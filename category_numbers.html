@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONOLIATH GAMES | Numbers & Algebra</title>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Base CSS for Consistency */
+        :root { 
+            --bg-color: #F4EFEA; 
+            --card-bg: #FFFFFF; 
+            --primary-accent: #E69A8D; 
+            --secondary-accent: #5EBEC4; 
+            --text-main: #2C3E50; 
+            --nav-bg: rgba(244, 239, 234, 0.85); 
+            --ad-bg: #EAE3DC; 
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Josefin Sans', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* Persistent Nav */
+        nav { position: sticky; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        .nav-links a { text-decoration: none; color: var(--text-main); font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: color 0.3s ease; }
+        .nav-links a:hover { color: var(--primary-accent); }
+        
+        /* Main Layout */
+        main { flex: 1; width: 90%; max-width: 1000px; margin: 40px auto 60px auto; text-align: center; }
+        h1, h2, h3 { font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+        h1 { font-size: 2.5rem; color: var(--secondary-accent); margin-top: 20px; }
+        p.subtitle { font-weight: 300; font-size: 1.2rem; line-height: 1.6; margin-bottom: 40px; opacity: 0.8; }
+        
+        .back-link { display: inline-block; margin-bottom: 10px; color: var(--primary-accent); text-decoration: none; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem; transition: color 0.3s; }
+        .back-link:hover { color: var(--secondary-accent); }
+
+        /* Game Grid Layout */
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; }
+        .game-card { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); text-align: left; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .game-card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px rgba(0,0,0,0.08); }
+        .game-card img { width: 100%; height: 160px; object-fit: cover; border-radius: 4px; margin-bottom: 15px; }
+        .game-card h3 { font-size: 1.2rem; color: var(--text-main); margin-bottom: 10px; letter-spacing: 2px; }
+        .game-card p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; flex-grow: 1; }
+        
+        .play-btn { display: inline-block; padding: 12px 0; text-align: center; background-color: var(--secondary-accent); color: white; text-decoration: none; font-weight: 600; letter-spacing: 2px; border-radius: 4px; text-transform: uppercase; font-size: 0.9rem; transition: background 0.3s; }
+        .play-btn:hover { background-color: var(--primary-accent); }
+
+        /* Persistent Ad Frame & Footer */
+        .ad-frame { width: 100%; background-color: var(--ad-bg); padding: 20px; text-align: center; border-top: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05); margin-top: auto; }
+        .ad-content { width: 100%; max-width: 728px; height: 90px; margin: 0 auto; background-color: #d1c9c1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem; letter-spacing: 1px; border: 1px dashed #bbaaa0; }
+        footer { text-align: center; padding: 30px; font-size: 0.9rem; font-weight: 300; letter-spacing: 1px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="story.html">Story</a>
+            <a href="topics.html" style="color: var(--primary-accent);">Topics</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+
+    <main>
+        <a href="topics.html" class="back-link">&larr; Back to All Topics</a>
+        
+        <h1>Numbers & Algebra</h1>
+        <p class="subtitle">These games focus on Dovit's core numerical identity and his ability to manipulate the logic of the geometric world.</p>
+
+        <div class="grid-container">
+            <div class="game-card">
+                <img src="https://via.placeholder.com/400x250/5EBEC4/FFFFFF?text=The+First+Vertex" alt="Game Thumbnail">
+                <h3>dovit</h3>
+                <p>Place Value and Decimals (P3–P6). Managing Dovit’s value by navigating decimal positions.</p>
+                <a href="simulation-1.html" class="play-btn">Play Game</a>
+            </div>
+
+            <div class="game-card">
+                <img src="https://via.placeholder.com/400x250/E69A8D/FFFFFF?text=Illusions+of+Scale" alt="Game Thumbnail">
+                <h3>Fragment</h3>
+                <p>Fractions (P2–P6). Manipulating numerators and denominators to alter Dovit's physical scale.</p>
+                <a href="simulation-6.html" class="play-btn">Play Game</a>
+            </div>
+
+            <div class="game-card">
+                <img src="https://via.placeholder.com/400x250/5EBEC4/FFFFFF?text=The+Hidden+Plane" alt="Game Thumbnail">
+                <h3>Cipher</h3>
+                <p>Whole Numbers and Operations (P1–P6). Solving the internal equations of the Monoliath using the four operations and mathematical symbols. </p>
+                <a href="simulation-7.html" class="play-btn">Play Game</a>
+            </div>
+
+	<div class="game-card">
+                <img src="https://via.placeholder.com/400x250/5EBEC4/FFFFFF?text=The+Hidden+Plane" alt="Game Thumbnail">
+                <h3>Illuminate</h3>
+                <p>Mental Calculation and Operations (P1–P4). Using strategic addition and subtraction to charge the grid and banish shadows. </p>
+                <a href="simulation-12.html" class="play-btn">Play Game</a>
+            </div>
+            
+            </div>
+
+    </main>
+
+    <div class="ad-frame">
+        <div class="ad-content">
+            [ ADVERTISEMENT SLOT : 728 x 90 ]
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 djinn Design Studios | MonoliATH Games. All paths lead to the start.
+    </footer>
+
+</body>
+</html>
