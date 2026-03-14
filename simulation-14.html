@@ -34,27 +34,53 @@
         }
 
         /* --- TOP BAR --- */
-        nav { 
-            width: 100%; 
-            background: var(--nav-bg); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            padding: 15px 0; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            z-index: 10;
-        }
-        .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
-        .nav-links a { 
-            text-decoration: none; 
-            color: var(--text-main); 
-            font-size: 1.1rem; 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            transition: color 0.3s ease; 
-        }
-        .nav-links a:hover { color: var(--primary-accent); }
+        /* --- UPDATED NAVIGATION --- */
+nav {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0; /* Reduced padding for a slimmer bar */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px; /* Reduced gap for desktop */
+    padding: 0 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.95rem; /* Slightly smaller base font */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: color 0.3s ease;
+}
+
+/* --- MOBILE SPECIFIC ADJUSTMENTS --- */
+@media (max-width: 600px) {
+    nav {
+        padding: 12px 0; /* Even slimmer on mobile */
+    }
+    .nav-links {
+        gap: 15px; /* Tighter spacing for narrow screens */
+        width: 100%;
+    }
+    .nav-links a {
+        font-size: 0.75rem; /* Smaller text to prevent wrapping/uneven lines */
+        letter-spacing: 1px;
+    }
+}
         .back-btn { font-weight: 300 !important; opacity: 0.7; }
 
         /* --- THE GAME AREA --- */
@@ -73,28 +99,29 @@
         }
 
         /* --- AD BAR --- */
-        .ad-frame { 
-            width: 100%; 
-            background-color: var(--ad-bg); 
-            padding: 10px; 
-            text-align: center; 
-            border-top: 1px solid rgba(0,0,0,0.05);
-            z-index: 10;
-        }
-        .ad-content { 
-            width: 100%; 
-            max-width: 728px; 
-            height: 90px; 
-            margin: 0 auto; 
-            background-color: #d1c9c1; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: #888; 
-            font-size: 0.9rem; 
-            letter-spacing: 1px; 
-            border: 1px dashed #bbaaa0; 
-        }
+.ad-frame { 
+    width: 100%; 
+    background-color: var(--ad-bg); 
+    padding: 5px; /* Reduced from 10px */
+    text-align: center; 
+    border-top: 1px solid rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+.ad-content { 
+    width: 100%; 
+    max-width: 728px; 
+    height: 50px; /* Reduced from 90px */
+    margin: 0 auto; 
+    background-color: #d1c9c1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #888; 
+    font-size: 0.75rem; /* Smaller text for smaller box */
+    letter-spacing: 1px; 
+    border: 1px dashed #bbaaa0; 
+}
 	
 	
 

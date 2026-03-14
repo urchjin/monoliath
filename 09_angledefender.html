@@ -29,7 +29,8 @@ body {
   color: var(--text);
   font-family: 'Montserrat', sans-serif;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: auto;
+overflow-x: hidden
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -278,21 +279,26 @@ body {
 #gameCanvas {
   border-radius: 50%;
   border: 2px solid var(--border);
-  box-shadow: none;
-  cursor: crosshair;
-  flex-shrink: 0;
-  margin-top: 6px;
-  touch-action: none;
+  display: block;
+  margin: 10px auto;
+  /* Ensures the canvas drawing stays square and centered */
+  object-fit: contain; 
+  /* Allows scrolling on mobile when touching the game */
+  touch-action: pan-y;
+  /* Removed fixed width/height so JavaScript can control scaling */
 }
 
 /* ── OVERLAY ── */
 #overlay {
   display: none;
   position: fixed; inset: 0;
-  background: rgba(247,243,238,0.93);
+  background: rgba(247,243,238,0.95);
   z-index: 200;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* Change from center to flex-start */
+  overflow-y: auto;        /* Enable vertical scrolling */
+  padding: 40px 0;         /* Add padding so the box doesn't touch edges */
+  -webkit-overflow-scrolling: touch;
 }
 #overlay.show { display: flex; }
 
@@ -498,15 +504,37 @@ body {
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Responsive canvas size
-const AVAIL = Math.min(
-  window.innerWidth - 380,
-  window.innerHeight - 120,
-  560
-);
-const SZ = Math.max(320, AVAIL);
-canvas.width = canvas.height = SZ;
-const C = SZ / 2;
+// ── DYNAMIC SCALING & RESOLUTION ──
+let SZ, C;
+const INTERNAL_RES = 600; // The fixed internal grid size
+
+function setupCanvasDimensions() {
+  const isMobile = window.innerWidth <= 768;
+  const horizontalSpace = isMobile ? window.innerWidth - 30 : window.innerWidth - 420;
+  const verticalSpace = window.innerHeight - 160; 
+  
+  // Visual size (how it looks on screen)
+  const visualSize = Math.min(isMobile ? 560 : 700, horizontalSpace, verticalSpace);
+  const displaySize = Math.max(300, visualSize); 
+
+  canvas.style.width = displaySize + "px";
+  canvas.style.height = displaySize + "px";
+
+  // Internal resolution (locked for consistent math)
+  canvas.width = INTERNAL_RES;
+  canvas.height = INTERNAL_RES;
+
+  C = INTERNAL_RES / 2; // Always 300
+  SZ = INTERNAL_RES;    // Always 600
+}
+
+setupCanvasDimensions();
+
+// Update dimensions on window resize or orientation change
+window.addEventListener('resize', () => {
+  setupCanvasDimensions();
+  if (typeof render === 'function') render();
+});
 
 // Grid constants
 const RINGS    = 10;
@@ -1056,46 +1084,59 @@ function retryLevel() {
 canvas.addEventListener('click', (e) => {
   if (G.phase !== 'player') return;
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left - C;
-  const my = e.clientY - rect.top - C;
+  
+  // Calculate the scale difference between the 600px grid and the screen size
+  const scale = 600 / rect.width;
+  
+  // Translate the screen coordinates to the 600px game grid
+  const mx = (e.clientX - rect.left) * scale - C;
+  const my = (e.clientY - rect.top) * scale - C;
+  
   const rawAngle = Math.atan2(my, mx) * 180 / Math.PI;
   const normalised = ((rawAngle % 360) + 360) % 360;
   const snappedCanvas = Math.round(normalised / 15) * 15 % 360;
   const snapped = canvasDegToTop(snappedCanvas);
+  
+  handleRotationAim(snapped);
+});
+
+// Helper to handle the common rotation logic
+function handleRotationAim(snapped) {
   const i = G.selBeam;
   const start = G.turnStartAngles[i];
   const diff = Math.abs((((snapped - start + 540) % 360) - 180));
-  if (diff > 30) { setMsg('Rotation limit 30° per turn. Use Undo if needed.'); return; }
-  if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
-  G.rotateHistory[i].push(G.beams[i].angle);
-  G.beams[i].angle = snapped;
-  if (document.getElementById(`bang${i}`))
-    document.getElementById(`bang${i}`).textContent = snapped + '°';
-  updateMathPanel();
-  render();
-});
+  
+  if (diff <= 30) {
+    if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
+    G.rotateHistory[i].push(G.beams[i].angle);
+    G.beams[i].angle = snapped;
+    if (document.getElementById(`bang${i}`))
+      document.getElementById(`bang${i}`).textContent = snapped + '°';
+    updateMathPanel();
+    render();
+  } else {
+    setMsg('Rotation limit 30° per turn.');
+  }
+}
 canvas.addEventListener('touchstart', (e) => {
   if (G.phase !== 'player') return;
   const rect = canvas.getBoundingClientRect();
   const t = e.touches[0];
-  const mx = t.clientX - rect.left - C;
-  const my = t.clientY - rect.top - C;
-  const rawAngle = Math.atan2(my, mx) * 180 / Math.PI;
-  const normalised = ((rawAngle % 360) + 360) % 360;
-  const snappedCanvas = Math.round(normalised / 15) * 15 % 360;
-  const snapped = canvasDegToTop(snappedCanvas);
-  const i = G.selBeam;
-  const start = G.turnStartAngles[i];
-  const diff = Math.abs((((snapped - start + 540) % 360) - 180));
-  if (diff > 30) { setMsg('Rotation limit 30° per turn. Use Undo if needed.'); return; }
-  if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
-  G.rotateHistory[i].push(G.beams[i].angle);
-  G.beams[i].angle = snapped;
-  if (document.getElementById(`bang${i}`))
-    document.getElementById(`bang${i}`).textContent = snapped + '°';
-  updateMathPanel();
-  render();
-  e.preventDefault();
+  const scale = 600 / rect.width;
+  
+  const mx = (t.clientX - rect.left) * scale - C;
+  const my = (t.clientY - rect.top) * scale - C;
+  const dist = Math.hypot(mx, my);
+
+  // If touching the active radar area, handle aim and prevent page scroll
+  if (dist <= 300) { 
+    if (e.cancelable) e.preventDefault();
+    const rawAngle = Math.atan2(my, mx) * 180 / Math.PI;
+    const normalised = ((rawAngle % 360) + 360) % 360;
+    const snappedCanvas = Math.round(normalised / 15) * 15 % 360;
+    const snapped = canvasDegToTop(snappedCanvas);
+    handleRotationAim(snapped);
+  }
 }, { passive: false });
 
 // ── STATS UI ─────────────────────────────────────────────────
@@ -1153,7 +1194,8 @@ function setupResponsiveLayout() {
 window.addEventListener('resize', setupResponsiveLayout);
 
 function render() {
-  ctx.clearRect(0, 0, SZ, SZ);
+  // Clear the entire 600x600 internal area
+  ctx.clearRect(0, 0, 600, 600);
   drawBg();
   drawGrid();
   drawDegreeLabels();
@@ -1175,31 +1217,35 @@ function drawBg() {
 
 function drawGrid() {
   ctx.save();
+  // Re-calculate RING_R based on fixed 600px internal size
+  const current_RING_R = (600 / 2 - 22) / RINGS;
+
   // Ring circles
   for (let r = 1; r <= RINGS; r++) {
-    const radius = r * RING_R;
+    const radius = r * current_RING_R;
     ctx.beginPath();
     ctx.arc(C, C, radius, 0, Math.PI * 2);
-    const highlightRange = (G && G.upg && typeof G.upg.range === 'number') ? G.upg.range : -1;
+   const highlightRange = (G && G.upg && typeof G.upg.range === 'number') ? G.upg.range : -1;
+    
     if (r === highlightRange) {
-      ctx.strokeStyle = 'rgba(126,200,200,0.45)';
+      // Lightened Highlight Range
+      ctx.strokeStyle = 'rgba(126,200,200,0.4)'; 
       ctx.lineWidth = 2;
     } else {
-      ctx.strokeStyle = r % 5 === 0 ? 'rgba(166,159,150,0.45)' : 'rgba(191,184,175,0.45)';
+      // Lightened standard rings
+      // 0.15 for major rings, 0.08 for minor rings
+      ctx.strokeStyle = r % 5 === 0 ? 'rgba(166,159,150,0.3)' : 'rgba(191,184,175,0.2)';
       ctx.lineWidth = r % 5 === 0 ? 1.6 : 1.2;
     }
     ctx.stroke();
   }
 
-  // Sector lines every 15°
+  // Sector lines
   for (let s = 0; s < SECTORS; s++) {
     const angle = topDegToRad(s * SECTOR_DEG);
-    const major = s % 6 === 0;
     ctx.beginPath();
     ctx.moveTo(C, C);
-    ctx.lineTo(C + RINGS * RING_R * Math.cos(angle), C + RINGS * RING_R * Math.sin(angle));
-    ctx.strokeStyle = major ? 'rgba(176,168,158,0.45)' : 'rgba(195,188,179,0.45)';
-    ctx.lineWidth   = major ? 1.2 : 0.8;
+    ctx.lineTo(C + RINGS * current_RING_R * Math.cos(angle), C + RINGS * current_RING_R * Math.sin(angle));
     ctx.stroke();
   }
   ctx.restore();

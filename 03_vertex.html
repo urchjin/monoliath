@@ -251,10 +251,33 @@ html,body{height:100%;background:var(--bg);font-family:'Raleway',sans-serif;
   background:rgba(10,8,5,.82);backdrop-filter:blur(8px);
   display:flex;align-items:center;justify-content:center;padding:12px;}
 .modal-overlay.hidden{display:none;}
-.modal-box{background:#221D17;border:1px solid rgba(201,168,76,.3);
-  border-radius:18px;padding:clamp(18px,4vw,32px);
-  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
-  box-shadow:0 24px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:12px;}
+
+.modal-box {
+  background: #221D17;
+  border: 1px solid rgba(201,168,76,0.3);
+  border-radius: 18px;
+  padding: 15px; /* Slightly reduced padding */
+  width: 95%; /* Increased width for mobile */
+  max-width: 560px;
+  max-height: 98vh; /* Allow it to take almost full height */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#modal-board-wrap {
+  background: #0C0906;
+  border: 1px solid rgba(242,232,220,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Prevents the board from squishing */
+  margin: 0 auto;
+}
+
 .modal-title{font-family:'Cinzel',serif;font-size:clamp(13px,3vw,18px);
   letter-spacing:3px;color:var(--gold);text-align:center;text-transform:uppercase;}
 .modal-sub{font-size:clamp(9px,2vw,11px);color:var(--light);text-align:center;line-height:1.7;}
@@ -1271,29 +1294,30 @@ function openAreaModal(){
   document.getElementById('modal-answer').value='';
   document.getElementById('modal-angle-answer').value='';
   document.getElementById('modal-feedback').textContent='';
-  document.getElementById('modal-feedback').className='modal-feedback';
   document.getElementById('modal-pts-info').textContent='No points selected';
 
-  // Standard mode
-  document.getElementById('modal-title-lbl').textContent='⬡ Area Challenge';
-  document.getElementById('modal-sub-lbl').textContent=
-    'Tap 3+ nodes on your path to select a polygon, then enter its area to earn bonus points.';
-  document.getElementById('modal-area-lbl').textContent='Your answer (sq units):';
-  document.getElementById('modal-unit-lbl').textContent='sq';
-  document.getElementById('modal-angle-section').style.display='';
-  document.getElementById('modal-area-section').style.display='';
-
-  // Comeback row visibility
-  const comebackEligible=isComeback()&&!G.players[G.cur].negativeAreaUsed;
-  document.getElementById('modal-comeback-row').style.display=comebackEligible?'block':'none';
-  document.getElementById('modal-comeback-toggle').textContent='🔁 Switch to Negative Area (Comeback)';
-  MODAL.negativeMode=false;
-
   document.getElementById('area-modal').classList.remove('hidden');
-  const sz=Math.min(320,window.innerWidth-48);
-  document.getElementById('modal-board-wrap').style.width=sz+'px';
-  document.getElementById('modal-board-wrap').style.height=sz+'px';
+
+  // --- DYNAMIC SIZE FIX ---
+  const isMobile = window.innerWidth < 860;
+  const paddingBuffer = isMobile ? 220 : 300; // Space reserved for text and buttons
+  
+  const availableWidth = window.innerWidth - 60;
+  const availableHeight = window.innerHeight - paddingBuffer;
+  
+  // Ensure we pick the smallest dimension to keep it a perfect square
+  const sz = Math.min(400, availableWidth, availableHeight);
+  
+  const wrap = document.getElementById('modal-board-wrap');
+  wrap.style.width = sz + 'px';
+  wrap.style.height = sz + 'px';
+  
   drawModalSvg(sz);
+  // -------------------------
+
+  // (Keep the rest of your existing logic for titles and comeback visibility)
+  const comebackEligible = isComeback() && !G.players[G.cur].negativeAreaUsed;
+  document.getElementById('modal-comeback-row').style.display = comebackEligible ? 'block' : 'none';
 }
 
 function drawModalSvg(sz){
@@ -1302,6 +1326,7 @@ function drawModalSvg(sz){
   const cmz=sz/12,mx=c=>c*cmz+cmz/2,my=r=>r*cmz+cmz/2;
   svg.setAttribute('width',sz);svg.setAttribute('height',sz);
   svg.setAttribute('viewBox',`0 0 ${sz} ${sz}`);svg.innerHTML='';
+  svg.style.touchAction = "none"; // Prevents accidental page scrolling while tapping nodes
   // Grid
   for(let r=0;r<12;r++)for(let c=0;c<12;c++){
     const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');

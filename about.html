@@ -13,10 +13,53 @@
         :root { --bg-color: #F4EFEA; --card-bg: #FFFFFF; --primary-accent: #E69A8D; --secondary-accent: #5EBEC4; --text-main: #2C3E50; --nav-bg: rgba(244, 239, 234, 0.85); --ad-bg: #EAE3DC; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Josefin Sans', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
-        nav { position: sticky; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-        .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
-        .nav-links a { text-decoration: none; color: var(--text-main); font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: color 0.3s ease; }
-        .nav-links a:hover { color: var(--primary-accent); }
+        /* --- UPDATED NAVIGATION --- */
+nav {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0; /* Reduced padding for a slimmer bar */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px; /* Reduced gap for desktop */
+    padding: 0 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.95rem; /* Slightly smaller base font */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: color 0.3s ease;
+}
+
+/* --- MOBILE SPECIFIC ADJUSTMENTS --- */
+@media (max-width: 600px) {
+    nav {
+        padding: 12px 0; /* Even slimmer on mobile */
+    }
+    .nav-links {
+        gap: 15px; /* Tighter spacing for narrow screens */
+        width: 100%;
+    }
+    .nav-links a {
+        font-size: 0.75rem; /* Smaller text to prevent wrapping/uneven lines */
+        letter-spacing: 1px;
+    }
+}
         main { flex: 1; width: 90%; max-width: 800px; margin: 60px auto; text-align: center; }
         h1, h2, h3 { font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
         h1 { font-size: 2.5rem; color: var(--secondary-accent); }

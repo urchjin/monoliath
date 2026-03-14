@@ -90,8 +90,19 @@ body {
 }
 
 @media (max-width: 900px) {
-  .arena { grid-template-columns: 1fr; }
-  #cWrap { order: -1; }
+  .arena { 
+    grid-template-columns: 1fr; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #cWrap { 
+    order: -1; 
+    width: 100%;
+    max-height: 60vh; /* Prevents the game from taking over the whole screen */
+    display: flex;
+    justify-content: center;
+  }
 }
 
 /* ── PANEL ── */
@@ -315,12 +326,22 @@ input[type=range]::-webkit-slider-thumb:hover {
 
 /* ── SPLASH ── */
 #splash {
-  position:fixed; inset:0; z-index:200;
-  background:rgba(0,10,22,0.97);
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  gap:14px; padding:30px;
+  position: fixed;
+  inset: 0;
+  z-index: 400; /* Ensure it stays above everything else */
+  background: rgba(0, 10, 22, 0.98);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Change 'justify-content' from center to flex-start */
+  justify-content: flex-start; 
+  gap: 14px;
+  padding: 40px 20px;
+  /* Critical additions for mobile scrolling: */
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch; 
 }
+
 #splash h1 {
   font-family:'Raleway',sans-serif;
   font-size:clamp(1.5em,4vw,2.8em);
@@ -415,10 +436,10 @@ input[type=range]::-webkit-slider-thumb:hover {
   <h1>LIGHTHOUSE</h1>
   <p class="sub">Guide ships safely with your <strong style="color:var(--cyan)">3–4 lighthouses</strong>. Click a lighthouse on the ring or its beam and drag to rotate the light direction. Lit ships slow down and avoid collisions.</p>
   <div class="keys">
-    <div class="key-item"><span>� Control</span>Drag a lighthouse icon or its beam to change direction. Beams don’t overlap.</div>
+    <div class="key-item"><span>  Control</span>Drag a lighthouse icon or its beam to change direction. Beams don’t overlap.</div>
     <div class="key-item"><span>◆ Ships</span>Blue = normal, green = lit & safe, orange = warning. Red flash shows a collision.</div>
     <div class="key-item"><span>⚠️ Alerts</span>Faint red dots mark predicted collision points. Watch the angle callout at the top.</div>
-    <div class="key-item"><span>� Events</span>Occasionally a big ship appears from the border — you’ll get a warning.</div>
+    <div class="key-item"><span>  Events</span>Occasionally a big ship appears from the border — you’ll get a warning.</div>
   </div>
   <div class="settings">
     <div class="opt">
@@ -563,17 +584,28 @@ const COLL_CRASH = 22;  // px – actual collision
 function setupCanvasSize() {
   const wrap = document.getElementById('cWrap');
   const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-  const size = Math.min(680, wrap.clientWidth - 8);
+  
+  // Calculate available space
+  const availableWidth = wrap.clientWidth - 16;
+  const availableHeight = window.innerHeight * 0.6; // Use 60% of screen height max
+  
+  // Pick the smaller of the two to ensure it fits the screen
+  const size = Math.min(680, availableWidth, availableHeight);
+  
   canvas.style.width = size + 'px';
   canvas.style.height = size + 'px';
   canvas.width = size * dpr;
   canvas.height = size * dpr;
+  
   W = canvas.width;
   H = canvas.height;
   CX = Math.floor(W / 2);
   CY = Math.floor(H / 2);
+  
+  // Adjust the radar radius based on the new size
   R = Math.floor(Math.min(W, H) / 2) - Math.floor(22 * dpr / 2);
   DRAW_SCALE = R / 228;
+  
   lhs.forEach(lh => {
     const posRad = lh.posAngleDeg * Math.PI / 180;
     lh.x = CX + R * Math.cos(posRad);
