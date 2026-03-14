@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Fragment – Classic</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+  background: linear-gradient(135deg, #E8D5C4 0%, #F5E6D3 50%, #D4E5F0 100%);
+  color:#5A5A5A; 
+  font-family:'Raleway',sans-serif; 
+  text-align:center; 
+  user-select:none; 
+  overflow:hidden;
+  touch-action: none;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#header {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(200, 180, 160, 0.3);
+  box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+h2 { 
+  font-size: 14px; 
+  font-weight: 300;
+  letter-spacing: 3px;
+  color: #7B6B5D;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+#hud {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(200, 180, 160, 0.25);
+  padding: 8px 16px;
+  gap: 10px;
+  min-height: 62px;
+}
+
+.hud-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 2px;
+}
+
+.hud-player-label {
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: #9B8B7D;
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+.hud-score {
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.hud-raw {
+  font-size: 11px;
+  font-weight: 300;
+  color: #9B8B7D;
+  letter-spacing: 1px;
+}
+
+.hud-p1-score { color: #7B9B93; }
+.hud-p2-score { color: #C59B8B; }
+
+#hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 90px;
+}
+
+#hud-timer {
+  font-size: 28px;
+  font-weight: 300;
+  color: #9B8B7D;
+  letter-spacing: 2px;
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+#hud-timer.urgent {
+  color: #E05C5C;
+}
+
+#status {
+  display: none;
+}
+
+.mode-buttons {
+  margin: 8px 0;
+  display: none;
+}
+
+button { 
+  padding: 10px 20px; 
+  margin: 5px; 
+  font-size: 13px; 
+  background: rgba(255, 255, 255, 0.8);
+  color: #7B6B5D;
+  border: 2px solid rgba(200, 180, 160, 0.4);
+  cursor: pointer;
+  border-radius: 25px;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 400;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+button:hover, button:active { 
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#muteBtn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  padding: 10px 18px;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #7B6B5D;
+  border: 2px solid rgba(200, 180, 160, 0.4);
+  cursor: pointer;
+  border-radius: 25px;
+  font-family: 'Raleway', sans-serif;
+  z-index: 100;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+#muteBtn:hover, #muteBtn:active {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#gameContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+#canvasWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #E8D5C4 0%, #F5E6D3 50%, #D4E5F0 100%);
+}
+
+canvas { 
+  display: block; 
+  background: transparent;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+#controls {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 10px 15px;
+  border-top: 2px solid rgba(200, 180, 160, 0.3);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  min-height: 100px;
+  box-shadow: 0 -2px 20px rgba(0,0,0,0.05);
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.dpad {
+  display: grid;
+  grid-template-areas: 
+    ". up ."
+    ". . ."
+    ". down .";
+  gap: 5px;
+}
+
+.control-btn {
+  width: 65px;
+  height: 65px;
+  font-size: 24px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+  border: 2px solid rgba(200, 180, 160, 0.3);
+  color: #7B6B5D;
+  cursor: pointer;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.control-btn:active {
+  background: linear-gradient(135deg, #D4E5F0 0%, #C8D9E6 100%);
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.control-btn.up { grid-area: up; }
+.control-btn.down { grid-area: down; }
+.control-btn.fire {
+  width: 75px;
+  height: 75px;
+  background: linear-gradient(135deg, #F5C6A5 0%, #E5B695 100%);
+  border-color: rgba(200, 150, 120, 0.4);
+  font-size: 28px;
+}
+
+.control-btn.fire:active {
+  background: linear-gradient(135deg, #E5B695 0%, #D5A685 100%);
+}
+
+#predictionModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background-color: rgba(232, 213, 196, 0.95);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease;
+}
+
+.predict-fractions {
+  display: flex;
+  justify-content: space-around;
+  margin: 24px 0;
+  gap: 14px;
+}
+
+.predict-card {
+  flex: 1;
+  text-align: center;
+  padding: 18px 12px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.6);
+  border: 2px solid rgba(200,180,160,0.25);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+.predict-card:hover {
+  background: rgba(255,255,255,0.9);
+  border-color: #A8C7A0;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.predict-card .frac-display {
+  font-size: 26px;
+  font-weight: 500;
+  color: #7B6B5D;
+  letter-spacing: 2px;
+  margin: 10px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.frac-display .frac-num {
+  font-size: 28px;
+  color: #5A9E7C;
+  font-weight: 600;
+}
+.frac-display .frac-bar {
+  width: 40px;
+  height: 2px;
+  background: #9B8B7D;
+  margin: 3px 0;
+}
+.frac-display .frac-den {
+  font-size: 22px;
+  color: #C07A5A;
+  font-weight: 500;
+}
+.predict-card .card-label {
+  font-size: 12px;
+  color: #9B8B7D;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+.predict-btn-tie {
+  background: transparent;
+  border: 2px solid rgba(155, 139, 125, 0.4);
+  color: #9B8B7D;
+  font-family: Raleway, sans-serif;
+  font-size: 13px;
+  padding: 10px 24px;
+  border-radius: 20px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  transition: all 0.15s;
+}
+.predict-btn-tie:hover {
+  background: rgba(155,139,125,0.1);
+  border-color: #9B8B7D;
+}
+
+#gameOverModal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(232, 213, 196, 0.95);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease;
+  overflow-y: auto;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F9F6F2 100%);
+  margin: 30px auto;
+  padding: 30px;
+  border: 3px solid rgba(200, 180, 160, 0.3);
+  border-radius: 25px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-content h2 {
+  color: #7B6B5D;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+}
+
+.score-display {
+  display: flex;
+  justify-content: space-around;
+  margin: 25px 0;
+  gap: 15px;
+}
+
+.player-score {
+  text-align: center;
+  padding: 20px 15px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.6);
+  flex: 1;
+  border: 2px solid rgba(200, 180, 160, 0.2);
+}
+
+.player-score.winner {
+  border: 3px solid #A8C7A0;
+  background: rgba(168, 199, 160, 0.15);
+  box-shadow: 0 0 25px rgba(168, 199, 160, 0.3);
+}
+
+.player-score.loser {
+  border: 3px solid #D5A895;
+  background: rgba(213, 168, 149, 0.1);
+}
+
+.player-name {
+  font-size: 13px;
+  margin-bottom: 10px;
+  color: #9B8B7D;
+  font-weight: 300;
+  letter-spacing: 1px;
+}
+
+.player-fraction {
+  font-size: 28px;
+  margin: 10px 0;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+.player-score.winner .player-fraction {
+  color: #7B9B73;
+}
+
+.player-score.loser .player-fraction {
+  color: #C59B8B;
+}
+
+.result-text {
+  font-size: 18px;
+  margin: 20px 0;
+  color: #7B6B5D;
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+#playAgainBtn {
+  background: linear-gradient(135deg, #D4E5F0 0%, #C8D9E6 100%);
+  color: #5A6A7A;
+  font-size: 15px;
+  padding: 15px 35px;
+  border: 2px solid rgba(180, 200, 220, 0.4);
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 400;
+  margin-top: 20px;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+#playAgainBtn:active {
+  background: linear-gradient(135deg, #C8D9E6 0%, #B8C9D6 100%);
+  transform: scale(1.05);
+}
+
+#welcomeModal {
+  display: block;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(232, 213, 196, 0.95);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease;
+  overflow-y: auto;
+}
+
+@media (orientation: landscape) {
+  #gameContainer {
+    flex-direction: row;
+  }
+  #controls {
+    flex-direction: column;
+    border-top: none;
+    border-left: 2px solid rgba(200, 180, 160, 0.3);
+    min-width: 200px;
+    padding: 20px 10px;
+  }
+  .control-section {
+    margin: 15px 0;
+  }
+}
+</style>
+</head>
+<body>
+<div id="header">
+  <h2>⬡ Fragment ⬡</h2>
+  <p id="status"></p>
+</div>
+
+<div id="hud">
+  <div class="hud-player">
+    <div class="hud-player-label">Traveler One</div>
+    <div class="hud-score hud-p1-score" id="hud-p1-score">1.00</div>
+    <div class="hud-raw" id="hud-p1-raw">50 / 50</div>
+  </div>
+
+  <div id="hud-center">
+    <div id="hud-timer">60</div>
+  </div>
+
+  <div class="hud-player">
+    <div class="hud-player-label" id="hud-p2-label">Companion</div>
+    <div class="hud-score hud-p2-score" id="hud-p2-score">1.00</div>
+    <div class="hud-raw" id="hud-p2-raw">50 / 50</div>
+  </div>
+</div>
+
+<button id="muteBtn" onclick="toggleMusic()">🔇 Silence</button>
+
+<div id="welcomeModal">
+  <div class="modal-content">
+    <h2>⬡ Welcome Traveler ⬡</h2>
+    <div class="result-text" style="margin-top:0;">
+      Choose a path and learn the rules.
+    </div>
+    <div style="text-align:left; font-size:13px; color:#7B6B5D; line-height:1.6; margin:15px 0;">
+      • Move: W/S (Player 1) and ▲/▼ (Player 2 in Journey Together)<br>
+      • Send: Space (Player 1) and Enter (Player 2)<br>
+      • Top zone hits change <strong>Numerator</strong> · Bottom zone changes <strong>Denominator</strong><br>
+      • Your pillar size reacts to fraction changes<br>
+      • Operations rotate every 10s; watch for the blinking warning<br>
+      • 🪟 <strong>Stay still</strong> for 2s and your paddle turns <strong>glass</strong> — it can't block bullets! Keep moving!<br>
+      • <span style="color:#5DBB63; font-weight:600;">Green projectiles</span> grow your fraction · <span style="color:#E05C5C; font-weight:600;">Red</span> shrink it<br>
+      • 🏆 <strong>Goal:</strong> Highest fraction value at the end of 60 seconds wins!
+    </div>
+    <div class="mode-buttons" style="display:flex; justify-content:center; gap:10px;">
+      <button id="startAiBtn">Explore Alone</button>
+      <button id="startPvpBtn">Journey Together</button>
+    </div>
+  </div>
+  </div>
+
+<div id="gameContainer">
+  <div id="canvasWrapper">
+    <canvas id="game" width="600" height="400"></canvas>
+  </div>
+  
+  <div id="controls">
+    <div class="control-section">
+      <div class="dpad">
+        <button class="control-btn up" id="upBtn">△</button>
+        <button class="control-btn down" id="downBtn">▽</button>
+      </div>
+      <div style="font-size:11px; color:#9B8B7D; margin-top:8px; font-weight:300; letter-spacing:1px;">MOVE</div>
+    </div>
+    
+    <div class="control-section">
+      <button class="control-btn fire" id="fireBtn">◆</button>
+      <div style="font-size:11px; color:#9B8B7D; margin-top:8px; font-weight:300; letter-spacing:1px;">SEND</div>
+    </div>
+  </div>
+</div>
+
+<div id="predictionModal">
+  <div class="modal-content">
+    <h2>⬡ Who Has More? ⬡</h2>
+    <p style="color:#9B8B7D; font-size:13px; letter-spacing:1px; margin-bottom:4px;">Which fraction is larger?</p>
+    <div class="predict-fractions">
+      <div class="predict-card" id="predictP1" onclick="submitPrediction('p1')">
+        <div class="card-label">Traveler One</div>
+        <div class="frac-display">
+          <span class="frac-num" id="pred-p1-num">?</span>
+          <div class="frac-bar"></div>
+          <span class="frac-den" id="pred-p1-den">?</span>
+        </div>
+      </div>
+      <div class="predict-card" id="predictP2" onclick="submitPrediction('p2')">
+        <div class="card-label" id="pred-p2-label">Companion</div>
+        <div class="frac-display">
+          <span class="frac-num" id="pred-p2-num">?</span>
+          <div class="frac-bar"></div>
+          <span class="frac-den" id="pred-p2-den">?</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <button class="predict-btn-tie" onclick="submitPrediction('tie')">They're equal</button>
+    </div>
+  </div>
+</div>
+
+<div id="gameOverModal">
+  <div class="modal-content">
+    <h2>⬡ Journey Complete ⬡</h2>
+    <div class="result-text" id="resultText"></div>
+    <div class="score-display">
+      <div class="player-score" id="player1Score">
+        <div class="player-name">Traveler One</div>
+        <div class="player-fraction" id="p1Fraction"></div>
+        <div style="font-size:11px; color:#9B8B7D; font-weight:300;">
+          <span id="p1Numerator"></span> / <span id="p1Denominator"></span>
+        </div>
+      </div>
+      <div class="player-score" id="player2Score">
+        <div class="player-name" id="p2Name">Companion</div>
+        <div class="player-fraction" id="p2Fraction"></div>
+        <div style="font-size:11px; color:#9B8B7D; font-weight:300;">
+          <span id="p2Numerator"></span> / <span id="p2Denominator"></span>
+        </div>
+      </div>
+    </div>
+    <button id="playAgainBtn">New Journey</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+let lastTime = 0;
+let dt = 0;
+let upHold = 0;
+let downHold = 0;
+let upHold2 = 0;
+let downHold2 = 0;
+const PLAYER_BULLET_SPEED = 380;
+const AI_BULLET_SPEED = 320;
+let aiReactDelayUntil = 0;
+let aiWrongAimUntil = 0;
+const AI_BLOCK_FAIL_RATE = 0.15;
+const AI_IGNORE_BULLET_RATE = 0.2;
+const AI_WRONG_SHOT_RATE = 0.12;
+const BASE_MARGIN_P = 0.05;
+const BASE_WIDTH_P = 0.0667;
+const LEFT_GAP_P = 0.0167;
+const RIGHT_GAP_P = 0.0417;
+function resizeCanvas(){
+  const wrapper = document.getElementById("canvasWrapper");
+  const w = wrapper.clientWidth;
+  const h = wrapper.clientHeight;
+  const aspect = 600/400;
+  let targetW = w;
+  let targetH = Math.round(targetW / aspect);
+  if (targetH > h) {
+    targetH = h;
+    targetW = Math.round(targetH * aspect);
+  }
+  const prevH = canvas.height;
+  canvas.width = targetW;
+  canvas.height = targetH;
+  playerBase.w = Math.round(canvas.width * BASE_WIDTH_P);
+  playerBase.x = Math.round(canvas.width * BASE_MARGIN_P);
+  playerBase.h = canvas.height;
+  player2Base.w = Math.round(canvas.width * BASE_WIDTH_P);
+  player2Base.x = Math.round(canvas.width - Math.round(canvas.width * BASE_MARGIN_P) - player2Base.w);
+  player2Base.h = canvas.height;
+  const scaleY = prevH ? canvas.height / prevH : 1;
+  player.y = Math.min(canvas.height - player.h, Math.round(player.y * scaleY));
+  player.h = Math.round(player.h * scaleY);
+  player2.y = Math.min(canvas.height - player2.h, Math.round(player2.y * scaleY));
+  player2.h = Math.round(player2.h * scaleY);
+  player.x = Math.round(playerBase.x + playerBase.w + canvas.width * LEFT_GAP_P);
+  player2.x = Math.round(player2Base.x - canvas.width * RIGHT_GAP_P);
+  minH = canvas.height/15;
+  maxH = canvas.height/5;
+}
+function computePaddleSpeed(holdMs){
+  const base = canvas.height * 0.4;
+  const accel = canvas.height * 0.7;
+  const t = Math.min(1, holdMs / 600);
+  return base + accel * t;
+}
+window.addEventListener("resize", resizeCanvas);
+
+// ===== GENERATIVE AUDIO ENGINE =====
+// Monument Valley-inspired ambient soundscape generator
+
+class AmbientAudioEngine {
+  constructor() {
+    this.audioContext = null;
+    this.masterGain = null;
+    this.oscillators = [];
+    this.isPlaying = false;
+    
+    // Pentatonic scale frequencies for harmonic ambient tones
+    this.scale = [
+      130.81, 146.83, 164.81, 196.00, 220.00, // Lower octave
+      261.63, 293.66, 329.63, 392.00, 440.00, // Middle octave
+      523.25, 587.33, 659.25, 783.99, 880.00  // Higher octave
+    ];
+  }
+  
+  init() {
+    if (this.audioContext) return;
+    
+    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.audioContext.createGain();
+    this.masterGain.gain.value = 0.15; // Very gentle volume
+    this.masterGain.connect(this.audioContext.destination);
+    
+    console.log('✓ Audio engine initialized');
+  }
+  
+  start() {
+    if (!this.audioContext) this.init();
+    if (this.isPlaying) return;
+    
+    this.isPlaying = true;
+    console.log('✓ Generative ambient music started');
+    
+    // Create 3-4 layered ambient tones that slowly evolve
+    this.createAmbientLayer(0, 8000);  // Deep pad
+    this.createAmbientLayer(1, 12000); // Mid pad
+    this.createAmbientLayer(2, 16000); // High shimmer
+    
+    // Occasionally add gentle melodic notes
+    this.scheduleRandomNotes();
+  }
+  
+  createAmbientLayer(index, duration) {
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    const filter = this.audioContext.createBiquadFilter();
+    
+    // Choose random frequency from scale
+    const freq = this.scale[Math.floor(Math.random() * this.scale.length)];
+    
+    // Use sine wave for pure, meditative tone
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    
+    // Low-pass filter for warmth
+    filter.type = 'lowpass';
+    filter.frequency.value = 800 + (index * 400);
+    filter.Q.value = 1;
+    
+    // Very gentle volume with slow fade in
+    gain.gain.value = 0;
+    gain.gain.linearRampToValueAtTime(0.02 + (index * 0.01), 
+      this.audioContext.currentTime + 3);
+    
+    // Slowly modulate frequency for organic feel
+    const lfo = this.audioContext.createOscillator();
+    const lfoGain = this.audioContext.createGain();
+    lfo.frequency.value = 0.05 + (Math.random() * 0.05); // Very slow LFO
+    lfoGain.gain.value = 0.5;
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    osc.start();
+    lfo.start();
+    
+    this.oscillators.push({ osc, gain, filter, lfo, lfoGain });
+    
+    // Gradually fade out and recreate for continuous evolution
+    setTimeout(() => {
+      if (this.isPlaying) {
+        gain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 2);
+        setTimeout(() => {
+          osc.stop();
+          lfo.stop();
+          this.oscillators = this.oscillators.filter(o => o.osc !== osc);
+          if (this.isPlaying) {
+            this.createAmbientLayer(index, duration);
+          }
+        }, 2000);
+      }
+    }, duration);
+  }
+  
+  scheduleRandomNotes() {
+    if (!this.isPlaying) return;
+    
+    // Occasionally play a gentle melodic note
+    const delay = 3000 + Math.random() * 7000; // Every 3-10 seconds
+    
+    setTimeout(() => {
+      if (this.isPlaying) {
+        this.playMeditativeNote();
+        this.scheduleRandomNotes();
+      }
+    }, delay);
+  }
+  
+  playMeditativeNote() {
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    const filter = this.audioContext.createBiquadFilter();
+    
+    const freq = this.scale[Math.floor(Math.random() * this.scale.length)];
+    
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    
+    filter.type = 'lowpass';
+    filter.frequency.value = 2000;
+    filter.Q.value = 2;
+    
+    // Gentle bell-like envelope
+    gain.gain.value = 0;
+    gain.gain.linearRampToValueAtTime(0.03, this.audioContext.currentTime + 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 3);
+    
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    
+    osc.start();
+    osc.stop(this.audioContext.currentTime + 3);
+  }
+  
+  stop() {
+    this.isPlaying = false;
+    this.oscillators.forEach(({ osc, lfo, gain }) => {
+      gain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 1);
+      setTimeout(() => {
+        try { osc.stop(); } catch(e) {}
+        try { lfo.stop(); } catch(e) {}
+      }, 1000);
+    });
+    this.oscillators = [];
+    console.log('✓ Ambient music stopped');
+  }
+  
+  // Pure tone sound effects
+  playTone(frequency, duration, type = 'sine') {
+    if (!this.audioContext) this.init();
+    
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+    
+    osc.type = type;
+    osc.frequency.value = frequency;
+    
+    gain.gain.value = 0.15;
+    gain.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
+    
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    
+    osc.start();
+    osc.stop(this.audioContext.currentTime + duration);
+  }
+}
+
+// Initialize audio engine
+const audioEngine = new AmbientAudioEngine();
+let musicEnabled = false;
+
+function toggleMusic() {
+  const btn = document.getElementById('muteBtn');
+  
+  if (!musicEnabled) {
+    audioEngine.init(); // Initialize on first click
+    audioEngine.start();
+    musicEnabled = true;
+    
+    btn.textContent = '♫ Music';
+    btn.style.background = 'linear-gradient(135deg, #A8C7A0 0%, #98B790 100%)';
+    btn.style.color = '#FFFFFF';
+  } else {
+    audioEngine.stop();
+    musicEnabled = false;
+    
+    btn.textContent = '🔇 Silence';
+    btn.style.background = 'rgba(255, 255, 255, 0.9)';
+    btn.style.color = '#7B6B5D';
+  }
+}
+
+// Sound effect functions using pure tones
+function playShootSound() {
+  // Ascending tone - gentle "send"
+  audioEngine.playTone(523.25, 0.15, 'sine'); // C5
+  setTimeout(() => audioEngine.playTone(659.25, 0.15, 'sine'), 50); // E5
+}
+
+function playHitSound() {
+  // Descending tone - impact
+  audioEngine.playTone(392.00, 0.2, 'sine'); // G4
+  setTimeout(() => audioEngine.playTone(329.63, 0.2, 'sine'), 80); // E4
+}
+
+function playBlockSound() {
+  // Single clear tone - deflection
+  audioEngine.playTone(587.33, 0.25, 'sine'); // D5
+}
+
+function playPhaseSound() {
+  // Gentle chime - notification
+  audioEngine.playTone(783.99, 0.3, 'sine'); // G5
+}
+
+// ===== GAME LOGIC =====
+
+let mode = "ai";
+let gameStarted = false;
+
+// Fixed target midpoint for AI logic
+const TARGET_MID = 1.0;
+
+const colors = {
+  primary: '#D4E5F0',
+  secondary: '#F5C6A5',
+  accent1: '#A8C7A0',
+  accent2: '#C59B8B',
+  stone: '#9B8B7D',
+  light: '#F9F6F2',
+  shadow: 'rgba(123, 107, 93, 0.2)'
+};
+
+const player = {x:80, y:150, w:15, h:70, snapY: 150, snapTime: Date.now()};
+const player2 = {x:505, y:150, w:15, h:70, lastMove:0, targetZone:'top', snapY: 150, snapTime: Date.now()};
+
+const playerBase = {x:30, y:0, w:40, h:canvas.height};
+const player2Base = {x:530, y:0, w:40, h:canvas.height};
+
+const playerVal = {n:50, d:50, lastFrac:1.0};
+const player2Val = {n:50, d:50, lastFrac:1.0};
+
+let minH = canvas.height/15;
+let maxH = canvas.height/5;
+
+let bullets = [];
+let playerCooldown = 0;
+let player2Cooldown = 0;
+
+function randomEffect(){
+  const ops=["+","-","*","/"];
+  const val=[2,3,4,5];
+  return {type:ops[Math.floor(Math.random()*ops.length)], value:val[Math.floor(Math.random()*val.length)]};
+}
+
+let playerEffect = randomEffect();
+let player2Effect = randomEffect();
+let playerPhase = 10;
+let player2Phase = 10;
+
+let timeLeft = 60;
+
+let moveUp = false, moveDown = false, fire = false;
+let moveUp2 = false, moveDown2 = false;
+
+let impacts = [];
+
+function startGame(selectedMode){
+  mode = selectedMode;
+  gameStarted = true;
+  timeLeft = 60;
+  const wm = document.getElementById("welcomeModal");
+  if (wm) wm.style.display = "none";
+  
+  player.y = Math.round(canvas.height * 0.375);
+  player2.y = Math.round(canvas.height * 0.375);
+  player2.lastMove = 0;
+  player2.targetZone = 'top';
+  
+  playerVal.n = 50;
+  playerVal.d = 50;
+  playerVal.lastFrac = 1.0;
+  player2Val.n = 50;
+  player2Val.d = 50;
+  player2Val.lastFrac = 1.0;
+  
+  player.h = Math.round(canvas.height * 0.175);
+  player2.h = Math.round(canvas.height * 0.175);
+  
+  bullets = [];
+  impacts = [];
+  player.snapY = player.y; player.snapTime = Date.now();
+  player2.snapY = player2.y; player2.snapTime = Date.now();
+  
+  setOppositeEffects(false);
+  playerPhase = 10;
+  player2Phase = 10;
+  
+  startTimers();
+}
+
+function setOppositeEffects(boost){
+  const growOps = ["+","*"];
+  const shrinkOps = ["-","/"];
+  const boostLose = [4,5];
+  const boostWin = [2,3];
+  const normal = [2,3,4,5];
+  const p1Score = playerVal.n / playerVal.d;
+  const p2Score = player2Val.n / player2Val.d;
+  const p1Losing = p1Score < p2Score;
+  const losingVals = boost ? boostLose : normal;
+  const winningVals = boost ? boostWin : normal;
+  const loseType = growOps[Math.floor(Math.random()*growOps.length)];
+  const winType = shrinkOps[Math.floor(Math.random()*shrinkOps.length)];
+  const loseVal = losingVals[Math.floor(Math.random()*losingVals.length)];
+  const winVal = winningVals[Math.floor(Math.random()*winningVals.length)];
+  if(p1Losing){
+    playerEffect = {type:loseType, value:loseVal};
+    player2Effect = {type:winType, value:winVal};
+  } else if(p2Score < p1Score){
+    playerEffect = {type:winType, value:winVal};
+    player2Effect = {type:loseType, value:loseVal};
+  } else {
+    const p1Grow = Math.random() < 0.5;
+    if(p1Grow){
+      playerEffect = {type:growOps[Math.floor(Math.random()*growOps.length)], value:normal[Math.floor(Math.random()*normal.length)]};
+      player2Effect = {type:shrinkOps[Math.floor(Math.random()*shrinkOps.length)], value:normal[Math.floor(Math.random()*normal.length)]};
+    } else {
+      playerEffect = {type:shrinkOps[Math.floor(Math.random()*shrinkOps.length)], value:normal[Math.floor(Math.random()*normal.length)]};
+      player2Effect = {type:growOps[Math.floor(Math.random()*growOps.length)], value:normal[Math.floor(Math.random()*normal.length)]};
+    }
+  }
+}
+function forceOppositeUpdate(boost){
+  setOppositeEffects(boost);
+  playerPhase = 10;
+  player2Phase = 10;
+}
+
+function shoot(owner){
+  if(owner==="player" && playerCooldown>0) return;
+  if(owner==="player2" && player2Cooldown>0) return;
+  
+  if(owner==="player"){
+    bullets.push({x:player.x+player.w, y:player.y+player.h/2, v:PLAYER_BULLET_SPEED, owner:"player", effect:{...playerEffect}});
+    playerCooldown=20;
+  } else {
+    bullets.push({x:player2.x, y:player2.y+player2.h/2, v:-AI_BULLET_SPEED, owner:"player2", effect:{...player2Effect}});
+    player2Cooldown=60;
+  }
+  playShootSound();
+}
+
+function aiShoot(){
+  if(player2Cooldown>0) return;
+  bullets.push({x:player2.x, y:player2.y+player2.h/2, v:-AI_BULLET_SPEED, owner:"player2", effect:{...player2Effect}});
+  player2Cooldown=60;
+  playShootSound();
+}
+
+function applyEffect(obj,effect,paddle,isNumerator){
+  if(isNumerator){
+    if(effect.type==="+") obj.n += effect.value;
+    if(effect.type==="-") obj.n = Math.max(1, obj.n - effect.value);
+    if(effect.type==="*") obj.n *= effect.value;
+    if(effect.type==="/") obj.n = Math.max(1, Math.floor(obj.n / effect.value));
+  } else {
+    if(effect.type==="+") obj.d += effect.value;
+    if(effect.type==="-") obj.d = Math.max(1, obj.d - effect.value);
+    if(effect.type==="*") obj.d *= effect.value;
+    if(effect.type==="/") obj.d = Math.max(1, Math.floor(obj.d / effect.value));
+  }
+
+  const frac = obj.n / obj.d;
+  if(frac - obj.lastFrac >= 0.15){
+    obj.lastFrac = frac;
+    paddle.h = Math.min(maxH, paddle.h + 5);
+  }
+  if(obj.lastFrac - frac >= 0.15){
+    obj.lastFrac = frac;
+    paddle.h = Math.max(minH, paddle.h - 5);
+  }
+  playHitSound();
+}
+
+function paddleIdleAlpha(paddle) {
+  const now = Date.now();
+  const elapsed = (now - paddle.snapTime) / 1000;
+  const moved = Math.abs(paddle.y - paddle.snapY);
+
+  if (moved >= canvas.height * 0.10) {
+    // Moved enough — immediately uncloak and start a fresh window
+    paddle._isIdle = false;
+    paddle.snapY = paddle.y;
+    paddle.snapTime = now;
+  } else if (elapsed >= 2.0) {
+    // Window expired without enough movement — cloak, reset window
+    paddle._isIdle = true;
+    paddle.snapY = paddle.y;
+    paddle.snapTime = now;
+  }
+  return paddle._isIdle ? 0 : 1;
+}
+
+function bulletHitsPaddle(b, paddle){
+  if(paddleIdleAlpha(paddle) <= 0) return false; // invisible = no blocking
+  if(paddle===player2 && Math.random() < AI_BLOCK_FAIL_RATE) return false;
+  return b.x+5>paddle.x && b.x-5<paddle.x+paddle.w && b.y>paddle.y && b.y<paddle.y+paddle.h;
+}
+
+function showGameOver(){
+  gameStarted = false;
+  if (musicEnabled) audioEngine.stop();
+
+  // Show prediction modal first
+  document.getElementById("pred-p1-num").textContent = playerVal.n;
+  document.getElementById("pred-p1-den").textContent = playerVal.d;
+  document.getElementById("pred-p2-num").textContent = player2Val.n;
+  document.getElementById("pred-p2-den").textContent = player2Val.d;
+  document.getElementById("pred-p2-label").textContent = mode === "ai" ? "Companion" : "Traveler Two";
+  document.getElementById("predictionModal").style.display = "block";
+}
+
+function submitPrediction(guess) {
+  document.getElementById("predictionModal").style.display = "none";
+
+  const p1Frac = playerVal.n / playerVal.d;
+  const p2Frac = player2Val.n / player2Val.d;
+
+  let resultText = "";
+  let p1Wins = false, p2Wins = false;
+
+  if (p1Frac > p2Frac + 0.001) {
+    p1Wins = true;
+    resultText = guess === "p1"
+      ? "⬡ Correct — First Traveler Ascends ⬡"
+      : "⬡ First Traveler Ascends ⬡";
+  } else if (p2Frac > p1Frac + 0.001) {
+    p2Wins = true;
+    const label = mode === "ai" ? "Companion" : "Second Traveler";
+    resultText = guess === "p2"
+      ? `⬡ Correct — ${label} Prevails ⬡`
+      : `⬡ ${label} Prevails ⬡`;
+  } else {
+    resultText = guess === "tie"
+      ? "⬡ Correct — Balanced Harmony ⬡"
+      : "⬡ Balanced Harmony ⬡";
+  }
+
+  // Add ✓ or ✗ prefix based on correctness
+  const correct = (guess === "p1" && p1Wins) || (guess === "p2" && p2Wins) || (guess === "tie" && !p1Wins && !p2Wins);
+  const prefix = correct ? "✓ " : "✗ ";
+  resultText = prefix + resultText.slice(2, -2).trim();
+  // Re-wrap with decorators
+  resultText = (correct ? "✓ " : "✗ ") + resultText.replace(/^[✓✗] /, "");
+
+  if (p1Wins) {
+    document.getElementById("player1Score").classList.add("winner");
+    document.getElementById("player2Score").classList.add("loser");
+  } else if (p2Wins) {
+    document.getElementById("player2Score").classList.add("winner");
+    document.getElementById("player1Score").classList.add("loser");
+  }
+
+  const resultEl = document.getElementById("resultText");
+  resultEl.textContent = correct ? "✓ " + (p1Wins ? "First Traveler Ascends" : p2Wins ? (mode==="ai"?"Companion Prevails":"Second Traveler Ascends") : "Balanced Harmony") : "✗ " + (p1Wins ? "First Traveler Ascends" : p2Wins ? (mode==="ai"?"Companion Prevails":"Second Traveler Ascends") : "Balanced Harmony");
+  resultEl.style.color = correct ? "#5A9E7C" : "#C05A5A";
+
+  document.getElementById("p2Name").textContent = mode === "ai" ? "Companion" : "Traveler Two";
+  document.getElementById("hud-p2-label").textContent = mode === "ai" ? "Companion" : "Traveler Two";
+  document.getElementById("p1Fraction").textContent = p1Frac.toFixed(3);
+  document.getElementById("p1Numerator").textContent = playerVal.n;
+  document.getElementById("p1Denominator").textContent = playerVal.d;
+  document.getElementById("p2Fraction").textContent = p2Frac.toFixed(3);
+  document.getElementById("p2Numerator").textContent = player2Val.n;
+  document.getElementById("p2Denominator").textContent = player2Val.d;
+
+  document.getElementById("gameOverModal").style.display = "block";
+}
+
+let phaseTimer1, phaseTimer2, gameTimer;
+
+function startTimers(){
+  if(phaseTimer1) clearInterval(phaseTimer1);
+  if(phaseTimer2) clearInterval(phaseTimer2);
+  if(gameTimer) clearInterval(gameTimer);
+  
+  phaseTimer1 = setInterval(()=>{
+    if(!gameStarted) return;
+    playerPhase--;
+    if(playerPhase === 3) playPhaseSound();
+    if(playerPhase <= 0){
+      forceOppositeUpdate(false);
+    }
+  }, 1000);
+  
+  phaseTimer2 = setInterval(()=>{
+    if(!gameStarted) return;
+    player2Phase--;
+    if(player2Phase === 3) playPhaseSound();
+    if(player2Phase <= 0){
+      forceOppositeUpdate(false);
+      aiReactDelayUntil = Date.now() + 600 + Math.floor(Math.random()*1200);
+    }
+  }, 1000);
+  
+  gameTimer = setInterval(()=>{
+    if(!gameStarted) return;
+    timeLeft--;
+    if(timeLeft === 30 || timeLeft === 10){
+      forceOppositeUpdate(true);
+    }
+    if(timeLeft <= 0){
+      showGameOver();
+    }
+  }, 1000);
+}
+
+function setupTouchControl(btnId, onPress, onRelease){
+  const btn = document.getElementById(btnId);
+  btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); onPress(); });
+  btn.addEventListener('touchend', (e)=>{ e.preventDefault(); if(onRelease) onRelease(); });
+  btn.addEventListener('touchcancel', (e)=>{ e.preventDefault(); if(onRelease) onRelease(); });
+}
+
+setupTouchControl('upBtn', ()=>moveUp=true, ()=>moveUp=false);
+setupTouchControl('downBtn', ()=>moveDown=true, ()=>moveDown=false);
+setupTouchControl('fireBtn', ()=>fire=true, ()=>fire=false);
+
+document.addEventListener("keydown", e=>{
+  if(!gameStarted) return;
+  if(e.key==="w" || e.key==="W") moveUp=true;
+  if(e.key==="s" || e.key==="S") moveDown=true;
+  if(e.key===" "){e.preventDefault(); fire=true;}
+  if(mode==="pvp"){
+    if(e.key==="ArrowUp") moveUp2=true;
+    if(e.key==="ArrowDown") moveDown2=true;
+    if(e.key==="Enter"){e.preventDefault(); shoot("player2");}
+  }
+});
+
+document.addEventListener("keyup", e=>{
+  if(e.key==="w" || e.key==="W") moveUp=false;
+  if(e.key==="s" || e.key==="S") moveDown=false;
+  if(e.key===" ") fire=false;
+  if(mode==="pvp"){
+    if(e.key==="ArrowUp") moveUp2=false;
+    if(e.key==="ArrowDown") moveDown2=false;
+  }
+});
+
+// ---- AI Shot intelligence ----
+// Truth table for fraction impact — no abstractions.
+//
+// op applied to NUMERATOR:
+//   + or * → numerator grows → fraction RISES (green)
+//   - or / → numerator shrinks → fraction FALLS (red)
+//
+// op applied to DENOMINATOR:
+//   + or * → denominator grows → fraction FALLS (red)
+//   - or / → denominator shrinks → fraction RISES (green)
+//
+// AI goal: fire shots that LOWER player1's fraction (red bullets).
+// AI goal: block shots that would LOWER player2's fraction; let through shots that RAISE it.
+
+// Does bullet b RAISE the fraction of whoever it hits?
+function bulletRaisesFraction(effectType, bulletY) {
+  const inTopHalf = bulletY < canvas.height / 2;
+  if (inTopHalf) return effectType === '+' || effectType === '*'; // hits numerator
+  else           return effectType === '-' || effectType === '/'; // hits denominator
+}
+
+function updateAI(){
+  if(!gameStarted) return;
+
+  const isCloaked = !!player2._isIdle;
+  const elapsed = (Date.now() - player2.snapTime) / 1000;
+  const movedSoFar = Math.abs(player2.y - player2.snapY);
+  const needsEscape = isCloaked || (elapsed > 1.3 && movedSoFar < canvas.height * 0.08);
+
+  if (needsEscape) {
+    if (player2._waveT === undefined) player2._waveT = 0;
+    player2._waveT += 0.04;
+    const amplitude = canvas.height * 0.14;
+    const center = canvas.height * 0.5 - player2.h / 2;
+    const desiredY = center + Math.sin(player2._waveT) * amplitude;
+    const diff = desiredY - player2.y;
+    player2.y += Math.sign(diff) * Math.min(Math.abs(diff), 5);
+    player2.y = Math.max(0, Math.min(canvas.height - player2.h, player2.y));
+    if (isCloaked) return;
+  } else {
+    player2._waveT = undefined;
+  }
+
+  const op = player2Effect.type;
+  const addOrMul = op === '+' || op === '*';
+
+  // Where should AI be to fire a RED (damaging) bullet?
+  // +/* lowers fraction when hitting denominator → need to be in BOTTOM half
+  // -// lowers fraction when hitting numerator   → need to be in TOP half
+  const wantBottom = addOrMul;
+
+  let targetY = player2.y;
+  let priority = 'none';
+
+  const incomingBullets = bullets.filter(b => b.owner === "player");
+
+  if (incomingBullets.length > 0 && Math.random() > AI_IGNORE_BULLET_RATE) {
+    const closestBullet = incomingBullets.reduce((best, b) =>
+      (!best || b.x > best.x) ? b : best, null);
+
+    if (closestBullet) {
+      // Does this bullet RAISE player2's fraction? Good — let it through.
+      // Does it LOWER player2's fraction? Bad — block it.
+      const raisesP2 = bulletRaisesFraction(closestBullet.effect.type, closestBullet.y);
+      if (raisesP2) {
+        // Step aside so bullet passes through and applies its beneficial effect
+        targetY = closestBullet.y < canvas.height / 2
+          ? canvas.height * 0.75 - player2.h / 2
+          : canvas.height * 0.25 - player2.h / 2;
+        priority = 'letpass';
+      } else {
+        // Harmful — intercept it
+        targetY = closestBullet.y - player2.h / 2;
+        priority = 'block';
+      }
+    }
+  } else {
+    // No incoming — move to firing zone
+    targetY = wantBottom
+      ? canvas.height * 0.72 - player2.h / 2
+      : canvas.height * 0.28 - player2.h / 2;
+    // Gentle wobble to accumulate movement and avoid recloaking
+    targetY += Math.sin(Date.now() / 600) * canvas.height * 0.04;
+  }
+
+  const speed = priority === 'block' ? 3.2 : priority === 'letpass' ? 2.8 : 2.0;
+  const clamped = Math.max(0, Math.min(canvas.height - player2.h, targetY));
+  const diff2 = clamped - player2.y;
+  if (Math.abs(diff2) > 1) player2.y += Math.sign(diff2) * speed;
+  player2.y = Math.max(0, Math.min(canvas.height - player2.h, player2.y));
+
+  // Fire only when in the correct zone — verified by checking the bullet's actual Y
+  // against the fraction truth table directly (not via helper).
+  const fireY = player2.y + player2.h / 2;
+  const wouldBeInTop = fireY < canvas.height / 2;
+  // A shot from current position: does it lower player1's fraction?
+  // Top half: +/* raises numerator (BAD), -// lowers numerator (GOOD — fire!)
+  // Bottom half: +/* raises denominator i.e. lowers fraction (GOOD — fire!), -// lowers denominator i.e. raises fraction (BAD)
+  const shotLowersP1 = wouldBeInTop ? !addOrMul : addOrMul;
+
+  if (shotLowersP1) {
+    if (Math.random() < 0.022) aiShoot();
+  }
+  // Never fire if shot would raise player1's fraction
+}
+
+function updateBullets(){
+  if(!gameStarted) return;
+  
+  if(playerCooldown>0) playerCooldown--;
+  if(player2Cooldown>0) player2Cooldown--;
+  
+  bullets.forEach((b,i)=>{
+    b.x += (b.v || 0) * dt;
+    
+    if(b.owner==="player"){
+      if(bulletHitsPaddle(b, player2)){
+        impacts.push({x:b.x, y:b.y, alpha:1, text:"◇"});
+        playBlockSound();
+        bullets.splice(i,1);
+        return;
+      }
+      
+      if(b.x > player2.x + player2.w){
+        if(b.y < canvas.height/2){
+          applyEffect(player2Val, b.effect, player2, true);
+          impacts.push({x:b.x, y:b.y, alpha:1, text:b.effect.type+b.effect.value});
+          bullets.splice(i,1);
+          return;
+        }
+        if(b.y >= canvas.height/2){
+          applyEffect(player2Val, b.effect, player2, false);
+          impacts.push({x:b.x, y:b.y, alpha:1, text:b.effect.type+b.effect.value});
+          bullets.splice(i,1);
+          return;
+        }
+      }
+    }
+    
+    if(b.owner==="player2"){
+      if(bulletHitsPaddle(b, player)){
+        impacts.push({x:b.x, y:b.y, alpha:1, text:"◇"});
+        playBlockSound();
+        bullets.splice(i,1);
+        return;
+      }
+      
+      if(b.x < player.x){
+        if(b.y < canvas.height/2){
+          applyEffect(playerVal, b.effect, player, true);
+          impacts.push({x:b.x, y:b.y, alpha:1, text:b.effect.type+b.effect.value});
+          bullets.splice(i,1);
+          return;
+        }
+        if(b.y >= canvas.height/2){
+          applyEffect(playerVal, b.effect, player, false);
+          impacts.push({x:b.x, y:b.y, alpha:1, text:b.effect.type+b.effect.value});
+          bullets.splice(i,1);
+          return;
+        }
+      }
+    }
+    
+    if(b.x<0 || b.x>canvas.width) bullets.splice(i,1);
+  });
+  
+  impacts.forEach((imp,i)=>{
+    imp.alpha -= 0.015;
+    if(imp.alpha<=0) impacts.splice(i,1);
+  });
+}
+
+function updatePlayers(){
+  if(!gameStarted) return;
+  
+  if(moveUp){
+    player.y -= computePaddleSpeed(upHold) * dt;
+    upHold += dt * 1000;
+  } else {
+    upHold = 0;
+  }
+  if(moveDown){
+    player.y += computePaddleSpeed(downHold) * dt;
+    downHold += dt * 1000;
+  } else {
+    downHold = 0;
+  }
+  if(player.y<0) player.y=0;
+  if(player.y+player.h>canvas.height) player.y=canvas.height-player.h;
+  if(fire){ shoot("player"); fire=false; }
+  
+  if(mode==="pvp"){
+    if(moveUp2){
+      player2.y -= computePaddleSpeed(upHold2) * dt;
+      upHold2 += dt * 1000;
+    } else {
+      upHold2 = 0;
+    }
+    if(moveDown2){
+      player2.y += computePaddleSpeed(downHold2) * dt;
+      downHold2 += dt * 1000;
+    } else {
+      downHold2 = 0;
+    }
+    if(player2.y<0) player2.y=0;
+    if(player2.y+player2.h>canvas.height) player2.y=canvas.height-player2.h;
+  } else {
+    updateAI();
+  }
+}
+
+function draw(){
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  gradient.addColorStop(0, '#E8D5C4');
+  gradient.addColorStop(0.5, '#F5E6D3');
+  gradient.addColorStop(1, '#D4E5F0');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.strokeStyle = 'rgba(200, 180, 160, 0.1)';
+  ctx.lineWidth = 1;
+  for(let i = 0; i < canvas.width; i += 40){
+    ctx.beginPath();
+    ctx.moveTo(i, 0);
+    ctx.lineTo(i, canvas.height);
+    ctx.stroke();
+  }
+  for(let i = 0; i < canvas.height; i += 40){
+    ctx.beginPath();
+    ctx.moveTo(0, i);
+    ctx.lineTo(canvas.width, i);
+    ctx.stroke();
+  }
+  
+  ctx.strokeStyle = 'rgba(155, 139, 125, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 8]);
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height/2);
+  ctx.lineTo(canvas.width, canvas.height/2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  
+  // Zone labels — drawn large and bold behind everything
+  ctx.save();
+  ctx.font = `600 ${Math.round(canvas.height * 0.07)}px Raleway`;
+  ctx.fillStyle = 'rgba(100, 130, 120, 0.18)';
+  ctx.textAlign = 'center';
+  ctx.translate(canvas.width / 2, canvas.height / 4);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('NUMERATOR', 0, 0);
+  ctx.restore();
+  
+  ctx.save();
+  ctx.font = `600 ${Math.round(canvas.height * 0.07)}px Raleway`;
+  ctx.fillStyle = 'rgba(180, 120, 90, 0.18)';
+  ctx.textAlign = 'center';
+  ctx.translate(canvas.width / 2, 3 * canvas.height / 4);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('DENOMINATOR', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(168, 199, 160, 0.15)';
+  ctx.fillRect(playerBase.x, 0, playerBase.w, canvas.height/2);
+  ctx.fillRect(player2Base.x, 0, player2Base.w, canvas.height/2);
+  
+  ctx.fillStyle = 'rgba(245, 198, 165, 0.15)';
+  ctx.fillRect(playerBase.x, canvas.height/2, playerBase.w, canvas.height/2);
+  ctx.fillRect(player2Base.x, canvas.height/2, player2Base.w, canvas.height/2);
+  
+  function drawPillar(x, y, w, h, color1, color2, isIdle){
+    ctx.save();
+    if (isIdle) {
+      // Glass effect: nearly transparent fill, crisp bright edges, inner sheen
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.fillRect(x, y, w, h);
+      ctx.globalAlpha = 1;
+
+      // Frosted border
+      ctx.strokeStyle = 'rgba(220, 240, 255, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x, y, w, h);
+
+      // Left specular streak
+      const glassSheen = ctx.createLinearGradient(x, y, x + w, y);
+      glassSheen.addColorStop(0,   'rgba(255,255,255,0.55)');
+      glassSheen.addColorStop(0.25,'rgba(255,255,255,0.0)');
+      glassSheen.addColorStop(1,   'rgba(255,255,255,0.0)');
+      ctx.fillStyle = glassSheen;
+      ctx.globalAlpha = 1;
+      ctx.fillRect(x, y, w, h);
+
+      // Top cap glint
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillRect(x, y, w, 2);
+    } else {
+      ctx.fillStyle = colors.shadow;
+      ctx.fillRect(x + 3, y + 3, w, h);
+
+      const pillarGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+      pillarGrad.addColorStop(0, color1);
+      pillarGrad.addColorStop(1, color2);
+      ctx.fillStyle = pillarGrad;
+      ctx.fillRect(x, y, w, h);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + w/2, y - 5);
+      ctx.lineTo(x + w, y);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.fillRect(x, y, 3, h);
+    }
+    ctx.restore();
+  }
+  
+  const p1Idle = paddleIdleAlpha(player) === 0;
+  const p2Idle = paddleIdleAlpha(player2) === 0;
+
+  drawPillar(player.x, player.y, player.w, player.h, '#D4E5F0', '#C8D9E6', p1Idle);
+  drawPillar(player2.x, player2.y, player2.w, player2.h, '#F5C6A5', '#E5B695', p2Idle);
+  
+  ctx.font = "bold 16px Raleway";
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = 'rgba(200, 180, 160, 0.5)';
+  
+  ctx.fillStyle = '#7B9B93';
+  const pBlink = playerPhase <= 3 ? (0.4 + 0.6 * (Math.sin(Date.now()/150) > 0 ? 1 : 0)) : 1;
+  ctx.globalAlpha = pBlink * (p1Idle ? 0.2 : 1);
+  ctx.fillText(`${playerEffect.type}${playerEffect.value} • ${playerPhase}s`, player.x - 5, player.y - 20);
+  ctx.globalAlpha = 1;
+  
+  ctx.fillStyle = '#C59B8B';
+  const p2Blink = player2Phase <= 3 ? (0.4 + 0.6 * (Math.sin(Date.now()/150) > 0 ? 1 : 0)) : 1;
+  ctx.globalAlpha = p2Blink * (p2Idle ? 0.2 : 1);
+  ctx.fillText(`${player2Effect.type}${player2Effect.value} • ${player2Phase}s`, player2.x - 5, player2.y - 20);
+  ctx.globalAlpha = 1;
+  
+  ctx.shadowBlur = 0;
+  
+  bullets.forEach(b=>{
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.rotate(Date.now() / 500);
+    
+    // Determine if this bullet grows or shrinks the fraction
+    const isNumeratorZone = b.y < canvas.height / 2;
+    const isGrowth = isNumeratorZone
+      ? (b.effect.type === '+' || b.effect.type === '*')
+      : (b.effect.type === '-' || b.effect.type === '/');
+    
+    const bulletColor = isGrowth ? '#5DBB63' : '#E05C5C';
+    ctx.fillStyle = bulletColor;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = bulletColor;
+    
+    ctx.beginPath();
+    ctx.moveTo(0, -6);
+    ctx.lineTo(6, 0);
+    ctx.lineTo(0, 6);
+    ctx.lineTo(-6, 0);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    
+    ctx.fillStyle = colors.stone;
+    ctx.font = "9px Raleway";
+    ctx.fillText(b.effect.type+b.effect.value, b.x-8, b.y-10);
+  });
+  
+  impacts.forEach((imp,i)=>{
+    if(imp.bonus){
+      ctx.fillStyle = `rgba(93, 187, 99, ${imp.alpha})`;
+      ctx.font = `bold 15px Raleway`;
+    } else {
+      ctx.fillStyle = `rgba(155, 139, 125, ${imp.alpha})`;
+      ctx.font = "bold 14px Raleway";
+    }
+    ctx.fillText(imp.text, imp.x-10, imp.y);
+  });
+  
+  ctx.shadowBlur = 0;
+  ctx.textAlign = "left";
+  
+  // Update HUD DOM elements
+  const p1Val = playerVal.n / playerVal.d;
+  const p2Val = player2Val.n / player2Val.d;
+  const p1El = document.getElementById('hud-p1-score');
+  const p2El = document.getElementById('hud-p2-score');
+  p1El.textContent = p1Val.toFixed(2);
+  p1El.className = 'hud-score hud-p1-score';
+  document.getElementById('hud-p1-raw').textContent = `${playerVal.n} / ${playerVal.d}`;
+  p2El.textContent = p2Val.toFixed(2);
+  p2El.className = 'hud-score hud-p2-score';
+  document.getElementById('hud-p2-raw').textContent = `${player2Val.n} / ${player2Val.d}`;
+  
+  const timerEl = document.getElementById('hud-timer');
+  timerEl.textContent = `⧗ ${timeLeft}`;
+  timerEl.className = timeLeft <= 10 ? 'urgent' : '';
+}
+
+function loop(ts){ 
+  if(!lastTime) lastTime = ts;
+  dt = Math.min(0.05, (ts - lastTime) / 1000);
+  lastTime = ts;
+  updatePlayers(); 
+  updateBullets(); 
+  draw(); 
+  requestAnimationFrame(loop); 
+}
+resizeCanvas();
+requestAnimationFrame(loop);
+
+document.getElementById("playAgainBtn").addEventListener("click", ()=>{
+  document.getElementById("gameOverModal").style.display = "none";
+  document.getElementById("predictionModal").style.display = "none";
+  document.getElementById("player1Score").classList.remove("winner", "loser");
+  document.getElementById("player2Score").classList.remove("winner", "loser");
+  
+  const wm = document.getElementById("welcomeModal");
+  if (wm) wm.style.display = "block";
+});
+
+document.getElementById("startAiBtn").addEventListener("click", ()=>{
+  startGame('ai');
+});
+document.getElementById("startPvpBtn").addEventListener("click", ()=>{
+  startGame('pvp');
+});
+
+</script>
+</body>
+</html>

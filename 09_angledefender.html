@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angle Defender – Maths Tower Defence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Josefin+Sans:wght@300;400;600&family=Orbitron:wght@600;700&display=swap');
+
+:root {
+  --bg: #f7f3ee;
+  --panel: #f3efe8;
+  --border: #d4cfc6;
+  --accent: #7ec8c8;
+  --gold: #c9a66b;
+  --danger: #e67c73;
+  --green: #7fbf94;
+  --text: #3b4147;
+  --dim: #8d9aa1;
+  --beam0: #f6f2e9;
+  --beam1: #cde5e5;
+  --beam2: #e8d4ef;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: linear-gradient(180deg, #f7f3ee, #e9e4dc);
+  color: var(--text);
+  font-family: 'Montserrat', sans-serif;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* ── TOP BAR ── */
+#topbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 18px;
+  background: #efe9e0;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#topbar h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #4a5560;
+  letter-spacing: 2px;
+}
+
+.top-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.65rem;
+  color: var(--dim);
+  letter-spacing: 1px;
+}
+.top-stat .val {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.0rem;
+  color: var(--gold);
+  line-height: 1;
+}
+#lives-row .val { color: var(--danger); font-size: 0.75rem; letter-spacing: 0; }
+
+.top-stats { display: flex; gap: 28px; align-items: center; }
+
+/* ── MAIN LAYOUT ── */
+#main {
+  display: flex;
+  gap: 10px;
+  padding: 22px 10px 8px;
+  align-items: flex-start;
+  flex: 1;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.panel-title {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 0.52rem;
+  color: #5b7d80;
+  letter-spacing: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+#left-panel, #right-panel { width: 172px; flex-shrink: 0; }
+
+/* ── MOBILE CONTROLS ── */
+.mobile-controls {
+  display: none;
+  margin: 10px 0 6px;
+  width: 92%;
+}
+.mc-row { display:flex; gap:8px; justify-content:center; }
+.mc-btn {
+  background: #ece7df;
+  color: #4a5560;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+.mc-btn.primary {
+  background: #dfecea;
+  color: #2f5b5b;
+  border-color: #b7dcdc;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  #main { flex-direction: column; align-items: center; padding: 12px 8px; }
+  #left-panel, #right-panel { width: 94%; }
+  #topbar h1 { font-size: 0.95rem; }
+  .top-stats { gap: 12px; }
+  .rbt { padding: 6px 8px; font-size: 0.8rem; }
+  .mobile-controls { display: block; }
+  #mobile-math { display:block; width:94%; }
+  .mobile-next-turn { display:block; }
+  #right-panel .panel:first-child { display:none; } /* hide Actions panel on mobile */
+}
+
+/* ── BEAM CONTROLS ── */
+.beam-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0;
+}
+.beam-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rbt {
+  background: #ece7df;
+  border: 1px solid var(--border);
+  color: #4a5560;
+  border-radius: 4px;
+  width: 28px; height: 26px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.1s;
+  flex-shrink: 0;
+}
+.rbt:hover { background: #e1dbd2; color: #202429; }
+.rbt:disabled { opacity: 0.3; cursor: not-allowed; }
+.beam-angle {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.8rem;
+  color: #5b6a73;
+  min-width: 42px;
+  text-align: right;
+}
+.beam-sel-label {
+  font-size: 0.65rem;
+  color: #6c7c85;
+  margin: 4px 0 2px;
+  cursor: pointer;
+}
+.beam-sel-label.active { color: var(--gold); }
+
+/* ── MATH BOX ── */
+.math-card {
+  background: #f0ebe3;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px;
+  font-size: 0.72rem;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+.math-card .mh { color: #5b7d80; font-family: 'Josefin Sans', sans-serif; font-size: 0.5rem; letter-spacing: 2px; margin-bottom: 4px; }
+.hi { color: var(--gold); font-weight: bold; }
+.hi2 { color: var(--accent); }
+
+/* ── FIRE ── */
+#fire-btn {
+  width: 100%;
+  padding: 12px 0;
+  background: #e9e4db;
+  border: none; border-radius: 8px;
+  color: #33383e;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: none;
+  transition: all 0.12s;
+  margin-bottom: 8px;
+}
+#fire-btn:hover:not(:disabled) { transform: scale(1.02); background: #e3ddd4; }
+#fire-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+#end-turn-btn {
+  width: 100%;
+  padding: 8px 0;
+  background: transparent;
+  border: 1px solid var(--dim);
+  border-radius: 8px;
+  color: var(--dim);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.12s;
+  margin-bottom: 8px;
+}
+#end-turn-btn:hover:not(:disabled) { border-color: #6c7c85; color: #4a5560; }
+#end-turn-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── LEGEND ── */
+.leg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  font-size: 0.68rem;
+}
+.leg-svg { flex-shrink: 0; }
+
+/* ── UPGRADES ── */
+.upg-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  margin: 4px 0;
+}
+.upg-stat .uv { color: var(--green); font-weight: bold; }
+
+.upg-bar-bg {
+  height: 3px;
+  background: #e2ddd4;
+  border-radius: 2px;
+  margin: 2px 0 5px;
+  overflow: hidden;
+}
+.upg-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, #b7dcdc, #b7d6bf); transition: width 0.3s; }
+
+/* ── MESSAGE BAR ── */
+#msg-bar {
+  width: 100%;
+  height: 26px;
+  line-height: 26px;
+  text-align: center;
+  font-size: 0.73rem;
+  color: #6c7c85;
+  background: #efe9e0;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  padding: 0 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── CANVAS ── */
+#gameCanvas {
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  box-shadow: none;
+  cursor: crosshair;
+  flex-shrink: 0;
+  margin-top: 6px;
+  touch-action: none;
+}
+
+/* ── OVERLAY ── */
+#overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(247,243,238,0.93);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+#overlay.show { display: flex; }
+
+.obox {
+  background: #f3efe8;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 30px 38px;
+  text-align: center;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: none;
+  animation: popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275) both;
+}
+@keyframes popIn {
+  from { opacity:0; transform: scale(0.8); }
+  to { opacity:1; transform: scale(1); }
+}
+
+.obox h2 {
+  font-family: 'Josefin Sans', sans-serif;
+  font-size: 1.5rem;
+  color: #4a5560;
+  margin-bottom: 12px;
+}
+.obox p { margin: 7px 0; line-height: 1.6; font-size: 0.88rem; }
+
+.obtn {
+  display: inline-block;
+  margin: 12px 5px 0;
+  padding: 11px 26px;
+  background: #e9e4db;
+  color: #33383e;
+  border: none; border-radius: 8px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-weight: bold;
+}
+.obtn:hover { transform: scale(1.03); background: #e3ddd4; }
+.obtn.danger { background: var(--danger); }
+.obtn.sec { background: transparent; color: #4a5560; border: 2px solid var(--border); }
+
+.upg-grid {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.upg-card {
+  background: #eee8df;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 12px;
+  width: 140px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.upg-card:hover { border-color: #cfc9c0; transform: translateY(-2px); }
+.upg-card .ui { font-size: 1.8rem; margin-bottom: 6px; }
+.upg-card .un { font-family: 'Josefin Sans', sans-serif; font-size: 0.55rem; color: #4a5560; letter-spacing: 1px; }
+.upg-card .ud { font-size: 0.68rem; margin-top: 4px; color: #6c7c85; line-height: 1.5; }
+
+.fact-box {
+  background: #efe8df;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  text-align: left;
+  margin: 10px 0;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+.fact-box strong { color: #4a5560; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <h1>ANGLE DEFENDER</h1>
+  <div class="top-stats">
+    <div class="top-stat"><span>LEVEL</span><span class="val" id="t-lvl">1</span></div>
+    <div class="top-stat"><span>SCORE</span><span class="val" id="t-score">0</span></div>
+    <div class="top-stat"><span>TURN</span><span class="val" id="t-turn">1</span></div>
+    <div class="top-stat" id="lives-row"><span>LIVES</span><span class="val" id="t-lives">❤❤❤❤❤❤❤❤❤❤</span></div>
+    <div class="top-stat"><span>ENEMIES LEFT</span><span class="val" id="t-enemies">0</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+
+    <div class="panel">
+      <div class="panel-title">🔦 BEAM CONTROLS</div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-bottom:6px;">◀ ▶ rotate selected beam 15°</div>
+      <div id="beam-ctrl-area"></div>
+      <div style="font-size:0.62rem;color:var(--dim);margin-top:6px;">Or click the grid to aim!</div>
+      <div class="mobile-next-turn" style="margin-top:8px;display:none">
+        <button class="mc-btn primary next-turn">⏭ NEXT TURN</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📐 ANGLE MATHS</div>
+      <div class="math-card" id="math-panel">
+        <div class="mh">📐 BEAM INFO</div>
+        Aim a beam to see its angle coverage!
+      </div>
+      <div class="math-card" id="hit-panel" style="display:none">
+        <div class="mh">💥 HIT REPORT</div>
+        <div id="hit-info"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CANVAS -->
+  <canvas id="gameCanvas"></canvas>
+  <!-- MOBILE MATH BELOW GRID -->
+  <div id="mobile-math" class="panel" style="display:none">
+    <div class="panel-title">📐 ANGLE MATHS</div>
+    <div class="math-card" id="mobile-math-anchor"></div>
+  </div>
+  <!-- MOBILE CONTROLS -->
+  <div id="mobile-controls" class="mobile-controls">
+    <div class="mc-row" style="margin-bottom:6px">
+      <button class="mc-btn" onclick="rotB(G.selBeam,-15)">◀ 15°</button>
+      <button class="mc-btn" onclick="rotB(G.selBeam,15)">15° ▶</button>
+      <button class="mc-btn primary" onclick="advanceTurn()">⏭ NEXT TURN</button>
+    </div>
+    <div class="mc-row">
+      <button class="mc-btn" onclick="selBeam(0)">B1</button>
+      <button class="mc-btn" id="mc-b2" onclick="selBeam(1)">B2</button>
+      <button class="mc-btn" id="mc-b3" onclick="selBeam(2)">B3</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+
+    <div class="panel">
+      <div class="panel-title">⚡ ACTIONS</div>
+      <button id="end-turn-btn" class="next-turn">⏭ NEXT TURN</button>
+      <div style="font-size:0.62rem;color:var(--dim);text-align:center;line-height:1.6">
+        Aim your beams,<br>then advance the turn.
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">👾 ENEMY GUIDE</div>
+      <div class="leg-row">
+        <svg class="leg-svg" width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="#e88a8a" stroke="#ffffff" stroke-width="1.2"/></svg>
+        <div><b style="color:#e88a8a">Circle</b> – 1 HP<br><span style="font-size:0.62rem;color:var(--dim)">Straight, 1 step/turn</span></div>
+      </div>
+      <div class="leg-row">
+        <svg class="leg-svg" width="18" height="18" viewBox="0 0 18 18"><polygon points="9,1 17,9 9,17 1,9" fill="#e6b37c" stroke="#ffffff" stroke-width="1.2"/></svg>
+        <div><b style="color:#e6b37c">Diamond</b> – 2 HP<br><span style="font-size:0.62rem;color:var(--dim)">Dodges once sideways</span></div>
+      </div>
+      <div class="leg-row">
+        <svg class="leg-svg" width="18" height="18" viewBox="0 0 18 18"><polygon points="9,1 17,17 1,17" fill="#83c3d9" stroke="#ffffff" stroke-width="1.2"/></svg>
+        <div><b style="color:#83c3d9">Triangle</b> – 1 HP<br><span style="font-size:0.62rem;color:var(--dim)">Fast! 2 steps/turn</span></div>
+      </div>
+      <div class="leg-row">
+        <svg class="leg-svg" width="18" height="18" viewBox="0 0 18 18"><rect x="2" y="2" width="14" height="14" fill="#c8a7d9" stroke="#ffffff" stroke-width="1.2"/></svg>
+        <div><b style="color:#c8a7d9">Square</b> – 3 HP<br><span style="font-size:0.62rem;color:var(--dim)">Armoured, evades</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">⬆ TOWER UPGRADES</div>
+      <div class="upg-stat"><span>Beams</span><span class="uv" id="u-beams">2</span></div>
+      <div class="upg-bar-bg"><div class="upg-bar" id="ub-beams" style="width:33%"></div></div>
+      <div class="upg-stat"><span>Range</span><span class="uv" id="u-range">5 rings</span></div>
+      <div class="upg-bar-bg"><div class="upg-bar" id="ub-range" style="width:50%"></div></div>
+      <div class="upg-stat"><span>Width</span><span class="uv" id="u-width">30°</span></div>
+      <div class="upg-bar-bg"><div class="upg-bar" id="ub-width" style="width:33%"></div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MESSAGE BAR -->
+<div id="msg-bar">Welcome, Commander! Angle Defender loading...</div>
+
+<!-- OVERLAY -->
+<div id="overlay">
+  <div class="obox" id="obox"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  ANGLE DEFENDER – Full Game Engine
+// ═══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Responsive canvas size
+const AVAIL = Math.min(
+  window.innerWidth - 380,
+  window.innerHeight - 120,
+  560
+);
+const SZ = Math.max(320, AVAIL);
+canvas.width = canvas.height = SZ;
+const C = SZ / 2;
+
+// Grid constants
+const RINGS    = 10;
+const SECTORS  = 24;        // 360 / 15 = 24 sectors
+const SECTOR_DEG = 15;      // degrees per sector
+const RING_R   = (SZ / 2 - 22) / RINGS;
+const DEG      = Math.PI / 180;
+// Angle system: 0° at TOP, increasing CLOCKWISE
+function topDegToRad(d) { return ((d + 270) % 360) * DEG; }
+function canvasDegToTop(d) { return ((d - 270 + 360) % 360); }
+
+// Visual colours
+const BEAM_COLS  = ['#f6f2e9', '#cde5e5', '#e8d4ef'];
+const ENEMY_COLS = { circle:'#e88a8a', diamond:'#e6b37c', triangle:'#83c3d9', square:'#c8a7d9', boss:'#b58abb', final:'#a08060' };
+
+// ── LEVEL DEFINITIONS ────────────────────────────────────────
+// Each level: array of { turn, type, count } spawn entries
+// upgrade: null | 'choose'
+const LEVELS = [
+  { name:"First Contact",      upgrade:null,
+    spawns:[{t:1,type:'circle',n:3},{t:4,type:'circle',n:2}] },
+  { name:"Growing Threat",     upgrade:null,
+    spawns:[{t:1,type:'circle',n:3},{t:3,type:'diamond',n:2},{t:5,type:'circle',n:2}] },
+  { name:"Double Trouble",     upgrade:'choose',
+    spawns:[{t:1,type:'circle',n:4},{t:2,type:'diamond',n:2},{t:4,type:'circle',n:3},{t:5,type:'diamond',n:2}] },
+  { name:"Speed Demons",       upgrade:null,
+    spawns:[{t:1,type:'circle',n:3},{t:2,type:'triangle',n:3},{t:4,type:'diamond',n:2},{t:5,type:'triangle',n:2}] },
+  { name:"The Rush",           upgrade:'choose',
+    spawns:[{t:1,type:'triangle',n:4},{t:2,type:'circle',n:3},{t:3,type:'diamond',n:3},{t:5,type:'triangle',n:3},{t:6,type:'circle',n:2}] },
+  { name:"Armoured Units",     upgrade:null,
+    spawns:[{t:1,type:'circle',n:3},{t:2,type:'square',n:2},{t:3,type:'diamond',n:3},{t:5,type:'triangle',n:3},{t:6,type:'square',n:2}] },
+  { name:"Heavy Assault",      upgrade:'choose',
+    spawns:[{t:1,type:'square',n:3},{t:2,type:'triangle',n:4},{t:3,type:'diamond',n:3},{t:4,type:'circle',n:4},{t:6,type:'square',n:2},{t:7,type:'diamond',n:2}] },
+  { name:"Overwhelming Force", upgrade:null,
+    spawns:[{t:1,type:'circle',n:4},{t:1,type:'square',n:2},{t:2,type:'triangle',n:5},{t:3,type:'diamond',n:4},{t:5,type:'square',n:3},{t:6,type:'triangle',n:3},{t:7,type:'circle',n:3}] },
+  { name:"The Siege",          upgrade:'choose',
+    spawns:[{t:1,type:'square',n:3},{t:1,type:'triangle',n:4},{t:2,type:'diamond',n:5},{t:3,type:'circle',n:5},{t:4,type:'square',n:3},{t:5,type:'triangle',n:5},{t:6,type:'diamond',n:3},{t:7,type:'square',n:2}] },
+  { name:"⚠ FINAL WAVE",       upgrade:null,
+    spawns:[{t:1,type:'circle',n:5},{t:1,type:'square',n:3},{t:2,type:'triangle',n:6},{t:2,type:'diamond',n:4},{t:3,type:'square',n:4},{t:4,type:'final',n:1},{t:5,type:'triangle',n:5},{t:6,type:'square',n:3},{t:7,type:'diamond',n:4},{t:8,type:'circle',n:4}] },
+];
+
+// ── GAME STATE ───────────────────────────────────────────────
+let G;
+let eid = 0;
+
+function newGame() {
+  G = {
+    mode: 'campaign',
+    level: 1,
+    lives: 10,
+    score: 0,
+    turn: 1,
+    phase: 'player',   // player | moving | done
+    enemies: [],
+    spawnQ: [],
+    beams: [
+      { angle:90,  width:30, range:5 },
+      { angle:270, width:30, range:5 },
+    ],
+    selBeam: 0,
+    upg: { numBeams:2, range:5, width:30 },
+    hitIds: new Set(),
+    flashEls: [],
+    killsThisLevel: 0,
+    totalThisLevel: 0,
+    turnStartAngles: [],
+    rotateHistory: [],
+  };
+  loadLevel(1);
+}
+
+function loadLevel(lvl) {
+  G.level = lvl;
+  G.livesAtLevelStart = G.lives;
+  G.enemies = [];
+  G.hitIds = new Set();
+  G.turn = 1;
+  G.killsThisLevel = 0;
+  G.phase = 'player';
+
+  const ld = LEVELS[lvl - 1];
+  G.spawnQ = [];
+  ld.spawns.forEach(s => {
+    for (let i = 0; i < s.n; i++) G.spawnQ.push({ turn: s.t, type: s.type });
+  });
+  G.totalThisLevel = G.spawnQ.length;
+
+  // Apply upgrades to all beams
+  G.beams.forEach(b => { b.width = G.upg.width; b.range = G.upg.range; });
+
+  doSpawn(1);
+  buildBeamUI();
+  initTurnRotation();
+  updateStats();
+  setMsg(`Level ${lvl}: ${ld.name} — Rotate beams; light auto-damages in-range enemies.`);
+  setupResponsiveLayout();
+  render();
+}
+
+// ── ENEMY FACTORY ────────────────────────────────────────────
+function spawnEnemy(type) {
+  const hp = { circle:1, diamond:2, triangle:1, square:3, boss:8, final:10 }[type];
+  // Spread enemies around all sectors
+  const sector = Math.floor(Math.random() * SECTORS);
+  return {
+    id: eid++,
+    type, hp, maxHp: hp,
+    ring: RINGS,
+    sector,
+    shifted: false,   // diamond: can shift once
+    flash: 0,
+    lenSec: type === 'final' ? 4 : 1,
+    moveClock: 0,
+    dying: false,
+    deathFade: 0,
+  };
+}
+
+function doSpawn(turn) {
+  for (let i = G.spawnQ.length - 1; i >= 0; i--) {
+    if (G.spawnQ[i].turn === turn) {
+      const ty = G.spawnQ[i].type;
+      const e = spawnEnemy(ty);
+      G.enemies.push(e);
+      if (G.level === 10 && ty === 'final') { if (window.playSfxBoss) window.playSfxBoss(); showFinalBossIntro(); }
+      G.spawnQ.splice(i, 1);
+    }
+  }
+}
+
+function doSpawnSurvival(turn) {
+  const smallTypes = ['circle','triangle','diamond'];
+  const n = Math.min(6, 2 + Math.floor(Math.random()*3) + Math.floor(turn/6));
+  for (let i = 0; i < n; i++) {
+    G.enemies.push(spawnEnemy(smallTypes[Math.floor(Math.random()*smallTypes.length)]));
+  }
+  if (turn % 5 === 0) {
+    G.enemies.push(spawnEnemy('boss'));
+  }
+}
+
+// ── BEAM UI ──────────────────────────────────────────────────
+function buildBeamUI() {
+  const area = document.getElementById('beam-ctrl-area');
+  area.innerHTML = '';
+  for (let i = 0; i < G.upg.numBeams; i++) {
+    const col = BEAM_COLS[i];
+    const row = document.createElement('div');
+    row.className = 'beam-row';
+    row.dataset.beam = i;
+    row.innerHTML = `
+      <div class="beam-dot" style="background:${col}"></div>
+      <span class="beam-sel-label" id="bsl${i}" onclick="selBeam(${i})" style="color:${col};width:28px;">B${i+1}</span>
+      <button class="rbt" id="bL${i}" onclick="rotB(${i},-15)" title="Rotate -15°">◀</button>
+      <button class="rbt" id="bR${i}" onclick="rotB(${i},+15)" title="Rotate +15°">▶</button>
+      <button class="rbt" id="bU${i}" onclick="undoRotate(${i})" title="Undo last rotation">↶</button>
+      <span class="beam-angle" id="bang${i}">${G.beams[i].angle}°</span>
+    `;
+    area.appendChild(row);
+  }
+  updateMathPanel();
+}
+
+function selBeam(i) {
+  G.selBeam = i;
+  updateMathPanel();
+  render();
+}
+
+function initTurnRotation() {
+  G.turnStartAngles = G.beams.map(b => b.angle);
+  G.rotateHistory = G.beams.map(() => []);
+}
+
+function undoRotate(i) {
+  if (!G.rotateHistory[i] || G.rotateHistory[i].length === 0) { setMsg('Nothing to undo for this beam.'); return; }
+  const prev = G.rotateHistory[i].pop();
+  G.beams[i].angle = prev;
+  document.getElementById(`bang${i}`).textContent = G.beams[i].angle + '°';
+  updateMathPanel();
+  render();
+}
+
+function rotB(i, delta) {
+  if (G.phase !== 'player') return;
+  G.selBeam = i;
+  const start = G.turnStartAngles[i];
+  const curr = G.beams[i].angle;
+  const cand = ((curr + delta) % 360 + 360) % 360;
+  const diff = Math.abs((((cand - start + 540) % 360) - 180));
+  if (diff > 30) { setMsg('Rotation limit 30° per turn. Use Undo if needed.'); return; }
+  if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
+  G.rotateHistory[i].push(curr);
+  G.beams[i].angle = cand;
+  document.getElementById(`bang${i}`).textContent = G.beams[i].angle + '°';
+  updateMathPanel();
+  render();
+}
+
+function updateMathPanel() {
+  const b = G.beams[G.selBeam];
+  const half = b.width / 2;
+  const s1 = ((b.angle - half) % 360 + 360) % 360;
+  const s2 = ((b.angle + half) % 360 + 360) % 360;
+  const col = BEAM_COLS[G.selBeam];
+
+  const enemiesInBeam = G.enemies.filter(e => inBeam(e, b));
+
+  document.getElementById('math-panel').innerHTML = `
+    <div class="mh">📐 BEAM ${G.selBeam + 1} INFO</div>
+    Centre angle: <span class="hi">${b.angle}°</span><br>
+    Beam width: <span class="hi">${b.width}°</span><br>
+    Covers: <span class="hi">${s1}°</span> → <span class="hi">${s2}°</span><br>
+    Range: rings <span class="hi">1</span> to <span class="hi">${b.range}</span><br>
+    <span style="color:${enemiesInBeam.length>0?'#ff4466':'var(--dim)'}">
+      Targets in beam: <b>${enemiesInBeam.length}</b>
+    </span>
+  `;
+}
+
+// ── BEAM GEOMETRY ─────────────────────────────────────────────
+function inBeam(enemy, beam) {
+  if (enemy.ring > beam.range) return false;
+  const ea = enemy.sector * SECTOR_DEG;
+  const half = beam.width / 2;
+  const s = ((beam.angle - half) % 360 + 360) % 360;
+  const e = ((beam.angle + half) % 360 + 360) % 360;
+  if (enemy.type === 'final') {
+    const fs = enemy.sector * SECTOR_DEG;
+    const fe = ((enemy.sector + enemy.lenSec) % SECTORS) * SECTOR_DEG;
+    return arcOverlap(fs, fe, s, e);
+  }
+  return arcContains(ea, s, e);
+}
+
+function arcContains(angle, start, end) {
+  angle = ((angle % 360) + 360) % 360;
+  if (start <= end) return angle >= start && angle <= end;
+  return angle >= start || angle <= end; // wraps through 0°
+}
+
+function arcOverlap(aStart, aEnd, bStart, bEnd) {
+  aStart = ((aStart % 360) + 360) % 360;
+  aEnd   = ((aEnd   % 360) + 360) % 360;
+  bStart = ((bStart % 360) + 360) % 360;
+  bEnd   = ((bEnd   % 360) + 360) % 360;
+  const contains = (x, s, e) => s <= e ? (x >= s && x <= e) : (x >= s || x <= e);
+  return contains(aStart, bStart, bEnd) || contains(aEnd, bStart, bEnd) ||
+         contains(bStart, aStart, aEnd) || contains(bEnd, aStart, aEnd);
+}
+
+// ── TURN CONTROL ──────────────────────────────────────────────
+document.querySelectorAll('.next-turn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (G.phase !== 'player') return;
+    setMsg('Advancing turn...');
+    advanceTurn();
+  });
+});
+
+function applyBeamDamage() {
+  G.hitIds = new Set();
+  let hits = 0;
+  let hitAngleStr = '';
+  let bossKilled = false;
+  G.enemies.forEach(e => {
+    if (e.dying) return;
+    let beamsHit = 0;
+    for (let bi = 0; bi < G.beams.length; bi++) {
+      if (inBeam(e, G.beams[bi])) beamsHit++;
+    }
+    if (beamsHit > 0) {
+      e.hp -= beamsHit;
+      e.flash = Math.min(1.0, 0.5 + 0.25 * beamsHit);
+      hits++;
+      if (e.hp <= 0) {
+        G.hitIds.add(e.id);
+        G.score += { circle:10, diamond:20, triangle:15, square:30, boss:60 }[e.type];
+        G.killsThisLevel++;
+        e.dying = true;
+        e.deathFade = 1.0;
+        if (e.type === 'boss') bossKilled = true;
+      }
+    }
+  });
+  // Keep dying enemies for fade-out; they'll be cleaned up in draw loop
+  if (hits > 0) {
+    if (window.playSfxHit) window.playSfxHit();
+    document.getElementById('hit-panel').style.display = '';
+    document.getElementById('hit-info').innerHTML =
+      `Enemies hit: <span class="hi">${hits}</span><br>` +
+      `Killed this turn: <span class="hi">${G.hitIds.size}</span>`;
+    setMsg(`💥 Light damaged ${hits} enem${hits>1?'ies':'y'}! Overlaps stack damage.`);
+  } else {
+    document.getElementById('hit-panel').style.display = 'none';
+    setMsg(`No enemies in beam arcs. Adjust your angle.`);
+  }
+  if (bossKilled && G.mode === 'survival') {
+    showUpgrade();
+  }
+  const b2 = document.getElementById('mc-b2');
+  const b3 = document.getElementById('mc-b3');
+  if (b2) b2.style.display = G.upg.numBeams >= 2 ? '' : 'none';
+  if (b3) b3.style.display = G.upg.numBeams >= 3 ? '' : 'none';
+}
+
+// ── ENEMY MOVEMENT ────────────────────────────────────────────
+function advanceTurn() {
+  applyBeamDamage();
+  // Move each enemy
+  G.enemies.forEach(e => {
+    if (e.dying) return;
+    switch (e.type) {
+      case 'circle':
+        e.ring--;
+        break;
+      case 'triangle':
+        e.ring -= 2;
+        break;
+      case 'diamond':
+        // Dodge once if in any beam's path next step
+        if (!e.shifted && wouldBeHit({ ...e, ring: e.ring - 1 })) {
+          e.sector = (e.sector + (Math.random() < 0.5 ? 1 : -1) + SECTORS) % SECTORS;
+          e.shifted = true;
+        }
+        e.ring--;
+        break;
+      case 'square':
+        // Tries to evade every turn
+        if (wouldBeHit({ ...e, ring: e.ring - 1 })) {
+          e.sector = (e.sector + (Math.random() < 0.5 ? 1 : -1) + SECTORS) % SECTORS;
+        }
+        e.ring--;
+        break;
+      case 'boss':
+        if (wouldBeHit({ ...e, ring: e.ring - 1 })) {
+          e.sector = (e.sector + (Math.random() < 0.5 ? 1 : -1) + SECTORS) % SECTORS;
+        }
+        e.ring--;
+        break;
+      case 'final':
+        e.moveClock++;
+        if (e.moveClock % 2 === 0) {
+          e.ring--;
+        }
+        // Always can move sideways by 1
+        e.sector = (e.sector + (Math.random() < 0.5 ? 1 : -1) + SECTORS) % SECTORS;
+        break;
+    }
+    if (e.ring < 0) e.ring = 0;
+  });
+
+  // Check damage
+  const dead = G.enemies.filter(e => !e.dying && e.ring <= 0);
+  G.enemies    = G.enemies.filter(e => e.dying || e.ring > 0);
+  G.lives -= dead.length;
+  if (dead.length > 0) {
+    setMsg(`💔 ${dead.length} enemy reached the tower! -${dead.length} life${dead.length>1?'s':''}`);
+    if (window.playSfxLife) window.playSfxLife();
+  }
+
+  G.turn++;
+  if (G.mode === 'survival') {
+    doSpawnSurvival(G.turn);
+  } else {
+    doSpawn(G.turn);
+  }
+  updateStats();
+  updateMathPanel();
+
+  // Check game over
+  if (G.lives <= 0) {
+    G.lives = 0; updateStats();
+    setTimeout(showGameOver, 400);
+    return;
+  }
+
+  // Check level complete: all spawned and all dead
+  if (G.mode !== 'survival' && G.enemies.length === 0 && G.spawnQ.length === 0) {
+    setTimeout(levelClear, 400);
+    return;
+  }
+
+  initTurnRotation();
+  G.phase = 'player';
+  render();
+}
+
+function wouldBeHit(enemy) {
+  return G.beams.some(b => inBeam(enemy, b));
+}
+
+// ── LEVEL CLEAR ───────────────────────────────────────────────
+function levelClear() {
+  const bonus = G.lives * 50;
+  G.score += bonus;
+  updateStats();
+  if (window.playSfxRoundClear) window.playSfxRoundClear();
+
+  if (G.level >= 10) { showWin(); return; }
+
+  const ld = LEVELS[G.level - 1];
+  if (ld.upgrade === 'choose') {
+    showUpgrade();
+  } else {
+    showOverlay(`
+      <h2>✅ LEVEL ${G.level} CLEAR!</h2>
+      <p style="color:var(--gold);font-size:1.1rem">Score: ${G.score.toLocaleString()}</p>
+      <p>+${bonus} lives bonus</p>
+      <p style="margin-top:8px">Next: <b style="color:var(--accent)">${LEVELS[G.level].name}</b></p>
+      <div class="fact-box">
+        <strong>📐 Angle Fact:</strong><br>
+        A full circle = <b>360°</b>. Each grid sector = <b>15°</b>.<br>
+        Your beam covers a <b>slice</b> of the circle. The wider the slice, the more degrees it spans!
+      </div>
+      <button class="obtn" onclick="goNextLevel()">NEXT LEVEL →</button>
+    `);
+  }
+}
+
+function showUpgrade() {
+  const opts = getUpgradeOptions();
+  let cards = opts.map(o => `
+    <div class="upg-card" onclick="applyUpgrade('${o.id}')">
+      <div class="ui">${o.icon}</div>
+      <div class="un">${o.name}</div>
+      <div class="ud">${o.desc}</div>
+    </div>
+  `).join('');
+
+  showOverlay(`
+    <h2>⬆️ UPGRADE TIME!</h2>
+    <p style="color:var(--gold)">Level ${G.level} Complete! Score: ${G.score.toLocaleString()}</p>
+    <p style="color:#88aacc;margin:6px 0">Choose one upgrade for your tower:</p>
+    <div class="upg-grid">${cards}</div>
+    <div class="fact-box" style="margin-top:14px">
+      <strong>📐 Maths Tip:</strong><br>
+      A wider beam covers more degrees, so more enemy sectors fall inside it!<br>
+      A longer range beam reaches further out on the circular grid.
+    </div>
+  `);
+}
+
+function showFinalBossIntro() {
+  showOverlay(`
+    <h2 style="color:#a08060">🟥 FINAL BOSS</h2>
+    <p>A massive rectangular entity appears!</p>
+    <div class="fact-box" style="text-align:left">
+      <strong>Stats</strong><br>
+      • HP: <b>10</b><br>
+      • Size: <b>occupies 4 sectors</b><br>
+      • Movement: <b>inward 1 ring every 2 turns</b><br>
+      • Side move: <b>shifts left or right each turn</b><br><br>
+      Tip: Stack your beams so overlaps double the damage.
+    </div>
+    <button class="obtn" onclick="hideOverlay()">OK</button>
+  `);
+}
+
+function getUpgradeOptions() {
+  const opts = [];
+  if (G.upg.width < 60)
+    opts.push({ id:'width',  icon:'📐', name:'WIDER BEAM',   desc:`+15° width\n${G.upg.width}° → ${G.upg.width+15}°\nCovers more sectors!` });
+  if (G.upg.range < 10)
+    opts.push({ id:'range',  icon:'📏', name:'LONGER RANGE', desc:`+2 rings range\n${G.upg.range} → ${Math.min(10,G.upg.range+2)} rings\nShoot enemies earlier!` });
+  if (G.upg.numBeams < 3)
+    opts.push({ id:'beams',  icon:'🔦', name:'EXTRA BEAM',   desc:`+1 beam\n${G.upg.numBeams} → ${G.upg.numBeams+1} beams\nAim at two directions!` });
+  if (opts.length < 2)
+    opts.push({ id:'score',  icon:'⭐', name:'SCORE BONUS',  desc:'+ 500 points\nGo for that high score!' });
+  return opts.slice(0, 3);
+}
+
+function applyUpgrade(id) {
+  switch(id) {
+    case 'width': G.upg.width  = Math.min(60, G.upg.width + 15); break;
+    case 'range': G.upg.range  = Math.min(10, G.upg.range + 2);  break;
+    case 'beams':
+      G.upg.numBeams = Math.min(3, G.upg.numBeams + 1);
+      G.beams.push({ angle:180, width:G.upg.width, range:G.upg.range });
+      break;
+    case 'score': G.score += 500; break;
+  }
+  hideOverlay();
+  goNextLevel();
+}
+
+function goNextLevel() {
+  hideOverlay();
+  loadLevel(G.level + 1);
+}
+
+// ── WIN / LOSE ────────────────────────────────────────────────
+function showGameOver() {
+  G.phase = 'done';
+  showOverlay(`
+    <h2 style="color:var(--danger)">💀 TOWER FALLEN!</h2>
+    <p>10 enemies breached your defences!</p>
+    <p>Final Score: <b style="color:var(--gold)">${G.score.toLocaleString()}</b></p>
+    <p>Reached Level: <b>${G.level}</b></p>
+    <div class="fact-box">
+      <strong>💡 Tip:</strong><br>
+      Try aiming beams toward sectors with many enemies,<br>
+      and use the angle display to predict enemy paths!
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:8px">
+      <button class="obtn" onclick="retryLevel()">RETRY LEVEL</button>
+      <button class="obtn danger" onclick="restartGame()">PLAY FROM START</button>
+    </div>
+  `);
+  render();
+}
+
+function showWin() {
+  G.phase = 'done';
+  showOverlay(`
+    <h2 style="color:var(--gold)">🏆 VICTORY!</h2>
+    <p>You defended through all 10 waves!</p>
+    <p>Final Score: <b style="color:var(--gold)">${G.score.toLocaleString()}</b></p>
+    <p>Lives Remaining: <b>${G.lives}</b></p>
+    <div class="fact-box">
+      <strong>🎉 Angle Master!</strong><br>
+      You've shown brilliant angle skills!<br>
+      You can measure, rotate, and apply angles from 0° to 360°.<br>
+      A full circle = 360°, and every 15° = one sector on the grid.
+    </div>
+    <button class="obtn" onclick="restartGame()">PLAY AGAIN</button>
+  `);
+  render();
+}
+
+function restartGame() {
+  hideOverlay();
+  newGame();
+}
+
+function retryLevel() {
+  hideOverlay();
+  if (G.mode === 'campaign') {
+    G.lives = G.livesAtLevelStart || G.lives;
+    loadLevel(G.level);
+  } else {
+    startSurvival();
+  }
+}
+
+// ── CANVAS CLICK TO AIM ───────────────────────────────────────
+canvas.addEventListener('click', (e) => {
+  if (G.phase !== 'player') return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left - C;
+  const my = e.clientY - rect.top - C;
+  const rawAngle = Math.atan2(my, mx) * 180 / Math.PI;
+  const normalised = ((rawAngle % 360) + 360) % 360;
+  const snappedCanvas = Math.round(normalised / 15) * 15 % 360;
+  const snapped = canvasDegToTop(snappedCanvas);
+  const i = G.selBeam;
+  const start = G.turnStartAngles[i];
+  const diff = Math.abs((((snapped - start + 540) % 360) - 180));
+  if (diff > 30) { setMsg('Rotation limit 30° per turn. Use Undo if needed.'); return; }
+  if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
+  G.rotateHistory[i].push(G.beams[i].angle);
+  G.beams[i].angle = snapped;
+  if (document.getElementById(`bang${i}`))
+    document.getElementById(`bang${i}`).textContent = snapped + '°';
+  updateMathPanel();
+  render();
+});
+canvas.addEventListener('touchstart', (e) => {
+  if (G.phase !== 'player') return;
+  const rect = canvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left - C;
+  const my = t.clientY - rect.top - C;
+  const rawAngle = Math.atan2(my, mx) * 180 / Math.PI;
+  const normalised = ((rawAngle % 360) + 360) % 360;
+  const snappedCanvas = Math.round(normalised / 15) * 15 % 360;
+  const snapped = canvasDegToTop(snappedCanvas);
+  const i = G.selBeam;
+  const start = G.turnStartAngles[i];
+  const diff = Math.abs((((snapped - start + 540) % 360) - 180));
+  if (diff > 30) { setMsg('Rotation limit 30° per turn. Use Undo if needed.'); return; }
+  if (!G.rotateHistory[i]) G.rotateHistory[i] = [];
+  G.rotateHistory[i].push(G.beams[i].angle);
+  G.beams[i].angle = snapped;
+  if (document.getElementById(`bang${i}`))
+    document.getElementById(`bang${i}`).textContent = snapped + '°';
+  updateMathPanel();
+  render();
+  e.preventDefault();
+}, { passive: false });
+
+// ── STATS UI ─────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('t-lvl').textContent   = G.level;
+  document.getElementById('t-score').textContent = G.score.toLocaleString();
+  document.getElementById('t-turn').textContent  = G.turn;
+  const h = Math.max(0, G.lives);
+  document.getElementById('t-lives').textContent = '❤'.repeat(h) + '🖤'.repeat(10-h);
+
+  const alive = G.enemies.filter(e => !e.dying).length;
+  const remaining = G.mode === 'survival' ? alive : (alive + G.spawnQ.length);
+  document.getElementById('t-enemies').textContent = remaining;
+
+  document.querySelectorAll('.next-turn').forEach(b => b.disabled = G.phase !== 'player');
+
+  // Upgrades panel
+  document.getElementById('u-beams').textContent = G.upg.numBeams;
+  document.getElementById('u-range').textContent = G.upg.range + ' rings';
+  document.getElementById('u-width').textContent = G.upg.width + '°';
+  document.getElementById('ub-beams').style.width = ((G.upg.numBeams - 2) / 1 * 100) + '%';
+  document.getElementById('ub-range').style.width = ((G.upg.range - 5) / 5 * 100) + '%';
+  document.getElementById('ub-width').style.width = ((G.upg.width - 30) / 30 * 100) + '%';
+}
+
+function setMsg(t) { document.getElementById('msg-bar').textContent = t; }
+function showOverlay(h) { document.getElementById('obox').innerHTML = h; document.getElementById('overlay').classList.add('show'); }
+function hideOverlay() { document.getElementById('overlay').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function setupResponsiveLayout() {
+  const isMobile = window.innerWidth <= 768;
+  const leftPanel = document.getElementById('left-panel');
+  const mobileAnchor = document.getElementById('mobile-math-anchor');
+  const mathPanel = document.getElementById('math-panel');
+  const hitPanel = document.getElementById('hit-panel');
+  if (!leftPanel || !mobileAnchor || !mathPanel || !hitPanel) return;
+  if (isMobile) {
+    // Move maths panels below canvas
+    mobileAnchor.innerHTML = '';
+    mobileAnchor.appendChild(mathPanel);
+    mobileAnchor.appendChild(hitPanel);
+  } else {
+    // Move back to left panel
+    const parentPanel = leftPanel.querySelectorAll('.panel')[1];
+    if (parentPanel) {
+      parentPanel.appendChild(mathPanel);
+      parentPanel.appendChild(hitPanel);
+    }
+  }
+}
+window.addEventListener('resize', setupResponsiveLayout);
+
+function render() {
+  ctx.clearRect(0, 0, SZ, SZ);
+  drawBg();
+  drawGrid();
+  drawDegreeLabels();
+  drawRingLabels();
+  drawBeams();
+  drawEnemies();
+  drawTower();
+}
+
+function drawBg() {
+  const g = ctx.createRadialGradient(C, C, 0, C, C, C);
+  g.addColorStop(0, '#f7f3ee');
+  g.addColorStop(1, '#e9e4dc');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(C, C, C, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawGrid() {
+  ctx.save();
+  // Ring circles
+  for (let r = 1; r <= RINGS; r++) {
+    const radius = r * RING_R;
+    ctx.beginPath();
+    ctx.arc(C, C, radius, 0, Math.PI * 2);
+    const highlightRange = (G && G.upg && typeof G.upg.range === 'number') ? G.upg.range : -1;
+    if (r === highlightRange) {
+      ctx.strokeStyle = 'rgba(126,200,200,0.45)';
+      ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = r % 5 === 0 ? 'rgba(166,159,150,0.45)' : 'rgba(191,184,175,0.45)';
+      ctx.lineWidth = r % 5 === 0 ? 1.6 : 1.2;
+    }
+    ctx.stroke();
+  }
+
+  // Sector lines every 15°
+  for (let s = 0; s < SECTORS; s++) {
+    const angle = topDegToRad(s * SECTOR_DEG);
+    const major = s % 6 === 0;
+    ctx.beginPath();
+    ctx.moveTo(C, C);
+    ctx.lineTo(C + RINGS * RING_R * Math.cos(angle), C + RINGS * RING_R * Math.sin(angle));
+    ctx.strokeStyle = major ? 'rgba(176,168,158,0.45)' : 'rgba(195,188,179,0.45)';
+    ctx.lineWidth   = major ? 1.2 : 0.8;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawDegreeLabels() {
+  ctx.save();
+  ctx.font = `${Math.max(8, SZ * 0.016)}px "Montserrat"`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (let s = 0; s < SECTORS; s += (SZ < 420 ? 4 : 2)) {
+    const deg = s * SECTOR_DEG;
+    const rad = topDegToRad(deg);
+    const r = RINGS * RING_R + 14;
+    const x = C + r * Math.cos(rad);
+    const y = C + r * Math.sin(rad);
+
+    const isMajor = deg % 90 === 0;
+    ctx.fillStyle = isMajor ? '#4a5560' : '#6c7c85';
+    if (isMajor) {
+      ctx.font = `bold ${Math.max(9, SZ * 0.018)}px "Montserrat"`;
+    } else {
+      ctx.font = `${Math.max(7, SZ * 0.014)}px "Montserrat"`;
+    }
+    ctx.fillText(deg + '°', x, y);
+  }
+  ctx.restore();
+}
+
+function drawRingLabels() {
+  ctx.save();
+  ctx.font = `${Math.max(7, SZ * 0.013)}px "Montserrat"`;
+  ctx.fillStyle = '#9aa7ae';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const highlightRange = (G && G.upg && typeof G.upg.range === 'number') ? G.upg.range : -1;
+  for (let r = 1; r <= RINGS; r++) {
+    const y = C - r * RING_R + RING_R / 2;
+    ctx.fillStyle = r === highlightRange ? '#4a5560' : '#6c7c85';
+    ctx.fillText(r, C + 2, y);
+  }
+  ctx.restore();
+}
+
+function drawBeams() {
+  if (!G || !Array.isArray(G.beams) || G.beams.length === 0) return;
+  for (let bi = 0; bi < G.beams.length; bi++) {
+    const beam = G.beams[bi];
+    const col  = BEAM_COLS[bi];
+    const half = beam.width / 2;
+    const sa   = topDegToRad(beam.angle - half);
+    const ea   = topDegToRad(beam.angle + half);
+    const rng  = beam.range * RING_R;
+
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.moveTo(C, C);
+    ctx.arc(C, C, rng, sa, ea);
+    ctx.closePath();
+  ctx.fillStyle = hexA(col, 0.6);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(C, C);
+    ctx.arc(C, C, rng, sa, ea);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(126,200,200,0.8)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(C, C, rng, sa - 0.05, ea + 0.05);
+    ctx.strokeStyle = 'rgba(127,191,148,0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const lblR = rng * 0.55;
+    const lblX = C + lblR * Math.cos(topDegToRad(beam.angle));
+    const lblY = C + lblR * Math.sin(topDegToRad(beam.angle));
+    ctx.font = `bold ${Math.max(10, SZ * 0.02)}px "Montserrat"`;
+    ctx.fillStyle = '#6c7c85';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(beam.angle + '°', lblX, lblY);
+
+    ctx.restore();
+  }
+}
+
+function drawEnemies() {
+  if (!G || !Array.isArray(G.enemies) || G.enemies.length === 0) return;
+  for (const e of G.enemies) {
+    const angle = topDegToRad(e.sector * SECTOR_DEG);
+    const r = (e.ring - 0.5) * RING_R;
+    const x = C + r * Math.cos(angle);
+    const y = C + r * Math.sin(angle);
+    const sz = Math.max(5, RING_R * 0.38);
+
+    ctx.save();
+    ctx.translate(x, y);
+    if (e.dying) ctx.globalAlpha = Math.max(0, e.deathFade);
+
+    // Flash white on hit
+    if (e.flash > 0) {
+      ctx.globalAlpha = e.flash * 0.7;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, sz * 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    const col = ENEMY_COLS[e.type];
+    ctx.fillStyle = col;
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 1.1;
+
+    switch (e.type) {
+      case 'circle':
+        ctx.beginPath();
+        ctx.arc(0, 0, sz, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'diamond':
+        ctx.beginPath();
+        ctx.moveTo(0, -sz * 1.25);
+        ctx.lineTo(sz * 0.85, 0);
+        ctx.lineTo(0, sz * 1.25);
+        ctx.lineTo(-sz * 0.85, 0);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'triangle':
+        ctx.beginPath();
+        ctx.moveTo(0, -sz * 1.2);
+        ctx.lineTo(sz * 1.0, sz * 0.85);
+        ctx.lineTo(-sz * 1.0, sz * 0.85);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+
+      case 'square':
+        ctx.fillRect(-sz, -sz, sz * 2, sz * 2);
+        ctx.strokeRect(-sz, -sz, sz * 2, sz * 2);
+        break;
+      case 'boss':
+        ctx.beginPath();
+        ctx.moveTo(0, -sz * 1.6);
+        ctx.lineTo(sz * 1.2, 0);
+        ctx.lineTo(0, sz * 1.6);
+        ctx.lineTo(-sz * 1.2, 0);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+        break;
+      case 'final':
+        const arcA = (e.lenSec * SECTOR_DEG) * DEG;
+        const width = Math.max(sz * 2.2, 2 * r * Math.sin(arcA / 2));
+        const height = RING_R * 0.9;
+        ctx.rotate(angle + Math.PI / 2);
+        ctx.fillRect(-width/2, -height/2, width, height);
+        ctx.strokeRect(-width/2, -height/2, width, height);
+        ctx.rotate(-(angle + Math.PI / 2));
+        break;
+    }
+
+    ctx.shadowBlur = 0;
+
+    // HP bar for multi-HP enemies
+    if (e.maxHp > 1) {
+      const bw = sz * 2.6, bh = 3;
+      ctx.fillStyle = '#ded8cf';
+      ctx.fillRect(-bw/2, sz + 3, bw, bh);
+      ctx.fillStyle = e.hp / e.maxHp > 0.5 ? '#7fbf94' : '#e67c73';
+      ctx.fillRect(-bw/2, sz + 3, bw * (e.hp / e.maxHp), bh);
+    }
+
+    // Sector angle small label
+    if (RING_R > 22) {
+      ctx.font = `${Math.max(6, SZ*0.011)}px "Montserrat"`;
+      ctx.fillStyle = '#6c7c85';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.sector * 15 + '°', 0, sz + 10);
+    }
+
+    ctx.restore();
+  }
+
+  // Decay flash and death fade
+  G.enemies.forEach(e => {
+    if (e.flash > 0) e.flash -= 0.08;
+    if (e.dying && e.deathFade > 0) e.deathFade -= 0.06;
+  });
+  // Cleanup fully faded
+  G.enemies = G.enemies.filter(e => !(e.dying && e.deathFade <= 0));
+}
+
+function drawTower() {
+  ctx.save();
+
+  const g = ctx.createRadialGradient(C, C, 0, C, C, 22);
+  g.addColorStop(0, '#efe7dc');
+  g.addColorStop(1, '#e1d9cf');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(C, C, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#bfb8af';
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#b6bcc2';
+  ctx.beginPath();
+  ctx.arc(C, C, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function hexA(hex, a) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// ── ANIMATION LOOP ────────────────────────────────────────────
+function loop() {
+  if (G && G.enemies && G.enemies.some(e => e.flash > 0 || (e.dying && e.deathFade > 0))) render();
+  requestAnimationFrame(loop);
+}
+
+// ── KEYBOARD SHORTCUTS ────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (!G || G.phase !== 'player') return;
+  if (e.key === 'ArrowLeft')  rotB(G.selBeam, -15);
+  if (e.key === 'ArrowRight') rotB(G.selBeam, +15);
+  if (e.key === 'Enter') { e.preventDefault(); advanceTurn(); }
+  if (e.key === '1') selBeam(0);
+  if (e.key === '2' && G.upg.numBeams >= 2) selBeam(1);
+  if (e.key === '3' && G.upg.numBeams >= 3) selBeam(2);
+});
+
+// ── INTRO SCREEN ──────────────────────────────────────────────
+function showIntro() {
+  showOverlay(`
+    <h2 style="font-family:'Orbitron',sans-serif;font-weight:700;letter-spacing:2px">ANGLE DEFENDER</h2>
+    <p style="color:#6c7c85;font-family:'Montserrat',sans-serif">A Primary Maths Game – Understanding Angles</p>
+
+    <div class="fact-box" style="text-align:left;margin:14px 0">
+      <strong>🎯 Your Mission:</strong><br>
+      • Rotate your light beams to the correct <b>angle</b><br>
+      • Your light auto-damages entities within its beam arc<br>
+      • Don't let 10 enemies reach the centre tower!<br><br>
+      <strong>📐 Maths Focus:</strong><br>
+      • The grid has <b>24 sectors</b> × <b>15°</b> each = <b>360°</b> total<br>
+      • Your beam covers a <b>slice</b> of the circle in degrees<br>
+      • Study where enemies are, then aim your angle!
+    </div>
+
+    <div style="font-size:0.78rem;color:#88aacc;display:flex;gap:14px;justify-content:center;margin:10px 0">
+      <span>⌨️ Arrow keys rotate</span>
+      <span>Enter = next turn</span>
+      <span>Click grid = aim</span>
+    </div>
+
+    <button class="obtn" onclick="startGame()">START MISSION</button>
+    <button class="obtn sec" onclick="startSurvival()">∞ SURVIVAL MODE</button>
+  `);
+}
+
+function startGame() {
+  hideOverlay();
+  if (window.startBgm) window.startBgm();
+  newGame();
+  setMsg('Level 1: First Contact – Rotate beams; light auto-damages in-range enemies.');
+  setupResponsiveLayout();
+}
+
+function startSurvival() {
+  hideOverlay();
+  if (window.startBgm) window.startBgm();
+  G = {
+    mode: 'survival',
+    level: 1,
+    lives: 10,
+    score: 0,
+    turn: 1,
+    phase: 'player',
+    enemies: [],
+    spawnQ: [],
+    beams: [
+      { angle:90,  width:30, range:5 },
+      { angle:270, width:30, range:5 },
+    ],
+    selBeam: 0,
+    upg: { numBeams:2, range:5, width:30 },
+    hitIds: new Set(),
+    flashEls: [],
+    killsThisLevel: 0,
+    totalThisLevel: 0,
+    turnStartAngles: [],
+    rotateHistory: [],
+  };
+  doSpawnSurvival(1);
+  buildBeamUI();
+  initTurnRotation();
+  updateStats();
+  setMsg('Survival Mode: Outlast as long as you can! Bosses grant upgrades.');
+  setupResponsiveLayout();
+  render();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────
+G = {};
+showIntro();
+render();
+loop();
+
+let audioCtx;
+let masterGain;
+let bgmGain;
+let bgmNodes = [];
+let bgmState = null;
+let bgmTimers = [];
+function initAudio() {
+  if (audioCtx) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  audioCtx = new AC();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.2;
+  masterGain.connect(audioCtx.destination);
+  const resume = () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(()=>{});
+    }
+  };
+  window.addEventListener('touchstart', resume, { passive: true });
+  window.addEventListener('mousedown', resume);
+}
+function startBgm() {
+  initAudio();
+  if (bgmNodes.length) return;
+  bgmGain = audioCtx.createGain();
+  bgmGain.gain.value = 0.06;
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 900;
+  bgmGain.connect(lp);
+  lp.connect(masterGain);
+  const v1 = audioCtx.createOscillator();
+  v1.type = 'sawtooth';
+  v1.frequency.value = 220;
+  const v2 = audioCtx.createOscillator();
+  v2.type = 'square';
+  v2.frequency.value = 330;
+  const v3 = audioCtx.createOscillator();
+  v3.type = 'triangle';
+  v3.frequency.value = 440;
+  const lfo = audioCtx.createOscillator();
+  lfo.type = 'sine';
+  lfo.frequency.value = 1.6;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = 0.03;
+  lfo.connect(lfoGain);
+  lfoGain.connect(bgmGain.gain);
+  v1.connect(bgmGain);
+  v2.connect(bgmGain);
+  v3.connect(bgmGain);
+  const t = audioCtx.currentTime;
+  v1.start(t);
+  v2.start(t);
+  v3.start(t);
+  lfo.start(t);
+  bgmNodes = [v1, v2, v3, lfo];
+  bgmState = { v1, v2, v3, lfo, lfoGain, lp, bgmGain };
+  setBgmSection('verse');
+  scheduleBgmSections();
+}
+function stopBgm() {
+  if (!bgmNodes.length) return;
+  clearBgmTimers();
+  const t = audioCtx.currentTime;
+  bgmNodes.forEach(n => { try { n.stop(t + 0.05); } catch(e) {} });
+  bgmNodes = [];
+}
+function playTone(freq, dur, type, vol) {
+  initAudio();
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = type || 'triangle';
+  o.frequency.value = freq;
+  g.gain.value = 0;
+  o.connect(g);
+  g.connect(masterGain);
+  const t = audioCtx.currentTime;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(vol || 0.05, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.start(t);
+  o.stop(t + dur + 0.03);
+}
+function playSfxFire() { playTone(660, 0.15, 'triangle', 0.06); }
+function playSfxHit() { playTone(880, 0.12, 'sine', 0.05); setTimeout(() => playTone(1320, 0.08, 'sine', 0.04), 60); }
+function playSfxLife() { playTone(220, 0.3, 'sine', 0.05); }
+function playSfxBoss() { playTone(523, 0.18, 'square', 0.08); setTimeout(() => playTone(659, 0.18, 'square', 0.08), 180); setTimeout(() => playTone(784, 0.22, 'square', 0.09), 360); }
+function playSfxRoundClear() { playTone(988, 0.12, 'sine', 0.07); setTimeout(() => playTone(1319, 0.12, 'sine', 0.06), 120); setTimeout(() => playTone(1760, 0.18, 'triangle', 0.05), 240); }
+
+function setBgmSection(name) {
+  if (!bgmState) return;
+  const { v1, v2, v3, lfo, lfoGain, lp } = bgmState;
+  switch (name) {
+    case 'verse':
+      lp.frequency.value = 900;
+      lfo.frequency.value = 1.6;
+      lfoGain.gain.value = 0.03;
+      v1.frequency.value = 220;    // A3
+      v2.frequency.value = 330;    // E4
+      v3.frequency.value = 440;    // A4
+      v2.detune.value = 0;
+      v3.detune.value = 0;
+      break;
+    case 'chorus':
+      lp.frequency.value = 1400;
+      lfo.frequency.value = 2.6;
+      lfoGain.gain.value = 0.05;
+      v1.frequency.value = 262;    // C4
+      v2.frequency.value = 392;    // G4
+      v3.frequency.value = 523;    // C5
+      v2.detune.value = 7;         // slight detune for width
+      v3.detune.value = -7;
+      break;
+    case 'bridge':
+      lp.frequency.value = 700;
+      lfo.frequency.value = 1.2;
+      lfoGain.gain.value = 0.02;
+      v1.frequency.value = 196;    // G3
+      v2.frequency.value = 311;    // Eb4
+      v3.frequency.value = 466;    // Bb4
+      v2.detune.value = -5;
+      v3.detune.value = 5;
+      break;
+  }
+}
+
+function clearBgmTimers() {
+  bgmTimers.forEach(id => clearTimeout(id));
+  bgmTimers = [];
+}
+
+function scheduleBgmSections() {
+  clearBgmTimers();
+  setBgmSection('verse');
+  bgmTimers.push(setTimeout(() => setBgmSection('chorus'), 16000));
+  bgmTimers.push(setTimeout(() => setBgmSection('bridge'), 16000 + 12000));
+  bgmTimers.push(setTimeout(() => scheduleBgmSections(), 16000 + 12000 + 10000));
+}
+</script>
+</body>
+</html>

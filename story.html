@@ -44,33 +44,90 @@
         </div>
     </nav>
     <main>
-        <h1>The Journey</h1>
-        <p>Follow the architect through 15 realms of logic.</p>
+        <h1>Dovit & MonoliATH</h1>
+        <p>Follow the journey of Dovit from small-scale survival to a grand, harmonic integration with the MonoliATH. By aligning the narrative beats with primary mathematics concepts, the curriculum evolves alongside Dovit’s growing relationship with the giant.</p>
 
         <script>
-            const titles = [
-                "The First Vertex", "Illusions of Scale", "The Hidden Plane", "Non-Euclidean Bridges", 
-                "The Mobius Loop", "Reflections in Symmetry", "The Infinite Staircase", "Shadows of the Fourth Dimension", 
-                "Fractals in Bloom", "The Golden Ratio", "Tesseracts Unfolded", "The Penrose Steps", 
-                "Hyperbolic Corridors", "The Calculus of Motion", "The Final Theorem"
-            ];
-            
-            titles.forEach((title, index) => {
-                let levelNum = index + 1;
-                let color = levelNum % 2 === 0 ? 'E69A8D' : '5EBEC4';
-                document.write(`
-                <div class="story-step">
-                    <h2>Chapter ${levelNum}: ${title}</h2>
-                    <p>Awaken in a new realm. Manipulate the geometry, find the hidden paths, and guide the traveler closer to the truth.</p>
-                    <img src="https://via.placeholder.com/800x250/${color}/FFFFFF?text=Simulation+${levelNum}+Preview" alt="${title}">
-                    <br>
-                    <a href="simulation-${levelNum}.html" class="play-btn">Play Simulation ${levelNum}</a>
-                </div>
-                `);
-            });
-        </script>
+    // 1. Create a list of objects containing both Title and Description
+    const chapters = [
+        {
+            title: "Dovit",
+            description: "Dovit establishes his identity. He is small but significant. He moves across digit-platforms where his position determines his value."
+        },
+        {
+            title: "Orb",
+            description: "In the shadow of the giant, Dovit must collect light while maintaining a specific radius from danger."
+        },
+        {
+            title: "Vertex",
+            description: "Dovit begins to map the giant’s surface, connecting vertices to claim territory and understand the boundaries of this new world."
+        },
+        {
+            title: "Totemcraft",
+            description: "Dovit crafts totems and offers to the giant—by balancing specific masses. He learns that the giant values precision and balance."
+        },
+        {
+            title: "Ascend",
+            description: "Dovit begins the vertical climb. Each level of the Monoliath requires him to calculate the space he occupies to fit through the giant's shifting mechanisms."
+        },
+	{
+            title: "Fragment",
+            description: "On the steep slopes, Dovit learns to divide himself or his power into fractions. He realizes he is a fragment of the giant's world, yet essential to its completion."
+        },
+	 {
+            title: "Cipher",
+            description: "Dovit encounters the giant's internal logic. By rotating numerical rings, he solves the equations that keep the Monoliath’s systems running."
+        },
+ 	{
+            title: "Lighthouse",
+            description: "Dovit uses beams of light to guide others through the giant’s influence, learning the precise angles required for peaceful communication."
+        },
+ 	{
+            title: "Angle Defender",
+            description: "The giant tests Dovit's resolve. Dovit doesn't attack; he uses geometric precision to deflect chaos, turning defense into a display of mathematical mastery."
+        },
+	 {
+            title: "Eurythmy",
+            description: "Dovit moves in rhythm with the giant’s heartbeat. He follows patterns on a grid, proving he can exist in perfect synchronization with the Monoliath."
+        },
+ 	{
+            title: "Architect",
+            description: "Dovit helps the giant rebuild itself. By placing 3D geometric shapes in time with the music, he repairs the giant’s fragmented form."
+        },
+	 {
+            title: "Illuminate",
+            description: "Dovit brings total light to the giant’s psyche. By playing cards that charge the grid, he banishes the remaining shadows of fear and conflict."
+        },
+	{
+            title: "Monolith",
+            description: "Dovit navigates the final, beautiful isometric puzzles of the giant’s mind. The world is no longer flat but a complex, multi-dimensional reality."
+        },
+        {
+            title: "MonoliATH",
+            description: "The final state of equilibrium. Dovit and the giant exist in a balanced state of area and volume. The Goliath has been integrated, and the world is at peace."
+        }
+    ];
+    
+    // 2. Loop through the list to generate the HTML
+    chapters.forEach((chapter, index) => {
+        let levelNum = index + 1;
+        let color = levelNum % 2 === 0 ? 'E69A8D' : '5EBEC4'; // Alternates colors
+        
+        // Notice we are now using ${chapter.title} and ${chapter.description}
+        document.write(`
+        <div class="story-step">
+            <h2>Chapter ${levelNum}: ${chapter.title}</h2>
+            <p>${chapter.description}</p>
+            <img src="https://via.placeholder.com/800x250/${color}/FFFFFF?text=Simulation+${levelNum}+Preview" alt="${chapter.title}">
+            <br>
+            <a href="simulation-${levelNum}.html" class="play-btn">Play Simulation ${levelNum}</a>
+        </div>
+        `);
+    });
+</script>
+
         </main>
     <div class="ad-frame"><div class="ad-content">[ ADVERTISEMENT SLOT : 728 x 90 ]</div></div>
-    <footer>&copy; 2026 Geometry Tales. All paths lead to the start.</footer>
+    <footer>&copy; 2026 djinn Design Studios | MonoliATH Games. All paths lead to the start.</footer>
 </body>
 </html>

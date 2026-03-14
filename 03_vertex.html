@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Vertex</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F2E8DC;--p1a:#C9BBDB;--p1dk:#7A5FA0;
+  --p2a:#A8C8B8;--p2dk:#4A8468;
+  --amber:#D4A84B;--gold:#C09842;--teal:#82ADC0;
+  --rose:#C97A74;--sage:#9DBDAB;--lav:#B8A8D0;
+  --bg:#1A1510;--bg2:#221D17;
+  --stone:#5C504A;--mid:#7A6E68;--light:#A89890;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);font-family:'Raleway',sans-serif;
+  color:var(--cream);overflow:hidden;user-select:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+#mv-bg{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 15% 85%,rgba(184,168,208,.06),transparent 55%),
+    radial-gradient(ellipse 60% 70% at 85% 15%,rgba(130,173,192,.06),transparent 55%),
+    linear-gradient(155deg,#1A1510,#201B14 55%,#181309);}
+#bg-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.2;}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;overflow:auto;
+  transition:opacity .55s,transform .55s;}
+.screen.hidden{opacity:0;pointer-events:none;transform:translateY(8px);}
+
+/* MENU */
+#screen-menu{gap:28px;padding:20px;}
+.v-logo h1{font-family:'Cinzel',serif;font-weight:700;
+  font-size:clamp(34px,8vw,70px);letter-spacing:clamp(8px,3vw,20px);
+  text-transform:uppercase;
+  background:linear-gradient(135deg,#D4A84B,#F2E8DC 45%,#C09842);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 28px rgba(201,168,76,.28));}
+.v-logo .sub{font-size:clamp(8px,1.8vw,11px);letter-spacing:5px;
+  color:var(--light);text-transform:uppercase;margin-top:8px;font-weight:300;text-align:center;}
+.mode-cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;max-width:620px;width:100%;}
+.mode-card{background:rgba(242,232,220,.04);border:1px solid rgba(242,232,220,.1);
+  border-radius:18px;padding:clamp(22px,4vw,38px) clamp(18px,3vw,30px);
+  flex:1;min-width:210px;max-width:280px;text-align:center;cursor:pointer;
+  transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;}
+.mode-card::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.08),transparent 70%);
+  opacity:0;transition:opacity .4s;}
+.mode-card:hover,.mode-card:active{border-color:rgba(201,168,76,.4);transform:translateY(-5px);}
+.mode-card:hover::before,.mode-card:active::before{opacity:1;}
+.micon{font-size:clamp(32px,6vw,46px);margin-bottom:14px;display:block;}
+.mode-card h2{font-family:'Cinzel',serif;font-size:clamp(10px,2vw,14px);
+  letter-spacing:2px;color:var(--cream);margin-bottom:10px;text-transform:uppercase;}
+.mode-card p{font-size:clamp(9px,1.8vw,12px);color:var(--light);line-height:1.8;font-weight:300;}
+.badge{display:inline-block;margin-top:12px;padding:3px 12px;border-radius:20px;
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;border:1px solid;font-weight:500;}
+.ba{border-color:var(--amber);color:var(--amber);}
+.bs{border-color:var(--teal);color:var(--teal);}
+
+/* TOP BAR */
+#top-bar{position:fixed;top:0;left:0;right:0;height:42px;
+  display:none;align-items:center;justify-content:space-between;
+  padding:0 12px;z-index:40;background:rgba(26,21,16,.93);
+  border-bottom:1px solid rgba(242,232,220,.07);backdrop-filter:blur(10px);}
+#top-bar.on{display:flex;}
+#tbt{font-family:'Cinzel',serif;font-size:clamp(9px,2.5vw,13px);
+  letter-spacing:5px;color:var(--gold);text-transform:uppercase;}
+.tbr{display:flex;gap:7px;align-items:center;}
+.tbb{background:none;border:1px solid rgba(242,232,220,.14);border-radius:14px;
+  padding:3px 10px;color:var(--light);font-size:10px;letter-spacing:1px;
+  cursor:pointer;font-family:'Raleway',sans-serif;text-transform:uppercase;
+  transition:all .3s;white-space:nowrap;}
+.tbb:hover,.tbb:active{border-color:var(--gold);color:var(--gold);}
+
+/* GAME SCREEN */
+#screen-game{flex-direction:column;justify-content:flex-start;
+  padding:46px 6px 6px;gap:6px;overflow-y:auto;overflow-x:hidden;}
+@media(min-width:860px){
+  #screen-game{flex-direction:row;align-items:center;
+    justify-content:center;padding:50px 10px 10px;gap:12px;overflow:hidden;}}
+
+/* PLAYER PANELS */
+.player-strip{display:flex;gap:6px;width:100%;flex-shrink:0;}
+@media(min-width:860px){
+  .player-strip{flex-direction:column;width:168px;max-width:168px;align-self:flex-start;}}
+.pcard{flex:1;background:rgba(242,232,220,.04);border:1px solid rgba(242,232,220,.08);
+  border-radius:11px;padding:9px 11px;transition:all .3s;min-width:0;}
+.pcard.active{background:rgba(242,232,220,.08);border-color:rgba(201,168,76,.33);
+  box-shadow:0 0 16px rgba(201,168,76,.09);}
+.pcard h3{font-family:'Cinzel',serif;font-size:clamp(8px,2vw,10px);
+  letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;
+  display:flex;align-items:center;gap:5px;}
+.h1{color:var(--p1dk);}.h2{color:var(--p2dk);}
+.pawn-pip{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.pip1a{background:var(--p1a);box-shadow:0 0 4px var(--p1dk);}
+.pip2a{background:var(--p2a);box-shadow:0 0 4px var(--p2dk);}
+.srow{display:flex;gap:7px;align-items:baseline;}
+.smain{font-family:'Cinzel',serif;font-size:clamp(18px,5vw,27px);color:var(--cream);line-height:1;}
+.ssub{font-size:8px;color:var(--light);letter-spacing:1px;text-transform:uppercase;}
+.smeta{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
+.smeta span{font-size:8px;color:var(--mid);background:rgba(242,232,220,.05);
+  border-radius:3px;padding:1px 5px;white-space:nowrap;}
+.smeta span b{color:var(--sage);font-weight:500;}
+.smeta .ab{color:var(--amber);}
+.clog{margin-top:5px;max-height:60px;overflow-y:auto;display:none;}
+@media(min-width:860px){.clog{display:block;}}
+.ci{font-size:8px;color:var(--light);padding:2px 0;
+  border-bottom:1px solid rgba(242,232,220,.05);display:flex;justify-content:space-between;}
+.ci .cv{color:var(--amber);font-weight:500;}
+.pirow{font-size:8px;color:var(--mid);margin-top:3px;display:none;align-items:center;gap:4px;}
+.pirow.on{display:flex;}
+.piv{color:var(--rose);font-family:'Cinzel',serif;}
+.cyrow{display:none;margin-top:4px;}.cyrow.on{display:block;}
+.cytrack{display:flex;gap:2px;align-items:center;flex-wrap:wrap;}
+.cyd{width:6px;height:6px;border-radius:50%;border:1px solid var(--mid);background:transparent;transition:all .3s;}
+.cyd.ok{background:var(--sage);border-color:var(--p2dk);}
+.cyd.dn{background:var(--mid);border-color:var(--mid);}
+.cysep{width:4px;height:1px;background:rgba(242,232,220,.1);}
+.cywarn{font-size:7px;color:var(--rose);letter-spacing:.5px;margin-top:2px;}
+.turns-label{font-size:8px;color:var(--mid);margin-top:3px;}
+.turns-label b{color:var(--cream);}
+
+/* BOARD SECTION */
+.board-section{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;}
+.rbar{display:flex;align-items:center;gap:12px;
+  background:rgba(242,232,220,.04);border:1px solid rgba(242,232,220,.07);
+  border-radius:22px;padding:6px 16px;flex-wrap:wrap;justify-content:center;}
+.rnum{font-family:'Cinzel',serif;font-size:clamp(13px,3.5vw,18px);color:var(--gold);white-space:nowrap;}
+.rlbl{font-size:8px;letter-spacing:2px;color:var(--light);text-transform:uppercase;}
+.rdiv{width:1px;height:22px;background:rgba(242,232,220,.1);}
+.tlabel{font-size:clamp(9px,2.5vw,11px);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+.t1{color:var(--p1a);}.t2{color:var(--p2a);}
+.thint{font-size:8px;color:var(--light);letter-spacing:.5px;}
+
+/* BOARD */
+#board-wrapper{position:relative;filter:drop-shadow(0 8px 28px rgba(0,0,0,.7));}
+#board{
+  --C:clamp(22px,calc((100vw - 22px)/12),40px);
+  display:grid;grid-template-columns:repeat(12,var(--C));
+  grid-template-rows:repeat(12,var(--C));
+  gap:1px;background:#0C0906;
+  border:1.5px solid rgba(192,152,66,.18);border-radius:4px;
+  overflow:hidden;position:relative;z-index:1;}
+@media(min-width:860px){
+  #board{--C:clamp(26px,calc((min(100vw,1400px) - 440px)/12),40px);}}
+
+.cell{width:var(--C);height:var(--C);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;cursor:pointer;transition:background .12s;overflow:hidden;}
+.cl{background:#26201A;}.cd{background:#1F1913;}
+.p1v{background:#282040!important;}.p2v{background:#1A2E24!important;}
+.bv{background:#2C2414!important;}
+.vm{background:rgba(201,168,76,.17)!important;cursor:pointer;}
+.vm::after{content:'';position:absolute;inset:3px;
+  border:1px solid rgba(201,168,76,.26);border-radius:2px;pointer-events:none;}
+.vm:hover,.vm:active{background:rgba(201,168,76,.32)!important;}
+.place-ok{background:rgba(130,173,192,.12)!important;cursor:pointer;}
+.place-ok::after{content:'';position:absolute;inset:3px;
+  border:1px dashed rgba(130,173,192,.35);border-radius:2px;pointer-events:none;}
+.place-ok:hover{background:rgba(130,173,192,.25)!important;}
+
+/* TOKENS */
+.tok{pointer-events:none;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;width:100%;height:100%;position:relative;}
+.ta-expr{font-size:clamp(5px,1.3vw,8px);color:var(--amber);
+  line-height:1.2;text-align:center;font-weight:500;white-space:nowrap;}
+.ta-val{font-size:clamp(6px,1.5vw,9px);color:var(--cream);
+  font-family:'Cinzel',serif;line-height:1;}
+.tnum{font-family:'Cinzel',serif;font-size:clamp(8px,2vw,12px);color:var(--amber);}
+.tpi{font-family:'Cinzel',serif;font-style:italic;
+  font-size:clamp(8px,2vw,12px);color:var(--rose);}
+/* Number badge on shape cells */
+.tok-nbadge{
+  position:absolute;top:1px;right:1px;
+  font-size:clamp(4px,1vw,6px);color:var(--amber);
+  font-family:'Cinzel',serif;
+  background:rgba(26,21,16,.7);
+  border-radius:2px;padding:0 2px;line-height:1.4;
+}
+
+/* PAWNS */
+.pawn{position:absolute;border-radius:50%;border:2px solid;
+  display:flex;align-items:center;justify-content:center;z-index:8;
+  transition:top .32s cubic-bezier(.34,1.56,.64,1),left .32s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:all;cursor:pointer;font-weight:700;}
+.pawn.p1{background:var(--p1a);border-color:var(--p1dk);color:#1A1510;
+  box-shadow:0 0 9px rgba(201,187,219,.4),0 2px 5px rgba(0,0,0,.4);}
+.pawn.p2{background:var(--p2a);border-color:var(--p2dk);color:#1A1510;
+  box-shadow:0 0 9px rgba(168,200,184,.4),0 2px 5px rgba(0,0,0,.4);}
+@keyframes pulseSel{0%,100%{box-shadow:0 0 6px rgba(201,168,76,.4),0 2px 5px rgba(0,0,0,.4);}
+  50%{box-shadow:0 0 18px rgba(201,168,76,.8),0 2px 5px rgba(0,0,0,.4);}}
+@keyframes pulseIdle{0%,100%{box-shadow:0 0 5px rgba(255,255,255,.15),0 2px 5px rgba(0,0,0,.4);}
+  50%{box-shadow:0 0 11px rgba(255,255,255,.3),0 2px 5px rgba(0,0,0,.4);}}
+.pawn.selected{animation:pulseSel 1s ease-in-out infinite;border-color:var(--gold)!important;}
+.pawn.selectable{animation:pulseIdle 1.5s ease-in-out infinite;cursor:pointer;}
+.pawn.idle{opacity:.55;cursor:default;}
+#path-svg{position:absolute;top:0;left:0;pointer-events:none;z-index:4;}
+
+@keyframes cpop{0%{transform:scale(1);opacity:1;}40%{transform:scale(1.3);opacity:.7;}100%{transform:scale(0);opacity:0;}}
+.cell.collecting .tok{animation:cpop .28s ease forwards;}
+
+/* CLAIM AREA BUTTON */
+#btn-claim-area{display:none;margin-top:5px;font-size:9px;padding:8px 18px;}
+
+/* RESULTS */
+#screen-results{gap:18px;text-align:center;padding:55px 14px 18px;overflow-y:auto;}
+.rtitle{font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;
+  color:var(--light);text-transform:uppercase;}
+.winner{font-family:'Cinzel',serif;font-size:clamp(24px,6vw,42px);letter-spacing:2px;
+  background:linear-gradient(135deg,#D4A84B,#F2E8DC,#C09842);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 14px rgba(201,168,76,.4));}
+.rtable{background:rgba(242,232,220,.04);border:1px solid rgba(242,232,220,.1);
+  border-radius:14px;padding:clamp(20px,4vw,32px) clamp(16px,4vw,44px);
+  display:flex;gap:0;width:100%;max-width:560px;}
+.rcol{flex:1;text-align:center;padding:0 12px;}
+.rcol h4{font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:14px;}
+.rc1 h4{color:var(--p1dk);}.rc2 h4{color:var(--p2dk);}
+.rval{font-family:'Cinzel',serif;font-size:clamp(11px,2.8vw,15px);color:var(--cream);margin:6px 0;}
+.rval span{color:var(--gold);}
+/* BIG result totals */
+.rtot{font-family:'Cinzel',serif;font-size:clamp(52px,14vw,90px);
+  margin-top:12px;line-height:1;letter-spacing:-1px;}
+.rc1 .rtot{color:var(--p1a);text-shadow:0 0 30px rgba(201,187,219,.4);}
+.rc2 .rtot{color:var(--p2a);text-shadow:0 0 30px rgba(168,200,184,.4);}
+.rdivl{width:1px;background:rgba(242,232,220,.1);align-self:stretch;flex-shrink:0;}
+.fnote{font-size:9px;color:var(--mid);margin-top:3px;}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.vbtn{background:transparent;border:1px solid rgba(201,168,76,.38);color:var(--gold);
+  font-family:'Cinzel',serif;font-size:9px;letter-spacing:3px;text-transform:uppercase;
+  padding:11px 20px;border-radius:5px;cursor:pointer;transition:all .3s;}
+.vbtn:hover,.vbtn:active{background:rgba(201,168,76,.1);border-color:var(--gold);}
+.vbtn.sec{border-color:rgba(242,232,220,.18);color:var(--light);}
+.vbtn.sec:hover,.vbtn.sec:active{border-color:rgba(242,232,220,.38);color:var(--cream);}
+
+/* TOAST */
+#toast{position:fixed;top:50px;left:50%;
+  transform:translateX(-50%) translateY(-5px);
+  background:rgba(26,21,16,.97);border:1px solid rgba(201,168,76,.28);
+  border-radius:7px;padding:7px 16px;font-size:11px;color:var(--cream);
+  z-index:150;opacity:0;transition:all .28s;backdrop-filter:blur(12px);
+  pointer-events:none;box-shadow:0 5px 18px rgba(0,0,0,.4);
+  max-width:90vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* AREA MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:200;
+  background:rgba(10,8,5,.82);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;padding:12px;}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:#221D17;border:1px solid rgba(201,168,76,.3);
+  border-radius:18px;padding:clamp(18px,4vw,32px);
+  width:100%;max-width:560px;max-height:92vh;overflow-y:auto;
+  box-shadow:0 24px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:12px;}
+.modal-title{font-family:'Cinzel',serif;font-size:clamp(13px,3vw,18px);
+  letter-spacing:3px;color:var(--gold);text-align:center;text-transform:uppercase;}
+.modal-sub{font-size:clamp(9px,2vw,11px);color:var(--light);text-align:center;line-height:1.7;}
+#modal-board-wrap{background:#0C0906;border:1px solid rgba(242,232,220,.1);
+  border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#modal-svg{display:block;cursor:crosshair;}
+.modal-pts-info{font-size:10px;color:var(--amber);letter-spacing:1px;
+  text-align:center;min-height:16px;font-family:'Cinzel',serif;}
+.modal-input-row{display:flex;flex-direction:column;gap:6px;align-items:center;}
+.modal-lbl{font-size:10px;color:var(--light);letter-spacing:1px;text-transform:uppercase;}
+.modal-input-wrap{display:flex;align-items:center;gap:8px;}
+.modal-input{background:rgba(242,232,220,.06);border:1px solid rgba(201,168,76,.35);
+  border-radius:6px;padding:8px 14px;font-family:'Cinzel',serif;font-size:16px;
+  color:var(--cream);width:140px;text-align:center;outline:none;-moz-appearance:textfield;}
+.modal-input::-webkit-outer-spin-button,.modal-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.modal-input:focus{border-color:var(--gold);}
+.modal-unit{font-size:11px;color:var(--mid);}
+.modal-feedback{font-family:'Cinzel',serif;font-size:clamp(11px,2.5vw,14px);
+  text-align:center;min-height:20px;letter-spacing:1px;transition:color .3s;}
+.modal-feedback.correct{color:var(--sage);}
+.modal-feedback.wrong{color:var(--rose);}
+.modal-btn-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+
+/* CHOICE MODAL */
+#choice-modal .modal-box{max-width:400px;}
+.choice-title{font-family:'Cinzel',serif;font-size:clamp(12px,3vw,17px);
+  letter-spacing:2px;color:var(--gold);text-align:center;text-transform:uppercase;}
+.choice-desc{font-size:11px;color:var(--light);text-align:center;line-height:1.7;}
+.choice-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.choice-btn{flex:1;min-width:140px;padding:16px 12px;border-radius:10px;
+  cursor:pointer;transition:all .3s;text-align:center;border:1px solid;}
+.cb-shape{background:rgba(130,173,192,.08);border-color:rgba(130,173,192,.4);color:var(--teal);}
+.cb-shape:hover{background:rgba(130,173,192,.18);}
+.cb-number{background:rgba(212,168,75,.08);border-color:rgba(212,168,75,.4);color:var(--amber);}
+.cb-number:hover{background:rgba(212,168,75,.18);}
+.cb-label{font-family:'Cinzel',serif;font-size:13px;letter-spacing:1px;margin-bottom:4px;}
+.cb-val{font-size:22px;font-family:'Cinzel',serif;font-weight:700;}
+
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--stone);border-radius:2px;}
+</style>
+</head>
+<body>
+<div id="mv-bg"></div>
+<canvas id="bg-canvas"></canvas>
+<div id="toast"></div>
+
+<div id="top-bar">
+  <div id="tbt">Vertex</div>
+  <div class="tbr">
+    <button class="tbb" id="btn-menu">Menu</button>
+    <button class="tbb" id="btn-audio">🔊</button>
+  </div>
+</div>
+
+<!-- MENU -->
+<div class="screen" id="screen-menu">
+  <div class="v-logo">
+    <h1>Vertex</h1>
+    <div class="sub">Path · Area · Score</div>
+  </div>
+  <div class="mode-cards">
+    <div class="mode-card" id="btn-add">
+      <span class="micon">➕</span>
+      <h2>Addition Realm</h2>
+      <p>Place 2 pawns anywhere. Collect addition tokens across 8 rounds. Claim area bonuses by calculating the polygon formed by your path.</p>
+      <div class="badge ba">8 Rounds · 2 Pawns Each</div>
+    </div>
+    <div class="mode-card" id="btn-shape">
+      <span class="micon">◯△□</span>
+      <h2>Geometry Garden</h2>
+      <p>Place your pawn, then explore shapes and values. Each shape cell lets you choose: collect the shape's area or just the number. 12 turns each.</p>
+      <div class="badge bs">12 Turns · 1 Pawn · Shapes</div>
+    </div>
+  </div>
+</div>
+
+<!-- OPPONENT SELECT -->
+<div class="screen hidden" id="screen-opponent">
+  <div class="v-logo" style="margin-bottom:20px;">
+    <h1 style="font-size:clamp(22px,5vw,40px);letter-spacing:8px;">Vertex</h1>
+  </div>
+  <div id="opp-mode-label" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;
+    color:var(--light);text-transform:uppercase;margin-bottom:18px;"></div>
+  <div class="mode-cards" style="max-width:660px;">
+    <div class="mode-card" id="btn-2p">
+      <span class="micon">👥</span>
+      <h2>2 Players</h2>
+      <p>Pass the device and take turns with a friend on the same screen.</p>
+      <div class="badge ba">Local Multiplayer</div>
+    </div>
+    <div class="mode-card" id="btn-ai-easy">
+      <span class="micon">🤖</span>
+      <h2>vs AI · Easy</h2>
+      <p>The AI moves greedily — always grabbing the nearest highest-value token.</p>
+      <div class="badge bs">Single Player</div>
+    </div>
+    <div class="mode-card" id="btn-ai-hard">
+      <span class="micon">🧠</span>
+      <h2>vs AI · Skillful</h2>
+      <p>The AI plans ahead — balancing token value, path shape, and area bonus potential.</p>
+      <div class="badge" style="border-color:var(--rose);color:var(--rose);">Challenging</div>
+    </div>
+  </div>
+  <button class="vbtn sec" id="btn-opp-back" style="margin-top:18px;font-size:9px;">← Back</button>
+</div>
+
+<div class="screen hidden" id="screen-game">
+  <div class="player-strip">
+    <div class="pcard" id="card-p1">
+      <h3 class="h1"><span class="pawn-pip pip1a"></span>Player 1</h3>
+      <div class="srow"><div class="smain" id="p1-score">0</div><div class="ssub">pts</div></div>
+      <div class="smeta">
+        <span>Area <b id="p1-area" class="ab">0</b></span>
+        <span>Mvs <b id="p1-moves">0</b></span>
+      </div>
+      <div class="turns-label" id="p1-turns-lbl"></div>
+      <div class="pirow" id="p1-pi"><span>π held:</span><span class="piv" id="p1-piv">0</span></div>
+      <div class="cyrow" id="p1-cy"><div class="cytrack" id="p1-cyt"></div><div class="cywarn" id="p1-cyw"></div></div>
+      <div class="clog" id="p1-log"></div>
+    </div>
+  </div>
+
+  <div class="board-section">
+    <div class="rbar">
+      <div>
+        <div class="rnum" id="round-num">—</div>
+        <div class="rlbl" id="round-of">Placement</div>
+      </div>
+      <div class="rdiv"></div>
+      <div>
+        <div class="tlabel t1" id="turn-lbl">Player 1</div>
+        <div class="thint" id="turn-hint">Place your pawn on any cell</div>
+      </div>
+    </div>
+    <div id="board-wrapper">
+      <div id="board"></div>
+      <svg id="path-svg"></svg>
+    </div>
+    <button class="vbtn" id="btn-claim-area">⬡ Claim Area Bonus</button>
+  </div>
+
+  <div class="player-strip">
+    <div class="pcard" id="card-p2">
+      <h3 class="h2"><span class="pawn-pip pip2a"></span>Player 2</h3>
+      <div class="srow"><div class="smain" id="p2-score">0</div><div class="ssub">pts</div></div>
+      <div class="smeta">
+        <span>Area <b id="p2-area" class="ab">0</b></span>
+        <span>Mvs <b id="p2-moves">0</b></span>
+      </div>
+      <div class="turns-label" id="p2-turns-lbl"></div>
+      <div class="pirow" id="p2-pi"><span>π held:</span><span class="piv" id="p2-piv">0</span></div>
+      <div class="cyrow" id="p2-cy"><div class="cytrack" id="p2-cyt"></div><div class="cywarn" id="p2-cyw"></div></div>
+      <div class="clog" id="p2-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen hidden" id="screen-results">
+  <div class="rtitle">Final Scores</div>
+  <div class="winner" id="winner-txt">Player 1 Wins!</div>
+  <div class="rtable">
+    <div class="rcol rc1">
+      <h4>Player One</h4>
+      <div class="rval">Collected: <span id="r-p1-col">0</span></div>
+      <div class="rval">Area Bonus: <span id="r-p1-area">0</span></div>
+      <div class="rval">Angle Bonus: <span id="r-p1-angle">0</span> pt(s)</div>
+      <div class="fnote" id="r-p1-note"></div>
+      <div class="rtot" id="r-p1-tot">0</div>
+    </div>
+    <div class="rdivl"></div>
+    <div class="rcol rc2">
+      <h4>Player Two</h4>
+      <div class="rval">Collected: <span id="r-p2-col">0</span></div>
+      <div class="rval">Area Bonus: <span id="r-p2-area">0</span></div>
+      <div class="rval">Angle Bonus: <span id="r-p2-angle">0</span> pt(s)</div>
+      <div class="fnote" id="r-p2-note"></div>
+      <div class="rtot" id="r-p2-tot">0</div>
+    </div>
+  </div>
+  <div style="font-size:10px;color:var(--light);max-width:380px;text-align:center;line-height:1.9;">
+    Score = Collected Points + Correctly Answered Area Bonuses
+  </div>
+  <div class="btnrow">
+    <button class="vbtn" id="btn-again">Play Again</button>
+    <button class="vbtn sec" id="btn-home">Main Menu</button>
+  </div>
+</div>
+
+<!-- AREA MODAL -->
+<div id="area-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title-lbl">⬡ Area Challenge</div>
+    <div class="modal-sub" id="modal-sub-lbl">Tap 3+ nodes on your path to select a polygon, then enter its area to earn bonus points.</div>
+    <div id="modal-board-wrap"><svg id="modal-svg"></svg></div>
+    <div class="modal-pts-info" id="modal-pts-info">No points selected</div>
+
+    <!-- Standard area input -->
+    <div id="modal-area-section">
+      <div class="modal-input-row">
+        <div class="modal-lbl" id="modal-area-lbl">Your answer (sq units):</div>
+        <div class="modal-input-wrap">
+          <input id="modal-answer" type="number" step="0.01" placeholder="0.00" class="modal-input" inputmode="decimal">
+          <span class="modal-unit" id="modal-unit-lbl">sq</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Angle bonus (optional) -->
+    <div id="modal-angle-section" style="margin-top:10px;padding:10px 0 2px;border-top:1px solid rgba(242,232,220,.08);">
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--light);margin-bottom:6px;">
+        ✦ Bonus: Total interior angles of this polygon? <span style="color:var(--amber)">(+1 pt if correct)</span>
+      </div>
+      <div class="modal-input-row">
+        <div class="modal-lbl">Sum of angles (°):</div>
+        <div class="modal-input-wrap">
+          <input id="modal-angle-answer" type="number" step="1" placeholder="optional" class="modal-input" inputmode="decimal" style="width:110px;">
+          <span class="modal-unit">°</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-feedback" id="modal-feedback"></div>
+    <div id="modal-comeback-row" style="display:none;margin-bottom:8px;">
+      <button class="vbtn" id="modal-comeback-toggle"
+        style="width:100%;font-size:9px;letter-spacing:2px;background:rgba(194,80,80,.18);border-color:var(--rose);color:var(--rose);">
+        🔁 Switch to Negative Area (Comeback)
+      </button>
+    </div>
+    <div class="modal-btn-row">
+      <button class="vbtn" id="modal-submit">Submit</button>
+      <button class="vbtn sec" id="modal-clear">Clear</button>
+      <button class="vbtn sec" id="modal-cancel">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHOICE MODAL (Geometry Garden) -->
+<div id="choice-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="choice-title">What will you collect?</div>
+    <div class="choice-desc" id="choice-desc">This cell has both a shape and a number.</div>
+    <div class="choice-btns">
+      <div class="choice-btn cb-shape" id="cb-shape">
+        <div class="cb-label">Shape Area</div>
+        <div class="cb-val" id="cb-shape-val">π×r²</div>
+        <div style="font-size:9px;color:var(--light);margin-top:4px;">Shape is collected</div>
+      </div>
+      <div class="choice-btn cb-number" id="cb-number">
+        <div class="cb-label">Number</div>
+        <div class="cb-val" id="cb-num-val">+3</div>
+        <div style="font-size:9px;color:var(--light);margin-top:4px;">Shape stays on board</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   AUDIO
+══════════════════════════════════════════ */
+const VA = (() => {
+  let ctx, master, inited=false, muted=false;
+  const penta=[220,261.63,293.66,329.63,392,440,523.25,587.33,659.25];
+  function init(){
+    if(inited)return;inited=true;
+    ctx=new(window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain();master.gain.value=.17;master.connect(ctx.destination);
+    drone();bell();
+  }
+  function drone(){
+    [[220,.05],[329.63,.033],[440,.022],[261.63,.022]].forEach(([f,g])=>{
+      const o=ctx.createOscillator(),gn=ctx.createGain();
+      o.type='sine';o.frequency.value=f;
+      const lfo=ctx.createOscillator(),lg=ctx.createGain();
+      lfo.frequency.value=.07;lg.gain.value=1.3;
+      lfo.connect(lg);lg.connect(o.frequency);lfo.start();
+      gn.gain.value=g;o.connect(gn);gn.connect(master);o.start();
+    });
+  }
+  function bell(){
+    if(!inited)return;
+    if(!muted){
+      const f=penta[Math.floor(Math.random()*penta.length)];
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(.1,ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+3.2);
+      o.connect(g);g.connect(master);o.start();o.stop(ctx.currentTime+3.5);
+    }
+    setTimeout(bell,1200+Math.random()*2000);
+  }
+  function tone(freqs,gains,dur){
+    if(!inited||muted)return;
+    freqs.forEach((f,i)=>{
+      const d=i*.09,o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=f;
+      g.gain.setValueAtTime(0,ctx.currentTime+d);
+      g.gain.linearRampToValueAtTime(gains[i]||.07,ctx.currentTime+d+.04);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+d+dur);
+      o.connect(g);g.connect(master);
+      o.start(ctx.currentTime+d);o.stop(ctx.currentTime+d+dur+.1);
+    });
+  }
+  return{
+    init,muted:()=>muted,
+    toggle(){muted=!muted;if(master)master.gain.value=muted?0:.17;return muted;},
+    move(){tone([440,550],[.06,.05],.2);},
+    select(){tone([392,493.88],[.07,.05],.15);},
+    collect(){tone([523.25,659.25,783.99],[.08,.07,.06],.5);},
+    shape(){tone([392,523.25,659.25,783.99],[.07,.07,.06,.05],.8);},
+    round(){tone([329.63,392,493.88],[.06,.06,.05],1.4);},
+    win(){tone([440,554.37,659.25,880],[.08,.08,.07,.06],2.2);}
+  };
+})();
+
+/* ══════════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════════ */
+const BS = 12;
+const TURN_PATTERN = [0,1,1,0]; // P1 → P2 → P2 → P1, repeating
+
+function makeTurnOrder(totalTurns){
+  // Generates explicit sequence, e.g. [0,1,1,0, 0,1,1,0, ...]
+  const arr=[];
+  for(let i=0;i<totalTurns;i++) arr.push(TURN_PATTERN[i%4]);
+  return arr;
+}
+const DIRS = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
+const CORNERS = [[0,0],[0,11],[11,0],[11,11]];
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+let G = null;
+
+/* ══════════════════════════════════════════
+   DOM HELPERS
+══════════════════════════════════════════ */
+function getCellPx(){
+  const c=document.querySelector('#board .cell');
+  return c?c.getBoundingClientRect().width:28;
+}
+function getCellCenter(r,c){
+  const wrap=document.getElementById('board-wrapper');
+  const cell=document.querySelector(`#board [data-r='${r}'][data-c='${c}']`);
+  if(!cell||!wrap)return{x:0,y:0};
+  const wr=wrap.getBoundingClientRect(),cr=cell.getBoundingClientRect();
+  return{x:cr.left-wr.left+cr.width/2,y:cr.top-wr.top+cr.height/2};
+}
+
+/* ══════════════════════════════════════════
+   PLAYER STATE
+══════════════════════════════════════════ */
+function newPlayer(pawns){
+  return{
+    pawns, score:0, collected:[], moves:0,
+    personalTurn:0, shapesInCycle:0,
+    cyclesMissed:0, cyclesOk:0, piHeld:0,
+    areaBonus:0, areaUsedThisTurn:false,
+    claimedPolygons:new Set(),
+    angleBonus:0,          // extra +1 pts for correct angle answers
+    negativeAreaUsed:false, // comeback mechanic used
+    turnsTaken:0
+  };
+}
+
+function turnPlayer(){ return TURN_PATTERN[G.turn%4]; }
+
+/* ══════════════════════════════════════════
+   BOARD BUILDERS
+══════════════════════════════════════════ */
+function makeAddTok(){
+  const a=rnd(1,2),b=rnd(1,2);
+  return{type:'add',a,b,val:a+b};
+}
+
+function buildAdditionBoard(){
+  const B=Array.from({length:BS},()=>Array(BS).fill(null));
+  // Mirror top-half onto bottom-half (180° symmetry) — all cells including corners
+  for(let r=0;r<BS;r++){
+    for(let c=0;c<BS;c++){
+      if(B[r][c])continue;
+      const mr=11-r,mc=11-c;
+      const tok=makeAddTok();
+      B[r][c]=tok;
+      B[mr][mc]={...tok};
+    }
+  }
+  return B;
+}
+
+function makeShapeTok(){
+  const types=['circle','square','triangle','pi'];
+  const t=types[rnd(0,3)];
+  const cell={type:t,numVal:rnd(1,4)};
+  if(t==='circle')  cell.radius=rnd(1,3);
+  if(t==='square')  cell.side=rnd(1,4);
+  if(t==='triangle'){cell.base=rnd(1,4);cell.height=rnd(1,4);}
+  if(t==='pi')      cell.mult=1; // always exactly 1π
+  return cell;
+}
+
+function buildShapeBoard(){
+  const B=Array.from({length:BS},()=>Array(BS).fill(null));
+  for(let r=0;r<BS;r++)
+    for(let c=0;c<BS;c++)
+      B[r][c]=makeShapeTok();
+  return B;
+}
+
+function fillCorner(r,c,mode){
+  if(mode==='addition') return makeAddTok();
+  return makeShapeTok();
+}
+
+/* ══════════════════════════════════════════
+   GAME INITIALIZATION
+══════════════════════════════════════════ */
+function startGame(mode, vsAI=false, aiDifficulty='easy'){
+  const isAdd=mode==='addition';
+  // Build initial board (corners empty)
+  const board=isAdd?buildAdditionBoard():buildShapeBoard();
+
+  // Each player starts with placeholder pawns at null positions
+  // Pawns will be placed during placement phase
+  const pawnsP1=isAdd?
+    [{pos:null,path:[]},{pos:null,path:[]}]:
+    [{pos:null,path:[]}];
+  const pawnsP2=isAdd?
+    [{pos:null,path:[]},{pos:null,path:[]}]:
+    [{pos:null,path:[]}];
+
+  // Placement queue: Add mode: P1-A, P2-A, P1-B, P2-B | Shape: P1, P2
+  const placeQueue=isAdd?
+    [{pidx:0,pwi:0},{pidx:1,pwi:0},{pidx:0,pwi:1},{pidx:1,pwi:1}]:
+    [{pidx:0,pwi:0},{pidx:1,pwi:0}];
+
+  const totalTurns = isAdd ? 32 : 24;
+  G={
+    mode, board, vsAI, aiDifficulty,
+    players:[newPlayer(pawnsP1),newPlayer(pawnsP2)],
+    cur:0,
+    turnOrder: makeTurnOrder(totalTurns),
+    turnIdx: 0,
+    selectedPawn:null,
+    validMoves:[],
+    over:false,
+    phase:'place',
+    placeQueue,
+    placeStep:0
+  };
+
+  // UI setup
+  document.getElementById('round-of').textContent='Placement';
+  document.getElementById('round-num').textContent='—';
+  const isShape=mode==='shape';
+  ['p1','p2'].forEach(p=>{
+    document.getElementById(`${p}-pi`).classList.toggle('on',isShape);
+    document.getElementById(`${p}-cy`).classList.toggle('on',isShape);
+  });
+  document.getElementById('top-bar').classList.add('on');
+  // Update P2 name label
+  document.querySelector('#card-p2 h3').innerHTML =
+    `<span class="pawn-pip pip2a"></span>${vsAI ? (aiDifficulty==='hard'?'🧠 AI Pro':'🤖 AI') : 'Player 2'}`;
+  showScreen('game');
+  fullRender();
+  // If AI places first (unlikely but handle it)
+  maybeAIPlacement();
+}
+
+/* ══════════════════════════════════════════
+   PLACEMENT PHASE
+══════════════════════════════════════════ */
+function placementClick(r,c){
+  const step=G.placeQueue[G.placeStep];
+  // Block human clicks when it's AI's placement turn
+  if(G.vsAI && step.pidx===1) return;
+  const occ=occupiedSet();
+  if(occ.has(`${r},${c}`)) return;
+
+  VA.init(); VA.select();
+  const pw=G.players[step.pidx].pawns[step.pwi];
+  pw.pos=[r,c];
+  pw.path=[[r,c]];
+  G.board[r][c]=null;
+
+  G.placeStep++;
+  if(G.placeStep>=G.placeQueue.length){
+    finalizePlacement();
+  } else {
+    fullRender();
+    // Trigger AI if the next step belongs to AI
+    maybeAIPlacement();
+  }
+}
+
+function finalizePlacement(){
+  G.phase='play';
+  G.turnIdx=0;
+  G.cur=G.turnOrder[0];
+  if(G.mode==='shape'){ G.selectedPawn=0; computeValid(G.cur,0); }
+  else { G.selectedPawn=null; }
+  G.players[G.cur].areaUsedThisTurn=false;
+  document.getElementById('round-of').textContent=G.mode==='addition'?'of 8':'of 12';
+  fullRender();
+  maybeAITurn();
+}
+
+function occupiedSet(){
+  const s=new Set();
+  G.players.forEach(pl=>pl.pawns.forEach(pw=>{ if(pw.pos)s.add(`${pw.pos[0]},${pw.pos[1]}`); }));
+  return s;
+}
+
+/* ══════════════════════════════════════════
+   MOVEMENT
+══════════════════════════════════════════ */
+function computeValid(pidx,pwi){
+  const pw=G.players[pidx].pawns[pwi];
+  if(!pw.pos){G.validMoves=[];return;}
+  const[pr,pc]=pw.pos;
+  const occ=occupiedSet();
+  occ.delete(`${pr},${pc}`);
+  const moves=[];
+  for(const[dr,dc]of DIRS){
+    for(let s=1;s<=3;s++){
+      const nr=pr+dr*s,nc=pc+dc*s;
+      if(nr<0||nr>=BS||nc<0||nc>=BS)break;
+      if(occ.has(`${nr},${nc}`))break;
+      moves.push([nr,nc]);
+    }
+  }
+  G.validMoves=moves;
+}
+const isValid=(r,c)=>G.validMoves.some(([a,b])=>a===r&&b===c);
+
+function selectPawn(pwi){
+  VA.init();VA.select();
+  G.selectedPawn=pwi;
+  computeValid(G.cur,pwi);
+  fullRender();
+}
+
+/* ══════════════════════════════════════════
+   CELL CLICK ROUTER
+══════════════════════════════════════════ */
+function cellClick(r,c){
+  if(G.over)return;
+  if(G.phase==='place'){placementClick(r,c);return;}
+  if(G.mode==='addition'&&G.selectedPawn===null){showToast('Tap your pawn to select it first!');return;}
+  if(!isValid(r,c))return;
+  doMove(r,c);
+}
+
+function doMove(r,c){
+  VA.init();VA.move();
+  const cp=G.cur,p=G.players[cp];
+  const pw=p.pawns[G.selectedPawn];
+
+  pw.pos=[r,c];
+  pw.path.push([r,c]);
+  p.moves++;
+  p.turnsTaken++;
+
+  const cell=G.board[r][c];
+  if(cell){
+    // Geometry: shape cell with numVal → show choice
+    if(G.mode==='shape'&&isShapeType(cell.type)&&cell.numVal!=null){
+      // Defer turn advance until choice made
+      G.board[r][c]=null; // temporarily clear; choice modal will handle
+      const el=document.querySelector(`[data-r='${r}'][data-c='${c}']`);
+      if(el){el.classList.add('collecting');setTimeout(()=>el.classList.remove('collecting'),280);}
+      showChoiceModal(r,c,cell,cp);
+      fullRender();
+      return;
+    }
+    const el=document.querySelector(`[data-r='${r}'][data-c='${c}']`);
+    if(el){el.classList.add('collecting');setTimeout(()=>el.classList.remove('collecting'),280);}
+    collectCell(r,c,cp,cell);
+    G.board[r][c]=null;
+  }
+  advanceTurn();
+}
+
+function isShapeType(t){return t==='circle'||t==='square'||t==='triangle';}
+
+/* ══════════════════════════════════════════
+   COLLECTION
+══════════════════════════════════════════ */
+function collectCell(r,c,pidx,cell){
+  const p=G.players[pidx];
+  if(G.mode==='addition'){
+    p.score+=cell.val;
+    p.collected.push({label:`${cell.a}+${cell.b}`,val:cell.val});
+    showToast(`P${pidx+1}: ${cell.a}+${cell.b}=${cell.val} ✦`);
+    VA.collect();
+  } else {
+    collectShapeMode(pidx,cell);
+  }
+}
+
+function collectShapeMode(pidx,cell,shapeOnly){
+  const p=G.players[pidx];
+  let val=0,label='',isShape=false;
+  if(isShapeType(cell.type)){
+    if(cell.type==='circle'){
+      val=parseFloat((Math.PI*cell.radius**2).toFixed(3));
+      label=`○ π×${cell.radius}²=${val}`;
+    }else if(cell.type==='square'){
+      val=cell.side**2;label=`□ ${cell.side}²=${val}`;
+    }else if(cell.type==='triangle'){
+      val=parseFloat((.5*cell.base*cell.height).toFixed(3));
+      label=`△ ½×${cell.base}×${cell.height}=${val}`;
+    }
+    isShape=true;
+    showToast(`P${pidx+1} Shape: +${val} ✦`);VA.shape();
+  } else if(cell.type==='number'){
+    val=cell.val;label=`${val}`;
+    showToast(`P${pidx+1} collected ${val}`);VA.collect();
+  } else if(cell.type==='pi'){
+    val=parseFloat(Math.PI.toFixed(4));label=`π=${val}`;
+    p.piHeld+=val;
+    showToast(`P${pidx+1} collected π≈${val}`);VA.collect();
+  }
+  p.score+=val;
+  p.collected.push({label,val,isShape});
+  if(isShape)p.shapesInCycle++;
+}
+
+/* ══════════════════════════════════════════
+   TURN ADVANCEMENT
+══════════════════════════════════════════ */
+function advanceTurn(){
+  const cp=G.cur, p=G.players[cp];
+
+  // Shape mode cycle tracking
+  if(G.mode==='shape'){
+    p.personalTurn++;
+    if(p.personalTurn%3===0){
+      if(p.shapesInCycle>0) p.cyclesOk++;
+      else{ p.cyclesMissed++; showToast(`P${cp+1}: No shape this cycle!`); }
+      p.shapesInCycle=0;
+    }
+  }
+
+  G.turnIdx++;
+
+  if(G.turnIdx >= G.turnOrder.length){ endGame(); return; }
+
+  const next = G.turnOrder[G.turnIdx];
+  G.cur = next;
+  G.players[next].areaUsedThisTurn=false;
+  G.selectedPawn = G.mode==='shape' ? 0 : null;
+  G.validMoves=[];
+
+  if(G.mode==='shape') computeValid(G.cur,0);
+  if(G.turnIdx%4===0) VA.round();
+  fullRender();
+  maybeAITurn();
+}
+
+/* ══════════════════════════════════════════
+   CHOICE MODAL (Geometry Garden)
+══════════════════════════════════════════ */
+let _choiceCtx=null;
+
+function shapeArea(cell){
+  if(cell.type==='circle')return parseFloat((Math.PI*cell.radius**2).toFixed(3));
+  if(cell.type==='square')return cell.side**2;
+  if(cell.type==='triangle')return parseFloat((.5*cell.base*cell.height).toFixed(3));
+  return 0;
+}
+
+function shapeLabel(cell){
+  if(cell.type==='circle')return `π×${cell.radius}²`;
+  if(cell.type==='square')return `${cell.side}²`;
+  if(cell.type==='triangle')return `½×${cell.base}×${cell.height}`;
+  return '';
+}
+
+function showChoiceModal(r,c,cell,pidx){
+  _choiceCtx={r,c,cell,pidx};
+  // AI always picks whichever gives more points
+  if(G.vsAI && pidx===1){
+    const shapeVal=shapeArea(cell);
+    const numVal=cell.numVal||0;
+    setTimeout(()=>resolveChoice(shapeVal>=numVal), 700);
+    return;
+  }
+  const areaVal=shapeArea(cell);
+  document.getElementById('choice-desc').textContent=`You landed on a shape cell. Pick what you collect:`;
+  document.getElementById('cb-shape-val').textContent=`${shapeLabel(cell)} = ${areaVal}`;
+  document.getElementById('cb-num-val').textContent=`+${cell.numVal}`;
+  document.getElementById('choice-modal').classList.remove('hidden');
+}
+
+function resolveChoice(takeShape){
+  document.getElementById('choice-modal').classList.add('hidden');
+  if(!_choiceCtx)return;
+  const{r,c,cell,pidx}=_choiceCtx;
+  _choiceCtx=null;
+  if(takeShape){
+    // Collect shape; cell is already null from doMove
+    collectShapeMode(pidx,cell,true);
+    G.board[r][c]=null;
+  } else {
+    // Collect number; put shape back without numVal
+    const p=G.players[pidx];
+    const val=cell.numVal;
+    p.score+=val;
+    p.collected.push({label:`${val}`,val,isShape:false});
+    showToast(`P${pidx+1} took number: +${val}`);VA.collect();
+    // Restore shape without numVal
+    const restored={...cell};
+    delete restored.numVal;
+    G.board[r][c]=restored;
+  }
+  advanceTurn();
+}
+
+/* ══════════════════════════════════════════
+   AREA CALCULATION (Shoelace)
+══════════════════════════════════════════ */
+function shoelace(pts){
+  const n=pts.length;if(n<3)return 0;
+  let a=0;
+  for(let i=0;i<n;i++){
+    const[r1,c1]=pts[i],[r2,c2]=pts[(i+1)%n];
+    a+=(c1*r2)-(c2*r1);
+  }
+  return Math.abs(a/2);
+}
+
+function pawnArea(pw){ const a=shoelace(pw.path); return a>1?parseFloat(a.toFixed(2)):0; }
+
+/* ══════════════════════════════════════════
+   END GAME
+══════════════════════════════════════════ */
+function endGame(){
+  G.over=true;VA.win();fullRender();
+  setTimeout(()=>{
+    const p1=G.players[0], p2=G.players[1];
+    const a1=p1.areaBonus, a2=p2.areaBonus;
+    const ang1=p1.angleBonus, ang2=p2.angleBonus;
+    const t1=parseFloat((p1.score+a1+ang1).toFixed(2));
+    const t2=parseFloat((p2.score+a2+ang2).toFixed(2));
+    document.getElementById('r-p1-col').textContent=p1.score.toFixed(2);
+    document.getElementById('r-p1-area').textContent=a1.toFixed(2);
+    document.getElementById('r-p1-angle').textContent=ang1;
+    document.getElementById('r-p2-col').textContent=p2.score.toFixed(2);
+    document.getElementById('r-p2-area').textContent=a2.toFixed(2);
+    document.getElementById('r-p2-angle').textContent=ang2;
+    document.getElementById('r-p1-tot').textContent=t1;
+    document.getElementById('r-p2-tot').textContent=t2;
+    const p2name=G.vsAI?'AI':'Player Two';
+    document.getElementById('winner-txt').textContent=
+      t1>t2?'Player One Wins! ◆':t2>t1?`${p2name} Wins! ◈`:'A Perfect Tie!';
+    document.getElementById('r-p1-note').textContent='Score + Area + Angle Bonus';
+    document.getElementById('r-p2-note').textContent='Score + Area + Angle Bonus';
+    showScreen('results');
+  },900);
+}
+
+/* ══════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════ */
+function fullRender(){renderBoard();renderPawns();renderPaths();renderUI();updateClaimBtn();}
+
+function renderBoard(){
+  const boardEl=document.getElementById('board');
+  boardEl.innerHTML='';
+  const vis=G.players.map(p=>{
+    const s=new Set();
+    p.pawns.forEach(pw=>{if(pw.pos)pw.path.forEach(([r,c])=>s.add(`${r},${c}`));});
+    return s;
+  });
+  const occ=occupiedSet();
+
+  for(let r=0;r<BS;r++){
+    for(let c=0;c<BS;c++){
+      const el=document.createElement('div');
+      el.className=`cell ${(r+c)%2===0?'cl':'cd'}`;
+      el.dataset.r=r;el.dataset.c=c;
+      const v1=vis[0].has(`${r},${c}`),v2=vis[1].has(`${r},${c}`);
+      if(v1&&v2)el.classList.add('bv');
+      else if(v1)el.classList.add('p1v');
+      else if(v2)el.classList.add('p2v');
+
+      if(G.phase==='place'&&!occ.has(`${r},${c}`)){
+        el.classList.add('place-ok');
+      } else if(G.phase==='play'&&!G.over&&isValid(r,c)){
+        el.classList.add('vm');
+      }
+
+      const cell=G.board[r][c];
+      if(cell)el.appendChild(makeTok(cell));
+      el.addEventListener('click',()=>cellClick(r,c));
+      boardEl.appendChild(el);
+    }
+  }
+}
+
+function makeTok(cell){
+  const w=document.createElement('div');w.className='tok';
+  const C=getCellPx();
+  if(cell.type==='add'){
+    const e=document.createElement('div');e.className='ta-expr';e.textContent=`${cell.a}+${cell.b}`;
+    const v=document.createElement('div');v.className='ta-val';v.textContent=`=${cell.val}`;
+    w.appendChild(e);w.appendChild(v);
+  }else if(cell.type==='number'){
+    const n=document.createElement('div');n.className='tnum';n.textContent=cell.val;w.appendChild(n);
+  }else if(cell.type==='pi'){
+    const p=document.createElement('div');p.className='tpi';p.textContent='π';w.appendChild(p);
+  }else if(isShapeType(cell.type)){
+    const s=Math.max(12,Math.min(C-5,24));
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('width',s);svg.setAttribute('height',s);svg.setAttribute('viewBox',`0 0 ${s} ${s}`);
+    if(cell.type==='circle'){
+      const r2=s/2-1.5;
+      svg.innerHTML=`<circle cx="${s/2}" cy="${s/2}" r="${r2}" fill="rgba(130,173,192,.12)" stroke="#82ADC0" stroke-width="1.2"/>
+      <text x="${s/2}" y="${s/2+3.5}" text-anchor="middle" font-size="${Math.max(5,s*.22)}" fill="#82ADC0" font-family="Cinzel,serif">r${cell.radius}</text>`;
+    }else if(cell.type==='square'){
+      const sq=s*.76,off=(s-sq)/2;
+      svg.innerHTML=`<rect x="${off}" y="${off}" width="${sq}" height="${sq}" fill="rgba(184,168,208,.12)" stroke="#B8A8D0" stroke-width="1.2"/>
+      <text x="${s/2}" y="${s/2+3.5}" text-anchor="middle" font-size="${Math.max(5,s*.22)}" fill="#B8A8D0" font-family="Cinzel,serif">${cell.side}²</text>`;
+    }else{
+      svg.innerHTML=`<polygon points="${s/2},1.5 ${s-1.5},${s-2} 1.5,${s-2}" fill="rgba(157,189,171,.12)" stroke="#9DBDAB" stroke-width="1.2"/>
+      <text x="${s/2}" y="${s-3}" text-anchor="middle" font-size="${Math.max(4,s*.18)}" fill="#9DBDAB" font-family="Cinzel,serif">${cell.base},${cell.height}</text>`;
+    }
+    w.appendChild(svg);
+    // Show embedded numVal badge
+    if(cell.numVal!=null){
+      const nb=document.createElement('div');nb.className='tok-nbadge';nb.textContent=`+${cell.numVal}`;
+      w.appendChild(nb);
+    }
+  }
+  return w;
+}
+
+function renderPawns(){
+  document.querySelectorAll('.mv-pawn').forEach(e=>e.remove());
+  const wrap=document.getElementById('board-wrapper');
+  const C=getCellPx(),PS=Math.max(14,Math.min(C-4,20));
+  const cp=G.cur;
+  G.players.forEach((player,pidx)=>{
+    player.pawns.forEach((pw,pwi)=>{
+      if(!pw.pos)return;
+      const[r,c]=pw.pos;
+      const el=document.createElement('div');
+      el.className=`pawn p${pidx+1} mv-pawn`;
+      el.textContent=pidx===0?(pwi===0?'◆':'◇'):(pwi===0?'◈':'◉');
+      el.style.width=el.style.height=PS+'px';
+      el.style.fontSize=Math.max(6,PS*.42)+'px';
+      const{x,y}=getCellCenter(r,c);
+      el.style.left=`${x-PS/2}px`;el.style.top=`${y-PS/2}px`;
+      if(G.phase==='play'&&!G.over&&pidx===cp){
+        if(G.mode==='addition'){
+          if(G.selectedPawn===pwi)el.classList.add('selected');
+          else el.classList.add('selectable');
+        }else el.classList.add('selected');
+      }else el.classList.add('idle');
+      if(G.phase==='play'&&G.mode==='addition'&&pidx===cp&&!G.over){
+        el.addEventListener('click',e=>{e.stopPropagation();selectPawn(pwi);});
+      }
+      wrap.appendChild(el);
+    });
+  });
+}
+
+function renderPaths(){
+  const svg=document.getElementById('path-svg');
+  const wrap=document.getElementById('board-wrapper');
+  const wr=wrap.getBoundingClientRect();
+  svg.setAttribute('width',wr.width);svg.setAttribute('height',wr.height);
+  svg.setAttribute('viewBox',`0 0 ${wr.width} ${wr.height}`);
+  svg.innerHTML='';
+  const colors=[['#7A5FA0','#9B7FC0'],['#4A8468','#6AAA88']];
+  const pt=([r,c])=>{const p=getCellCenter(r,c);return`${p.x},${p.y}`;};
+  G.players.forEach((player,pidx)=>{
+    const cols=colors[pidx];
+    player.pawns.forEach((pw,pwi)=>{
+      if(!pw.pos||pw.path.length<2)return;
+      const pts=pw.path.map(pt).join(' ');
+      const poly=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      poly.setAttribute('points',pts);poly.setAttribute('fill','none');
+      poly.setAttribute('stroke',cols[pwi]);poly.setAttribute('stroke-width','1.5');
+      poly.setAttribute('stroke-opacity','.55');poly.setAttribute('stroke-dasharray','4,3');
+      poly.setAttribute('stroke-linecap','round');
+      svg.appendChild(poly);
+      const sp=getCellCenter(...pw.path[0]);
+      const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('cx',sp.x);dot.setAttribute('cy',sp.y);
+      dot.setAttribute('r','3');dot.setAttribute('fill',cols[pwi]);dot.setAttribute('opacity','.45');
+      svg.appendChild(dot);
+      if(pawnArea(pw)>0){
+        const fill=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+        fill.setAttribute('points',pw.path.map(pt).join(' '));
+        fill.setAttribute('fill',pidx===0?(pwi===0?'rgba(122,95,160,.11)':'rgba(155,127,192,.09)'):
+          (pwi===0?'rgba(74,132,104,.11)':'rgba(106,170,136,.09)'));
+        fill.setAttribute('stroke',cols[pwi]);fill.setAttribute('stroke-width','1');
+        fill.setAttribute('stroke-opacity','.28');fill.setAttribute('stroke-dasharray','3,4');
+        svg.insertBefore(fill,svg.firstChild);
+      }
+    });
+  });
+}
+
+function renderUI(){
+  if(G.phase==='place'){
+    const step=G.placeQueue[G.placeStep];
+    const pidx=step.pidx,pwi=step.pwi;
+    document.getElementById('round-num').textContent='—';
+    document.getElementById('round-of').textContent='Placement';
+    const lbl=document.getElementById('turn-lbl');
+    lbl.textContent=`Player ${pidx+1}`;
+    lbl.className=`tlabel ${pidx===0?'t1':'t2'}`;
+    document.getElementById('turn-hint').textContent=
+      G.mode==='addition'?`Place Pawn ${pwi===0?'A':'B'} — tap any empty cell`:'Place your pawn — tap any cell';
+    G.players.forEach((_,i)=>document.getElementById(`card-p${i+1}`).classList.toggle('active',i===pidx));
+    return;
+  }
+
+  const isAdd=G.mode==='addition';
+  const maxR=isAdd?8:12;
+  const maxTurnsPerPlayer=isAdd?8:12;
+  // Each player gets 2 turns per 4-turn block; count completed blocks
+  const roundNum = Math.min(Math.floor(G.turnIdx/4)+1, maxR);
+  document.getElementById('round-num').textContent=`Round ${roundNum}`;
+
+  const cp=G.cur;
+  const lbl=document.getElementById('turn-lbl');
+  lbl.textContent=G.over?'Game Over!':
+    `${cp===1&&G.vsAI?(G.aiDifficulty==='hard'?'🧠 AI Pro':'🤖 AI'):'Player '+(cp+1)}'s Turn`;
+  lbl.className=`tlabel ${cp===0?'t1':'t2'}`;
+
+  const hint=document.getElementById('turn-hint');
+  if(G.over)hint.textContent='Thanks for playing Vertex';
+  else if(isAdd)hint.textContent=G.selectedPawn===null?
+    'Tap your pawn to select it':`Pawn ${G.selectedPawn===0?'A':'B'} selected — move up to 3 spaces`;
+  else hint.textContent='Move up to 3 spaces · land on shapes to collect';
+
+  G.players.forEach((p,i)=>{
+    const idx=i+1;
+    document.getElementById(`p${idx}-score`).textContent=p.score.toFixed(1);
+    document.getElementById(`p${idx}-moves`).textContent=p.moves;
+    document.getElementById(`p${idx}-area`).textContent=
+      `${p.areaBonus.toFixed(2)}${p.angleBonus>0?` +${p.angleBonus}★`:''}`;
+    document.getElementById(`card-p${idx}`).classList.toggle('active',!G.over&&i===cp);
+    const tl=document.getElementById(`p${idx}-turns-lbl`);
+    tl.innerHTML=`Turns: <b>${p.turnsTaken}</b>/${maxTurnsPerPlayer}`;
+    document.getElementById(`p${idx}-log`).innerHTML=
+      p.collected.slice(-5).map(x=>`<div class="ci"><span>${x.label}</span><span class="cv">+${x.val}</span></div>`).join('');
+    if(G.mode==='shape'){
+      document.getElementById(`p${idx}-piv`).textContent=p.piHeld.toFixed(3);
+      const cyt=document.getElementById(`p${idx}-cyt`);
+      cyt.innerHTML='';
+      const cycles=4; // 12 turns / 3
+      const done=Math.floor(p.personalTurn/3),inC=p.personalTurn%3;
+      for(let ci=0;ci<cycles;ci++){
+        if(ci>0){const s=document.createElement('div');s.className='cysep';cyt.appendChild(s);}
+        for(let ti=0;ti<3;ti++){
+          const d=document.createElement('div');d.className='cyd';
+          if(ci<done)d.classList.add(ci<p.cyclesOk?'ok':'dn');
+          else if(ci===done&&ti<inC)d.classList.add('dn');
+          cyt.appendChild(d);
+        }
+      }
+      const w=document.getElementById(`p${idx}-cyw`);
+      w.textContent=inC===2&&p.shapesInCycle===0?'⚠ Collect a shape now!':
+        p.cyclesMissed>0?`${p.cyclesMissed} cycle(s) missed`:'';
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   CLAIM AREA BUTTON & MODAL
+══════════════════════════════════════════ */
+function updateClaimBtn(){
+  const btn=document.getElementById('btn-claim-area');
+  if(!G||G.phase!=='play'||G.over||isAITurn()){btn.style.display='none';return;}
+  const p=G.players[G.cur];
+  const totalNodes=p.pawns.reduce((sum,pw)=>sum+(pw.path?pw.path.length:0),0);
+  const hasPath=totalNodes>=3;
+  if(!hasPath||p.areaUsedThisTurn){btn.style.display='none';return;}
+  btn.style.display='block';
+  if(isComeback()&&!p.negativeAreaUsed){
+    btn.textContent='⬡ Claim Area / Comeback';
+    btn.style.borderColor='var(--rose)';btn.style.color='var(--rose)';
+  } else {
+    btn.textContent='⬡ Claim Area Bonus';
+    btn.style.borderColor='';btn.style.color='';
+  }
+}
+
+let MODAL={selectedPts:[],pidx:0,negativeMode:false};
+
+/* Is the current player in comeback territory (last 2 of their personal turns, and losing)? */
+function isComeback(){
+  const cp=G.cur;
+  const totalPerPlayer=G.mode==='addition'?8:12;
+  const myTurns=G.players[cp].turnsTaken; // turns already completed
+  // Only last personal turn (about to take their final turn)
+  if(myTurns < totalPerPlayer-1) return false;
+  const myTotal=G.players[cp].score+G.players[cp].areaBonus+G.players[cp].angleBonus;
+  const oppTotal=G.players[1-cp].score+G.players[1-cp].areaBonus+G.players[1-cp].angleBonus;
+  return myTotal<oppTotal;
+}
+
+function openAreaModal(){
+  VA.init();
+  MODAL.selectedPts=[];
+  MODAL.pidx=G.cur;
+  MODAL.negativeMode=false;
+  document.getElementById('modal-answer').value='';
+  document.getElementById('modal-angle-answer').value='';
+  document.getElementById('modal-feedback').textContent='';
+  document.getElementById('modal-feedback').className='modal-feedback';
+  document.getElementById('modal-pts-info').textContent='No points selected';
+
+  // Standard mode
+  document.getElementById('modal-title-lbl').textContent='⬡ Area Challenge';
+  document.getElementById('modal-sub-lbl').textContent=
+    'Tap 3+ nodes on your path to select a polygon, then enter its area to earn bonus points.';
+  document.getElementById('modal-area-lbl').textContent='Your answer (sq units):';
+  document.getElementById('modal-unit-lbl').textContent='sq';
+  document.getElementById('modal-angle-section').style.display='';
+  document.getElementById('modal-area-section').style.display='';
+
+  // Comeback row visibility
+  const comebackEligible=isComeback()&&!G.players[G.cur].negativeAreaUsed;
+  document.getElementById('modal-comeback-row').style.display=comebackEligible?'block':'none';
+  document.getElementById('modal-comeback-toggle').textContent='🔁 Switch to Negative Area (Comeback)';
+  MODAL.negativeMode=false;
+
+  document.getElementById('area-modal').classList.remove('hidden');
+  const sz=Math.min(320,window.innerWidth-48);
+  document.getElementById('modal-board-wrap').style.width=sz+'px';
+  document.getElementById('modal-board-wrap').style.height=sz+'px';
+  drawModalSvg(sz);
+}
+
+function drawModalSvg(sz){
+  const svg=document.getElementById('modal-svg');
+  const pidx=MODAL.pidx,p=G.players[pidx];
+  const cmz=sz/12,mx=c=>c*cmz+cmz/2,my=r=>r*cmz+cmz/2;
+  svg.setAttribute('width',sz);svg.setAttribute('height',sz);
+  svg.setAttribute('viewBox',`0 0 ${sz} ${sz}`);svg.innerHTML='';
+  // Grid
+  for(let r=0;r<12;r++)for(let c=0;c<12;c++){
+    const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',c*cmz);rect.setAttribute('y',r*cmz);
+    rect.setAttribute('width',cmz);rect.setAttribute('height',cmz);
+    rect.setAttribute('fill',(r+c)%2===0?'#26201A':'#1F1913');
+    rect.setAttribute('stroke','#111');rect.setAttribute('stroke-width','0.5');
+    svg.appendChild(rect);
+  }
+  const cols=[['#7A5FA0','#9B7FC0'],['#4A8468','#6AAA88']];
+  // Opponent path (faint)
+  G.players[1-pidx].pawns.forEach(pw=>{
+    if(!pw.pos||pw.path.length<2)return;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    line.setAttribute('points',pw.path.map(([r,c])=>`${mx(c)},${my(r)}`).join(' '));
+    line.setAttribute('fill','none');line.setAttribute('stroke','#3A3430');
+    line.setAttribute('stroke-width','1');line.setAttribute('stroke-dasharray','3,3');
+    svg.appendChild(line);
+  });
+  // Own paths
+  p.pawns.forEach((pw,pwi)=>{
+    if(!pw.pos||pw.path.length<2)return;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    line.setAttribute('points',pw.path.map(([r,c])=>`${mx(c)},${my(r)}`).join(' '));
+    line.setAttribute('fill','none');line.setAttribute('stroke',cols[pidx][pwi]);
+    line.setAttribute('stroke-width','1.5');line.setAttribute('stroke-opacity','.7');
+    svg.appendChild(line);
+  });
+  // Selected polygon fill
+  if(MODAL.selectedPts.length>=3){
+    const fp=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    fp.setAttribute('points',MODAL.selectedPts.map(n=>`${mx(n.c)},${my(n.r)}`).join(' '));
+    fp.setAttribute('fill',pidx===0?'rgba(122,95,160,.22)':'rgba(74,132,104,.22)');
+    fp.setAttribute('stroke',cols[pidx][0]);fp.setAttribute('stroke-width','1.2');
+    fp.setAttribute('stroke-dasharray','3,3');svg.appendChild(fp);
+  }
+  // Clickable nodes
+  const nr=Math.max(5,cmz*.3);
+  p.pawns.forEach((pw,pwi)=>{
+    pw.path.forEach(([r,c],si)=>{
+      const isSel=MODAL.selectedPts.some(n=>n.r===r&&n.c===c);
+      const circ=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      circ.setAttribute('cx',mx(c));circ.setAttribute('cy',my(r));circ.setAttribute('r',nr);
+      circ.setAttribute('fill',isSel?(pidx===0?'#C9BBDB':'#A8C8B8'):'rgba(255,255,255,.07)');
+      circ.setAttribute('stroke',isSel?'#D4A84B':cols[pidx][pwi]);
+      circ.setAttribute('stroke-width',isSel?'2':'1.2');circ.style.cursor='pointer';
+      circ.addEventListener('click',e=>{
+        e.stopPropagation();
+        const idx=MODAL.selectedPts.findIndex(n=>n.r===r&&n.c===c);
+        if(idx>=0)MODAL.selectedPts.splice(idx,1);
+        else MODAL.selectedPts.push({r,c,pwi,si});
+        updateModalInfo();drawModalSvg(sz);
+      });
+      const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',mx(c));txt.setAttribute('y',my(r)+nr*.38);
+      txt.setAttribute('text-anchor','middle');txt.setAttribute('font-size',Math.max(5,nr*.9));
+      txt.setAttribute('fill',isSel?'#1A1510':cols[pidx][pwi]);
+      txt.setAttribute('font-family','Cinzel,serif');txt.setAttribute('pointer-events','none');
+      txt.textContent=si;
+      svg.appendChild(circ);svg.appendChild(txt);
+    });
+  });
+}
+
+function updateModalInfo(){
+  const n=MODAL.selectedPts.length;
+  const el=document.getElementById('modal-pts-info');
+  if(n<3){el.textContent=`${n} point${n===1?'':'s'} — select at least 3`;return;}
+  const key=polygonKey(MODAL.selectedPts);
+  const alreadyClaimed=G.players[MODAL.pidx].claimedPolygons.has(key);
+  if(alreadyClaimed){
+    el.textContent=`⚠ Already claimed — add a new point to change the polygon`;
+    el.style.color='var(--rose)';
+  } else {
+    el.textContent=`${n} points selected · Calculate the area!`;
+    el.style.color='var(--amber)';
+  }
+}
+
+function polygonKey(pts){
+  // Canonical key: sorted "r,c" strings joined — order-independent
+  return pts.map(p=>`${p.r},${p.c}`).sort().join('|');
+}
+
+function toggleNegativeMode(){
+  MODAL.negativeMode=!MODAL.negativeMode;
+  const btn=document.getElementById('modal-comeback-toggle');
+  if(MODAL.negativeMode){
+    document.getElementById('modal-title-lbl').textContent='⬡ Negative Area (Comeback)';
+    document.getElementById('modal-sub-lbl').textContent=
+      'Enter 144 − area of your polygon (the remaining grid area). If correct, you earn that ÷ 2 comeback points!';
+    document.getElementById('modal-area-lbl').textContent='Negative area (e.g. −6.5):';
+    document.getElementById('modal-unit-lbl').textContent='neg';
+    document.getElementById('modal-angle-section').style.display='none';
+    document.getElementById('modal-answer').placeholder='-0.00';
+    btn.textContent='↩ Switch back to Normal Area';
+    btn.style.background='rgba(74,132,104,.18)';
+    btn.style.borderColor='var(--teal)';
+    btn.style.color='var(--teal)';
+  } else {
+    document.getElementById('modal-title-lbl').textContent='⬡ Area Challenge';
+    document.getElementById('modal-sub-lbl').textContent=
+      'Tap 3+ nodes on your path to select a polygon, then enter its area to earn bonus points.';
+    document.getElementById('modal-area-lbl').textContent='Your answer (sq units):';
+    document.getElementById('modal-unit-lbl').textContent='sq';
+    document.getElementById('modal-angle-section').style.display='';
+    document.getElementById('modal-answer').placeholder='0.00';
+    btn.textContent='🔁 Switch to Negative Area (Comeback)';
+    btn.style.background='rgba(194,80,80,.18)';
+    btn.style.borderColor='var(--rose)';
+    btn.style.color='var(--rose)';
+  }
+  document.getElementById('modal-answer').value='';
+  document.getElementById('modal-feedback').textContent='';
+}
+
+function submitAreaAnswer(){
+  const ans=parseFloat(document.getElementById('modal-answer').value);
+  if(isNaN(ans)){showModalFeedback('Enter a number first!',false);return;}
+  if(MODAL.selectedPts.length<3){showModalFeedback('Select at least 3 points!',false);return;}
+
+  const player=G.players[MODAL.pidx];
+  const key=polygonKey(MODAL.selectedPts);
+  const real=parseFloat(shoelace(MODAL.selectedPts.map(p=>[p.r,p.c])).toFixed(2));
+  const tol=Math.max(0.5,real*.09);
+  const n=MODAL.selectedPts.length;
+
+  // ── Negative / Comeback mode ──
+  if(MODAL.negativeMode){
+    if(player.negativeAreaUsed){showModalFeedback('Comeback already used!',false);return;}
+    const negReal=parseFloat((144-real).toFixed(2));
+    if(Math.abs(ans-negReal)<=tol){
+      VA.shape();
+      const gained=parseFloat((negReal/2).toFixed(2));
+      player.areaBonus+=gained;
+      player.negativeAreaUsed=true;
+      player.areaUsedThisTurn=true;
+      showModalFeedback(`✓ Comeback! 144−${real}=${negReal} · +${gained} pts earned`,true);
+      setTimeout(()=>{closeAreaModal();fullRender();},1800);
+    } else {
+      VA.move();
+      player.areaUsedThisTurn=true;
+      showModalFeedback(`✗ Negative area was 144−${real}=${negReal}. Try next turn!`,false);
+      setTimeout(()=>{closeAreaModal();fullRender();},2000);
+    }
+    return;
+  }
+
+  // ── Standard mode ──
+  if(player.claimedPolygons.has(key)){
+    showModalFeedback('✗ You already claimed this polygon!',false);
+    return;
+  }
+
+  if(Math.abs(ans-real)<=tol){
+    VA.shape();
+    player.areaBonus+=real;
+    player.claimedPolygons.add(key);
+    player.areaUsedThisTurn=true;
+
+    // Check angle bonus
+    const angleInput=document.getElementById('modal-angle-answer').value.trim();
+    let angleFeedback='';
+    if(angleInput!==''){
+      const ansAngle=parseFloat(angleInput);
+      const realAngle=(n-2)*180;
+      if(!isNaN(ansAngle)&&Math.abs(ansAngle-realAngle)<=2){
+        player.angleBonus+=1;
+        angleFeedback=` · ✦ Angle correct! (${realAngle}°) +1 bonus pt`;
+      } else {
+        angleFeedback=` · ✗ Angle was ${(n-2)*180}°`;
+      }
+    }
+
+    showModalFeedback(`✓ Correct! +${real} sq units earned${angleFeedback}`,true);
+    setTimeout(()=>{closeAreaModal();fullRender();},1800);
+  } else {
+    VA.move();
+    player.areaUsedThisTurn=true;
+    showModalFeedback(`✗ Not right (was ${real}). Try again next turn!`,false);
+    setTimeout(()=>{closeAreaModal();fullRender();},2000);
+  }
+}
+
+function showModalFeedback(msg,ok){
+  const el=document.getElementById('modal-feedback');
+  el.textContent=msg;el.className=`modal-feedback ${ok?'correct':'wrong'}`;
+}
+function closeAreaModal(){
+  document.getElementById('area-modal').classList.add('hidden');
+  MODAL.selectedPts=[];
+  MODAL.negativeMode=false;
+  document.getElementById('modal-angle-answer').value='';
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+let _tt=null;
+function showToast(msg,dur=2000){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  if(_tt)clearTimeout(_tt);
+  _tt=setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(`screen-${name}`).classList.remove('hidden');
+}
+
+/* ══════════════════════════════════════════
+   AI LOGIC
+══════════════════════════════════════════ */
+function isAITurn(){ return G.vsAI && G.cur===1; }
+
+function maybeAIPlacement(){
+  if(!G.vsAI || G.phase!=='place') return;
+  const step=G.placeQueue[G.placeStep];
+  if(step.pidx!==1) return; // not AI's turn
+  setTimeout(aiDoPlace, 750);
+}
+
+function aiDoPlace(){
+  if(G.phase!=='place') return;
+  const step=G.placeQueue[G.placeStep];
+  if(step.pidx!==1) return;
+
+  const occ=occupiedSet();
+  let best=null, bestVal=-1;
+
+  if(G.aiDifficulty==='hard'){
+    // Hard: place near the centre of the board to maximise reachable area
+    const cx=5.5, cy=5.5;
+    for(let r=0;r<BS;r++) for(let c=0;c<BS;c++){
+      if(occ.has(`${r},${c}`)) continue;
+      const v=cellValue(G.board[r][c]);
+      // Reward cells that are near-center (more future path options)
+      const distFromCentre=Math.abs(r-cy)+Math.abs(c-cx);
+      const centrePref=Math.max(0, 8-distFromCentre)*0.5;
+      // Also account for how spread existing AI pawns are
+      let spreadBonus=0;
+      G.players[1].pawns.forEach(pw=>{
+        if(pw.pos) spreadBonus+=Math.abs(pw.pos[0]-r)+Math.abs(pw.pos[1]-c);
+      });
+      const score=v+centrePref+spreadBonus*0.1;
+      if(score>bestVal){ bestVal=score; best=[r,c]; }
+    }
+  } else {
+    // Easy: pick highest value + edge bonus
+    for(let r=0;r<BS;r++) for(let c=0;c<BS;c++){
+      if(occ.has(`${r},${c}`)) continue;
+      const v=cellValue(G.board[r][c]);
+      const edgeBonus=(r===0||r===11||c===0||c===11)?1:0;
+      if(v+edgeBonus>bestVal){ bestVal=v+edgeBonus; best=[r,c]; }
+    }
+  }
+  if(!best){ best=[rnd(0,11),rnd(0,11)]; }
+
+  VA.select();
+  const pw=G.players[step.pidx].pawns[step.pwi];
+  pw.pos=[best[0],best[1]];
+  pw.path=[[best[0],best[1]]];
+  G.board[best[0]][best[1]]=null;
+
+  G.placeStep++;
+  if(G.placeStep>=G.placeQueue.length){
+    finalizePlacement();
+  } else {
+    fullRender();
+    maybeAIPlacement();
+  }
+}
+
+function cellValue(cell){
+  if(!cell) return 0;
+  if(cell.type==='add') return cell.val||0;
+  if(cell.type==='number') return cell.val||0;
+  if(cell.type==='pi') return Math.PI;
+  if(cell.type==='circle') return Math.PI*Math.pow(cell.radius,2);
+  if(cell.type==='square') return cell.side**2;
+  if(cell.type==='triangle') return .5*cell.base*cell.height;
+  return 0;
+}
+
+function aiScoreMove(r,c,pwi){
+  // Base: value of token on landing cell
+  let score=cellValue(G.board[r][c]);
+  if(G.aiDifficulty==='hard'){
+    // Bonus for cells that expand the path polygon area
+    const pw=G.players[1].pawns[pwi];
+    const testPath=[...pw.path,[r,c]];
+    const newArea=shoelace(testPath);
+    const oldArea=shoelace(pw.path);
+    score+=Math.max(0,newArea-oldArea)*0.4;
+    // Bonus for moving toward uncollected high-value tokens
+    let nearbyBonus=0;
+    for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr<0||nr>=BS||nc<0||nc>=BS) continue;
+      nearbyBonus+=cellValue(G.board[nr][nc])*0.12;
+    }
+    score+=nearbyBonus;
+  }
+  return score;
+}
+
+function getCombinations(arr,size){
+  const result=[];
+  function pick(start,combo){
+    if(combo.length===size){ result.push([...combo]); return; }
+    for(let i=start;i<arr.length;i++) pick(i+1,[...combo,arr[i]]);
+  }
+  pick(0,[]);
+  return result;
+}
+
+function aiClaimArea(onDone){
+  const p=G.players[1];
+  if(p.areaUsedThisTurn){ onDone(); return; }
+
+  const allNodes=[];
+  p.pawns.forEach((pw,pwi)=>{
+    pw.path.forEach(([r,c],si)=>allNodes.push({r,c,pwi,si}));
+  });
+  if(allNodes.length<3){ onDone(); return; }
+
+  const nodeCap=G.aiDifficulty==='hard'?Math.min(allNodes.length,10):Math.min(allNodes.length,6);
+  const nodes=allNodes.slice(0,nodeCap);
+  const stopArea=G.aiDifficulty==='hard'?4:2;
+
+  let bestArea=0, bestPts=null;
+  for(let size=3; size<=nodes.length; size++){
+    const combos=getCombinations(nodes,size);
+    for(const combo of combos){
+      const key=polygonKey(combo);
+      if(p.claimedPolygons.has(key)) continue;
+      const area=parseFloat(shoelace(combo.map(n=>[n.r,n.c])).toFixed(2));
+      if(area>bestArea){ bestArea=area; bestPts=combo; }
+    }
+    if(bestPts && bestArea>stopArea) break;
+  }
+
+  if(!bestPts || bestArea<=1){ onDone(); return; }
+
+  // ── Animate through the modal ──
+  const label=G.aiDifficulty==='hard'?'🧠 AI Pro':'🤖 AI';
+  const sz=Math.min(320,window.innerWidth-48);
+
+  // Open modal as the AI
+  MODAL.selectedPts=[];
+  MODAL.pidx=1;
+  document.getElementById('modal-answer').value='';
+  document.getElementById('modal-feedback').textContent='';
+  document.getElementById('modal-feedback').className='modal-feedback';
+  document.getElementById('modal-pts-info').textContent=`${label} is analysing paths…`;
+  document.getElementById('modal-board-wrap').style.width=sz+'px';
+  document.getElementById('modal-board-wrap').style.height=sz+'px';
+  document.getElementById('area-modal').classList.remove('hidden');
+  drawModalSvg(sz);
+
+  // Sequentially "select" each node with a delay
+  let step=0;
+  function selectNext(){
+    if(step>=bestPts.length){
+      // All nodes selected — show "calculating…" then type the answer
+      document.getElementById('modal-pts-info').textContent=`${label} is calculating…`;
+      setTimeout(typeAnswer, 600);
+      return;
+    }
+    MODAL.selectedPts.push(bestPts[step]);
+    step++;
+    updateModalInfo();
+    drawModalSvg(sz);
+    setTimeout(selectNext, 400);
+  }
+
+  // Animate typing the answer digit by digit
+  function typeAnswer(){
+    const ansStr=bestArea.toFixed(2);
+    const input=document.getElementById('modal-answer');
+    input.value='';
+    let ci=0;
+    function typeChar(){
+      if(ci>=ansStr.length){
+        // Done typing — pause then submit
+        setTimeout(aiSubmit, 500);
+        return;
+      }
+      input.value+=ansStr[ci++];
+      setTimeout(typeChar, 120);
+    }
+    typeChar();
+  }
+
+  function aiSubmit(){
+    // Apply the claim
+    const key=polygonKey(bestPts);
+    p.areaBonus+=bestArea;
+    p.claimedPolygons.add(key);
+    p.areaUsedThisTurn=true;
+    showModalFeedback(`✓ ${label} scores +${bestArea} sq units!`,true);
+    VA.shape();
+    setTimeout(()=>{
+      closeAreaModal();
+      onDone();
+    },1200);
+  }
+
+  setTimeout(selectNext, 300);
+}
+
+function maybeAITurn(){
+  if(!isAITurn()||G.over||G.phase!=='play') return;
+  setTimeout(aiDoTurn, 900);
+}
+
+function aiDoTurn(){
+  if(!isAITurn()||G.over) return;
+
+  // Run area claim animation first; movement happens in the callback
+  aiClaimArea(()=>{
+    if(!isAITurn()||G.over) return;
+    const p=G.players[1];
+
+    if(G.mode==='addition'){
+      let bestPwi=0, bestMove=null, bestVal=-1;
+      p.pawns.forEach((pw,pwi)=>{
+        computeValid(1,pwi);
+        G.validMoves.forEach(([r,c])=>{
+          const v=aiScoreMove(r,c,pwi);
+          if(v>bestVal){ bestVal=v; bestMove=[r,c]; bestPwi=pwi; }
+        });
+      });
+      if(!bestMove){
+        computeValid(1,0);
+        if(G.validMoves.length>0){
+          bestMove=G.validMoves[Math.floor(Math.random()*G.validMoves.length)];
+          bestPwi=0;
+        }
+      }
+      if(bestMove){
+        G.selectedPawn=bestPwi;
+        computeValid(1,bestPwi);
+        doMove(bestMove[0],bestMove[1]);
+      }
+    } else {
+      computeValid(1,0);
+      let bestMove=null, bestVal=-1;
+      G.validMoves.forEach(([r,c])=>{
+        const cell=G.board[r][c];
+        let v=Math.max(cellValue(cell), cell&&cell.numVal?cell.numVal:0);
+        if(G.aiDifficulty==='hard'){
+          let reachBonus=0;
+          DIRS.forEach(([dr,dc])=>{
+            for(let s=1;s<=3;s++){
+              const nr=r+dr*s, nc=c+dc*s;
+              if(nr<0||nr>=BS||nc<0||nc>=BS) break;
+              reachBonus+=cellValue(G.board[nr][nc])*0.15;
+            }
+          });
+          v+=reachBonus;
+        }
+        if(v>bestVal){ bestVal=v; bestMove=[r,c]; }
+      });
+      if(!bestMove && G.validMoves.length>0)
+        bestMove=G.validMoves[Math.floor(Math.random()*G.validMoves.length)];
+      if(bestMove){
+        G.selectedPawn=0;
+        doMove(bestMove[0],bestMove[1]);
+      }
+    }
+  });
+}
+
+/* ══════════════════════════════════════════
+   BG CANVAS
+══════════════════════════════════════════ */
+function initBg(){
+  const canvas=document.getElementById('bg-canvas');
+  const c=canvas.getContext('2d');
+  let W=canvas.width=innerWidth,H=canvas.height=innerHeight;
+  const pts=Array.from({length:18},()=>({x:Math.random()*W,y:Math.random()*H,
+    vx:(Math.random()-.5)*.1,vy:(Math.random()-.5)*.1,r:Math.random()*1.8+.4}));
+  const shapes=[
+    {t:'tri',x:.14,y:.18,s:36,a:0,sp:.0018,col:'rgba(192,152,66,.18)'},
+    {t:'rect',x:.84,y:.72,s:30,a:.5,sp:.0022,col:'rgba(130,173,192,.14)'},
+    {t:'circ',x:.5,y:.84,s:44,a:0,sp:.001,col:'rgba(184,168,208,.12)'},
+    {t:'tri',x:.88,y:.14,s:26,a:1,sp:.002,col:'rgba(157,189,171,.14)'},
+    {t:'rect',x:.06,y:.76,s:20,a:.2,sp:.0016,col:'rgba(201,122,116,.11)'},
+  ];
+  function tick(){
+    c.clearRect(0,0,W,H);
+    pts.forEach(p=>{p.x=(p.x+p.vx+W)%W;p.y=(p.y+p.vy+H)%H;
+      c.beginPath();c.arc(p.x,p.y,p.r,0,Math.PI*2);c.fillStyle='rgba(192,152,66,.28)';c.fill();});
+    shapes.forEach(s=>{
+      s.a+=s.sp;
+      const sx=s.x*W+Math.sin(s.a*2)*16,sy=s.y*H+Math.cos(s.a*1.5)*13;
+      c.save();c.translate(sx,sy);c.rotate(s.a);c.strokeStyle=s.col;c.lineWidth=1;c.beginPath();
+      if(s.t==='tri'){c.moveTo(0,-s.s);c.lineTo(s.s*.866,s.s*.5);c.lineTo(-s.s*.866,s.s*.5);c.closePath();}
+      else if(s.t==='rect')c.rect(-s.s/2,-s.s/2,s.s,s.s);
+      else c.arc(0,0,s.s,0,Math.PI*2);
+      c.stroke();c.restore();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+  window.addEventListener('resize',()=>{W=canvas.width=innerWidth;H=canvas.height=innerHeight;});
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  initBg();
+
+  let _pendingMode=null;
+
+  // Mode cards → opponent select screen
+  document.getElementById('btn-add').addEventListener('click',()=>{
+    VA.init(); _pendingMode='addition';
+    document.getElementById('opp-mode-label').textContent='Addition Realm';
+    showScreen('opponent');
+  });
+  document.getElementById('btn-shape').addEventListener('click',()=>{
+    VA.init(); _pendingMode='shape';
+    document.getElementById('opp-mode-label').textContent='Geometry Garden';
+    showScreen('opponent');
+  });
+
+  // Opponent select
+  document.getElementById('btn-2p').addEventListener('click',()=>startGame(_pendingMode,false,'easy'));
+  document.getElementById('btn-ai-easy').addEventListener('click',()=>startGame(_pendingMode,true,'easy'));
+  document.getElementById('btn-ai-hard').addEventListener('click',()=>startGame(_pendingMode,true,'hard'));
+  document.getElementById('btn-opp-back').addEventListener('click',()=>showScreen('menu'));
+
+  document.getElementById('btn-menu').addEventListener('click',()=>{
+    document.getElementById('top-bar').classList.remove('on');showScreen('menu');});
+  document.getElementById('btn-again').addEventListener('click',()=>startGame(G.mode,G.vsAI,G.aiDifficulty));
+  document.getElementById('btn-home').addEventListener('click',()=>{
+    document.getElementById('top-bar').classList.remove('on');showScreen('menu');});
+  document.getElementById('btn-audio').addEventListener('click',function(){
+    VA.init();const m=VA.toggle();this.textContent=m?'🔇':'🔊';});
+
+  // Claim area
+  document.getElementById('btn-claim-area').addEventListener('click',openAreaModal);
+  document.getElementById('modal-submit').addEventListener('click',submitAreaAnswer);
+  document.getElementById('modal-comeback-toggle').addEventListener('click',toggleNegativeMode);
+  document.getElementById('modal-clear').addEventListener('click',()=>{
+    MODAL.selectedPts=[];
+    const sz=Math.min(320,window.innerWidth-48);
+    updateModalInfo();drawModalSvg(sz);
+  });
+  document.getElementById('modal-cancel').addEventListener('click',closeAreaModal);
+  document.getElementById('modal-answer').addEventListener('keydown',e=>{
+    if(e.key==='Enter')submitAreaAnswer();});
+
+  // Choice modal
+  document.getElementById('cb-shape').addEventListener('click',()=>resolveChoice(true));
+  document.getElementById('cb-number').addEventListener('click',()=>resolveChoice(false));
+
+  showScreen('menu');
+});
+</script>
+</body>
+</html>

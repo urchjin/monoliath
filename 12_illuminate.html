@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ILLUMINATE</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0917;--surface:#17112a;--surface2:#211940;--border:#3a2860;
+  --gold:#f0c040;--gold2:#ff9b3d;--text:#e0ccaa;--text-dim:#6a5880;
+  --rose:#e87575;--sage:#72d4a8;--sky:#7ab8f0;--lav:#a888e0;--amber:#ffb347;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Josefin Sans',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none;}
+#stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+#monolith{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:28px;height:200px;
+  background:linear-gradient(to top,#150d28 0%,#0c0917 60%,transparent 100%);z-index:0;pointer-events:none;}
+#monolith::before{content:'';position:absolute;top:-32px;left:50%;transform:translateX(-50%);
+  border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:32px solid #150d28;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(58,40,96,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(58,40,96,0.07) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;}
+.screen{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:16px;}
+.screen.hidden{display:none!important;}
+.game-title{font-family:'Cinzel Decorative',serif;font-size:clamp(2.2rem,6vw,4rem);color:var(--gold);
+  text-shadow:0 0 20px var(--gold2),0 0 50px rgba(240,155,40,0.4);letter-spacing:0.25em;margin-bottom:0.3rem;}
+.game-sub{font-size:0.72rem;letter-spacing:0.45em;color:var(--text-dim);text-transform:uppercase;margin-bottom:2.5rem;}
+
+/* BUTTONS */
+.btn{font-family:'Josefin Sans',sans-serif;font-size:0.78rem;letter-spacing:0.22em;text-transform:uppercase;
+  padding:11px 28px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;
+  transition:all 0.18s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);
+  transform-origin:left;transition:transform 0.18s;z-index:-1;}
+.btn:hover::before{transform:scaleX(1);}
+.btn:hover{color:var(--bg);}
+.btn-primary{background:var(--gold);color:var(--bg);font-weight:600;}
+.btn-primary::before{display:none;}
+.btn-primary:hover{opacity:0.88;}
+.btn-sm{padding:7px 16px;font-size:0.7rem;}
+.btn-xs{padding:5px 11px;font-size:0.65rem;}
+.btn-danger{border-color:var(--rose);color:var(--rose);}
+.btn-danger::before{background:var(--rose);}
+.btn-danger:hover{color:white;}
+.btn-sage{border-color:var(--sage);color:var(--sage);}
+.btn-sage::before{background:var(--sage);}
+.btn-sage:hover{color:var(--bg);}
+.btn-sky{border-color:var(--sky);color:var(--sky);}
+.btn-sky::before{background:var(--sky);}
+.btn-sky:hover{color:var(--bg);}
+.btn-lav{border-color:var(--lav);color:var(--lav);}
+.btn-lav::before{background:var(--lav);}
+.btn-lav:hover{color:var(--bg);}
+.btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+
+/* SETUP */
+.count-label{font-size:0.7rem;letter-spacing:0.35em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.8rem;}
+.count-row{display:flex;gap:10px;justify-content:center;margin-bottom:2rem;}
+.count-btn{width:52px;height:52px;border:2px solid var(--border);background:var(--surface);
+  color:var(--text-dim);font-family:'Cinzel Decorative',serif;font-size:1.1rem;cursor:pointer;transition:all 0.18s;}
+.count-btn.active{border-color:var(--gold);color:var(--gold);background:var(--surface2);box-shadow:0 0 14px rgba(240,192,64,0.25);}
+.player-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:1.8rem;width:100%;}
+.player-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);}
+.pdot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+.pname-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);
+  color:var(--text);font-family:'Josefin Sans',sans-serif;font-size:0.88rem;padding:4px 6px;outline:none;}
+.pname-input:focus{border-bottom-color:var(--gold);}
+.ai-lbl{display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.7rem;letter-spacing:0.15em;color:var(--text-dim);flex-shrink:0;}
+.ai-lbl input{display:none;}
+.tog{width:34px;height:18px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;position:relative;transition:background 0.18s;}
+.tog::after{content:'';position:absolute;left:2px;top:2px;width:12px;height:12px;background:var(--text-dim);border-radius:50%;transition:all 0.18s;}
+.ai-lbl input:checked+.tog{background:var(--lav);border-color:var(--lav);}
+.ai-lbl input:checked+.tog::after{left:18px;background:white;}
+
+/* PASS */
+.pass-eye{font-size:3.5rem;margin-bottom:1rem;opacity:0.5;}
+.pass-to{font-size:0.72rem;letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.4rem;}
+.pass-name{font-family:'Cinzel Decorative',serif;font-size:1.9rem;margin-bottom:0.6rem;}
+.pass-hint{font-size:0.72rem;letter-spacing:0.15em;color:var(--text-dim);margin-bottom:2.2rem;}
+
+/* GAME HEADER */
+.game-header{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px;background:var(--surface);border:1px solid var(--border);margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+.cur-badge{display:flex;align-items:center;gap:8px;}
+.cur-dot{width:11px;height:11px;border-radius:50%;}
+.cur-name{font-size:0.85rem;letter-spacing:0.18em;text-transform:uppercase;}
+.opp-list{display:flex;gap:14px;flex-wrap:wrap;}
+.opp-item{display:flex;align-items:center;gap:5px;font-size:0.68rem;color:var(--text-dim);}
+.opp-dot{width:7px;height:7px;border-radius:50%;}
+.status-icons{display:flex;gap:4px;margin-left:4px;}
+.sicon{font-size:0.8rem;opacity:0.85;}
+
+/* BOARDS */
+.boards-wrap{display:flex;gap:12px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
+.board-box{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:opacity 0.2s;}
+.board-box.inactive{opacity:0.42;}
+.board-lbl{font-size:0.65rem;letter-spacing:0.25em;text-transform:uppercase;}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;padding:6px;
+  background:var(--surface);border:1px solid var(--border);transition:border-color 0.2s;}
+.cell{width:32px;height:32px;background:#0d0920;transition:background 0.25s,box-shadow 0.25s;}
+@keyframes cellPop{0%{transform:scale(0.4);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.cell.pop{animation:cellPop 0.3s ease;}
+.pbar-wrap{width:100%;}
+.pbar{height:3px;background:var(--surface2);}
+.pbar-fill{height:100%;transition:width 0.4s ease;}
+.pct-txt{font-size:0.75rem;text-align:center;letter-spacing:0.1em;margin-top:2px;}
+
+/* MESSAGE */
+.msg-bar{padding:8px 14px;background:var(--surface);border:1px solid var(--border);
+  font-size:0.76rem;letter-spacing:0.1em;color:var(--text-dim);text-align:center;min-height:36px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
+
+/* HAND SECTION */
+.hand-section{background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:8px;}
+.hand-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.hand-lbl{font-size:0.65rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;}
+.hand-count{font-size:0.65rem;letter-spacing:0.15em;color:var(--text-dim);}
+.hand-cards{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
+
+/* HAND CARDS */
+.hcard{
+  width:74px;height:108px;background:var(--surface2);border:2px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:7px;cursor:pointer;transition:all 0.18s;position:relative;
+  border-radius:2px;
+}
+.hcard:hover{transform:translateY(-7px);}
+.hcard.playable:hover{box-shadow:0 8px 22px rgba(0,0,0,0.4);}
+.hcard.not-playable{opacity:0.45;cursor:default;}
+.hcard.not-playable:hover{transform:none;}
+.hcard.hc-charge{border-color:rgba(240,192,64,0.5);}
+.hcard.hc-charge.playable:hover{border-color:var(--gold);box-shadow:0 8px 20px rgba(240,175,40,0.3);}
+.hcard.hc-action{border-color:rgba(232,117,117,0.5);}
+.hcard.hc-action.playable:hover{border-color:var(--rose);box-shadow:0 8px 20px rgba(232,80,80,0.25);}
+.hcard.hc-quiz{border-color:rgba(122,184,240,0.5);}
+.hcard.hc-quiz.playable:hover{border-color:var(--sky);box-shadow:0 8px 20px rgba(60,150,240,0.25);}
+.hcard.selected{transform:translateY(-12px)!important;box-shadow:0 12px 28px rgba(240,192,64,0.4)!important;border-color:var(--gold)!important;}
+.hc-badge{position:absolute;top:4px;left:4px;font-size:0.46rem;letter-spacing:0.08em;
+  text-transform:uppercase;padding:1px 4px;background:var(--surface);border:1px solid var(--border);}
+.hc-val{font-family:'Cinzel Decorative',serif;font-size:1rem;text-align:center;line-height:1.2;}
+.hc-sub{font-size:0.55rem;color:var(--text-dim);text-align:center;margin-top:5px;letter-spacing:0.06em;line-height:1.4;}
+.hc-eff{position:absolute;bottom:4px;right:4px;font-size:0.9rem;opacity:0.6;}
+
+/* DRAWN CARD DISPLAY */
+.drawn-area{padding:12px 14px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px;}
+.drawn-lbl{font-size:0.65rem;letter-spacing:0.35em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;}
+.drawn-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.drawn-card{
+  width:84px;height:116px;background:var(--surface2);border:2px solid var(--gold);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px;flex-shrink:0;position:relative;
+}
+@keyframes cardSlide{0%{transform:translateY(-22px) rotate(-4deg);opacity:0}100%{transform:translateY(0) rotate(0);opacity:1}}
+.drawn-card.new{animation:cardSlide 0.4s cubic-bezier(.2,.8,.4,1);}
+.drawn-card-val{font-family:'Cinzel Decorative',serif;font-size:1.3rem;text-align:center;color:var(--gold);}
+.drawn-card-sub{font-size:0.6rem;color:var(--text-dim);text-align:center;margin-top:5px;}
+.drawn-card-badge{position:absolute;top:5px;right:5px;font-size:0.48rem;letter-spacing:0.08em;
+  text-transform:uppercase;padding:1px 4px;background:var(--surface);}
+.drawn-actions{flex:1;display:flex;flex-direction:column;gap:6px;}
+.drawn-info{font-size:0.72rem;color:var(--text-dim);letter-spacing:0.08em;line-height:1.6;}
+.drawn-btns{display:flex;gap:6px;flex-wrap:wrap;}
+
+/* DECK INFO ROW */
+.deck-row{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 14px;font-size:0.62rem;letter-spacing:0.18em;color:var(--text-dim);}
+.deck-btn{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'Josefin Sans',sans-serif;
+  font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;padding:3px 10px;cursor:pointer;transition:all 0.15s;}
+.deck-btn:hover{border-color:var(--gold);color:var(--gold);}
+
+/* STATUS BADGES */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border:1px solid;font-size:0.6rem;
+  letter-spacing:0.1em;text-transform:uppercase;border-radius:1px;}
+.sbadge-shield{border-color:var(--sage);color:var(--sage);}
+.sbadge-surge{border-color:var(--gold);color:var(--gold);}
+.sbadge-skip{border-color:var(--rose);color:var(--rose);}
+.sbadge-veil{border-color:var(--lav);color:var(--lav);}
+.status-strip{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;justify-content:center;}
+
+/* MODALS */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.85);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+.modal-ov.hidden{display:none!important;}
+.modal{background:var(--surface);border:1px solid var(--border);
+  padding:26px 22px;max-width:420px;width:100%;text-align:center;position:relative;max-height:90vh;overflow-y:auto;}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.modal-title{font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);margin-bottom:0.4rem;}
+.modal-text{font-size:0.76rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:1.2rem;line-height:1.75;}
+.modal-card-big{font-family:'Cinzel Decorative',serif;font-size:3rem;color:var(--sky);margin-bottom:0.5rem;}
+.conv-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-family:'Josefin Sans',sans-serif;font-size:1.3rem;padding:9px 14px;
+  text-align:center;width:110px;outline:none;display:block;margin:0 auto 10px;}
+.conv-input:focus{border-color:var(--sky);}
+.err-txt{color:var(--rose);font-size:0.72rem;min-height:18px;margin-bottom:0.6rem;}
+.target-list{display:flex;flex-direction:column;gap:8px;margin-bottom:1.2rem;text-align:left;}
+.target-btn{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--surface2);border:1px solid var(--border);
+  cursor:pointer;transition:all 0.15s;font-family:'Josefin Sans',sans-serif;color:var(--text);font-size:0.82rem;letter-spacing:0.1em;}
+.target-btn:hover{border-color:var(--gold);}
+.target-btn:disabled{opacity:0.32;cursor:not-allowed;pointer-events:none;}
+.target-btn .tdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.target-btn .tpct{margin-left:auto;font-size:0.68rem;color:var(--text-dim);}
+.modal-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px;}
+.option-lbl{font-size:0.62rem;letter-spacing:0.28em;color:var(--text-dim);text-transform:uppercase;margin-bottom:7px;text-align:left;}
+
+/* DECK VIEWER */
+.deck-viewer{text-align:left;}
+.deck-section-title{font-size:0.65rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;
+  margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--border);}
+.deck-cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.deck-card-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);
+  border:1px solid var(--border);}
+.dc-icon{font-size:1.2rem;flex-shrink:0;width:28px;text-align:center;}
+.dc-info{flex:1;min-width:0;}
+.dc-name{font-size:0.78rem;letter-spacing:0.05em;font-weight:600;}
+.dc-desc{font-size:0.6rem;color:var(--text-dim);margin-top:2px;letter-spacing:0.04em;line-height:1.4;}
+.dc-count{font-size:0.65rem;color:var(--text-dim);flex-shrink:0;padding:2px 6px;border:1px solid var(--border);}
+.dc-count.charge{color:var(--gold);border-color:rgba(240,192,64,0.3);}
+.dc-count.action{color:var(--rose);border-color:rgba(232,117,117,0.3);}
+
+/* WIN */
+@keyframes winGlow{0%,100%{text-shadow:0 0 20px var(--gold2),0 0 50px rgba(240,155,40,0.4);}
+  50%{text-shadow:0 0 40px var(--gold2),0 0 100px rgba(240,155,40,0.7);}}
+.win-icon{font-size:4rem;margin-bottom:1rem;}
+.win-line1{font-size:0.72rem;letter-spacing:0.45em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.4rem;}
+.win-name{font-family:'Cinzel Decorative',serif;font-size:2.5rem;animation:winGlow 2.5s infinite;margin-bottom:0.4rem;}
+.win-line2{font-family:'Cinzel Decorative',serif;font-size:0.88rem;letter-spacing:0.3em;color:var(--text-dim);margin-bottom:2.5rem;}
+.win-boards{display:flex;gap:10px;justify-content:center;margin-bottom:2.5rem;flex-wrap:wrap;}
+.win-mini-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:1px;padding:5px;
+  background:var(--surface);border:1px solid var(--border);}
+.win-cell{width:16px;height:16px;}
+
+/* AI */
+#ai-overlay{position:fixed;inset:0;background:rgba(12,9,23,0.72);
+  display:flex;align-items:center;justify-content:center;z-index:50;}
+#ai-overlay.hidden{display:none!important;}
+.ai-orb{width:60px;height:60px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;margin:0 auto 1rem;}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 10px var(--border);}50%{box-shadow:0 0 25px var(--lav),0 0 50px rgba(168,136,224,0.3);}}
+.ai-orb{animation:orbPulse 1.5s infinite;}
+.ai-txt{font-size:0.72rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;text-align:center;}
+
+@media(max-width:520px){.cell{width:26px;height:26px;}}
+@media(max-width:400px){.cell{width:22px;height:22px;}.hcard{width:64px;height:96px;}}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div id="monolith"></div>
+<div id="ai-overlay" class="hidden">
+  <div style="text-align:center">
+    <div class="ai-orb">✦</div>
+    <div class="ai-txt" id="ai-txt">Consulting the Monolith...</div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="screen-setup" class="screen">
+  <h1 class="game-title">ILLUMINATE</h1>
+  <p class="game-sub">Banish the shadow cast by the Monolith</p>
+  <div id="setup-content" style="width:100%;max-width:480px;"></div>
+</div>
+
+<!-- PASS -->
+<div id="screen-pass" class="screen hidden">
+  <h1 class="game-title" style="font-size:clamp(1.4rem,4vw,2.5rem);margin-bottom:0.2rem;">ILLUMINATE</h1>
+  <div id="pass-content"></div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen hidden" style="justify-content:flex-start;padding-top:10px;">
+  <div id="game-content" style="width:100%;max-width:680px;"></div>
+</div>
+
+<!-- WIN -->
+<div id="screen-win" class="screen hidden">
+  <div id="win-content" style="text-align:center;max-width:520px;"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-ov" class="modal-ov hidden">
+  <div id="modal-content"></div>
+</div>
+
+<script>
+// ============================================================
+//   ILLUMINATE — Enhanced Edition
+// ============================================================
+
+const PC = [
+  { main:'#f0c040', glow:'rgba(240,175,40,0.6)', name:'Aureate' },
+  { main:'#e87575', glow:'rgba(232,80,80,0.6)',  name:'Crimson' },
+  { main:'#72d4a8', glow:'rgba(60,210,150,0.6)', name:'Verdant' },
+  { main:'#7ab8f0', glow:'rgba(60,150,240,0.6)', name:'Azure'   }
+];
+
+// ---- CARD DEFINITIONS ----
+// type: 'charge' | 'action'   quiz: requires conversion answer
+const CARD_DEFS = [
+  // CHARGE CARDS — new quantities per spec
+  { id:'c12', type:'charge', disp:'½ / 0.5',   val:50, quiz:true,  ans:50, q:'What is ½ (or 0.5) as a percentage?',     hint:'0.5 × 100 = ?',          cnt:2, icon:'💫', desc:'Illuminate 50%' },
+  { id:'c14', type:'charge', disp:'¼ / 0.25',  val:25, quiz:true,  ans:25, q:'What is ¼ (or 0.25) as a percentage?',    hint:'(1 ÷ 4) × 100 = ?',      cnt:6, icon:'✦',  desc:'Illuminate 25%' },
+  { id:'c34', type:'charge', disp:'¾ / 0.75',  val:75, quiz:true,  ans:75, q:'What is ¾ (or 0.75) as a percentage?',    hint:'(3 ÷ 4) × 100 = ?',      cnt:2, icon:'🌟', desc:'Illuminate 75%' },
+  { id:'c15', type:'charge', disp:'⅕ / 0.2',  val:20, quiz:true,  ans:20, q:'What is ⅕ (or 0.2) as a percentage?',    hint:'(1 ÷ 5) × 100 = ?',      cnt:6, icon:'✦',  desc:'Illuminate 20%' },
+  { id:'c25', type:'charge', disp:'⅖ / 0.4',  val:40, quiz:true,  ans:40, q:'What is ⅖ (or 0.4) as a percentage?',    hint:'(2 ÷ 5) × 100 = ?',      cnt:4, icon:'✦',  desc:'Illuminate 40%' },
+  { id:'c110',type:'charge', disp:'1/10 / 0.1',val:10, quiz:true,  ans:10, q:'What is 1/10 (or 0.1) as a percentage?', hint:'(1 ÷ 10) × 100 = ?',     cnt:8, icon:'🔆', desc:'Illuminate 10%' },
+  { id:'c120',type:'charge', disp:'1/20 / 0.05',val:5, quiz:true,  ans:5,  q:'What is 1/20 (or 0.05) as a percentage?',hint:'(1 ÷ 20) × 100 = ?',     cnt:3, icon:'🔆', desc:'Illuminate 5%' },
+  { id:'c18', type:'charge', disp:'⅛',         val:12, quiz:true,  ans:12, altAns:13, q:'What is ⅛ as a percentage? (round down)', hint:'(1 ÷ 8) × 100 = 12.5 → round down', cnt:3, icon:'✦',  desc:'Illuminate 12% (⅛ ≈ 12.5%)' },
+  { id:'c310',type:'charge', disp:'3/10',       val:30, quiz:true,  ans:30, q:'What is 3/10 as a percentage?',           hint:'(3 ÷ 10) × 100 = ?',     cnt:4, icon:'✦',  desc:'Illuminate 30%' },
+  { id:'c720',type:'charge', disp:'7/20',       val:35, quiz:true,  ans:35, q:'What is 7/20 as a percentage?',           hint:'(7 ÷ 20) × 100 = ?',     cnt:4, icon:'✦',  desc:'Illuminate 35%' },
+  { id:'c1c', type:'charge', disp:'1/100',      val:1,  quiz:true,  ans:1,  q:'What is 1/100 as a percentage?',          hint:'(1 ÷ 100) × 100 = ?',    cnt:4, icon:'·',  desc:'Illuminate 1%' },
+  // ACTION CARDS — 2 of each, no Veil / Refuge / Overflow
+  { id:'abs', type:'action', eff:'absorb',  disp:'Absorb',  icon:'🌑', cnt:2, color:'rose', desc:'Steal 10% from one opponent' },
+  { id:'ext', type:'action', eff:'extract', disp:'Extract', icon:'⚡', cnt:2, color:'rose', desc:'All opponents give you 5% each' },
+  { id:'ecl', type:'action', eff:'eclipse', disp:'Eclipse', icon:'🌒', cnt:2, color:'lav',  desc:"Skip one opponent's next turn" },
+  { id:'mir', type:'action', eff:'mirror',  disp:'Mirror',  icon:'🪞', cnt:2, color:'sky',  desc:'Copy last charge card played by any player' },
+  { id:'srg', type:'action', eff:'surge',   disp:'Surge',   icon:'⚡', cnt:2, color:'gold', desc:'Your next charge card counts as double' },
+  { id:'sht', type:'action', eff:'shatter', disp:'Shatter', icon:'💥', cnt:2, color:'rose', desc:'Remove 20% from an opponent; you lose 5%' },
+  { id:'csc', type:'action', eff:'cascade', disp:'Cascade', icon:'🌊', cnt:2, color:'sky',  desc:'Draw 3 cards; keep 1, discard the rest' },
+];
+
+let G = {};
+
+function freshState(){
+  return {
+    phase:'setup', modal:null, numP:2,
+    players:[], deck:[], curI:0,
+    pendCard:null, convAtt:0,
+    winner:null, msg:'Welcome to Illuminate.',
+    turnNum:0, lastCharge:null, turningOver:false, turnToken:0, skipping:false,
+    skipNext:{},
+    // Per-turn play tracking: each player may play 1 action + 1 charge per turn
+    turnPlayed:{action:false, charge:false},
+  };
+}
+G = freshState();
+
+// ---- AUDIO ----
+const Aud = (()=>{
+  let ctx,master,rev,going=false;
+  function init(){
+    if(going) return;
+    ctx=new(window.AudioContext||window.webkitAudioContext)();
+    master=ctx.createGain(); master.gain.value=0.5; master.connect(ctx.destination);
+    rev=makeRev(); rev.connect(master); going=true; startAmbient();
+  }
+  function makeRev(){
+    const c=ctx.createConvolver(),len=ctx.sampleRate*2.5,b=ctx.createBuffer(2,len,ctx.sampleRate);
+    for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.8);}
+    c.buffer=b;return c;
+  }
+  function t(freq,dur,type='sine',vol=0.1,delay=0){
+    if(!going)return;
+    const st=ctx.currentTime+delay,o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(vol,st+0.025);
+    g.gain.exponentialRampToValueAtTime(0.001,st+Math.max(dur,0.05));
+    o.connect(g);g.connect(master);g.connect(rev);o.start(st);o.stop(st+dur+0.07);
+  }
+  function startAmbient(){
+    [55,82.4].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type=i?'triangle':'sine';o.frequency.value=f;g.gain.value=i?0.014:0.028;
+      o.connect(g);g.connect(master);o.start();});
+    melody();setInterval(melody,14000);
+  }
+  function melody(){
+    const sc=[220,261,293,330,392,440,523,392,330];
+    [0,2,4,3,6,5,4,2,1,3,5,7,6,4,2].forEach((si,i)=>t(sc[si%sc.length]*2,0.65+Math.random()*0.5,'sine',0.045,i*0.68));
+  }
+  return{
+    init,
+    draw:()=>[523,659,784].forEach((f,i)=>t(f,0.28,'sine',0.09,i*0.06)),
+    fill:()=>{t(880,0.22,'sine',0.07);t(1108,0.18,'sine',0.04,0.06);},
+    action:()=>{t(110,0.45,'sawtooth',0.06);t(147,0.35,'sawtooth',0.04,0.18);t(82.4,0.55,'sine',0.04,0.32);},
+    win:()=>[261,329,392,523,659,784,1047].forEach((f,i)=>t(f,1.1,'sine',0.11,i*0.18)),
+    err:()=>{t(220,0.18,'sawtooth',0.09);t(185,0.25,'sawtooth',0.07,0.1);},
+    swap:()=>{t(440,0.18,'sine',0.08);t(330,0.18,'sine',0.08,0.14);t(440,0.28,'sine',0.06,0.28);},
+    add:()=>[196,247,294].forEach((f,i)=>t(f,0.35,'sine',0.09,i*0.1)),
+    shield:()=>{t(660,0.3,'sine',0.07);t(880,0.2,'sine',0.05,0.12);},
+    skip:()=>{t(110,0.6,'sawtooth',0.07);t(73.4,0.4,'sawtooth',0.04,0.2);},
+    surge:()=>[330,440,660].forEach((f,i)=>t(f,0.35,'triangle',0.07,i*0.07)),
+    cascade:()=>[523,523,523].forEach((f,i)=>t(f,0.22,'sine',0.08,i*0.1)),
+  };
+})();
+
+// ---- DECK ----
+function buildDeck(){
+  let d=[];
+  CARD_DEFS.forEach(def=>{ for(let i=0;i<def.cnt;i++) d.push({...def,uid:def.id+'_'+i+'_'+Math.random().toString(36).slice(2)}); });
+  return shuffle(d);
+}
+function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
+function deckDraw(){if(G.deck.length===0)G.deck=buildDeck();return G.deck.pop();}
+
+// ---- PLAYER ----
+function makePlayer(name,isAI,ci){
+  return{name,isAI,ci,boards:[Array(100).fill(false)],pcts:[0],activeB:0,hand:[],
+    status:{surge:false}};
+}
+function pctSpace(p){return 100-p.pcts[p.activeB];}
+function fillBoard(p,n,bi){
+  bi=bi??p.activeB;const cells=Math.round(n);let done=0;const newLit=[];
+  for(let i=0;i<100&&done<cells;i++){if(!p.boards[bi][i]){p.boards[bi][i]=true;newLit.push(i);done++;}}
+  p.pcts[bi]=p.boards[bi].filter(Boolean).length;return newLit;
+}
+function unfillBoard(p,n,bi){
+  bi=bi??0;const cells=Math.round(n);let done=0;
+  for(let i=99;i>=0&&done<cells;i--){if(p.boards[bi][i]){p.boards[bi][i]=false;done++;}}
+  p.pcts[bi]=p.boards[bi].filter(Boolean).length;return done;
+}
+function isWinner(p){return p.pcts.every(v=>v>=100);}
+function bestBoard(p){return p.pcts.indexOf(Math.max(...p.pcts));}
+
+// ---- SCREEN HELPERS ----
+function show(id){document.getElementById(id).classList.remove('hidden');}
+function hide(id){document.getElementById(id).classList.add('hidden');}
+
+function renderAll(){
+  ['screen-setup','screen-pass','screen-game','screen-win'].forEach(s=>hide(s));
+  hide('modal-ov');
+  if(G.phase==='setup'){show('screen-setup');renderSetup();}
+  else if(G.phase==='pass'){show('screen-pass');renderPass();}
+  else if(G.phase==='game'){show('screen-game');renderGame();}
+  else if(G.phase==='win'){show('screen-win');renderWin();}
+  if(G.modal){show('modal-ov');renderModal();}
+}
+
+// ---- SETUP ----
+function renderSetup(){
+  const n=G.numP;
+  let h=`<div class="count-label">Number of Seekers</div>
+    <div class="count-row">
+      ${[2,3,4].map(i=>`<button class="count-btn${n===i?' active':''}" onclick="setN(${i})">${i}</button>`).join('')}
+    </div>
+    <div class="player-rows">`;
+  for(let i=0;i<n;i++){
+    const c=PC[i],nm=G.players[i]?.name||`Seeker ${i+1}`,ai=G.players[i]?.isAI||false;
+    h+=`<div class="player-row">
+      <div class="pdot" style="background:${c.main}"></div>
+      <input class="pname-input" id="nm${i}" type="text" value="${nm}" maxlength="18">
+      <label class="ai-lbl"><input type="checkbox" id="ai${i}" ${ai?'checked':''}><div class="tog"></div>AI</label>
+    </div>`;
+  }
+  h+=`</div>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:10px" onclick="doStart()">✦ Begin Illumination ✦</button>
+    <button class="btn btn-sm btn-lav" style="width:100%" onclick="openDeckViewer()">📖 View Deck Composition</button>`;
+  document.getElementById('setup-content').innerHTML=h;
+}
+function setN(n){G.numP=n;renderAll();}
+
+function doStart(){
+  Aud.init();
+  G.players=[];
+  for(let i=0;i<G.numP;i++){
+    const nm=(document.getElementById('nm'+i)?.value||'').trim()||`Seeker ${i+1}`;
+    const ai=document.getElementById('ai'+i)?.checked||false;
+    G.players.push(makePlayer(nm,ai,i));
+  }
+  G.deck=buildDeck();
+  // Deal 3 cards to each player
+  G.players.forEach(p=>{for(let i=0;i<3;i++) p.hand.push(deckDraw());});
+  G.curI=0;G.phase='pass';G.turnNum=0;
+  renderAll();
+}
+
+// ---- PASS ----
+function renderPass(){
+  const p=G.players[G.curI],c=PC[p.ci];
+  if(G.skipping){
+    // Locked eclipse screen — no interactive buttons
+    document.getElementById('pass-content').innerHTML=`
+      <div class="pass-eye" style="opacity:1">🌒</div>
+      <div class="pass-to" style="color:var(--rose)">Eclipsed</div>
+      <div class="pass-name" style="color:${c.main};opacity:0.5">${p.name}</div>
+      <div class="pass-hint" style="color:var(--rose);letter-spacing:0.2em">
+        Turn skipped by Eclipse
+      </div>
+      <div style="font-size:0.68rem;color:var(--text-dim);margin-top:1rem;letter-spacing:0.15em">Advancing automatically...</div>`;
+    return;
+  }
+  document.getElementById('pass-content').innerHTML=`
+    <div class="pass-eye">🌑</div>
+    <div class="pass-to">Hand device to</div>
+    <div class="pass-name" style="color:${c.main};text-shadow:0 0 18px ${c.glow}">${p.name}</div>
+    <div class="pass-hint">${p.isAI?'(AI player — press continue)':'Do not look until you are ready'}</div>
+    <button class="btn btn-primary" onclick="revealBoard()">
+      ${p.isAI?'Continue →':'✦ Reveal My Board'}
+    </button>`;
+}
+
+function revealBoard(){
+  // Check if this player is skipped
+  if(G.skipNext[G.curI]){
+    G.skipNext[G.curI]=false;
+    G.skipping=true;   // lock the pass screen — no buttons
+    renderAll();       // re-render pass screen in locked state
+    setTimeout(()=>{
+      G.skipping=false;
+      endTurn();
+    }, 1800);
+    return;
+  }
+  G.phase='game'; G.tPhase='play';
+  const p=G.players[G.curI];
+
+  // Auto-draw 1 card at the start of every turn
+  const card=deckDraw(); G.turnNum++;
+  if(card.quiz && !p.isAI){
+    G.pendCard=card; G.convAtt=0; G.modal='conversion';
+    G.msg='A card was drawn — decode it to add it to your hand.';
+    renderAll(); return;
+  }
+  if(card.quiz) card.converted=true;
+  p.hand.push(card);
+  Aud.draw();
+  G.msg=`Drew ${card.disp}${card.type==='charge'?' ('+card.val+'%)':''}. Now play a card from your hand.`;
+  renderAll();
+  if(p.isAI){setTimeout(runAI,900);}
+}
+
+// ---- GAME RENDER ----
+function renderGame(){
+  const p=G.players[G.curI],c=PC[p.ci];
+  let h='';
+
+  // Header
+  const opps=G.players.filter((_,i)=>i!==G.curI).map(op=>{
+    const oc=PC[op.ci];
+    const avg=Math.round(op.pcts.reduce((a,b)=>a+b,0)/op.pcts.length)+'%';
+    const icons=(op.status.surge?'⚡':'')+(G.skipNext[G.players.indexOf(op)]?'🌒':'');
+    return `<div class="opp-item"><div class="opp-dot" style="background:${oc.main}"></div>
+      <span>${op.name} ${avg}</span><span style="font-size:0.8rem">${icons}</span></div>`;
+  }).join('');
+  h+=`<div class="game-header">
+    <div class="cur-badge">
+      <div class="cur-dot" style="background:${c.main};box-shadow:0 0 8px ${c.glow}"></div>
+      <span class="cur-name" style="color:${c.main}">${p.name}</span>
+    </div>
+    <div class="opp-list">${opps}</div>
+  </div>`;
+
+  // Status strip
+  const statuses=[];
+  if(p.status.surge) statuses.push(`<span class="sbadge sbadge-surge">⚡ Surge Active</span>`);
+  if(G.skipNext[G.curI]) statuses.push(`<span class="sbadge sbadge-skip">🌒 Eclipsed — your turn will be skipped</span>`);
+  // Turn progress indicator
+  const tA=G.turnPlayed.action, tC=G.turnPlayed.charge;
+  if(tA||tC) statuses.push(`<span class="sbadge" style="border-color:var(--text-dim);color:var(--text-dim)">
+    ${tC?'✓':'○'} Charge &nbsp;${tA?'✓':'○'} Action
+  </span>`);
+  if(statuses.length) h+=`<div class="status-strip">${statuses.join('')}</div>`;
+
+  // Boards
+  const cs=p.boards.length>1?'24px':'32px';
+  h+='<div class="boards-wrap">';
+  p.boards.forEach((board,bi)=>{
+    const active=bi===p.activeB;
+    h+=`<div class="board-box${active?'':' inactive'}" onclick="setAB(${bi})">
+      <div class="board-lbl" style="color:${active?c.main:'var(--text-dim)'}">
+        ${p.boards.length>1?`Board ${bi+1} ${active?'◆':'◇'}`:'Your Plain'}
+      </div>
+      <div class="grid" style="border-color:${active?c.main:'var(--border)'}">
+        ${board.map((lit,ci)=>`<div class="cell${lit?' lit':''}" id="cell-${bi}-${ci}"
+          style="width:${cs};height:${cs};${lit?`background:${c.main};box-shadow:0 0 3px ${c.glow}`:''}"></div>`).join('')}
+      </div>
+      <div class="pbar-wrap">
+        <div class="pbar"><div class="pbar-fill" style="width:${p.pcts[bi]}%;background:linear-gradient(90deg,${c.main},${c.glow.replace('0.6','1')})"></div></div>
+        <div class="pct-txt" style="color:${c.main}">${p.pcts[bi]}%</div>
+      </div>
+    </div>`;
+  });
+  h+='</div>';
+
+  // Message bar
+  h+=`<div class="msg-bar">${G.msg}</div>`;
+
+  // HAND section
+  const space=pctSpace(p);
+  h+=`<div class="hand-section">
+    <div class="hand-header">
+      <div>
+        <div class="hand-lbl">Your Hand</div>
+        <div style="font-size:0.6rem;color:var(--text-dim);margin-top:3px;letter-spacing:0.12em">
+          This turn: ${G.turnPlayed.charge?'<span style="color:var(--gold)">✓ Charge played</span>':'<span>○ Charge available</span>'} 
+          &nbsp;·&nbsp; 
+          ${G.turnPlayed.action?'<span style="color:var(--rose)">✓ Action played</span>':'<span>○ Action available</span>'}
+        </div>
+      </div>
+      <button class="deck-btn" onclick="openDeckViewer()">📖 Deck</button>
+    </div>
+    <div class="hand-cards">
+      ${p.hand.length===0?`<span style="font-size:0.72rem;color:var(--text-dim);letter-spacing:0.15em">No cards — draw one!</span>`:''}
+      ${p.hand.map((card,i)=>{
+        const isA=card.type==='action';
+        const fits=isA||true; // charge cards always have add OR subtract option
+        const hcClass=isA?'hc-action':card.quiz&&!card.converted?'hc-quiz':'hc-charge';
+        const col=isA?card.color||'rose':card.quiz&&!card.converted?'sky':'gold';
+        return `<div class="hcard ${hcClass}${fits?' playable':' not-playable'}" onclick="${fits?`playHandCard(${i})`:'showCantPlay()'}" title="${card.desc}">
+          <div class="hc-badge">${isA?'Action':'Charge'}</div>
+          <div class="hc-val" style="color:var(--${col})">${card.disp}</div>
+          <div class="hc-sub">${isA?card.desc:card.val+'%'}</div>
+          <div class="hc-eff">${card.icon||''}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      ${(G.turnPlayed.action||G.turnPlayed.charge)
+        ?`<button class="btn btn-sm btn-sage" onclick="doEndTurnManual()" style="min-width:120px">End Turn →</button>`
+        :`<button class="btn btn-sm" style="opacity:0.3;cursor:default;min-width:120px" disabled>Play a card first</button>`}
+      <button class="btn btn-xs btn-danger" onclick="doForfeit()">✕ Forfeit</button>
+    </div>
+  </div>`;
+
+  // Bottom deck info
+  h+=`<div class="deck-row"><span>Deck: ${G.deck.length} cards remaining</span><span>Turn ${G.turnNum}</span></div>`;
+
+  document.getElementById('game-content').innerHTML=h;
+}
+
+// ---- WIN ----
+function renderWin(){
+  const p=G.players[G.winner],c=PC[p.ci];
+  const grids=p.boards.map(b=>`<div class="win-mini-grid">
+    ${b.map(lit=>`<div class="win-cell" style="background:${lit?c.main:'#0d0920'}"></div>`).join('')}
+  </div>`).join('');
+  document.getElementById('win-content').innerHTML=`
+    <div class="win-icon">✦</div>
+    <div class="win-line1">The Light Returns</div>
+    <div class="win-name" style="color:${c.main}">${p.name}</div>
+    <div class="win-line2">has illuminated the plain!</div>
+    <div class="win-boards">${grids}</div>
+    <button class="btn btn-primary" onclick="resetGame()">Play Again ✦</button>`;
+}
+
+// ---- MODAL ----
+function renderModal(){
+  const type=G.modal;
+  let h='<div class="modal">';
+
+  if(type==='conversion'){
+    const card=G.pendCard;
+    h+=`<div class="modal-title">Decode the Light</div>
+      <div class="modal-card-big">${card.disp}</div>
+      <div class="modal-text">${card.q}<br><span style="font-size:0.68rem;color:var(--lav)">${card.hint}</span></div>
+      <input type="number" id="conv-inp" class="conv-input" placeholder="___" min="0" max="100"
+        onkeydown="if(event.key==='Enter')submitConv()">
+      <div class="err-txt" id="conv-err"></div>
+      <div class="modal-btns"><button class="btn btn-sm btn-sky" onclick="submitConv()">Confirm →</button></div>`;
+  }
+  else if(type==='deck-viewer'){
+    h+=`<div class="deck-viewer">
+      <div class="modal-title" style="text-align:center;margin-bottom:14px">Illuminate Deck</div>
+      <div class="deck-section-title">⚡ Charge Cards — illuminate your plain</div>
+      <div class="deck-cards-grid">
+        ${CARD_DEFS.filter(d=>d.type==='charge').map(d=>`
+          <div class="deck-card-item">
+            <div class="dc-icon" style="color:var(--gold)">${d.icon}</div>
+            <div class="dc-info">
+              <div class="dc-name" style="color:var(--gold)">${d.disp}</div>
+              <div class="dc-desc">${d.desc}</div>
+            </div>
+            <div class="dc-count charge">×${d.cnt}</div>
+          </div>`).join('')}
+      </div>
+      <div class="deck-section-title">🎴 Action Cards — shape the battlefield</div>
+      <div class="deck-cards-grid">
+        ${CARD_DEFS.filter(d=>d.type==='action').map(d=>`
+          <div class="deck-card-item">
+            <div class="dc-icon" style="color:var(--${d.color||'rose'})">${d.icon}</div>
+            <div class="dc-info">
+              <div class="dc-name" style="color:var(--${d.color||'rose'})">${d.disp}</div>
+              <div class="dc-desc">${d.desc}</div>
+            </div>
+            <div class="dc-count action">×${d.cnt}</div>
+          </div>`).join('')}
+      </div>
+      <div style="font-size:0.62rem;color:var(--text-dim);text-align:center;margin-top:8px;letter-spacing:0.1em">
+        Total: ${CARD_DEFS.reduce((a,d)=>a+d.cnt,0)} cards · Reshuffled when exhausted
+      </div>
+    </div>
+    <div class="modal-btns" style="margin-top:14px"><button class="btn btn-sm" onclick="closeModal()">Close</button></div>`;
+  }
+  else if(type==='target'){
+    const eff=G.modalD?.eff;
+    const title=eff==='shatter'?'Shatter Target':eff==='eclipse'?'Eclipse Target':'Absorb Target';
+    const desc=eff==='shatter'?'Remove 20% from opponent (you lose 5%)':eff==='eclipse'?"Skip this opponent's next turn":'Steal 10% from opponent';
+    const col=eff==='eclipse'?'lav':'rose';
+    h+=`<div class="modal-title">${title}</div>
+      <div class="modal-text" style="color:var(--${col})">${desc}</div>
+      <div class="target-list">
+        ${G.players.map((op,i)=>{
+          if(i===G.curI)return'';
+          const oc=PC[op.ci],mp=Math.max(...op.pcts);
+          let canUse=mp>=10;
+          if(eff==='eclipse')canUse=true;
+          return`<button class="target-btn" ${canUse?`onclick="doTargetAction(${i})"`:'disabled'}>
+            <div class="tdot" style="background:${oc.main}"></div>
+            <span>${op.name}</span>
+            <span class="tpct">${mp}% lit${op.status.shield?'  🛡️':''}</span>
+          </button>`;
+        }).join('')}
+      </div>
+      <div class="modal-btns"><button class="btn btn-sm btn-danger" onclick="cancelAction()">Cancel</button></div>`;
+  }
+  else if(type==='swap'){
+    const card=G.modalD?.card||G.players[G.curI].hand.find(c=>c.type==='charge'&&c.val>pctSpace(G.players[G.curI]));
+    if(!card){h+='<div class="modal-title">No valid card to swap.</div><div class="modal-btns"><button class="btn btn-sm" onclick="closeModal()">Close</button></div>';}
+    else{
+      const p=G.players[G.curI];
+      h+=`<div class="modal-title">Offer Swap</div>
+        <div class="modal-text">Offer <strong style="color:var(--gold)">${card.disp}</strong> (${card.val}%) to an opponent — they use it immediately.</div>
+        <div class="target-list">
+          ${G.players.map((op,i)=>{
+            if(i===G.curI)return'';
+            const oc=PC[op.ci];const canUse=card.val<=(100-op.pcts[op.activeB]);
+            return`<button class="target-btn" ${canUse?`onclick="doSwap(${i},'${card.uid}')"`:'disabled'}>
+              <div class="tdot" style="background:${oc.main}"></div>
+              <span>${op.name}</span>
+              <span class="tpct">${canUse?'Can use':'No space'}</span>
+            </button>`;
+          }).join('')}
+        </div>
+        <div class="modal-btns"><button class="btn btn-sm" onclick="closeModal()">Cancel</button></div>`;
+    }
+  }
+  else if(type==='charge-mode'){
+    const card=G.modalD?.card,idx=G.modalD?.idx;
+    const p=G.players[G.curI],space=pctSpace(p);
+    const surge=p.status.surge;
+    const addVal=surge?Math.min(card.val*2,space):card.val;
+    const canAdd=addVal<=space;
+    const canSub=Math.max(...p.pcts)>=card.val;
+    const c=PC[p.ci];
+    h+=`<div class="modal-title" style="margin-bottom:12px">Use ${card.disp}</div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:2.2rem;color:var(--gold);margin-bottom:6px">${card.disp}</div>
+      <div style="font-size:0.7rem;color:var(--text-dim);margin-bottom:18px;letter-spacing:0.12em">${card.val}% · Choose how to apply this card</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px">
+        <button class="target-btn${canAdd?'':' not-playable'}" style="justify-content:center;flex-direction:column;gap:4px;padding:14px;${canAdd?'':'opacity:0.35;cursor:default;pointer-events:none;'}"
+          onclick="confirmCharge(${idx},'add')">
+          <div style="font-size:1rem;color:var(--gold)">✦ Illuminate +${addVal}%</div>
+          <div style="font-size:0.65rem;color:var(--text-dim)">Light up ${addVal} squares on your plain${surge?' (Surge!)':''}</div>
+          ${!canAdd?`<div style="font-size:0.62rem;color:var(--rose)">Exceeds remaining space (${space}% left)</div>`:''}
+        </button>
+        <button class="target-btn${canSub?'':' not-playable'}" style="justify-content:center;flex-direction:column;gap:4px;padding:14px;${canSub?'':'opacity:0.35;cursor:default;pointer-events:none;'}"
+          onclick="confirmCharge(${idx},'sub')">
+          <div style="font-size:1rem;color:var(--rose)">🌑 Dim −${card.val}%</div>
+          <div style="font-size:0.65rem;color:var(--text-dim)">Extinguish ${card.val} squares to make room or disrupt your own board</div>
+          ${!canSub?`<div style="font-size:0.62rem;color:var(--rose)">Not enough lit squares to remove</div>`:''}
+        </button>
+      </div>
+      <div class="modal-btns"><button class="btn btn-sm" onclick="closeModal()">Cancel</button></div>`;
+  }
+  else if(type==='cascade'){
+    const opts=G.modalD?.opts||[];
+    h+=`<div class="modal-title">Cascade — Choose One</div>
+      <div class="modal-text">Pick one card to keep. The rest are discarded.</div>
+      <div class="target-list" style="text-align:center">
+        ${opts.map((card,i)=>`<button class="target-btn" style="justify-content:center" onclick="chooseCascade(${i})">
+          <span style="font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--${card.type==='action'?card.color||'rose':'gold'})">${card.disp}</span>
+          <span class="tpct">${card.desc||''}</span>
+        </button>`).join('')}
+      </div>`;
+  }
+
+  h+='</div>';
+  document.getElementById('modal-content').innerHTML=h;
+  if(type==='conversion') setTimeout(()=>document.getElementById('conv-inp')?.focus(),80);
+}
+
+// ---- DECK VIEWER ----
+function openDeckViewer(){G.modal='deck-viewer';renderAll();}
+
+// Draw is now auto-triggered at turn start in revealBoard()
+
+function submitConv(){
+  const v=parseInt(document.getElementById('conv-inp')?.value);
+  const card=G.pendCard;
+  if(isNaN(v)){Aud.err();return;}
+  if(v===card.ans||(card.altAns&&v===card.altAns)){
+    card.converted=true;G.players[G.curI].hand.push(card);G.pendCard=null;G.modal=null;
+    G.msg=`Correct! ${card.disp} = ${card.ans}%. Card added to hand.`;
+    renderAll();
+  } else {
+    G.convAtt++;
+    if(G.convAtt>=2){
+      G.pendCard=null;G.modal=null;
+      G.msg='Incorrect twice — card lost. Draw again or play from hand.';
+      Aud.err();renderAll();
+    } else {
+      Aud.err();
+      const el=document.getElementById('conv-err');
+      if(el)el.textContent=`Incorrect (attempt ${G.convAtt}/2). Try again.`;
+      const inp=document.getElementById('conv-inp');
+      if(inp){inp.value='';inp.focus();}
+    }
+  }
+}
+
+// ---- PLAY HAND CARD ----
+function playHandCard(idx){
+  const p=G.players[G.curI];
+  const card=p.hand[idx];
+  if(!card)return;
+  const space=pctSpace(p);
+
+  if(card.type==='charge'){
+    if(G.turnPlayed.charge){G.msg='Already played a charge card this turn.';renderAll();return;}
+    // Ask: illuminate (add) or dim (subtract)?
+    G.modal='charge-mode';G.modalD={card,idx};
+    renderAll();return;
+
+  } else if(card.type==='action'){
+    if(G.turnPlayed.action){G.msg='Already played an Action card this turn.';renderAll();return;}
+    p.hand.splice(idx,1);
+    handleAction(card);
+  }
+}
+
+function showCantPlay(){
+  G.msg='This card exceeds your remaining space. Tap another card, draw more, swap, or add a board.';
+  renderAll();
+}
+
+// ---- ACTION HANDLERS ----
+function afterAction(msg){
+  G.turnPlayed.action=true;
+  G.msg=msg+' '+(G.turnPlayed.charge?'Both cards played — click End Turn.':'You may still play a Charge card.');
+  renderAll();
+  // No auto-endTurn; player clicks End Turn button to avoid double-fire
+}
+
+function handleAction(card){
+  const eff=card.eff,p=G.players[G.curI];
+  G.turnPlayed.action=true; // mark immediately so modal callbacks know
+
+  if(eff==='absorb'){G.modal='target';G.modalD={eff:'absorb',card};renderAll();}
+  else if(eff==='shatter'){G.modal='target';G.modalD={eff:'shatter',card};renderAll();}
+  else if(eff==='eclipse'){G.modal='target';G.modalD={eff:'eclipse',card};renderAll();}
+
+  else if(eff==='extract'){
+    let total=0;
+    G.players.forEach((op,i)=>{
+      if(i===G.curI)return;
+      if(op.status.shield){op.status.shield=false;Aud.shield();return;}
+      const bi=bestBoard(op),give=Math.min(5,op.pcts[bi]);
+      unfillBoard(op,give,bi);fillBoard(p,give);total+=give;
+    });
+    Aud.action();afterAction(`Extract! Gathered ${total}% from all opponents. ✦`);
+  }
+
+  else if(eff==='surge'){
+    p.status.surge=true;Aud.surge();
+    afterAction('Surge charged! Your next charge card counts double. ✦');
+  }
+
+  else if(eff==='mirror'){
+    if(G.lastCharge){
+      const space=pctSpace(p),val=Math.min(G.lastCharge,space);
+      if(val>0){
+        fillBoard(p,val);G.lastCharge=val;Aud.fill();
+        afterAction(`Mirror! Copied last charge (${G.lastCharge}%), gained ${val}%. ✦`);
+      } else afterAction('Mirror failed — no room on your board!');
+    } else afterAction('Mirror fizzles — no charge has been played yet.');
+  }
+
+  else if(eff==='cascade'){
+    const opts=[deckDraw(),deckDraw(),deckDraw()];
+    opts.forEach(cd=>{if(cd.quiz)cd.converted=true;});
+    Aud.cascade();
+    G.modal='cascade';G.modalD={opts};
+    G.msg='Cascade! Choose one card to keep.';
+    renderAll();
+  }
+
+  else{
+    afterAction(`${card.disp} played. ✦`);
+  }
+}
+
+function doTargetAction(targetI){
+  const eff=G.modalD?.eff,p=G.players[G.curI],target=G.players[targetI];
+  G.modal=null;
+
+  if(eff==='absorb'){
+    const bi=bestBoard(target),got=unfillBoard(target,10,bi);
+    fillBoard(p,got);Aud.action();
+    afterAction(`Absorbed ${got}% from ${target.name}! ✦`);
+  }
+  else if(eff==='shatter'){
+    const bi=bestBoard(target),got=unfillBoard(target,20,bi);
+    unfillBoard(p,5,p.activeB);Aud.action();
+    afterAction(`Shattered ${got}% from ${target.name}! (You lost 5%) ✦`);
+  }
+  else if(eff==='eclipse'){
+    G.skipNext[targetI]=true;Aud.skip();
+    afterAction(`Eclipse! ${target.name}'s next turn is skipped. 🌒`);
+  }
+  else{
+    afterAction(`${eff} applied. ✦`);
+  }
+}
+
+function cancelAction(){G.modal=null;renderAll();}
+
+// ---- SWAP ----
+function doSwap(oppI, cardUid){
+  const p=G.players[G.curI],op=G.players[oppI];
+  // Find card by uid in hand
+  const idx=p.hand.findIndex(c=>c.uid===cardUid);
+  if(idx<0){closeModal();return;}
+  const card=p.hand[idx];
+  p.hand.splice(idx,1);
+  const newLit=fillBoard(op,card.val);
+  // Flash opponent fill (can't see their grid but will see it on their turn)
+  Aud.swap();
+  G.modal=null;
+  G.msg=`Swapped ${card.disp} with ${op.name}. They gained ${card.val}%!`;
+  renderAll();setTimeout(endTurn,1000);
+}
+
+// ---- CASCADE CHOICE ----
+function chooseCascade(i){
+  const opts=G.modalD.opts,chosen=opts[i];
+  G.players[G.curI].hand.push(chosen);
+  G.modal=null;
+  afterAction(`Cascade: Kept ${chosen.disp} and added to hand. ✦`);
+}
+
+// ---- ADD BOARD / FORFEIT ----
+function doAddBoard(cardIdx){
+  const p=G.players[G.curI];
+  p.boards.push(Array(100).fill(false));p.pcts.push(0);p.activeB=p.boards.length-1;
+  Aud.add();G.modal=null;
+  G.msg='Domain expanded! Fill all boards to win!';
+  renderAll();
+  // Don't end turn — player can now play the card
+}
+
+function doForfeit(){
+  G.modal=null;G.msg='Turn forfeited.';renderAll();setTimeout(endTurn,800);
+}
+
+function openSwapModal(cardIdx){
+  const p=G.players[G.curI],card=p.hand[cardIdx];
+  G.modal='swap';G.modalD={card,cardIdx};renderAll();
+}
+
+function setAB(bi){G.players[G.curI].activeB=bi;renderAll();}
+
+// ---- TURN MANAGEMENT ----
+function endTurn(){
+  if(G.turningOver) return;
+  G.turningOver=true;
+  const p=G.players[G.curI];
+  if(isWinner(p)){G.winner=G.curI;G.phase='win';G.turningOver=false;Aud.win();renderAll();return;}
+  G.curI=(G.curI+1)%G.players.length;
+  G.turnPlayed={action:false,charge:false};
+  G.turnToken++;          // invalidate all pending AI callbacks from the previous turn
+  G.phase='pass';
+  G.turningOver=false;
+  renderAll();
+}
+
+// ---- AI ENGINE ----
+// Schedule an AI callback that self-cancels if the turn has moved on
+function aiDelay(fn, ms){
+  const token=G.turnToken;
+  setTimeout(()=>{ if(G.turnToken===token) fn(); }, ms);
+}
+function aiThink(msg){document.getElementById('ai-txt').textContent=msg||'Consulting the Monolith...';show('ai-overlay');}
+function aiDone(){hide('ai-overlay');}
+
+function runAI(){
+  const p=G.players[G.curI];
+  aiThink(`${p.name} reads the Monolith...`);
+  // Card already drawn in revealBoard — just choose play
+  aiDelay(()=>{ aiDone(); aiChoosePlay(); }, 800);
+}
+
+function aiChoosePlay(){
+  const p=G.players[G.curI];
+  const space=pctSpace(p);
+  const allCards=p.hand;
+
+  const actions=allCards.filter(c=>c.type==='action');
+  const charges=allCards.filter(c=>c.type==='charge'&&c.val<=space).sort((a,b)=>b.val-a.val);
+  const overCards=allCards.filter(c=>c.type==='charge'&&c.val>space);
+
+  // Determine threat level
+  const topOpp=G.players.filter((_,i)=>i!==G.curI).sort((a,b)=>Math.max(...b.pcts)-Math.max(...a.pcts))[0];
+  const topOppPct=topOpp?Math.max(...topOpp.pcts):0;
+  const myPct=Math.max(...p.pcts);
+  const isBehind=myPct<topOppPct-20;
+  const oppLeading=topOppPct>75;
+
+  let chosen=null;
+
+  // Smart action selection
+  if(actions.length>0){
+    const absorb=actions.find(a=>a.eff==='absorb');
+    const shatter=actions.find(a=>a.eff==='shatter');
+    const eclipse=actions.find(a=>a.eff==='eclipse');
+    const extract=actions.find(a=>a.eff==='extract');
+    const surge=actions.find(a=>a.eff==='surge');
+    const mirror=actions.find(a=>a.eff==='mirror');
+    const cascade=actions.find(a=>a.eff==='cascade');
+
+    // Eclipse leader if they're close to winning
+    if(eclipse&&topOpp&&topOppPct>80){chosen=eclipse;}
+    // Shatter if opponent is way ahead
+    else if(shatter&&topOpp&&topOppPct>60&&topOppPct>=10){chosen=shatter;}
+    // Absorb if opponent has light and we need it
+    else if(absorb&&topOpp&&topOppPct>=10&&(oppLeading||isBehind)&&Math.random()<0.55){chosen=absorb;}
+    // Extract in multi-player
+    else if(extract&&G.players.length>2&&Math.random()<0.4){chosen=extract;}
+    // Surge if we have big charge cards
+    else if(surge&&charges.length>0&&charges[0].val>=20&&Math.random()<0.5){chosen=surge;}
+    // Mirror if big charge was played
+    else if(mirror&&G.lastCharge&&G.lastCharge>=20&&space>=G.lastCharge&&Math.random()<0.5){chosen=mirror;}
+    // Cascade if hand is small
+    else if(cascade&&p.hand.length<=3&&Math.random()<0.5){chosen=cascade;}
+  }
+
+  // Prefer largest charge if no action chosen
+  if(!chosen&&charges.length>0) chosen=charges[0];
+  // Fall back to any action
+  if(!chosen&&actions.length>0) chosen=actions[Math.floor(Math.random()*actions.length)];
+
+  if(!chosen){
+    // Handle overflow cards
+    if(overCards.length>0){
+      const swapTarget=G.players.find((op,i)=>i!==G.curI&&overCards[0].val<=(100-op.pcts[op.activeB]));
+      if(swapTarget){
+        const card=overCards[0];
+        const idx=p.hand.indexOf(card);if(idx>=0)p.hand.splice(idx,1);
+        fillBoard(swapTarget,card.val);Aud.swap();
+        G.msg=`${p.name} swapped ${card.disp} with ${swapTarget.name}!`;
+        renderAll();aiDelay(endTurn,900);return;
+      }
+      if(p.boards.length<3&&Math.random()<0.35){
+        p.boards.push(Array(100).fill(false));p.pcts.push(0);p.activeB=p.boards.length-1;
+        Aud.add();G.msg=`${p.name} expands their domain!`;
+        renderAll();aiDelay(aiChoosePlay,500);return;
+      }
+    }
+    G.msg=`${p.name} cannot play — turn passes.`;renderAll();aiDelay(endTurn,1000);return;
+  }
+
+  const idx=p.hand.indexOf(chosen);if(idx>=0)p.hand.splice(idx,1);
+  G.msg=`${p.name} plays ${chosen.disp}...`;renderAll();
+
+  aiDelay(()=>{
+    if(chosen.type==='charge'){
+      G.turnPlayed.charge=true;
+      const surge=p.status.surge;
+      // AI dims own board if no room but has a big charge that fits after dimming
+      const spaceNow=pctSpace(p);
+      if(chosen.val>spaceNow && Math.max(...p.pcts)>=chosen.val){
+        // Dim to make room
+        unfillBoard(p,chosen.val,p.activeB);
+        G.msg=`${p.name} dims their plain to make room (−${chosen.val}%). 🌑`;
+        renderAll();aiDelay(aiPlaySecondary,700);
+        return;
+      }
+      const actualVal=surge?Math.min(chosen.val*2,spaceNow):chosen.val;
+      if(surge){p.status.surge=false;}
+      fillBoard(p,actualVal);G.lastCharge=actualVal;Aud.fill();
+      G.msg=`${p.name} illuminated ${actualVal}%!${surge?' (Surge!)':''} ✦`;
+      renderAll();
+      // Try to also play an action card this turn
+      if(!G.turnPlayed.action){
+        aiDelay(aiPlaySecondary,700);
+      } else {
+        aiDelay(endTurn,700);
+      }
+    } else {
+      aiRunAction(chosen);
+    }
+  },500);
+}
+
+// After playing action first, try to also play a charge
+function aiPlaySecondary(){
+  const p=G.players[G.curI];
+  const space=pctSpace(p);
+  if(!G.turnPlayed.action){
+    // Play an action if possible
+    const actions=p.hand.filter(c=>c.type==='action');
+    if(actions.length>0&&Math.random()<0.7){
+      const ac=actions[0];
+      const idx=p.hand.indexOf(ac);if(idx>=0)p.hand.splice(idx,1);
+      G.msg=`${p.name} also plays ${ac.disp}...`;renderAll();
+      aiDelay(()=>aiRunAction(ac),400);
+      return;
+    }
+  }
+  if(!G.turnPlayed.charge){
+    const spaceNow=pctSpace(p);
+    const charges=p.hand.filter(c=>c.type==='charge'&&c.val<=spaceNow).sort((a,b)=>b.val-a.val);
+    if(charges.length>0){
+      const cc=charges[0];
+      const idx=p.hand.indexOf(cc);if(idx>=0)p.hand.splice(idx,1);
+      G.turnPlayed.charge=true;
+      const surge=p.status.surge;
+      const actualVal=surge?Math.min(cc.val*2,spaceNow):cc.val;
+      if(surge)p.status.surge=false;
+      fillBoard(p,actualVal);G.lastCharge=actualVal;Aud.fill();
+      G.msg=`${p.name} also illuminated ${actualVal}%! ✦`;
+      renderAll();aiDelay(endTurn,700);
+      return;
+    }
+  }
+  aiDelay(endTurn,700);
+}
+
+function aiRunAction(card){
+  const eff=card.eff,p=G.players[G.curI];
+  const topOpp=G.players.filter((_,i)=>i!==G.curI).sort((a,b)=>Math.max(...b.pcts)-Math.max(...a.pcts))[0];
+  G.turnPlayed.action=true;
+
+  function afterAIAction(msg){
+    G.msg=msg;renderAll();
+    // After action, try to also play a charge card
+    aiDelay(aiPlaySecondary,700);
+  }
+
+  if(eff==='absorb'||eff==='shatter'||eff==='eclipse'){
+    if(!topOpp){G.msg=`${p.name} plays ${card.disp} — no valid target.`;renderAll();setTimeout(aiPlaySecondary,700);return;}
+    if(eff==='absorb'){const bi=bestBoard(topOpp),got=unfillBoard(topOpp,10,bi);fillBoard(p,got);Aud.action();afterAIAction(`${p.name} absorbed ${got}% from ${topOpp.name}! ✦`);}
+    else if(eff==='shatter'){const bi=bestBoard(topOpp),got=unfillBoard(topOpp,20,bi);unfillBoard(p,5,p.activeB);Aud.action();afterAIAction(`${p.name} shattered ${got}% from ${topOpp.name}! (lost 5%) ✦`);}
+    else if(eff==='eclipse'){G.skipNext[G.players.indexOf(topOpp)]=true;Aud.skip();afterAIAction(`${p.name} eclipses ${topOpp.name}'s next turn! 🌒`);}
+  }
+  else if(eff==='extract'){
+    let total=0;
+    G.players.forEach((op,i)=>{if(i===G.curI)return;const bi=bestBoard(op),give=Math.min(5,op.pcts[bi]);unfillBoard(op,give,bi);fillBoard(p,give);total+=give;});
+    Aud.action();afterAIAction(`${p.name} extracts ${total}% from all opponents! ✦`);
+  }
+  else if(eff==='surge'){p.status.surge=true;Aud.surge();afterAIAction(`${p.name} activates Surge! Next charge is doubled. ✦`);}
+  else if(eff==='mirror'){if(G.lastCharge){const space=pctSpace(p),val=Math.min(G.lastCharge,space);if(val>0){fillBoard(p,val);Aud.fill();afterAIAction(`${p.name} mirrors ${G.lastCharge}%, gains ${val}%! ✦`);}else afterAIAction(`${p.name}'s Mirror — no space.`);}else{afterAIAction(`${p.name}'s Mirror fizzles.`);}}
+  else if(eff==='cascade'){const opts=[deckDraw(),deckDraw(),deckDraw()];opts.forEach(c=>{if(c.quiz)c.converted=true;});const best=opts.filter(c=>c.type==='charge').sort((a,b)=>b.val-a.val)[0]||opts[0];p.hand.push(best);Aud.cascade();afterAIAction(`${p.name} cascades — keeps ${best.disp}. ✦`);}
+  else{afterAIAction(`${p.name} uses ${card.disp}. ✦`);}
+}
+
+// ---- HELPERS ----
+function confirmCharge(idx, mode){
+  const p=G.players[G.curI],card=G.modalD?.card;
+  if(!card){closeModal();return;}
+  G.modal=null;G.modalD=null;
+  p.hand.splice(idx,1);
+  const surge=p.status.surge;
+
+  if(mode==='add'){
+    const space=pctSpace(p);
+    const actualVal=surge?Math.min(card.val*2,space):card.val;
+    if(surge)p.status.surge=false;
+    const newLit=fillBoard(p,actualVal);
+    G.lastCharge=actualVal;
+    G.turnPlayed.charge=true;
+    Aud.fill();
+    G.msg=`Illuminated +${actualVal}%! ✦${G.turnPlayed.action?' Both cards played — click End Turn.':' You may still play an Action card.'}`;
+    renderAll();
+    newLit.forEach((ci,i)=>setTimeout(()=>{const el=document.getElementById(`cell-${p.activeB}-${ci}`);if(el)el.classList.add('pop');},i*16));
+    // No auto-endTurn; player clicks End Turn button
+  } else {
+    // Subtract / dim
+    const removed=unfillBoard(p,card.val,p.activeB);
+    G.turnPlayed.charge=true;
+    Aud.action();
+    G.msg=`Dimmed −${removed}% from your own plain. 🌑${G.turnPlayed.action?' Both cards played — click End Turn.':' You may still play an Action card.'}`;
+    renderAll();
+    // No auto-endTurn; player clicks End Turn button
+  }
+}
+
+function doEndTurnManual(){
+  if(!G.turnPlayed.action&&!G.turnPlayed.charge){
+    G.msg='Play at least one card before ending your turn.';renderAll();return;
+  }
+  endTurn();
+}
+function closeModal(){G.modal=null;G.modalD=null;renderAll();}
+function resetGame(){G=freshState();renderAll();}
+
+// ---- STARFIELD ----
+(function(){
+  const canvas=document.getElementById('stars'),ctx=canvas.getContext('2d');
+  function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+  resize();window.addEventListener('resize',resize);
+  const stars=Array.from({length:170},()=>({
+    x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.5+0.2,
+    phase:Math.random()*Math.PI*2,spd:Math.random()*0.4+0.15,
+    col:Math.random()<0.2?'rgba(168,136,224,':'rgba(240,192,64,'
+  }));
+  let shoot={active:false};
+  setInterval(()=>{if(!shoot.active)shoot={active:true,x:Math.random()*canvas.width,y:Math.random()*80,vx:3+Math.random()*5,vy:1+Math.random()*2.5,life:45};},7500);
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const tt=Date.now()/1000;
+    stars.forEach(s=>{
+      const a=(Math.sin(tt*s.spd+s.phase)+1)/2*0.55+0.05;
+      ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.col+a+')';ctx.fill();
+    });
+    if(shoot.active){
+      ctx.strokeStyle=`rgba(240,220,160,${shoot.life/45})`;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(shoot.x,shoot.y);ctx.lineTo(shoot.x-shoot.vx*8,shoot.y-shoot.vy*8);ctx.stroke();
+      shoot.x+=shoot.vx;shoot.y+=shoot.vy;shoot.life--;if(shoot.life<=0)shoot.active=false;
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+window.onload=()=>renderAll();
+</script>
+</body>
+</html>

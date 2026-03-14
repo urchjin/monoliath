@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Dovit</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#02010a;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+#gc{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+canvas{display:block;touch-action:none}
+#ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(2,1,12,0.93);z-index:20}
+#ov.hidden{display:none}
+.scr{display:none;flex-direction:column;align-items:center;gap:14px;padding:22px;max-width:480px;width:100%}
+.scr.on{display:flex}
+.ttl{font-family:'Cinzel',serif;font-size:clamp(20px,6vw,38px);font-weight:700;color:#f0d060;text-shadow:0 0 40px rgba(240,208,80,0.5);letter-spacing:3px;text-align:center}
+.sub{font-family:'Cinzel',serif;font-size:clamp(8px,2vw,11px);color:#8878b8;letter-spacing:5px;text-transform:uppercase;text-align:center}
+.inf{font-family:'Nunito',sans-serif;font-size:clamp(11px,2.8vw,13px);color:#a898c8;text-align:center;line-height:1.8;max-width:420px}
+.inf b{color:#68d888}.inf .r{color:#f07888}
+.btn{font-family:'Cinzel',serif;font-size:clamp(10px,2.5vw,13px);letter-spacing:2px;text-transform:uppercase;color:#0e0618;background:linear-gradient(135deg,#f0d060,#d88020);border:none;cursor:pointer;padding:11px 28px;clip-path:polygon(10px 0%,calc(100% - 10px) 0%,100% 50%,calc(100% - 10px) 100%,10px 100%,0% 50%);transition:filter .15s,transform .1s;box-shadow:0 4px 20px rgba(240,208,80,0.28);min-width:140px}
+.btn:hover{filter:brightness(1.15);transform:scale(1.03)}
+.btn:active{transform:scale(0.97)}
+.btn.g{background:rgba(240,208,80,0.1);color:#f0d060;box-shadow:none;border:1px solid rgba(240,208,80,0.3)}
+.btn.d{background:linear-gradient(135deg,#ffb0b8,#f05068);color:#180008}
+#chips{display:flex;gap:9px;flex-wrap:wrap;justify-content:center}
+.chip{font-family:'Cinzel',serif;font-size:clamp(8px,2vw,10px);letter-spacing:1px;color:#f0d060;background:rgba(240,208,80,0.07);border:1px solid rgba(240,208,80,0.28);cursor:pointer;padding:7px 14px;border-radius:4px;transition:background .18s}
+.chip:hover{background:rgba(240,208,80,0.18)}
+.chip.lk{opacity:.28;cursor:not-allowed;pointer-events:none}
+#rv{font-family:'Cinzel',serif;font-size:clamp(28px,7vw,50px);color:#f0d060;text-align:center}
+#rm,#lm{font-family:'Nunito',sans-serif;font-size:clamp(11px,2.8vw,14px);color:#a898c8;text-align:center;line-height:1.7}
+#mc{position:absolute;bottom:0;left:0;right:0;height:115px;display:none;z-index:15;pointer-events:none}
+#mc.on{display:flex}
+.cb{position:absolute;width:72px;height:72px;border-radius:50%;border:2px solid rgba(240,208,80,0.32);background:rgba(2,1,10,0.62);display:flex;align-items:center;justify-content:center;font-size:26px;color:rgba(240,208,80,0.72);pointer-events:auto;-webkit-tap-highlight-color:transparent;touch-action:none}
+.cb:active,.cb.pr{background:rgba(240,208,80,0.22)}
+#bl{left:14px;bottom:16px}#br{left:100px;bottom:16px}#bj{right:14px;bottom:16px}
+</style>
+</head>
+<body>
+<div id="gc">
+<canvas id="c"></canvas>
+<div id="ov">
+  <div id="ts" class="scr on">
+    <div class="ttl">&#10022; Decimal Dot II &#10022;</div>
+    <div class="sub">Whole Number Edition</div>
+    <div class="inf">
+      Start on <b>Zero</b> and walk right across the glowing digit-platforms!<br>
+      Your <b>dot position IS the score</b> &mdash; it reads the number live.<br>
+      <b>Green gems + &times;</b> grow your number &mdash; the stage reshapes!<br>
+      <span class="r">Red spikes &minus; &divide;</span> shrink it. Gems respawn in <b>new spots</b>.<br>
+      <b>Triple jump</b> in mid-air. Fall? You respawn. No decimal-point platform!
+    </div>
+    <div class="inf" style="font-size:10px;color:#443060">Arrow keys / WASD move &nbsp;&middot;&nbsp; Up / Space jump (&#215;3 in air)</div>
+    <div id="chips"></div>
+    <button class="btn" id="sb">Begin</button>
+  </div>
+  <div id="is" class="scr">
+    <div id="ibg" class="sub"></div>
+    <div id="itn" class="ttl"></div>
+    <div id="idc" class="inf"></div>
+    <div id="itg" class="inf"></div>
+    <button class="btn" id="gb">Let's Go!</button>
+  </div>
+  <div id="ws" class="scr">
+    <div class="ttl">&#127775; Brilliant!</div>
+    <div id="rv"></div><div id="rm"></div>
+    <div style="display:flex;gap:11px;flex-wrap:wrap;justify-content:center;margin-top:6px">
+      <button class="btn" id="nb">Next Level</button>
+      <button class="btn g" id="rwb">Replay</button>
+    </div>
+  </div>
+  <div id="ls" class="scr">
+    <div class="ttl" style="color:#ff8888">Try Again!</div>
+    <div id="lm"></div>
+    <div style="display:flex;gap:11px;flex-wrap:wrap;justify-content:center">
+      <button class="btn d" id="rb">Retry</button>
+      <button class="btn g" id="mb">Menu</button>
+    </div>
+  </div>
+</div>
+<div id="mc">
+  <div class="cb" id="bl">&#9664;</div>
+  <div class="cb" id="br">&#9654;</div>
+  <div class="cb" id="bj">&#9650;</div>
+</div>
+</div>
+
+<script>
+// ═══════════════════ CANVAS ═══════════════════
+var canvas=document.getElementById('c');
+var gx=canvas.getContext('2d');
+var VW=960,VH=620,scale=1;
+function resize(){
+  var vw=window.innerWidth,vh=window.innerHeight;
+  scale=Math.min(vw/VW,vh/VH);
+  canvas.width=Math.round(VW*scale);canvas.height=Math.round(VH*scale);
+  canvas.style.width=canvas.width+'px';canvas.style.height=canvas.height+'px';
+  gx.setTransform(scale,0,0,scale,0,0);
+  document.getElementById('mc').classList.toggle('on',('ontouchstart' in window)||vw<760);
+}
+window.addEventListener('resize',resize);resize();
+
+// ═══════════════════ AUDIO ═══════════════════
+var AC=null;
+function au(){if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}
+function pn(f,d,tp,v,dl){
+  if(!AC)return;tp=tp||'sine';v=v||0.11;dl=dl||0;
+  var o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);o.type=tp;o.frequency.value=f;
+  var t=AC.currentTime+dl;
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.01);
+  g.gain.exponentialRampToValueAtTime(0.001,t+d);o.start(t);o.stop(t+d+0.05);
+}
+var PN=[261.63,293.66,329.63,392,440,523.25,587.33,659.25,784,880];
+var ML=[0,2,4,7,6,4,2,4,3,5,4,2,1,2,4,6,7,5,3,1,0,2,4,5,7,6,4];
+var BL=[0,0,4,0,2,0,3,3,1,4];
+var bStep=0,bTmr=null,dOs=null,dGn=null;
+function startBGM(){
+  stopBGM();if(!AC)return;
+  dOs=AC.createOscillator();dGn=AC.createGain();
+  dOs.connect(dGn);dGn.connect(AC.destination);
+  dOs.type='sine';dOs.frequency.value=130.81;dGn.gain.value=0.026;dOs.start();
+  bStep=0;
+  bTmr=setInterval(function(){
+    var mi=bStep%ML.length,bi=Math.floor(bStep/4)%BL.length;
+    pn(PN[ML[mi]]*2,0.33,'triangle',0.078);
+    if(bStep%4===0)pn(PN[BL[bi]]*0.5,0.90,'sine',0.078);
+    if(bStep%8===0)pn(PN[(BL[bi]+2)%PN.length]*0.75,0.44,'triangle',0.036);
+    bStep++;
+  },375);
+}
+function stopBGM(){
+  if(bTmr){clearInterval(bTmr);bTmr=null;}
+  if(dOs){try{dGn.gain.linearRampToValueAtTime(0,AC.currentTime+0.28);dOs.stop(AC.currentTime+0.33);}catch(e){}dOs=null;}
+}
+function sfxJ(){pn(440,0.04,'square',0.10);pn(587,0.08,'square',0.07,0.05);}
+function sfxJ2(){pn(660,0.04,'square',0.08);pn(880,0.07,'square',0.055,0.04);}
+function sfxC(){[784,1047,1319].forEach(function(f,i){pn(f,0.12,'sine',0.11,i*0.07);});}
+function sfxH(){[310,250,200].forEach(function(f,i){pn(f,0.11,'sawtooth',0.11,i*0.08);});}
+function sfxW(){[523,659,784,1047,1319].forEach(function(f,i){pn(f,0.25,'sine',0.13,i*0.10);});}
+function sfxL(){[370,310,250,195].forEach(function(f,i){pn(f,0.23,'sawtooth',0.12,i*0.10);});}
+
+// ═══════════════════ 7-SEGMENT GEOMETRY ═══════════════════
+// The stage number is displayed as X.XX (e.g. "0.00", "12.50")
+// But the DECIMAL POINT has NO platform — the dot player IS the decimal point.
+// Segments are thinner with larger gaps so the dot can slip between bars.
+var SEGS={
+  '0':[1,1,1,0,1,1,1],'1':[0,0,1,0,0,1,0],'2':[1,0,1,1,1,0,1],
+  '3':[1,0,1,1,0,1,1],'4':[0,1,1,1,0,1,0],'5':[1,1,0,1,0,1,1],
+  '6':[1,1,0,1,1,1,1],'7':[1,0,1,0,0,1,0],'8':[1,1,1,1,1,1,1],'9':[1,1,1,1,0,1,1]
+};
+
+// Digit geometry — THICK is intentionally slim so gaps between bars are wide
+var DIG_W=460,DIG_H=520,THICK=36,DIG_GAP=80,DOT_GAP=90;
+var STAGE_Y=40;  // world-y of top of digit zone
+
+function charRects(ch,ox){
+  // Decimal point has NO platforms — the player dot IS the decimal point
+  if(ch==='.') return [];
+  var b=SEGS[ch]; if(!b) return [];
+  var hw=DIG_W, hh=DIG_H/2, th=THICK, R=[];
+  // Gap cut into the middle of each vertical bar so the dot (radius PR=14) can pass through.
+  // Each vertical bar is split into top-half and bottom-half with a GAP_V gap in the centre.
+  var GAP_V=80; // vertical gap in the middle of each vertical segment (must be > 2*PR)
+
+  // Horizontal bars (no split needed — dot approaches from above/below)
+  if(b[0]) R.push({x:ox+th,    y:STAGE_Y,           w:hw-th*2, h:th});   // top horiz
+  if(b[3]) R.push({x:ox+th,    y:STAGE_Y+hh-th/2,   w:hw-th*2, h:th});   // middle horiz
+  if(b[6]) R.push({x:ox+th,    y:STAGE_Y+DIG_H-th,  w:hw-th*2, h:th});   // bottom horiz
+
+  // Vertical bars — each split into upper and lower halves with GAP_V between
+  var vtH=(hh-th-GAP_V/2)/2; // height of each half-segment
+  if(vtH<8) vtH=8; // minimum sensible size
+
+  // Top-left vertical (b[1]): spans STAGE_Y+th to STAGE_Y+hh-th/2
+  var v1top=STAGE_Y+th, v1bot=STAGE_Y+hh-th/2;
+  var v1mid=(v1top+v1bot)/2;
+  if(b[1]){
+    R.push({x:ox,         y:v1top,           w:th, h:v1mid-v1top-GAP_V/2});
+    R.push({x:ox,         y:v1mid+GAP_V/2,   w:th, h:v1bot-(v1mid+GAP_V/2)});
+  }
+  // Top-right vertical (b[2])
+  if(b[2]){
+    R.push({x:ox+hw-th,   y:v1top,           w:th, h:v1mid-v1top-GAP_V/2});
+    R.push({x:ox+hw-th,   y:v1mid+GAP_V/2,   w:th, h:v1bot-(v1mid+GAP_V/2)});
+  }
+  // Bottom-left vertical (b[4]): spans STAGE_Y+hh+th/2 to STAGE_Y+DIG_H-th
+  var v4top=STAGE_Y+hh+th/2, v4bot=STAGE_Y+DIG_H-th;
+  var v4mid=(v4top+v4bot)/2;
+  if(b[4]){
+    R.push({x:ox,         y:v4top,           w:th, h:v4mid-v4top-GAP_V/2});
+    R.push({x:ox,         y:v4mid+GAP_V/2,   w:th, h:v4bot-(v4mid+GAP_V/2)});
+  }
+  // Bottom-right vertical (b[5])
+  if(b[5]){
+    R.push({x:ox+hw-th,   y:v4top,           w:th, h:v4mid-v4top-GAP_V/2});
+    R.push({x:ox+hw-th,   y:v4mid+GAP_V/2,   w:th, h:v4bot-(v4mid+GAP_V/2)});
+  }
+  return R;
+}
+
+// Build stage platforms from a number value.
+// Number is shown as integer (e.g. "5" → "5.00") with '.' having no platform.
+function buildStage(val){
+  // Show whole numbers as integers (e.g. 5 → "5", 12 → "12"), not "5.00"
+  var v=Math.max(0,val);
+  var str=String(Math.floor(v));
+  var chars=[],cx=200;
+  for(var i=0;i<str.length;i++){
+    var ch=str[i];
+    chars.push({ch:ch,ox:cx,w:DIG_W});
+    cx+=DIG_W+DIG_GAP;
+  }
+  var totalW=cx+200;
+  // Build platforms from all chars
+  var plats=[];
+  for(var j=0;j<chars.length;j++){
+    var rr=charRects(chars[j].ch,chars[j].ox);
+    for(var k=0;k<rr.length;k++)
+      plats.push({wx:rr[k].x,wy:rr[k].y,w:rr[k].w,h:rr[k].h});
+  }
+  // Solid floor below the digits — dot lands here instead of falling off
+  var FLOOR_Y=STAGE_Y+DIG_H+50;
+  plats.push({wx:0,wy:FLOOR_Y,w:totalW,h:28,isFloor:true});
+  return {plats:plats,totalW:totalW,chars:chars,floorY:FLOOR_Y};
+}
+
+// ═══════════════════ SCORE FROM DOT POSITION ═══════════════════
+// The dot's CURRENT x-position acts as the decimal point.
+// As it moves through "0.00" → score reads 0; as value grows to "12.00",
+// the digit zones move and the score reads the digits the dot has passed.
+//
+// Layout example for val=12.00:  [1][2][.][0][0]
+//  dot in '1' zone → score = 1
+//  dot in '2' zone → score = 12
+//  dot past '.' → score = 12
+//  dot in first '0' zone → score = 12.0
+//  dot in second '0' zone → score = 12.00
+//
+// We compute which char-slot the dot is in, and sum up digit values.
+// Score = digits that are fully to the LEFT of the dot's left edge.
+// The dot's LEFT edge (P.wx - PR) is the "decimal point position".
+// Each digit char that the dot has FULLY passed (left edge > char right edge)
+// contributes its full place value. A digit the dot is currently inside or
+// hasn't reached yet contributes 0. This makes the score snap cleanly:
+//   val=12, dot between '1' and '2' → score = 1  (reading "1._")
+//   dot past '2' → score = 12
+// dotX should be passed as P.wx - PR (left edge of dot).
+function calcScore(dotX, chs, val){
+  if(!chs||!chs.length) return 0;
+  var v=Math.max(0,val);
+  var str=v.toFixed(2);
+
+  var dotCharIdx=-1;
+  for(var j=0;j<chs.length;j++){ if(chs[j].ch==='.'){dotCharIdx=j;break;} }
+
+  var dotPos=str.indexOf('.');
+  var intStr=dotPos>=0?str.substring(0,dotPos):str;
+  var decStr=dotPos>=0?str.substring(dotPos+1):'';
+
+  var leftCount=0;
+  for(var ii=0;ii<intStr.length;ii++){
+    var ch=chs[ii];
+    if(dotX>ch.ox+ch.w) leftCount++;
+  }
+  var intPartStr=intStr.substring(0,leftCount);
+  var fracPartStr=intStr.substring(leftCount);
+  var intPart=intPartStr.length?parseInt(intPartStr,10):0;
+  var fracPart=fracPartStr.length?parseInt(fracPartStr,10)/Math.pow(10,fracPartStr.length):0;
+  return Math.round((intPart+fracPart)*100)/100;
+}
+
+// ═══════════════════ LEVELS ═══════════════════
+// Whole-number gems and spikes only.
+// startVal=0: player begins on "0" platform and collects gems to grow.
+var LEVELS=[
+  {
+    name:'Number Run',badge:'LEVEL 1',
+    startVal:0, target:50, time:120, respawn:8,
+    hint:'Start at zero! Collect green gems to grow your number.',
+    gems:[
+      {op:'+',v:1},{op:'+',v:2},{op:'x',v:2,big:true},
+      {op:'+',v:3},{op:'+',v:5}
+    ],
+    spikes:[
+      {op:'-',v:1},{op:'/',v:2},{op:'-',v:3},{op:'-',v:2}
+    ]
+  },
+  {
+    name:'Multiplier Madness',badge:'LEVEL 2',
+    startVal:0, target:500, time:110, respawn:7,
+    hint:'Multiply early to get huge numbers fast!',
+    gems:[
+      {op:'+',v:5},{op:'x',v:2,big:true},{op:'+',v:10},
+      {op:'+',v:5},{op:'x',v:3,big:true},{op:'+',v:10}
+    ],
+    spikes:[
+      {op:'-',v:2},{op:'/',v:2},{op:'-',v:5},
+      {op:'/',v:3},{op:'-',v:10},{op:'-',v:5}
+    ]
+  },
+  {
+    name:'Power Surge',badge:'LEVEL 3 · FINAL',
+    startVal:0, target:5000, time:105, respawn:6,
+    hint:'Maximum multipliers! Chain them fast for a huge score!',
+    gems:[
+      {op:'+',v:10},{op:'x',v:2,big:true},{op:'+',v:10},
+      {op:'x',v:3,big:true},{op:'+',v:10},{op:'x',v:5,big:true}
+    ],
+    spikes:[
+      {op:'-',v:5},{op:'/',v:2},{op:'-',v:10},
+      {op:'/',v:3},{op:'-',v:5},{op:'/',v:2}
+    ]
+  }
+];
+
+// ═══════════════════ STATE ═══════════════════
+var gstate='title',curLvl=0,unlocked=1;
+var baseVal,displayScore,timer,lv,done;
+var plats=[],chars=[],totalW=0;
+var gems=[],spikes=[];
+var camX=0;
+var particles=[],floats=[];
+var morphing=false,morphAlpha=0,oldPlats=[],newPlats=[];
+var bestX=0;
+var P={};
+var PR=14; // player radius
+
+// ═══════════════════ SECURITY CHECK SYSTEM ═══════════════════
+var secElapsed=0,secNextCheck=25,secCheckCount=0,secWarned=false;
+var secAlertActive=false,secAlertMsg='',secAlertTimer=0,secAlertPassed=false;
+var secFailReason='';
+// Returns the required range label and pass condition for a given check number (1-based)
+function secRequirement(checkNum){
+  if(checkNum===1) return {label:'0.1 — 0.999',min:0.1,max:0.999};
+  if(checkNum===2) return {label:'1.0 — 9.999',min:1.0,max:9.999};
+  return {label:'10.0 and above',min:10.0,max:Infinity};
+}
+function secSoundWarn(){
+  pn(330,0.06,'square',0.13);pn(260,0.08,'square',0.10,0.07);
+}
+function secSoundPass(){
+  pn(660,0.07,'sine',0.12);pn(880,0.10,'sine',0.10,0.08);pn(1047,0.12,'sine',0.09,0.17);
+}
+function secSoundFail(){
+  pn(200,0.15,'sawtooth',0.14);pn(160,0.20,'sawtooth',0.13,0.12);pn(120,0.22,'sawtooth',0.12,0.25);
+}
+
+var keys={},mL=false,mR=false,mJUsed=false;
+
+window.addEventListener('keydown',function(e){
+  keys[e.code]=true;
+  if(gstate==='playing'&&!done&&(e.code==='Space'||e.code==='ArrowUp')){e.preventDefault();tryJump();}
+  if(e.code==='Space')e.preventDefault();
+});
+window.addEventListener('keyup',function(e){keys[e.code]=false;});
+
+function mBtn(id,setV){
+  var el=document.getElementById(id);
+  function on(){setV(true);el.classList.add('pr');}
+  function off(){setV(false);el.classList.remove('pr');}
+  ['touchstart','mousedown'].forEach(function(ev){el.addEventListener(ev,function(e){e.preventDefault();on();},{passive:false});});
+  ['touchend','touchcancel','mouseup'].forEach(function(ev){el.addEventListener(ev,function(e){e.preventDefault();off();},{passive:false});});
+}
+mBtn('bl',function(v){mL=v;});
+mBtn('br',function(v){mR=v;});
+mBtn('bj',function(v){if(v&&!mJUsed){mJUsed=true;tryJump();}if(!v)mJUsed=false;});
+
+function tryJump(){
+  if(P.onG||P.coy>0){
+    P.vy=-900;P.onG=false;P.coy=0;P.airJumps=2;
+    P.sqY=0.64;P.sqX=1.38;sfxJ();burst(P.wx,P.wy,'#f0d060',6,'j');
+  } else if(P.airJumps>0){
+    P.vy=-780;P.airJumps--;
+    P.sqY=0.70;P.sqX=1.28;sfxJ2();burst(P.wx,P.wy,'#90c0ff',8,'j');
+  }
+}
+
+// ═══════════════════ PARTICLES ═══════════════════
+function burst(wx,wy,col,n,mode){
+  n=n||12;mode=mode||'b';
+  for(var i=0;i<n;i++){
+    var a=(Math.PI*2/n)*i+Math.random()*0.5;
+    var sp=mode==='j'?1.5+Math.random()*2:2.5+Math.random()*4;
+    particles.push({wx:wx,wy:wy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-(mode==='j'?2.8:0),life:1,col:col,sz:2.5+Math.random()*4});
+  }
+}
+
+// ═══════════════════ PICKUPS — always fully random position ═══════════════════
+function randomisePickup(pk,tw){
+  // Keep pickups well inside the stage (not near the finish line or start margin)
+  var minX=220, maxX=tw-280;
+  pk.wx=minX+Math.random()*(maxX-minX);
+  pk.wy=STAGE_Y+DIG_H*(0.08+Math.random()*0.84);
+}
+function placePickups(tw){
+  for(var i=0;i<gems.length;i++)   randomisePickup(gems[i],tw);
+  for(var j=0;j<spikes.length;j++) randomisePickup(spikes[j],tw);
+}
+
+function rebuildStage(val,animate){
+  var prev=plats.slice();
+  var r=buildStage(val);
+  plats=r.plats; totalW=r.totalW; chars=r.chars;
+  if(animate&&prev.length){oldPlats=prev;newPlats=plats.slice();morphing=true;morphAlpha=0;}
+  displayScore=calcScore((P.wx||0)-PR,chars,baseVal);
+}
+
+// ═══════════════════ INIT LEVEL ═══════════════════
+function initLevel(idx){
+  curLvl=idx; lv=LEVELS[idx];
+  baseVal=0; displayScore=0;
+  timer=lv.time; done=false; bestX=0;
+  particles=[]; floats=[]; morphing=false; camX=0;
+  // Create gem/spike instances from level template (no fixed p position)
+  gems=lv.gems.map(function(g){
+    return {op:g.op,v:g.v,big:!!g.big,hit:false,bobT:Math.random()*Math.PI*2,rt:0,wx:0,wy:0};
+  });
+  spikes=lv.spikes.map(function(s){
+    return {op:s.op,v:s.v,hit:false,spin:Math.random()*Math.PI*2,rt:0,wx:0,wy:0};
+  });
+  rebuildStage(baseVal,false);
+  placePickups(totalW);
+  // Reset security check state
+  secElapsed=0; secNextCheck=25; secCheckCount=0; secWarned=false;
+  secAlertActive=false; secAlertMsg=''; secAlertTimer=0; secAlertPassed=false; secFailReason='';
+  // Start player on first platform (first bar of the '0' digit)
+  var fp=null;
+  for(var i=0;i<plats.length;i++){if(!plats[i].isFloor){fp=plats[i];break;}}
+  if(!fp){fp={wx:220,wy:STAGE_Y,w:DIG_W,h:THICK};}
+  P={wx:fp.wx+fp.w/2, wy:fp.wy-PR-2, vx:0,vy:0,onG:false,coy:0,sqX:1,sqY:1,inv:0,airJumps:2};
+}
+
+// ═══════════════════ UPDATE ═══════════════════
+var lastTS=0;
+function r3(v){return Math.round(v*1000)/1000;}
+function addF(wx,wy,t,c){floats.push({wx:wx,wy:wy,text:t,col:c,life:1.8});}
+function d2(ax,ay,bx,by){var dx=ax-bx,dy=ay-by;return Math.sqrt(dx*dx+dy*dy);}
+
+function fmtVal(v){
+  // Show integers without decimals, decimals with 1dp max
+  if(v===Math.floor(v)) return String(Math.floor(v));
+  return parseFloat(v.toFixed(1)).toString();
+}
+function fmtInt(v){
+  return String(Math.floor(Math.max(0,v)));
+}
+function fmtScore(dotX,chs,val,score){
+  var s=(Math.max(0,val)).toFixed(2);
+  var p=s.indexOf('.');
+  var i=p>=0?s.substring(0,p):s;
+  var d=p>=0?s.substring(p+1):'';
+  var leftCount=0;
+  for(var ii=0;ii<i.length;ii++){
+    var ch=chs[ii];
+    if(dotX>ch.ox+ch.w) leftCount++;
+  }
+  var intPart=i.substring(0,leftCount);
+  var fracPart=i.substring(leftCount);
+  if(!fracPart.length) return intPart.length?intPart:'0';
+  return (intPart.length?intPart:'0')+'.'+fracPart;
+}
+
+function update(dt){
+  if(gstate!=='playing'||done) return;
+  timer=Math.max(0,timer-dt);
+  if(timer===0){endGame(false,'time');return;}
+
+  // ── Security check periods ─────────────────────────────────────
+  secElapsed+=dt;
+  var timeToCheck=secNextCheck-secElapsed;
+
+  // One-time 5-second warning sound + alert banner
+  if(!secWarned && timeToCheck<=5 && timeToCheck>0){
+    secWarned=true;
+    secSoundWarn();
+  }
+
+  // Fire security check when period expires
+  if(secElapsed>=secNextCheck){
+    secNextCheck+=25;
+    secCheckCount++;
+    secWarned=false; // arm warning for next period
+
+    // Only enforce check if player hasn't already reached the finish
+    if(!done){
+      var req=secRequirement(secCheckCount);
+      var val=r3(displayScore);
+      var passed=(val>=req.min&&val<=req.max);
+      if(passed){
+        secAlertPassed=true; secAlertMsg='✓ SECURITY PASSED'; secAlertTimer=2.2; secAlertActive=true;
+        secSoundPass();
+      } else {
+        secFailReason='Security check failed! Value '+fmtVal(val)+' not in range '+req.label+'.';
+        endGame(false,'security'); return;
+      }
+    }
+  }
+
+  // Tick alert banner timer
+  if(secAlertActive){secAlertTimer-=dt;if(secAlertTimer<=0)secAlertActive=false;}
+  // ── end security checks ────────────────────────────────────────
+
+  // Morph animation
+  if(morphing){morphAlpha=Math.min(1,morphAlpha+dt*4);if(morphAlpha>=1){morphing=false;oldPlats=[];}}
+
+  // Respawn pickups at new random positions
+  for(var gi=0;gi<gems.length;gi++){
+    var gg=gems[gi];
+    if(gg.hit){gg.rt-=dt;if(gg.rt<=0){gg.hit=false;gg.bobT=Math.random()*Math.PI*2;randomisePickup(gg,totalW);}}
+    else gg.bobT+=dt*2.1;
+  }
+  for(var si=0;si<spikes.length;si++){
+    var ss=spikes[si];
+    if(ss.hit){ss.rt-=dt;if(ss.rt<=0){ss.hit=false;ss.spin=Math.random()*Math.PI*2;randomisePickup(ss,totalW);}}
+    else ss.spin+=dt*2.2;
+  }
+
+  // Movement
+  var goL=keys['ArrowLeft']||keys['KeyA']||mL;
+  var goR=keys['ArrowRight']||keys['KeyD']||mR;
+  var spd=700;
+  var acc=2000;
+  if(goL)      P.vx=Math.max(P.vx-acc*dt,-spd);
+  else if(goR) P.vx=Math.min(P.vx+acc*dt, spd);
+  else         P.vx*=Math.pow(0.72,dt*60);
+
+  var grav=2600, maxVy=3200;
+  P.vy=Math.min(P.vy+grav*dt,maxVy);
+  var nx=P.wx+P.vx*dt, ny=P.wy+P.vy*dt;
+  var wasOnG=P.onG; // capture before collision resets it
+  P.onG=false;
+
+  // Platform collision
+  for(var pi=0;pi<plats.length;pi++){
+    var pl=plats[pi];
+    // Floor is included — dot bounces back up from it
+    var pL=nx-PR,pR=nx+PR,pT=ny-PR,pB=ny+PR;
+    var rL=pl.wx,rR=pl.wx+pl.w,rT=pl.wy,rB=pl.wy+pl.h;
+    if(pR<=rL||pL>=rR||pB<=rT||pT>=rB) continue;
+    var prevB=P.wy+PR,prevT=P.wy-PR;
+    if(P.vy>=0&&prevB<=rT+6){ny=rT-PR;P.vy=0;P.onG=true;}
+    else if(P.vy<0&&prevT>=rB-6){ny=rB+PR;P.vy=0;}
+    else{if(nx+PR<=rL+6){nx=rL-PR;P.vx=0;}else{nx=rR+PR;P.vx=0;}}
+  }
+
+  P.wx=Math.max(PR,nx); P.wy=ny;
+  // wasOnG was captured BEFORE collision loop — use it to detect landing frame
+  if(P.onG && !wasOnG){ P.sqY=0.65; P.sqX=1.35; }  // squash only on landing
+  if(P.onG){P.coy=0.06;P.airJumps=2;} else P.coy=Math.max(0,P.coy-dt);
+  // Snap back to circle quickly
+  P.sqX+=(1-P.sqX)*0.30; P.sqY+=(1-P.sqY)*0.30;
+  if(Math.abs(P.sqX-1)<0.005) P.sqX=1;
+  if(Math.abs(P.sqY-1)<0.005) P.sqY=1;
+  if(P.inv>0) P.inv-=dt;
+
+  // Track rightmost x for progress bar
+  if(P.wx>bestX) bestX=P.wx;
+
+  // Score = current dot position mapped through digit chars
+  displayScore=calcScore(P.wx-PR,chars,baseVal);
+
+  // Camera: keep player 280px from left
+  var tCam=Math.max(0,Math.min(totalW-VW,P.wx-280));
+  camX+=(tCam-camX)*0.09;
+
+  // Safety net: if dot somehow falls past viewport+floor, snap to floor
+  if(P.wy>VH+300){
+    var flY=STAGE_Y+DIG_H+50;
+    P.wy=flY-PR-2; P.vy=0; P.vx=0; P.airJumps=2;
+  }
+
+  // Gem pickup
+  for(var g2=0;g2<gems.length;g2++){
+    var g=gems[g2]; if(g.hit) continue;
+    var gy=g.wy+Math.sin(g.bobT)*10;
+    if(d2(P.wx,P.wy,g.wx,gy)<PR+28){
+      g.hit=true; g.rt=lv.respawn;
+      var prev=baseVal;
+      baseVal=r3(g.op==='+'?baseVal+g.v:baseVal*g.v);
+      if(baseVal<0) baseVal=0;
+      addF(P.wx,P.wy-32,fmtVal(prev)+' '+g.op+' '+g.v+' = '+fmtVal(baseVal),'#68d888');
+      burst(P.wx,P.wy,'#f0d060',14); burst(P.wx,P.wy,'#68d888',7);
+      sfxC(); rebuildStage(baseVal,true);
+    }
+  }
+
+  // Spike
+  if(P.inv<=0){
+    for(var s2=0;s2<spikes.length;s2++){
+      var sp=spikes[s2]; if(sp.hit) continue;
+      if(d2(P.wx,P.wy,sp.wx,sp.wy)<PR+26){
+        sp.hit=true; sp.rt=lv.respawn;
+        var prev2=baseVal;
+        if(sp.op==='-'){baseVal=Math.max(0,baseVal-sp.v);}else{baseVal=Math.max(0,baseVal/sp.v);if(baseVal!==Math.floor(baseVal))baseVal=Math.ceil(baseVal);}baseVal=r3(baseVal);
+        addF(P.wx,P.wy-32,fmtVal(prev2)+' '+sp.op+' '+sp.v+' = '+fmtVal(baseVal),'#f07888');
+        burst(P.wx,P.wy,'#f06070',14); sfxH(); P.inv=1.4;
+        rebuildStage(baseVal,true); break;
+      }
+    }
+  }
+
+  // Reach end → win (player must walk all the way to the very end of stage)
+  if(P.wx>=totalW-60){endGame(true);return;}
+
+  // Update particles & floats
+  for(var i2=particles.length-1;i2>=0;i2--){
+    var pp=particles[i2];pp.wx+=pp.vx;pp.wy+=pp.vy;pp.vy+=0.2;pp.life-=dt*1.7;
+    if(pp.life<=0) particles.splice(i2,1);
+  }
+  for(var i3=floats.length-1;i3>=0;i3--){
+    var ff=floats[i3];ff.wy-=1.0;ff.life-=dt;
+    if(ff.life<=0) floats.splice(i3,1);
+  }
+}
+
+// ═══════════════════ END GAME ═══════════════════
+function endGame(reached,reason){
+  if(done) return; done=true; stopBGM();
+  var fs=r3(displayScore);
+  setTimeout(function(){
+    if(reached){
+      if(fs>=lv.target){
+        sfxW();
+        var st=fs>=lv.target*2?'★★★':fs>=lv.target*1.5?'★★':'★';
+        document.getElementById('rv').textContent=fmtVal(fs);
+        document.getElementById('rm').textContent=st+' Score: '+fmtVal(fs)+' — Target: '+lv.target+' '+st;
+        if(curLvl+1<LEVELS.length) unlocked=Math.max(unlocked,curLvl+2);
+        document.getElementById('nb').style.display=curLvl+1<LEVELS.length?'':'none';
+        showScr('ws');
+      } else {
+        sfxL();
+        document.getElementById('lm').textContent='Reached the end with '+fmtVal(fs)+' — needed '+lv.target+'. Collect more gems!';
+        showScr('ls');
+      }
+    } else {
+      sfxL();
+      document.getElementById('lm').textContent=
+        reason==='time'?'Time\'s up! Score: '+fmtVal(fs)+'. Target: '+lv.target+'.':
+        reason==='security'?secFailReason:
+        'Score: '+fmtVal(fs)+'. Target: '+lv.target+'.';
+      showScr('ls');
+    }
+  },420);
+}
+
+// ═══════════════════ DRAW ═══════════════════
+var STARS=[];
+for(var _i=0;_i<100;_i++) STARS.push({x:Math.random()*VW,y:Math.random()*VH*0.9,r:Math.random()*1.6+0.3,t:Math.random()*Math.PI*2});
+
+function sc(wx){return wx-camX;}
+
+function rrect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function drawBG(){
+  var t=Date.now()/1000;
+  var gr=gx.createLinearGradient(0,0,0,VH);
+  gr.addColorStop(0,'#020109');gr.addColorStop(0.5,'#0a0120');gr.addColorStop(1,'#180228');
+  gx.fillStyle=gr;gx.fillRect(0,0,VW,VH);
+  for(var i=0;i<STARS.length;i++){
+    var st=STARS[i],a=0.2+0.25*Math.sin(st.t+t*0.8);
+    gx.fillStyle='rgba(200,190,255,'+a+')';
+    gx.beginPath();gx.arc(st.x,st.y,st.r,0,Math.PI*2);gx.fill();
+  }
+  // subtle grid
+  gx.strokeStyle='rgba(255,255,255,0.014)';gx.lineWidth=1;
+  var go=((-camX*0.025%120)+120)%120;
+  for(var x=go;x<VW;x+=120){gx.beginPath();gx.moveTo(x,0);gx.lineTo(x,VH);gx.stroke();}
+}
+
+// Ghost outlines of all segments (full '8' silhouette, very faint)
+function drawGhosts(){
+  if(!chars.length) return;
+  gx.globalAlpha=0.038;
+  for(var i=0;i<chars.length;i++){
+    var ch=chars[i]; if(ch.ch==='.') continue;
+    var rr=charRects('8',ch.ox);
+    for(var j=0;j<rr.length;j++){gx.fillStyle='#3818a0';gx.fillRect(sc(rr[j].x),rr[j].y,rr[j].w,rr[j].h);}
+  }
+  gx.globalAlpha=1;
+}
+
+// Draw a single segment bar
+function drawBar(p,alpha){
+  var sx=sc(p.wx),sy=p.wy;
+  if(sx+p.w<-20||sx>VW+20) return;
+  gx.globalAlpha=alpha;
+  // Depth shadow
+  var dep=18;
+  gx.fillStyle='rgba(0,0,0,0.34)';gx.fillRect(sx+4,sy+p.h+1,p.w,dep+2);
+  // 3-D side face
+  gx.fillStyle='rgba(38,14,96,0.88)';
+  gx.beginPath();gx.moveTo(sx,sy+p.h);gx.lineTo(sx+p.w,sy+p.h);gx.lineTo(sx+p.w,sy+p.h+dep);gx.lineTo(sx,sy+p.h+dep);gx.closePath();gx.fill();
+  // Soft glow halo
+  gx.fillStyle='rgba(96,58,228,0.07)';
+  rrect(gx,sx-8,sy-8,p.w+16,p.h+16,14);gx.fill();
+  // Flat face
+  gx.fillStyle='#6038c8';
+  gx.fillRect(sx,sy,p.w,p.h);
+  // Top shine
+  gx.fillStyle='rgba(255,255,255,0.28)';
+  gx.fillRect(sx+2,sy+2,p.w-4,Math.min(7,p.h*0.26));
+  // Rim
+  gx.strokeStyle='rgba(165,135,248,0.48)';gx.lineWidth=1.6;gx.strokeRect(sx,sy,p.w,p.h);
+  gx.globalAlpha=1;
+}
+
+
+function drawFloor(){
+  var fy=STAGE_Y+DIG_H+50;
+  // Dark platform strip across full visible width
+  gx.fillStyle='rgba(30,12,80,0.92)';
+  gx.fillRect(0,fy,VW,28);
+  // Glowing top edge
+  var gl=gx.createLinearGradient(0,fy,0,fy+28);
+  gl.addColorStop(0,'rgba(100,60,200,0.55)');
+  gl.addColorStop(1,'rgba(30,12,80,0)');
+  gx.fillStyle=gl;gx.fillRect(0,fy,VW,28);
+  gx.strokeStyle='rgba(140,100,255,0.38)';gx.lineWidth=1.4;
+  gx.beginPath();gx.moveTo(0,fy);gx.lineTo(VW,fy);gx.stroke();
+}
+function drawStage(){
+  drawGhosts();
+  if(morphing){
+    for(var i=0;i<oldPlats.length;i++) drawBar(oldPlats[i],1-morphAlpha);
+    for(var j=0;j<newPlats.length;j++) drawBar(newPlats[j],morphAlpha);
+  } else {
+    for(var k=0;k<plats.length;k++) drawBar(plats[k],1);
+  }
+}
+
+// Current value label above stage
+function drawValLabel(){
+  if(!chars.length) return;
+  var last=chars[chars.length-1];
+  var midX=sc(200+(last.ox+last.w-200)/2);
+  var t=Date.now()/1000;
+  var bvStr=fmtVal(baseVal);
+  gx.save();gx.font='bold 22px Cinzel,serif';gx.textAlign='center';
+  gx.globalAlpha=0.12+0.06*Math.sin(t*2.1);gx.fillStyle='#f0d060';
+  for(var dx=-4;dx<=4;dx+=2) for(var dy=-4;dy<=4;dy+=2) gx.fillText(fmtInt(baseVal),midX+dx,Math.max(20,STAGE_Y-52)+dy);
+  gx.globalAlpha=1;gx.fillStyle='#f0d060';gx.fillText(fmtInt(baseVal),midX,Math.max(20,STAGE_Y-52));
+  gx.restore();
+}
+
+// Dashed beam at current dot x (shows live score position)
+function drawScoreBeam(){
+  var bx=sc(P.wx); if(bx<-5||bx>VW+5) return;
+  var t=Date.now()/520,a=0.30+0.18*Math.sin(t);
+  gx.setLineDash([6,5]);gx.strokeStyle='rgba(255,215,60,'+a+')';gx.lineWidth=1.8;
+  gx.beginPath();gx.moveTo(bx,STAGE_Y-18);gx.lineTo(bx,STAGE_Y+DIG_H+40);gx.stroke();
+  gx.setLineDash([]);
+}
+
+// End-of-stage finish line
+function drawFinish(){
+  var fx=sc(totalW-70); if(fx<-60||fx>VW+60) return;
+  var t=Date.now()/680,a=0.44+0.34*Math.sin(t);
+  gx.setLineDash([12,7]);gx.strokeStyle='rgba(90,195,255,'+a+')';gx.lineWidth=3;
+  gx.beginPath();gx.moveTo(fx,STAGE_Y-110);gx.lineTo(fx,STAGE_Y+DIG_H+55);gx.stroke();
+  gx.setLineDash([]);
+  gx.font='bold 13px Cinzel,serif';gx.fillStyle='rgba(120,210,255,'+a+')';gx.textAlign='center';
+  gx.fillText('FINISH',fx,STAGE_Y-118);
+}
+
+// Gem (hexagon)
+function drawGem(g){
+  if(g.hit) return;
+  var sx=sc(g.wx), sy=g.wy+Math.sin(g.bobT)*10;
+  if(sx<-70||sx>VW+70) return;
+  var r=g.big?34:24;
+  // Glow
+  var gl=gx.createRadialGradient(sx,sy,0,sx,sy,r*3);
+  gl.addColorStop(0,'rgba(50,215,95,0.28)');gl.addColorStop(1,'rgba(50,215,95,0)');
+  gx.fillStyle=gl;gx.beginPath();gx.arc(sx,sy,r*3,0,Math.PI*2);gx.fill();
+  // Hexagon body
+  gx.beginPath();
+  for(var i=0;i<6;i++){
+    var a=(Math.PI/3)*i-Math.PI/6;
+    i===0?gx.moveTo(sx+r*Math.cos(a),sy+r*Math.sin(a)):gx.lineTo(sx+r*Math.cos(a),sy+r*Math.sin(a));
+  }
+  gx.closePath();gx.fillStyle='#169038';gx.fill();
+  gx.strokeStyle='rgba(190,255,210,0.72)';gx.lineWidth=2.5;gx.stroke();
+  // Label above gem — large, white, clear
+  var lbl=(g.op==='+'?'+':'×')+g.v;
+  var fs=g.big?24:19;
+  gx.font='bold '+fs+'px Nunito,sans-serif';gx.textAlign='center';
+  gx.fillStyle='rgba(0,0,0,0.85)';gx.fillText(lbl,sx+1.5,sy-r-7+1.5);
+  gx.fillStyle='#ffffff';gx.fillText(lbl,sx,sy-r-7);
+}
+
+// Spike (diamond)
+function drawSpike(sp){
+  if(sp.hit) return;
+  var sx=sc(sp.wx), sy=sp.wy;
+  if(sx<-70||sx>VW+70) return;
+  gx.save();gx.translate(sx,sy);
+  // Glow (static)
+  var gl=gx.createRadialGradient(0,0,0,0,0,40);
+  gl.addColorStop(0,'rgba(235,35,55,0.26)');gl.addColorStop(1,'rgba(235,35,55,0)');
+  gx.fillStyle=gl;gx.beginPath();gx.arc(0,0,40,0,Math.PI*2);gx.fill();
+  // Diamond body (rotates)
+  gx.rotate(sp.spin||0);
+  var rf=26;
+  gx.beginPath();gx.moveTo(0,-rf);gx.lineTo(rf*0.78,rf*0.44);gx.lineTo(0,rf*0.64);gx.lineTo(-rf*0.78,rf*0.44);gx.closePath();
+  gx.fillStyle='#b81424';gx.fill();
+  gx.strokeStyle='rgba(255,175,185,0.65)';gx.lineWidth=2.2;gx.stroke();
+  gx.fillStyle='rgba(255,255,255,0.16)';gx.beginPath();gx.moveTo(0,-rf*0.78);gx.lineTo(rf*0.28,-rf*0.08);gx.lineTo(0,-rf*0.04);gx.closePath();gx.fill();
+  gx.rotate(-(sp.spin||0));
+  // Label above spike (does NOT rotate)
+  var lbl=(sp.op==='-'?'−':'÷')+sp.v;
+  gx.font='bold 22px Nunito,sans-serif';gx.textAlign='center';
+  gx.fillStyle='rgba(0,0,0,0.85)';gx.fillText(lbl,1.5,-(rf+10)+1.5);
+  gx.fillStyle='#ffffff';gx.fillText(lbl,0,-(rf+10));
+  gx.restore();
+}
+
+// Respawn countdown rings
+function drawRespawn(){
+  for(var i=0;i<gems.length;i++){
+    var g=gems[i]; if(!g.hit) continue;
+    var sx=sc(g.wx); if(sx<-70||sx>VW+70) continue;
+    var f=Math.max(0,1-g.rt/lv.respawn);
+    gx.strokeStyle='rgba(55,210,90,0.38)';gx.lineWidth=3.5;
+    gx.beginPath();gx.arc(sx,g.wy,24,-Math.PI/2,-Math.PI/2+f*Math.PI*2);gx.stroke();
+  }
+  for(var j=0;j<spikes.length;j++){
+    var sp=spikes[j]; if(!sp.hit) continue;
+    var sx2=sc(sp.wx); if(sx2<-70||sx2>VW+70) continue;
+    var f2=Math.max(0,1-sp.rt/lv.respawn);
+    gx.strokeStyle='rgba(235,38,55,0.38)';gx.lineWidth=3.5;
+    gx.beginPath();gx.arc(sx2,sp.wy,24,-Math.PI/2,-Math.PI/2+f2*Math.PI*2);gx.stroke();
+  }
+}
+
+// The dot player
+function drawDot(){
+  var sx=sc(P.wx), sy=P.wy;
+  gx.save();gx.translate(sx,sy);gx.scale(P.sqX,P.sqY);
+  if(P.inv>0&&Math.floor(P.inv*10)%2===0) gx.globalAlpha=0.22;
+  // Outer glow
+  var gl=gx.createRadialGradient(0,0,0,0,0,PR*3.4);
+  gl.addColorStop(0,'rgba(248,215,30,0.38)');gl.addColorStop(1,'rgba(248,215,30,0)');
+  gx.fillStyle=gl;gx.beginPath();gx.arc(0,0,PR*3.4,0,Math.PI*2);gx.fill();
+  // Flat solid body
+  gx.fillStyle='#f5cc0e';gx.beginPath();gx.arc(0,0,PR,0,Math.PI*2);gx.fill();
+  // Bright rim
+  gx.strokeStyle='rgba(255,252,165,0.82)';gx.lineWidth=2.6;
+  gx.beginPath();gx.arc(0,0,PR,0,Math.PI*2);gx.stroke();
+  // Double-jump pip
+  if(!P.onG&&P.airJumps>0){
+    gx.fillStyle='rgba(120,188,255,0.78)';
+    gx.beginPath();gx.arc(0,-PR-8,5,0,Math.PI*2);gx.fill();
+    if(P.airJumps>1){gx.beginPath();gx.arc(10,-PR-8,5,0,Math.PI*2);gx.fill();}
+  }
+  gx.globalAlpha=1;gx.restore();
+}
+
+function drawParticles(){
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    gx.globalAlpha=Math.max(0,p.life);gx.fillStyle=p.col;
+    gx.beginPath();gx.arc(sc(p.wx),p.wy,p.sz*p.life,0,Math.PI*2);gx.fill();
+  }
+  gx.globalAlpha=1;
+}
+
+function drawFloats(){
+  for(var i=0;i<floats.length;i++){
+    var f=floats[i];
+    gx.globalAlpha=Math.min(1,f.life*1.2);
+    gx.font='bold 14px Nunito,sans-serif';gx.textAlign='center';
+    gx.fillStyle='rgba(0,0,0,0.54)';gx.fillText(f.text,sc(f.wx)+1,f.wy+1);
+    gx.fillStyle=f.col;gx.fillText(f.text,sc(f.wx),f.wy);
+  }
+  gx.globalAlpha=1;
+}
+
+
+function drawMinimap(){
+  if(!chars.length||!totalW) return;
+  var MW=200,MH=40,MX=VW-MW-10,MY=82;
+  // Background
+  gx.fillStyle='rgba(2,1,14,0.88)';rrect(gx,MX,MY,MW,MH,6);gx.fill();
+  gx.strokeStyle='rgba(100,70,200,0.45)';gx.lineWidth=1.2;rrect(gx,MX,MY,MW,MH,6);gx.stroke();
+  gx.font='8px Cinzel,serif';gx.fillStyle='rgba(120,100,200,0.70)';gx.textAlign='left';
+  gx.fillText('MAP',MX+5,MY+9);
+
+  var scaleX=MW/totalW;
+  var scaleY=(MH-14)/(DIG_H+80);
+  var oy=MY+12;
+
+  // Draw each digit outline in minimap
+  for(var i=0;i<chars.length;i++){
+    var ch=chars[i]; if(ch.ch==='.') continue;
+    var rr=charRects('8',ch.ox);
+    gx.fillStyle='rgba(80,40,160,0.55)';
+    for(var k=0;k<rr.length;k++){
+      var rx=MX+rr[k].x*scaleX, ry=oy+(rr[k].y-STAGE_Y)*scaleY;
+      var rw=Math.max(1,rr[k].w*scaleX), rh=Math.max(1,rr[k].h*scaleY);
+      gx.fillRect(rx,ry,rw,rh);
+    }
+  }
+
+  // Active platforms
+  for(var j=0;j<plats.length;j++){
+    var pl=plats[j];
+    if(pl.isFloor){
+      gx.fillStyle='rgba(80,40,180,0.30)';
+      gx.fillRect(MX,oy+(DIG_H+50)*scaleY,MW,Math.max(1,28*scaleY));
+    } else {
+      gx.fillStyle='rgba(140,100,255,0.65)';
+      var px=MX+pl.wx*scaleX, py=oy+(pl.wy-STAGE_Y)*scaleY;
+      var pw=Math.max(1,pl.w*scaleX), ph=Math.max(1,pl.h*scaleY);
+      gx.fillRect(px,py,pw,ph);
+    }
+  }
+
+  // Gem dots (green)
+  for(var gi=0;gi<gems.length;gi++){
+    var gm=gems[gi]; if(gm.hit) continue;
+    var gx2=MX+gm.wx*scaleX, gy2=oy+(gm.wy-STAGE_Y)*scaleY;
+    gx.fillStyle='rgba(60,220,90,0.80)';
+    gx.beginPath();gx.arc(gx2,gy2,1.6,0,Math.PI*2);gx.fill();
+  }
+
+  // Spike dots (red)
+  for(var si=0;si<spikes.length;si++){
+    var sp2=spikes[si]; if(sp2.hit) continue;
+    var sx2=MX+sp2.wx*scaleX, sy2=oy+(sp2.wy-STAGE_Y)*scaleY;
+    gx.fillStyle='rgba(240,60,60,0.80)';
+    gx.beginPath();gx.arc(sx2,sy2,1.6,0,Math.PI*2);gx.fill();
+  }
+
+  // Dot player (yellow)
+  var dpx=MX+P.wx*scaleX, dpy=oy+(P.wy-STAGE_Y)*scaleY;
+  gx.fillStyle='#f5cc0e';
+  gx.beginPath();gx.arc(dpx,dpy,4.5,0,Math.PI*2);gx.fill();
+  gx.strokeStyle='rgba(255,252,140,0.85)';gx.lineWidth=1.2;
+  gx.beginPath();gx.arc(dpx,dpy,4.5,0,Math.PI*2);gx.stroke();
+
+  // Finish line marker
+  var flx=MX+(totalW-70)*scaleX;
+  gx.strokeStyle='rgba(90,195,255,0.60)';gx.lineWidth=1.5;
+  gx.beginPath();gx.moveTo(flx,MY+2);gx.lineTo(flx,MY+MH-2);gx.stroke();
+}
+function drawHUD(){
+  if(gstate!=='playing') return;
+  function card(x,y,w,h,bc){
+    gx.fillStyle='rgba(2,1,12,0.88)';rrect(gx,x,y,w,h,8);gx.fill();
+    gx.strokeStyle=bc;gx.lineWidth=1.2;rrect(gx,x,y,w,h,8);gx.stroke();
+  }
+  card(10,10,250,72,'rgba(240,208,80,0.50)');
+  gx.font='9px Cinzel,serif';gx.fillStyle='#605080';gx.textAlign='left';
+  gx.fillText('VALUE',20,25);
+  gx.font='bold 22px Cinzel,serif';gx.fillStyle='#f0d060';
+  gx.fillText(fmtInt(baseVal),20,50);
+  gx.font='11px Nunito,sans-serif';gx.fillStyle='rgba(180,160,80,0.70)';
+  gx.fillText('SCORE: '+fmtScore(P.wx-PR,chars,baseVal,displayScore),20,66);
+
+  // Target
+  var ok=displayScore>=lv.target;
+  card(VW/2-92,10,184,70,ok?'rgba(55,210,80,0.58)':'rgba(240,90,108,0.50)');
+  gx.font='9px Cinzel,serif';gx.fillStyle='#605080';gx.textAlign='center';gx.fillText('TARGET',VW/2,25);
+  gx.font='bold 22px Cinzel,serif';gx.fillStyle=ok?'#68d888':'#f07888';
+  gx.fillText('>= '+lv.target.toLocaleString(),VW/2,53);
+
+  // Timer
+  card(VW-220,10,210,70,timer<15?'rgba(242,60,60,0.70)':'rgba(240,208,80,0.44)');
+  gx.font='9px Cinzel,serif';gx.fillStyle='#605080';gx.textAlign='right';gx.fillText('TIME',VW-20,25);
+  gx.font='bold 26px Cinzel,serif';
+  gx.fillStyle=(timer<15&&Math.floor(timer*4)%2===0)?'#ff1828':'#f0d060';
+  gx.fillText(Math.ceil(timer)+'s',VW-20,54);
+
+  // Timer bar
+  gx.fillStyle='rgba(2,1,12,0.55)';rrect(gx,10,84,VW-20,5,2);gx.fill();
+  var tg=gx.createLinearGradient(10,0,VW-10,0);
+  tg.addColorStop(0,'#f04860');tg.addColorStop(0.5,'#f0d060');tg.addColorStop(1,'#68d888');
+  gx.fillStyle=tg;rrect(gx,10,84,Math.max(5,(VW-20)*(timer/lv.time)),5,2);gx.fill();
+
+  // Progress bar (rightmost position)
+  var pfr=Math.min(1,Math.max(0,bestX/totalW));
+  gx.fillStyle='rgba(2,1,12,0.50)';rrect(gx,10,VH-16,VW-20,7,3);gx.fill();
+  var pg=gx.createLinearGradient(10,0,VW-10,0);
+  pg.addColorStop(0,'#68d888');pg.addColorStop(1,'#90c8ff');
+  gx.fillStyle=pg;rrect(gx,10,VH-16,Math.max(7,(VW-20)*pfr),7,3);gx.fill();
+  // Dot marker on progress bar
+  var mx=10+(VW-20)*pfr;
+  gx.fillStyle='#f5cc0e';gx.beginPath();gx.arc(mx,VH-12,6,0,Math.PI*2);gx.fill();
+  gx.strokeStyle='rgba(255,252,140,0.72)';gx.lineWidth=1.5;
+  gx.beginPath();gx.arc(mx,VH-12,6,0,Math.PI*2);gx.stroke();
+  gx.font='10px Nunito,sans-serif';gx.textAlign='center';gx.fillStyle='#483898';gx.fillText(lv.name,VW/2,VH-4);
+
+  // Air-jump indicator
+  if(!P.onG){
+    gx.font='10px Nunito,sans-serif';gx.textAlign='left';
+    gx.fillStyle=P.airJumps>0?'rgba(120,188,255,0.72)':'rgba(80,80,80,0.46)';
+    gx.fillText(P.airJumps>0?'^ TRIPLE JUMP':'^ USED',20,VH-26);
+  }
+
+  // ── Security check warning banner ─────────────────────────────
+  var tToChk=secNextCheck-secElapsed;
+  if(tToChk>0&&tToChk<=5){
+    var pulse=Math.floor(Date.now()/220)%2===0;
+    var wa=pulse?0.97:0.62;
+    // Which check is coming up next?
+    var nextCheckNum=secCheckCount+1;
+    var req=secRequirement(nextCheckNum);
+    var bW=320,bH=88,bX=VW/2-bW/2,bY=VH/2-bH/2-20;
+    gx.globalAlpha=wa;
+    gx.fillStyle='rgba(180,20,40,0.92)';rrect(gx,bX,bY,bW,bH,10);gx.fill();
+    gx.strokeStyle='rgba(255,120,140,0.90)';gx.lineWidth=2.2;rrect(gx,bX,bY,bW,bH,10);gx.stroke();
+    gx.font='bold 15px Cinzel,serif';gx.fillStyle='#ffffff';gx.textAlign='center';
+    gx.fillText('\u26A0 SECURITY CHECK IN '+Math.ceil(tToChk)+'s',VW/2,bY+24);
+    gx.font='12px Nunito,sans-serif';gx.fillStyle='#ffcccc';
+    gx.fillText('Required value range: '+req.label,VW/2,bY+44);
+    gx.fillStyle='rgba(255,255,255,0.72)';
+    gx.fillText('Your current value: '+fmtVal(r3(displayScore)),VW/2,bY+62);
+    gx.globalAlpha=1;
+  }
+
+  // Security alert flash (pass/fail)
+  if(secAlertActive){
+    var aA=Math.min(1,secAlertTimer*0.9);
+    gx.globalAlpha=aA;
+    gx.fillStyle=secAlertPassed?'rgba(30,190,80,0.92)':'rgba(200,30,50,0.92)';
+    var mW=260,mH=56,mX=VW/2-mW/2,mY=VH/2-mH/2-20;
+    rrect(gx,mX,mY,mW,mH,10);gx.fill();
+    gx.strokeStyle=secAlertPassed?'rgba(120,255,160,0.85)':'rgba(255,120,140,0.85)';
+    gx.lineWidth=2;rrect(gx,mX,mY,mW,mH,10);gx.stroke();
+    gx.font='bold 17px Cinzel,serif';gx.fillStyle='#ffffff';gx.textAlign='center';
+    gx.fillText(secAlertMsg,VW/2,mY+mH/2+6);
+    gx.globalAlpha=1;
+  }
+  // ── end security visuals ───────────────────────────────────────
+}
+
+// ═══════════════════ MAIN LOOP ═══════════════════
+function render(){
+  gx.clearRect(0,0,VW,VH);drawBG();
+  if(gstate==='playing'){
+    drawFloor();drawStage();drawValLabel();drawScoreBeam();drawFinish();
+    drawRespawn();
+    for(var i=0;i<gems.length;i++)   drawGem(gems[i]);
+    for(var j=0;j<spikes.length;j++) drawSpike(spikes[j]);
+    drawParticles();drawDot();drawFloats();drawMinimap();drawHUD();
+  }
+}
+function loop(ts){
+  var dt=Math.min((ts-lastTS)/1000,0.05);lastTS=ts;
+  try{update(dt);render();}catch(e){console.error('GameErr:',e);}
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(function(ts){lastTS=ts;requestAnimationFrame(loop);});
+
+// ═══════════════════ UI ═══════════════════
+function showScr(id){
+  document.querySelectorAll('.scr').forEach(function(x){x.classList.remove('on');});
+  document.getElementById(id).classList.add('on');
+  document.getElementById('ov').classList.remove('hidden');
+}
+function hideOv(){document.getElementById('ov').classList.add('hidden');}
+
+function buildChips(){
+  var el=document.getElementById('chips');el.innerHTML='';
+  LEVELS.forEach(function(lvl,i){
+    var c=document.createElement('div');
+    c.className='chip'+(i>=unlocked?' lk':'');
+    c.textContent='Lvl '+(i+1)+': '+lvl.name;
+    if(i<unlocked)(function(idx){c.onclick=function(){openIntro(idx);};})(i);
+    el.appendChild(c);
+  });
+}
+function openIntro(idx){
+  curLvl=idx; var l=LEVELS[idx];
+  document.getElementById('ibg').textContent=l.badge;
+  document.getElementById('itn').textContent=l.name;
+  document.getElementById('idc').textContent=l.hint;
+  document.getElementById('itg').innerHTML='<strong style="color:#f0d060">Target: '+l.target.toLocaleString()+'</strong>&nbsp;&middot;&nbsp;Time: '+l.time+'s';
+  showScr('is');
+}
+
+document.getElementById('sb').onclick=function(){au();buildChips();openIntro(0);};
+document.getElementById('gb').onclick=function(){au();initLevel(curLvl);displayScore=0;gstate='playing';hideOv();startBGM();};
+document.getElementById('nb').onclick=function(){openIntro(curLvl+1);};
+document.getElementById('rwb').onclick=function(){openIntro(curLvl);};
+document.getElementById('rb').onclick=function(){au();initLevel(curLvl);displayScore=0;gstate='playing';hideOv();startBGM();};
+document.getElementById('mb').onclick=function(){buildChips();showScr('ts');};
+
+canvas.addEventListener('touchstart',function(e){e.preventDefault();au();if(gstate==='playing'&&!done)tryJump();},{passive:false});
+canvas.addEventListener('click',function(){au();});
+
+buildChips();showScr('ts');gstate='title';
+</script>
+</body>
+</html>

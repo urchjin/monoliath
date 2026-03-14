@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ORB</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#8eb8d0;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  font-family:'Share Tech Mono',monospace}
+#C{display:block;position:absolute;top:0;left:0;touch-action:none}
+
+/* ── TITLE ── */
+#title{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:100;
+  background:linear-gradient(160deg,#c0daf0,#86b4cc)}
+.t-word{font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(78px,20vw,148px);letter-spacing:.14em;color:#1e1610;
+  display:flex;align-items:center;line-height:1}
+.t-o{position:relative;display:inline-flex;align-items:center;justify-content:center}
+.t-o svg{position:absolute;width:100%;height:100%;top:0;left:0;pointer-events:none}
+.t-rb{font-size:.27em;color:#e8c44a;font-weight:600;position:absolute;
+  letter-spacing:.06em;bottom:26%}
+.t-sub{font-family:'Share Tech Mono',monospace;font-size:clamp(9px,2.4vw,13px);
+  letter-spacing:.28em;color:#4a7090;margin-top:10px;text-transform:uppercase}
+.t-tap{margin-top:46px;font-size:clamp(11px,3vw,15px);letter-spacing:.26em;
+  color:#2a5070;animation:blink 1.9s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.25}55%{opacity:1}}
+.t-rules{margin-top:16px;font-size:clamp(8px,2vw,11px);letter-spacing:.08em;
+  color:#3a607a;line-height:2;text-align:center;max-width:min(310px,82vw)}
+
+/* ── HUD ── */
+#hud {
+  position: absolute;
+  bottom: 20px; /* Increased from 0 to 20px to push it higher */
+  left: 0;
+  right: 0;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hbox{background:rgba(8,4,2,.88);border:1px solid rgba(232,196,74,.2);
+  border-radius:10px;backdrop-filter:blur(10px);display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;padding:8px 10px 6px;gap:3px}
+#hl,#hr{width:88px}
+#hc{flex:1;max-width:130px}
+
+/* ── TOP-RIGHT BUTTONS ── */
+#topBtns{position:absolute;top:14px;right:14px;display:flex;flex-direction:column;
+  gap:7px;z-index:20;pointer-events:auto}
+.tbtn{width:40px;height:40px;background:rgba(8,4,2,.82);
+  border:1px solid rgba(232,196,74,.32);border-radius:8px;
+  color:#e8c44a;font-family:'Share Tech Mono',monospace;font-size:9px;
+  letter-spacing:.08em;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;cursor:pointer;gap:2px;transition:background .15s,border-color .15s;
+  touch-action:manipulation}
+.tbtn:hover,.tbtn:active{background:rgba(232,196,74,.18);border-color:rgba(232,196,74,.7)}
+.tbtn svg{width:16px;height:16px;stroke:#e8c44a;fill:none;stroke-width:1.6;stroke-linecap:round}
+.tbtn span{font-size:7px;letter-spacing:.1em;opacity:.7}
+
+/* ── MODALS ── */
+.modal-overlay{position:absolute;inset:0;background:rgba(4,2,1,.88);
+  backdrop-filter:blur(8px);z-index:60;display:none;align-items:center;
+  justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal-box{background:rgba(14,9,4,.96);border:1px solid rgba(232,196,74,.28);
+  border-radius:14px;padding:24px 22px 20px;max-width:min(500px,94vw);
+  width:100%;max-height:88vh;overflow-y:auto;position:relative}
+.modal-title{font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(22px,6vw,32px);letter-spacing:.18em;color:#f5e090;
+  margin-bottom:16px;text-align:center}
+.modal-close{position:absolute;top:12px;right:14px;background:none;
+  border:none;color:rgba(232,196,74,.5);font-size:18px;cursor:pointer;
+  line-height:1;padding:4px 8px;font-family:monospace;transition:color .15s}
+.modal-close:hover{color:#e8c44a}
+
+/* Map modal canvas */
+#bigMapCanvas{display:block;border-radius:10px;
+  border:1px solid rgba(232,196,74,.2);margin:0 auto}
+
+/* Instructions */
+.inst-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;
+  padding-bottom:14px;border-bottom:1px solid rgba(232,196,74,.1)}
+.inst-row:last-child{border-bottom:none;margin-bottom:0}
+.inst-icon{width:36px;height:36px;flex-shrink:0;background:rgba(232,196,74,.1);
+  border:1px solid rgba(232,196,74,.22);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.inst-text{flex:1}
+.inst-head{font-size:10px;letter-spacing:.2em;color:#e8c44a;margin-bottom:4px;
+  text-transform:uppercase}
+.inst-body{font-size:clamp(9px,2.2vw,11px);letter-spacing:.06em;
+  color:rgba(255,255,255,.55);line-height:1.75}
+.inst-body b{color:rgba(255,255,255,.85);font-weight:normal}
+.inst-pause-note{text-align:center;font-size:9px;letter-spacing:.18em;
+  color:rgba(232,196,74,.4);margin-top:16px}
+.hlbl{font-size:7.5px;letter-spacing:.22em;color:rgba(232,196,74,.48);
+  text-transform:uppercase;margin-bottom:1px}
+#orbc{font-size:9px;letter-spacing:.14em;color:rgba(255,255,255,.52)}
+
+/* ── JOYSTICK ── */
+#joy{position:absolute;bottom:152px;left:22px;width:82px;height:82px;
+  border-radius:50%;background:rgba(8,4,2,.44);border:1.5px solid rgba(232,196,74,.28);
+  z-index:10;touch-action:none;display:flex;align-items:center;justify-content:center}
+#jk{position:absolute;width:32px;height:32px;border-radius:50%;
+  background:radial-gradient(circle at 36% 33%,#f5e090,#e8c44a 52%,#b08020);
+  box-shadow:0 2px 14px rgba(232,196,74,.45);pointer-events:none;
+  transform:translate(-50%,-50%);top:50%;left:50%}
+
+/* ── MSG ── */
+#msg{position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  background:rgba(8,4,2,.9);border:1px solid rgba(232,196,74,.28);border-radius:6px;
+  padding:6px 16px;font-size:clamp(9px,2.4vw,12px);letter-spacing:.14em;
+  color:#f5e090;text-align:center;z-index:20;opacity:0;transition:opacity .35s;
+  pointer-events:none;white-space:nowrap}
+
+/* ── END ── */
+#end{position:absolute;inset:0;background:rgba(4,2,1,.93);display:none;
+  flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:16px}
+#eTitle{font-family:'Cormorant Garamond',serif;font-size:clamp(46px,13vw,88px);
+  font-weight:300;letter-spacing:.2em;color:#f5e090}
+#eSub{font-size:clamp(9px,2.4vw,12px);letter-spacing:.2em;color:rgba(255,255,255,.5);
+  text-align:center;max-width:80vw}
+#btn{margin-top:12px;padding:11px 30px;background:none;border:1.5px solid #e8c44a;
+  color:#e8c44a;font-family:'Share Tech Mono',monospace;font-size:11px;
+  letter-spacing:.24em;text-transform:uppercase;border-radius:4px;cursor:pointer}
+#btn:hover,#btn:active{background:#e8c44a;color:#090500}
+
+/* ── VIGNETTE ── */
+#vig{position:absolute;inset:0;
+  background:radial-gradient(ellipse at center,transparent 20%,rgba(155,45,0,.7) 100%);
+  pointer-events:none;z-index:8;opacity:0;transition:opacity .7s}
+
+/* ── DIFFICULTY ── */
+.diff-label{font-size:clamp(9px,2.2vw,11px);letter-spacing:.22em;color:#4a7090;
+  margin-top:28px;text-transform:uppercase}
+.diff-btns{display:flex;gap:10px;margin-top:10px}
+.diff-btn{padding:9px 20px;background:none;border:1.5px solid rgba(74,112,144,.55);
+  border-radius:6px;color:#3a6080;font-family:'Share Tech Mono',monospace;
+  font-size:clamp(10px,2.6vw,13px);letter-spacing:.2em;cursor:pointer;
+  transition:all .2s;touch-action:manipulation}
+.diff-btn:hover,.diff-btn.sel{background:rgba(74,112,144,.18);
+  border-color:#4a90c8;color:#2a5070}
+.diff-btn.sel{border-color:#e8c44a;color:#e8c44a;background:rgba(232,196,74,.1)}
+
+/* ── QUIZ MODAL ── */
+#quiz{position:absolute;inset:0;background:rgba(4,2,1,.96);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  z-index:55;padding:24px;gap:0}
+.quiz-title{font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(26px,7vw,44px);letter-spacing:.16em;color:#f5e090;
+  margin-bottom:6px;text-align:center}
+.quiz-outcome{font-size:clamp(10px,2.6vw,13px);letter-spacing:.18em;
+  color:rgba(255,255,255,.45);margin-bottom:20px;text-align:center}
+.quiz-card{background:rgba(18,12,5,.95);border:1px solid rgba(232,196,74,.22);
+  border-radius:14px;padding:22px 20px;max-width:min(460px,92vw);width:100%}
+.quiz-q{font-size:clamp(11px,2.8vw,14px);letter-spacing:.07em;
+  color:rgba(255,255,255,.82);line-height:1.8;margin-bottom:14px}
+.quiz-q b{color:#f5e090}
+.quiz-formula{background:rgba(232,196,74,.07);border:1px solid rgba(232,196,74,.18);
+  border-radius:8px;padding:10px 14px;font-size:clamp(12px,3.2vw,16px);
+  letter-spacing:.1em;color:#e8c44a;text-align:center;margin-bottom:14px;
+  font-family:'Cormorant Garamond',serif}
+.quiz-data{font-size:clamp(10px,2.4vw,12px);letter-spacing:.1em;
+  color:rgba(255,255,255,.55);line-height:2;margin-bottom:16px}
+.quiz-data span{color:#fff}
+.quiz-input-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+#quizInput{flex:1;background:rgba(255,255,255,.06);border:1px solid rgba(232,196,74,.3);
+  border-radius:6px;padding:10px 12px;color:#fff;font-family:'Share Tech Mono',monospace;
+  font-size:14px;letter-spacing:.1em;outline:none;min-width:0;
+  -moz-appearance:textfield}
+#quizInput::-webkit-inner-spin-button{display:none}
+#quizInput:focus{border-color:rgba(232,196,74,.7)}
+#quizSubmit{padding:10px 16px;background:rgba(232,196,74,.12);
+  border:1.5px solid #e8c44a;border-radius:6px;color:#e8c44a;
+  font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:.2em;
+  cursor:pointer;white-space:nowrap;touch-action:manipulation}
+#quizSubmit:hover,#quizSubmit:active{background:#e8c44a;color:#090500}
+#quizFeedback{font-size:clamp(10px,2.4vw,12px);letter-spacing:.1em;
+  min-height:18px;text-align:center;transition:color .2s}
+#quizSuccess{display:none;flex-direction:column;align-items:center;gap:12px;
+  margin-top:4px;text-align:center}
+.quiz-success-msg{font-size:clamp(11px,2.8vw,13px);letter-spacing:.1em;
+  color:rgba(255,255,255,.7);line-height:1.8}
+.quiz-success-msg b{color:#4caf88}
+#quizMenuBtn{padding:11px 28px;background:none;border:1.5px solid #e8c44a;
+  color:#e8c44a;font-family:'Share Tech Mono',monospace;font-size:11px;
+  letter-spacing:.24em;text-transform:uppercase;border-radius:4px;
+  cursor:pointer;touch-action:manipulation}
+#quizMenuBtn:hover,#quizMenuBtn:active{background:#e8c44a;color:#090500}
+</style>
+</head>
+<body>
+
+<div id="title">
+  <div class="t-word">
+    <span class="t-o">O
+      <svg viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="44" stroke="#e8c44a" stroke-width="1.2" opacity=".5"/>
+        <circle cx="50" cy="50" r="31" stroke="#e8c44a" stroke-width=".8" opacity=".32"/>
+        <circle cx="50" cy="50" r="18" stroke="#e8c44a" stroke-width=".6" opacity=".2"/>
+      </svg>
+      <span class="t-rb">rb</span>
+    </span>RB
+  </div>
+  <div class="t-sub">The Heliostat Maze</div>
+  <div class="diff-label">Select difficulty — minutes to escape</div>
+  <div class="diff-btns">
+    <button class="diff-btn" data-mins="3">3 min</button>
+    <button class="diff-btn sel" data-mins="5">5 min</button>
+    <button class="diff-btn" data-mins="10">10 min</button>
+  </div>
+  <div class="t-tap" style="margin-top:28px">— TAP TO BEGIN —</div>
+  <div class="t-rules">
+    Navigate 12 rings · Collect all orbs<br>
+    Your mass dilates time · Shadow grows outward<br>
+    Return to the lighthouse to escape
+  </div>
+
+</div>
+
+<canvas id="C"></canvas>
+<div id="vig"></div>
+
+<!-- TOP-RIGHT BUTTONS -->
+<div id="topBtns">
+  <button class="tbtn" id="zoomBtn" aria-label="Toggle zoom">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>
+    <span id="zoomLbl">1×</span>
+  </button>
+  <button class="tbtn" id="mapBtn" aria-label="Full map">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" style="fill:#e8c44a;stroke:none"/></svg>
+    <span>MAP</span>
+  </button>
+  <button class="tbtn" id="infoBtn" aria-label="How to play">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="17"/><circle cx="12" cy="7.5" r="1" style="fill:#e8c44a;stroke:none"/></svg>
+    <span>HOW</span>
+  </button>
+</div>
+
+<!-- MAP MODAL -->
+<div class="modal-overlay" id="mapModal">
+  <div class="modal-box" style="padding:18px">
+    <div class="modal-title">THE MAZE</div>
+    <button class="modal-close" id="mapClose">✕</button>
+    <canvas id="bigMapCanvas"></canvas>
+  </div>
+</div>
+
+<!-- QUIZ / END MODAL -->
+<div id="quiz">
+  <div class="quiz-title" id="quizTitle">—</div>
+  <div class="quiz-outcome" id="quizOutcome">—</div>
+  <div class="quiz-card">
+    <div class="quiz-q">
+      The shadow expanded until it consumed <b>Ring <span id="qLimitRing">—</span></b>
+      of the maze. Using your knowledge of circles, can you calculate what
+      <b>ring number</b> the shadow stopped at — i.e. the radius — given its final area?
+    </div>
+    <div class="quiz-formula">A = π · r²</div>
+    <div class="quiz-data">
+      Shadow area at game end: <span id="qArea">—</span> ring-units²<br>
+      π ≈ 3.14159 &nbsp;·&nbsp; Isolate r: <span style="color:#e8c44a">r = √(A ÷ π)</span>
+    </div>
+    <div id="quizForm">
+      <div class="quiz-input-row">
+        <input id="quizInput" type="number" min="1" max="20" step="1" placeholder="Enter ring number…">
+        <button id="quizSubmit">CHECK</button>
+      </div>
+      <div id="quizFeedback" style="color:rgba(255,255,255,.4)">—</div>
+    </div>
+    <div id="quizSuccess">
+      <div class="quiz-success-msg">
+        Correct! The shadow radius was <b>Ring <span id="qSuccessRing">—</span></b>.<br>
+        Area = π × <span id="qSuccessR">—</span>² ≈ <b><span id="qSuccessArea">—</span> ring-units²</b>
+      </div>
+      <button id="quizMenuBtn">BACK TO MENU</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="infoModal">
+  <div class="modal-box">
+    <div class="modal-title">HOW TO PLAY</div>
+    <button class="modal-close" id="infoClose">✕</button>
+
+    <div class="inst-row">
+      <div class="inst-icon">🕹️</div>
+      <div class="inst-text">
+        <div class="inst-head">Move</div>
+        <div class="inst-body">Use the <b>joystick</b> (bottom-left) to navigate the rings. On desktop use <b>WASD</b> or arrow keys. Tap-and-hold on the maze to pathfind.</div>
+      </div>
+    </div>
+
+    <div class="inst-row">
+      <div class="inst-icon">✦</div>
+      <div class="inst-text">
+        <div class="inst-head">Collect Orbs</div>
+        <div class="inst-body">Find enough <b>glowing orbs</b> to match the shadow's ring radius. Each orb increases your mass, which <b>slows time</b> — helpful, but the shadow still grows. The target orb count is revealed by the shadow itself.</div>
+      </div>
+    </div>
+
+    <div class="inst-row">
+      <div class="inst-icon">🌑</div>
+      <div class="inst-text">
+        <div class="inst-head">The Shadow</div>
+        <div class="inst-body">A dark shadow expands from the centre outward. It <b>blurs maze walls</b> inside it. When it reaches the limit ring, it's game over.</div>
+      </div>
+    </div>
+
+    <div class="inst-row">
+      <div class="inst-icon">🏠</div>
+      <div class="inst-text">
+        <div class="inst-head">Escape</div>
+        <div class="inst-body">Once all orbs are collected, <b>return to the lighthouse</b> at the centre before the shadow closes in. The clock glows red as time runs low.</div>
+      </div>
+    </div>
+
+    <div class="inst-row">
+      <div class="inst-icon">⏱️</div>
+      <div class="inst-text">
+        <div class="inst-head">Time Dilation</div>
+        <div class="inst-body">Each orb slows your clock. The <b>TIME dial</b> glows red when the shadow is close. Watch the <b>minimap</b> to track orb locations and shadow growth.</div>
+      </div>
+    </div>
+
+    <div class="inst-pause-note">— GAME PAUSED WHILE READING —</div>
+  </div>
+</div>
+
+<div id="hud">
+  <div id="hl" class="hbox">
+    <div class="hlbl">TIME</div>
+    <div style="font-size:7px;letter-spacing:.14em;color:rgba(232,196,74,.38);text-transform:uppercase;margin-bottom:0">ESCAPE BY</div>
+    <div id="lastTime" style="font-size:10px;letter-spacing:.14em;color:rgba(232,196,74,.7);margin-bottom:3px;text-align:center;font-family:'Share Tech Mono',monospace">—:——</div>
+    <canvas id="clk" width="70" height="70" style="border-radius:50%"></canvas>
+  </div>
+  <div id="hc" class="hbox" style="padding:6px 8px 6px">
+    <div class="hlbl">MAP</div>
+    <canvas id="minimap" width="90" height="90" style="border-radius:50%;border:1px solid rgba(232,196,74,.18)"></canvas>
+    <div id="orbc">ORBS: 0</div>
+    <div id="shdw-pct" style="font-size:8px; color:#e05a2b; letter-spacing:0.1em; margin-top:2px;">SHADOW: 0%</div>
+  </div>
+  <div id="hr" class="hbox">
+    <div class="hlbl">MASS</div>
+    <canvas id="mss" width="70" height="70" style="border-radius:50%"></canvas>
+  </div>
+</div>
+
+<div id="joy"><div id="jk"></div></div>
+<div id="msg"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════
+//  ORB  —  The Heliostat Maze  (v2)
+// ═══════════════════════════════════════════════════
+const cv = document.getElementById('C');
+const cx = cv.getContext('2d');
+let W, H, CX, CY;
+
+// ── Safety: clamp negative radii on every arc call ──
+// Negative radii throw DOMException; this silently skips degenerate arcs.
+(function patchArc(proto) {
+  const _arc = proto.arc;
+  proto.arc = function(x, y, r, a1, a2, ccw) {
+    if (r < 0) r = 0;
+    _arc.call(this, x, y, r, a1, a2, ccw);
+  };
+})(CanvasRenderingContext2D.prototype);
+let LIMIT_RING = 10;
+
+let zoom = 1.0;
+let lastDist = 0; // For pinch tracking
+
+// Zoom button toggle
+document.getElementById('zoomBtn').addEventListener('click', () => {
+  const steps = [1.0, 0.65, 0.4];
+  const idx = steps.indexOf(zoom);
+  zoom = steps[(idx + 1) % steps.length];
+  document.getElementById('zoomLbl').textContent = zoom === 1.0 ? '1×' : zoom === 0.65 ? '0.6×' : '0.4×';
+});
+
+// 2. Pinch-to-Zoom (Touch Screens)
+cv.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    lastDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+  }
+}, {passive: false});
+
+cv.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+    const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    const delta = (dist - lastDist) * 0.005;
+    zoom = Math.max(0.3, Math.min(1.5, zoom + delta));
+    lastDist = dist;
+    const zl = document.getElementById('zoomLbl');
+    if (zl) zl.textContent = zoom.toFixed(1) + '×';
+  }
+}, {passive: false});
+
+const RC  = 15;   // ring count
+const SC  = 12;   // sector count
+const OC  = 12;   // orbs on map
+let GAM_DUR = 300; // real seconds — set by difficulty choice
+const TIME_MULT = 3; // game-minutes per real-minute (1min/3sec)
+const B_SPEED = 8.5;  // base world px/frame
+const P_RAD = 5;      // player collision radius
+
+let RG = 52; // ring gap in world px — recomputed on resize
+
+function resize(){
+  // Save relative position before scale changes
+  const oldRG = RG;
+  const relR = Math.hypot(pWX, pWY) / oldRG;
+  const angle = Math.atan2(pWY, pWX);
+
+  W = cv.width = window.innerWidth;
+  H = cv.height = window.innerHeight;
+  CX = W/2; CY = H/2;
+  RG = Math.min(W,H) / 8.2;
+
+  // Restore position based on new RG
+  if (oldRG > 0) {
+    pWX = Math.cos(angle) * relR * RG;
+    pWY = Math.sin(angle) * relR * RG;
+    camX = pWX; camY = pWY;
+  }
+}
+
+// Initialize position variables before resize runs
+let pWX=0, pWY=0, camX=0, camY=0;
+resize();
+window.addEventListener('resize', resize);
+
+// ── State ─────────────────────────────────────────
+let scene = 'title', walls=[], orbList=[], helios=[], parts=[];
+let collected=0, tScale=1, rTime=0, sH=10, sMin=0;   
+let shadowR=0, ended=false, msgT=0;
+
+// ── Audio ─────────────────────────────────────────
+let AC, MG, reverbNode, drones=[], arpeggioTimer=null, aReady=false;
+
+// D minor pentatonic across 3 octaves — always consonant, never clashes
+const PENTA = [73.42,110.00,146.83,174.61,196.00,220.00,261.63,293.66,349.23,392.00,440.00,523.25];
+
+function makeImpulse(secs, decay) {
+  // Synthetic reverb impulse response — long, smooth tail
+  const sr = AC.sampleRate, len = Math.floor(sr * secs);
+  const buf = AC.createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  const conv = AC.createConvolver();
+  conv.buffer = buf;
+  return conv;
+}
+
+function initAudio() {
+  if (aReady) return;
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    AC.resume();
+
+    // Master output — fade in gently over 4 seconds
+    MG = AC.createGain();
+    MG.gain.value = 0;
+    MG.gain.setTargetAtTime(0.52, AC.currentTime, 4.0);
+    MG.connect(AC.destination);
+
+    // Long hall reverb — 5.5s tail, soft decay
+    reverbNode = makeImpulse(5.5, 1.6);
+    const revOut = AC.createGain(); revOut.gain.value = 0.48;
+    reverbNode.connect(revOut); revOut.connect(AC.destination);
+
+    // ── Pad drones — D minor pentatonic ──────────────
+    // Each has a near-imperceptibly slow breath (0.04–0.08 Hz) rather than vibrato
+    const padSpec = [
+      { f: 73.42,  g: 0.20, type: 'sine',     onset: 0.0  }, // D2 — deep root
+      { f: 110.00, g: 0.14, type: 'sine',     onset: 2.5  }, // A2
+      { f: 146.83, g: 0.11, type: 'triangle', onset: 5.0  }, // D3
+      { f: 174.61, g: 0.08, type: 'sine',     onset: 8.0  }, // F3
+      { f: 220.00, g: 0.06, type: 'triangle', onset: 11.5 }, // A3
+      { f: 261.63, g: 0.04, type: 'sine',     onset: 15.0 }, // C4
+    ];
+
+    padSpec.forEach(({ f, g, type, onset }) => {
+      const osc = AC.createOscillator();
+      const gn  = AC.createGain();
+
+      // Breathing amplitude — LFO on gain, not pitch (avoids wobble)
+      const breathLFO  = AC.createOscillator();
+      const breathGain = AC.createGain();
+      breathLFO.frequency.value = 0.04 + Math.random() * 0.04; // 0.04–0.08 Hz
+      breathGain.gain.value = g * 0.18; // ±18% amplitude breath, inaudible as vibrato
+      breathLFO.connect(breathGain);
+      breathGain.connect(gn.gain);
+      breathLFO.start();
+
+      osc.type = type;
+      osc.frequency.value = f;
+      gn.gain.value = 0;
+      // Staggered fade-in — each layer blooms in slowly
+      gn.gain.setTargetAtTime(g, AC.currentTime + onset, 5.5);
+
+      osc.connect(gn);
+      gn.connect(MG);
+      gn.connect(reverbNode); // wet send
+      osc.start();
+      drones.push({ osc, gn, base: f, baseGain: g });
+    });
+
+    // ── Airy high shimmer — filtered noise, barely there ──
+    const nBuf = AC.createBuffer(1, AC.sampleRate * 4, AC.sampleRate);
+    const nd = nBuf.getChannelData(0);
+    for (let i = 0; i < nBuf.length; i++) nd[i] = (Math.random() * 2 - 1) * 0.01;
+    const noise = AC.createBufferSource(); noise.buffer = nBuf; noise.loop = true;
+    const hpf = AC.createBiquadFilter(); hpf.type = 'highpass';
+    hpf.frequency.value = 4000; hpf.Q.value = 0.5;
+    const noiseGain = AC.createGain(); noiseGain.gain.value = 0.12;
+    noise.connect(hpf); hpf.connect(noiseGain);
+    noiseGain.connect(reverbNode); // only in reverb — pure air texture
+    noise.start();
+
+    // ── Begin slow bell arpeggio ──
+    scheduleArp(4500);
+
+    aReady = true;
+  } catch (e) {
+    console.warn('Audio init failed:', e);
+  }
+}
+
+function scheduleArp(delayMs) {
+  arpeggioTimer = setTimeout(() => {
+    if (!aReady) return;
+    ringBell(
+      PENTA[Math.floor(Math.random() * PENTA.length)],
+      0.048 + Math.random() * 0.028
+    );
+    // Next note in 4–11 s — randomised so it never feels metronomic
+    scheduleArp(4000 + Math.random() * 7000);
+  }, delayMs);
+}
+
+function ringBell(freq, vel) {
+  if (!aReady) return;
+  const now = AC.currentTime;
+
+  // Two partials — fundamental + inharmonic overtone (2.756× = bowl/bell character)
+  const f1 = AC.createOscillator(); f1.type = 'sine'; f1.frequency.value = freq;
+  const f2 = AC.createOscillator(); f2.type = 'sine'; f2.frequency.value = freq * 2.756;
+  const g1 = AC.createGain();
+  const g2 = AC.createGain(); g2.gain.value = 0.22; // partial softer than fundamental
+
+  // Bell envelope: instant on, long exponential decay (~6 s)
+  g1.gain.setValueAtTime(vel, now);
+  g1.gain.exponentialRampToValueAtTime(0.0001, now + 6.2);
+
+  f1.connect(g1); f2.connect(g2); g2.connect(g1);
+  g1.connect(MG);
+  g1.connect(reverbNode);
+  f1.start(now); f2.start(now);
+  f1.stop(now + 6.3); f2.stop(now + 6.3);
+}
+
+function pitchUpdate() {
+  if (!aReady) return;
+  // Mass slows time → drones shift down very gradually (gravitational red-shift feel)
+  drones.forEach(({ osc, gn, base, baseGain }) => {
+    osc.frequency.setTargetAtTime(base * tScale, AC.currentTime, 4.0);
+    // Slight gain swell as pitch drops — heavier, denser feel
+    gn.gain.setTargetAtTime(baseGain * (0.75 + 0.25 * tScale), AC.currentTime, 4.0);
+  });
+}
+
+function pickupSound() {
+  if (!aReady) return;
+  // Gentle crystal bell from upper pentatonic — never the same note twice in a row
+  const idx = 5 + Math.floor(Math.random() * (PENTA.length - 5));
+  ringBell(PENTA[idx], 0.072);
+}
+
+// ── Maze generation ───────────────────────────────
+function genMaze() {
+  // 1. Initialize ALL walls to true first
+  walls = Array.from({ length: RC }, (_, r) =>
+    Array.from({ length: SC }, () => ({
+      inner: true,
+      ccw: true
+    }))
+  );
+
+  const vis = Array.from({ length: RC }, () => new Array(SC).fill(false));
+
+  // 2. CLEAR THE CENTER (Rings 0, 1, 2)
+  // We explicitly remove walls in the center so it's an open plaza
+  for (let r = 0; r <= 2; r++) {
+    for (let s = 0; s < SC; s++) {
+      vis[r][s] = true;         // Prevent DFS from entering
+      walls[r][s].inner = false; // Remove horizontal ring walls
+      walls[r][s].ccw = false;   // Remove vertical sector walls
+    }
+  }
+
+  // 3. DFS Maze Generation (Starting from Ring 3)
+  function dfs(r, s) {
+    vis[r][s] = true;
+    const nb = [];
+    if (r > 2) nb.push([r - 1, s, 'in']); // Can't go below ring 3
+    if (r < RC - 1) nb.push([r + 1, s, 'out']);
+    nb.push([r, (s + 1) % SC, 'cw']);
+    nb.push([r, (s - 1 + SC) % SC, 'ccw']);
+    
+    nb.sort(() => Math.random() - .5);
+
+    for (const [nr, ns, dir] of nb) {
+      if (vis[nr][ns]) continue;
+      
+      // Carve the path by removing walls
+      if (dir === 'out')      walls[nr][ns].inner = false;
+      else if (dir === 'in')  walls[r][s].inner = false;
+      else if (dir === 'cw')  walls[r][ns].ccw = false;
+      else                    walls[r][s].ccw = false;
+      
+      dfs(nr, ns);
+    }
+  }
+
+  // Start the maze generation at the first "real" maze ring
+  dfs(3, 0);
+  
+  // 4. Ensure the boundary between the "Safe Zone" and "Maze" is open
+  // This picks one random sector to open the entrance to the maze
+  const entrance = Math.floor(Math.random() * SC);
+  walls[3][entrance].inner = false;
+   
+
+  // Helio markers
+  helios=[];
+  for(let r=0;r<RC;r++) for(let s=0;s<SC;s++){
+    if(r>0 && walls[r][s].inner) helios.push({r,s,t:'arc',brt:0});
+    if(walls[r][s].ccw)          helios.push({r,s,t:'rad',brt:0});
+  }
+
+  // Orbs at rings 2-11
+  orbList=[];
+  const used=new Set();
+  while(orbList.length<OC){
+    const r=2+Math.floor(Math.random()*(RC-2));
+    const s=Math.floor(Math.random()*SC);
+    const k=`${r},${s}`;
+    if(used.has(k)) continue; used.add(k);
+    orbList.push({r,s,col:false,ph:Math.random()*Math.PI*2});
+  }
+}
+
+// ── Cell helpers ──────────────────────────────────
+function normA(a){return((a%(Math.PI*2))+Math.PI*2)%(Math.PI*2)}
+function cellOf(wx,wy){
+  const r=Math.hypot(wx,wy);
+  const a=normA(Math.atan2(wy,wx));
+  return{ring:Math.min(Math.floor(r/RG),RC-1),
+         sec:Math.floor(a/(Math.PI*2)*SC)%SC, r, a};
+}
+function orbPos(o){
+  const a=((o.s+.5)/SC)*Math.PI*2;
+  return{x:Math.cos(a)*(o.r+.5)*RG, y:Math.sin(a)*(o.r+.5)*RG};
+}
+function helioPos(h){
+  if(h.t==='arc'){const a=((h.s+.5)/SC)*Math.PI*2; return{x:Math.cos(a)*h.r*RG,y:Math.sin(a)*h.r*RG};}
+  else {const a=(h.s/SC)*Math.PI*2; return{x:Math.cos(a)*(h.r+.5)*RG,y:Math.sin(a)*(h.r+.5)*RG};}
+}
+
+// ── Player movement with wall collision ───────────
+function doMove(dx,dy){
+  if(ended) return;
+  const spd=B_SPEED*tScale;
+  let nx=pWX+dx*spd, ny=pWY+dy*spd;
+  const{ring:cR,sec:cS}=cellOf(pWX,pWY);
+
+  // ── Ring boundary ──
+  const nd=Math.hypot(nx,ny);
+  const nR=Math.min(Math.floor(nd/RG),RC-1);
+  if(nR!==cR){
+    const out=nR>cR;
+    const bR=Math.max(cR,nR)*RG;
+    const wr=out?nR:cR;
+    const blocked=walls[wr]?.[cS]?.inner??false;
+    if(blocked){
+      const ang=Math.atan2(ny,nx);
+      const cr=out?bR-P_RAD-1:bR+P_RAD+1;
+      nx=Math.cos(ang)*cr; ny=Math.sin(ang)*cr;
+    }
+  }
+
+  // ── Sector boundary ──
+  const na=normA(Math.atan2(ny,nx));
+  const nS=Math.floor(na/(Math.PI*2)*SC)%SC;
+  const fR=Math.min(Math.floor(Math.hypot(nx,ny)/RG),RC-1);
+  if(nS!==cS){
+    const diff=(nS-cS+SC)%SC;
+    const goCW=diff<=SC/2;
+    const ws=goCW?nS:cS;
+    const blocked=walls[fR]?.[ws]?.ccw??false;
+    if(blocked){
+      const bAng=ws/SC*Math.PI*2;
+      const eps=0.012;
+      const ca=goCW?bAng-eps:bAng+eps;
+      const r=Math.hypot(nx,ny);
+      nx=Math.cos(ca)*r; ny=Math.sin(ca)*r;
+    }
+  }
+
+  // ── Bounds ──
+  const fr=Math.hypot(nx,ny);
+  const maxR=(RC-.1)*RG-P_RAD;
+  if(fr>maxR){const a=Math.atan2(ny,nx); nx=Math.cos(a)*maxR; ny=Math.sin(a)*maxR;}
+  if(fr<1){nx=pWX;ny=pWY;}
+
+  pWX=nx; pWY=ny;
+}
+
+// ── Input ─────────────────────────────────────────
+const keys={};
+window.addEventListener('keydown',e=>keys[e.key]=true);
+window.addEventListener('keyup',  e=>keys[e.key]=false);
+
+const joyEl=document.getElementById('joy');
+const jkEl =document.getElementById('jk');
+let jActive=false,jDX=0,jDY=0,jTId=null;
+
+joyEl.addEventListener('touchstart',e=>{
+  e.preventDefault(); const t=e.changedTouches[0];
+  jTId=t.identifier; jActive=true; updateJoy(t);
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+  if(!jActive) return;
+  for(const t of e.changedTouches) if(t.identifier===jTId){updateJoy(t);break;}
+},{passive:false});
+document.addEventListener('touchend',e=>{
+  for(const t of e.changedTouches) if(t.identifier===jTId){
+    jActive=false;jDX=0;jDY=0;
+    jkEl.style.transform='translate(-50%,-50%)'; break;
+  }
+});
+function updateJoy(t){
+  const rc=joyEl.getBoundingClientRect();
+  const cx2=rc.left+rc.width/2, cy2=rc.top+rc.height/2;
+  let dx=t.clientX-cx2, dy=t.clientY-cy2;
+  const d=Math.hypot(dx,dy), mx=rc.width*.38;
+  if(d>mx){dx*=mx/d;dy*=mx/d;}
+  jDX=dx/mx; jDY=dy/mx;
+  jkEl.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+}
+
+let tapWX=null,tapWY=null;
+cv.addEventListener('touchstart',e=>{
+  if(scene!=='play') return;
+  const t=e.changedTouches[0];
+  const jb=joyEl.getBoundingClientRect();
+  if(t.clientX<jb.right+24 && t.clientY>jb.top-24) return;
+  tapWX=t.clientX-CX+camX; tapWY=t.clientY-CY+camY;
+},{passive:true});
+cv.addEventListener('touchmove',e=>{
+  if(scene!=='play') return;
+  tapWX=e.changedTouches[0].clientX-CX+camX;
+  tapWY=e.changedTouches[0].clientY-CY+camY;
+},{passive:true});
+cv.addEventListener('touchend',()=>{tapWX=null;tapWY=null;});
+cv.addEventListener('mousemove',e=>{
+  if(scene!=='play'||!(e.buttons&1)) return;
+  tapWX=e.clientX-CX+camX; tapWY=e.clientY-CY+camY;
+});
+cv.addEventListener('mouseup',()=>{tapWX=null;tapWY=null;});
+
+function inputVec(){
+  let dx=0,dy=0;
+  if(keys['ArrowLeft'] ||keys['a'])dx-=1;
+  if(keys['ArrowRight']||keys['d'])dx+=1;
+  if(keys['ArrowUp']   ||keys['w'])dy-=1;
+  if(keys['ArrowDown'] ||keys['s'])dy+=1;
+  dx+=jDX; dy+=jDY;
+  if(tapWX!==null){
+    const tx=tapWX-pWX,ty=tapWY-pWY;
+    const td=Math.hypot(tx,ty);
+    if(td>10){dx+=tx/td;dy+=ty/td;}else{tapWX=null;}
+  }
+  const len=Math.hypot(dx,dy);
+  if(len>1){dx/=len;dy/=len;}
+  return{dx,dy};
+}
+
+// ── Shadow ────────────────────────────────────────
+function shadowEdge(angle){
+  const base=shadowR*RG;
+  return base
+    +Math.sin(angle*7+rTime*1.9)*.072*base
+    +Math.cos(angle*4-rTime*2.4)*.042*base
+    +Math.sin(angle*11+rTime*3.3)*.022*base;
+}
+
+function drawShadow() {
+  if (shadowR < 0.05) return;
+
+  // 1. Lower the "Step Count" for the wave effect
+  // Reducing this from 180 to 60 significantly reduces CPU load
+  const steps = 30; 
+  cx.beginPath();
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const r = shadowEdge(a);
+    const x = Math.cos(a) * r, y = Math.sin(a) * r;
+    i === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+  }
+  cx.closePath();
+
+// Simple tint instead of heavy blur/gradient
+  cx.fillStyle = 'rgba(40, 20, 10, 0.4)'; 
+  cx.fill();
+
+  // Add a subtle border instead of a CPU-heavy blur filter
+  cx.strokeStyle = 'rgba(224, 88, 40, 0.7)';
+ 
+
+}
+
+// ── Lighthouse ────────────────────────────────────
+function drawLighthouse(){
+  const bR=RG*.36, pulse=.68+.32*Math.sin(rTime*2.6);
+
+  // Outer glow
+  const og=cx.createRadialGradient(0,0,0,0,0,bR*2.4);
+  og.addColorStop(0,  `rgba(255,242,155,${.55*pulse})`);
+  og.addColorStop(.5, `rgba(255,200,60,${.28*pulse})`);
+  og.addColorStop(1,  'rgba(255,150,20,0)');
+  cx.beginPath(); cx.arc(0,0,bR*2.4,0,Math.PI*2);
+  cx.fillStyle=og; cx.fill();
+
+  // Stone body
+  const bg2=cx.createRadialGradient(-bR*.2,-bR*.2,0,0,0,bR);
+  bg2.addColorStop(0,'#ddd4c2'); bg2.addColorStop(.65,'#bfb49e'); bg2.addColorStop(1,'#a09078');
+  cx.beginPath(); cx.arc(0,0,bR,0,Math.PI*2);
+  cx.fillStyle=bg2; cx.fill();
+  cx.strokeStyle='#8a6840'; cx.lineWidth=1.8; cx.stroke();
+
+  // Bands
+  for(let i=1;i<=5;i++){
+    cx.beginPath(); cx.arc(0,0,bR*(i*.18),0,Math.PI*2);
+    cx.strokeStyle='rgba(90,65,40,.3)'; cx.lineWidth=.7; cx.stroke();
+  }
+
+  // Rotating beacon ray
+  cx.save(); cx.rotate(rTime*1.3);
+  const rayG=cx.createLinearGradient(0,0,RC*RG*.9,0);
+  rayG.addColorStop(0,`rgba(255,245,160,${.22*pulse})`);
+  rayG.addColorStop(1,'rgba(255,245,160,0)');
+  cx.beginPath(); cx.moveTo(bR*.5,0);
+  cx.lineTo(RC*RG*.9, RG*.7); cx.lineTo(RC*RG*.9,-RG*.7); cx.closePath();
+  cx.fillStyle=rayG; cx.fill();
+  cx.restore();
+
+  // Lantern
+  const lg=cx.createRadialGradient(0,0,0,0,0,bR*.42);
+  lg.addColorStop(0,  `rgba(255,252,200,${.92*pulse})`);
+  lg.addColorStop(.5, `rgba(255,210,80,${.65*pulse})`);
+  lg.addColorStop(1,  'rgba(255,160,20,0)');
+  cx.beginPath(); cx.arc(0,0,bR*.42,0,Math.PI*2);
+  cx.fillStyle=lg; cx.fill();
+
+  // Safe-zone ring
+  cx.beginPath(); cx.arc(0,0,RG*.85,0,Math.PI*2);
+  cx.strokeStyle=`rgba(232,196,74,${.18+.1*Math.sin(rTime*3)})`;
+  cx.lineWidth=1; cx.setLineDash([4,5]); cx.stroke(); cx.setLineDash([]);
+}
+
+// ── Maze walls ────────────────────────────────────
+function drawWallBatch(inShadow){
+  const sEdge=shadowR*RG;
+  for(let r=0;r<RC;r++){
+    for(let s=0;s<SC;s++){
+      const a1=(s/SC)*Math.PI*2, a2=((s+1)/SC)*Math.PI*2, aM=(a1+a2)/2;
+      // Arc wall
+      if(r>0 && walls[r][s].inner){
+        const wR=r*RG;
+        const IS=Math.hypot(Math.cos(aM)*wR,Math.sin(aM)*wR)<sEdge;
+        if(IS===inShadow) drawArc(wR,a1,a2,r,s);
+      }
+      // Radial wall
+      if(walls[r][s].ccw){
+        const mR=(r+.5)*RG;
+        const IS=Math.hypot(Math.cos(a1)*mR,Math.sin(a1)*mR)<sEdge;
+        if(IS===inShadow) drawRad(r*RG,(r+1)*RG,a1,r,s);
+      }
+    }
+  }
+}
+
+function getHBrt(type,r,s){
+  for(const h of helios) if(h.t===type&&h.r===r&&h.s===s) return h.brt;
+  return 0;
+}
+
+function drawArc(radius,a1,a2,r,s){
+  const brt=getHBrt('arc',r,s);
+  const tk=Math.max(2,RG*.055);
+  // Stone
+  cx.beginPath(); cx.arc(0,0,radius,a1,a2);
+  cx.strokeStyle=`rgb(${192+Math.round(brt*38)},${180+Math.round(brt*22)},${158+Math.round(brt*14)})`;
+  cx.lineWidth=tk; cx.stroke();
+  // Gold mirror
+  cx.beginPath(); cx.arc(0,0,radius+tk*.52,a1+.012,a2-.012);
+  cx.strokeStyle=`rgba(232,196,74,${.42+brt*.58})`; cx.lineWidth=tk*.32; cx.stroke();
+  // Beam
+  if(brt>.22){
+    const mx=Math.cos((a1+a2)/2)*radius, my=Math.sin((a1+a2)/2)*radius;
+    const bx=pWX-mx, by=pWY-my;
+    const bg=cx.createLinearGradient(mx,my,mx+bx*.85,my+by*.85);
+    bg.addColorStop(0,`rgba(255,235,120,${brt*.26})`); bg.addColorStop(1,'rgba(255,235,120,0)');
+    cx.beginPath(); cx.moveTo(mx,my); cx.lineTo(mx+bx*.85,my+by*.85);
+    cx.strokeStyle=bg; cx.lineWidth=brt*4; cx.stroke();
+  }
+}
+
+function drawRad(r1,r2,ang,r,s){
+  const brt=getHBrt('rad',r,s);
+  const tk=Math.max(2,RG*.055);
+  const x1=Math.cos(ang)*r1,y1=Math.sin(ang)*r1;
+  const x2=Math.cos(ang)*r2,y2=Math.sin(ang)*r2;
+  cx.beginPath(); cx.moveTo(x1,y1); cx.lineTo(x2,y2);
+  cx.strokeStyle=`rgb(${192+Math.round(brt*38)},${180+Math.round(brt*22)},${158+Math.round(brt*14)})`;
+  cx.lineWidth=tk; cx.stroke();
+  // Gold side
+  const pa=ang+Math.PI/2, of=tk*.58;
+  cx.beginPath();
+  cx.moveTo(x1+Math.cos(pa)*of,y1+Math.sin(pa)*of);
+  cx.lineTo(x2+Math.cos(pa)*of,y2+Math.sin(pa)*of);
+  cx.strokeStyle=`rgba(232,196,74,${.42+brt*.58})`; cx.lineWidth=tk*.32; cx.stroke();
+  if(brt>.22){
+    const mx=(x1+x2)/2,my=(y1+y2)/2;
+    const bx=pWX-mx,by=pWY-my;
+    const bg=cx.createLinearGradient(mx,my,mx+bx*.85,my+by*.85);
+    bg.addColorStop(0,`rgba(255,235,120,${brt*.26})`); bg.addColorStop(1,'rgba(255,235,120,0)');
+    cx.beginPath(); cx.moveTo(mx,my); cx.lineTo(mx+bx*.85,my+by*.85);
+    cx.strokeStyle=bg; cx.lineWidth=brt*4; cx.stroke();
+  }
+}
+
+function drawMaze(){
+  // Guide rings
+  for (let r = 1; r <= RC; r++) {
+    cx.beginPath(); 
+    cx.arc(0, 0, r * RG, 0, Math.PI * 2);
+    // Make the last ring (RC) thicker and more visible
+    cx.strokeStyle = (r === RC) ? 'rgba(232, 196, 74, 0.8)' : 'rgba(172, 158, 134, 0.1)'; 
+    cx.lineWidth = (r === RC) ? 3 : 0.5;
+    cx.stroke();
+  }
+
+  // Sector rays
+  for(let s=0;s<SC;s++){
+    const a=(s/SC)*Math.PI*2;
+    cx.beginPath();
+    cx.moveTo(Math.cos(a)*RG,Math.sin(a)*RG);
+    cx.lineTo(Math.cos(a)*RC*RG,Math.sin(a)*RC*RG);
+    cx.strokeStyle='rgba(172,158,134,.05)'; cx.lineWidth=.4; cx.stroke();
+  }
+
+  // This ensures that even if no maze walls are generated on the last ring, 
+  // the player sees a solid "glass" or "stone" perimeter.
+  cx.beginPath();
+  cx.arc(0, 0, RC * RG, 0, Math.PI * 2);
+  cx.strokeStyle = 'rgba(232, 196, 74, 0.6)'; // Brighter gold for the boundary
+  cx.lineWidth = 4;
+  cx.stroke();
+
+  // Pass 1: sharp walls outside shadow
+  cx.save(); drawWallBatch(false); cx.restore();
+
+  // Pass 2: Draw walls inside shadow
+  cx.save(); 
+  cx.filter = 'blur(1px)'; 
+  cx.globalAlpha = 0.26; 
+  drawWallBatch(true); 
+  cx.restore();
+}
+
+// ── Orbs ──────────────────────────────────────────
+function drawOrbs(dt){
+  orbList.forEach(o=>{
+    if(o.col) return;
+    const p = orbPos(o);
+    const rr = (5.5 + (.5 + .5 * Math.sin(o.ph)) * 3) * (RG / 52) / zoom; // Apply zoom correction
+    const g=cx.createRadialGradient(p.x,p.y,0,p.x,p.y,rr*2.6);
+    g.addColorStop(0,'rgba(255,244,188,.95)');
+    g.addColorStop(.4,'rgba(232,196,74,.72)');
+    g.addColorStop(1,'rgba(232,140,40,0)');
+    cx.beginPath(); cx.arc(p.x,p.y,rr*2.6,0,Math.PI*2);
+    cx.fillStyle=g; cx.fill();
+    cx.beginPath(); cx.arc(p.x,p.y,rr,0,Math.PI*2);
+    cx.fillStyle='rgba(255,248,200,.94)'; cx.fill();
+    // Highlight
+    cx.beginPath(); cx.arc(p.x-rr*.28,p.y-rr*.3,rr*.28,0,Math.PI*2);
+    cx.fillStyle='rgba(255,255,255,.6)'; cx.fill();
+  });
+}
+
+// ── Player ────────────────────────────────────────
+function drawPlayer(){
+  
+  // Multiply base radius by (1 / zoom) so it stays the same visual size on screen
+  const baseR = Math.max(5, RG * 0.12);
+  const r = baseR / zoom; 
+  const g = cx.createRadialGradient(pWX, pWY, 0, pWX, pWY, r * 3.2);
+  g.addColorStop(0,'rgba(175,222,255,.52)'); g.addColorStop(1,'rgba(75,148,220,0)');
+  cx.beginPath(); cx.arc(pWX,pWY,r*3.2,0,Math.PI*2);
+  cx.fillStyle=g; cx.fill();
+  cx.beginPath(); cx.arc(pWX,pWY,r,0,Math.PI*2);
+  cx.fillStyle='rgba(208,238,255,.96)'; cx.fill();
+  cx.strokeStyle='rgba(100,168,228,.82)'; cx.lineWidth=1.5; cx.stroke();
+  cx.beginPath(); cx.arc(pWX-r*.28,pWY-r*.3,r*.3,0,Math.PI*2);
+  cx.fillStyle='rgba(255,255,255,.62)'; cx.fill();
+}
+
+// ── Particles ─────────────────────────────────────
+function spawnParts(wx,wy){
+  for(let i=0;i<16;i++){
+    const a=Math.random()*Math.PI*2, sp=1.6+Math.random()*2.6;
+    parts.push({x:wx,y:wy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,
+                life:1,sz:2.2+Math.random()*3.2});
+  }
+}
+function drawParts(rawDt){
+  parts=parts.filter(p=>p.life>0);
+  parts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.05; p.life-=rawDt*2.6;
+    cx.beginPath(); cx.arc(p.x,p.y,p.sz*p.life*(RG/52),0,Math.PI*2);
+    cx.fillStyle=`rgba(232,196,74,${p.life*.82})`; cx.fill();
+  });
+}
+
+// ── Orb collection ────────────────────────────────
+function checkOrbs(){
+  orbList.forEach(o=>{
+    if(o.col) return;
+    const p=orbPos(o), d=Math.hypot(pWX-p.x,pWY-p.y);
+    if(d<RG*.48){
+      o.col=true; collected++;
+      tScale=1/(1+collected*.005);
+      pitchUpdate(); pickupSound();
+      spawnParts(p.x,p.y);
+      helios.forEach(h=>{
+        const hp=helioPos(h);
+        if(Math.hypot(hp.x-p.x,hp.y-p.y)<RG*2) h.brt=1;
+      });
+      document.getElementById('orbc').textContent=`ORBS: ${collected}`;
+      showMsg(`ORB ${collected} COLLECTED  ·  TIME ×${tScale.toFixed(2)}`);
+    }
+  });
+}
+
+// ── Win / Lose ────────────────────────────────────
+function checkEnd() {
+  if (collected >= orbsNeeded && Math.hypot(pWX, pWY) < RG * 1.5) {
+    doEnd(true);
+    return;
+  }
+  if (shadowR >= LIMIT_RING - 0.01) {
+    doEnd(false);
+  }
+}
+
+function doEnd(win){
+  if(ended) return; ended=true; scene='end';
+  const outcomeText = win
+    ? `${collected} orbs recovered · Shadow radius was Ring ${LIMIT_RING}`
+    : `${collected} orbs found · The shadow consumed the maze`;
+  setTimeout(() => openQuiz(win, outcomeText), 900);
+}
+
+// ── Message ───────────────────────────────────────
+function showMsg(t){
+  const el=document.getElementById('msg');
+  el.textContent=t; el.style.opacity=1; msgT=2.8;
+}
+
+// ── Background ────────────────────────────────────
+function drawBG(){
+  const p=Math.min(rTime/GAM_DUR,1);
+  function lp(a,b,t){return Math.round(a+(b-a)*t)}
+  const c1=`rgb(${lp(182,202,p)},${lp(212,138,p)},${lp(232,82,p)})`;
+  const c2=`rgb(${lp(138,158,p)},${lp(178,92,p)},${lp(202,48,p)})`;
+  const g=cx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,c1); g.addColorStop(1,c2);
+  cx.fillStyle=g; cx.fillRect(0,0,W,H);
+}
+
+// ── HUD dials ─────────────────────────────────────
+function drawClock(){
+  const c=document.getElementById('clk').getContext('2d'), S=70;
+  const p=Math.min(rTime/GAM_DUR,1); // 0→1 over game duration
+  c.clearRect(0,0,S,S);
+
+  // Red glow behind dial — starts at p=0.5, fully intense at p=1
+  if(p>0.42){
+    const glowT=Math.min((p-0.42)/0.58,1);
+    const pulse=glowT*(0.72+0.28*Math.sin(rTime*4.5*(0.5+glowT)));
+    const grd=c.createRadialGradient(S/2,S/2,0,S/2,S/2,S/2+4);
+    grd.addColorStop(0,  `rgba(220,50,20,0)`);
+    grd.addColorStop(0.55,`rgba(220,50,20,${pulse*0.38})`);
+    grd.addColorStop(1,  `rgba(220,50,20,${pulse*0.72})`);
+    c.beginPath(); c.arc(S/2,S/2,S/2+4,0,Math.PI*2);
+    c.fillStyle=grd; c.fill();
+  }
+
+  // Dial face
+  c.beginPath(); c.arc(S/2,S/2,S/2-1,0,Math.PI*2);
+  c.fillStyle='rgba(8,4,2,.92)'; c.fill();
+
+  // Border — shifts red as time runs out
+  const borderR=Math.round(60+p*162), borderG=Math.round(Math.max(0,196-p*196));
+  c.strokeStyle=p>0.42?`rgba(${borderR},${borderG},20,${0.4+p*0.55})`:'rgba(232,196,74,.22)';
+  c.lineWidth=1+(p>0.42?(p-0.42)*3.5:0); c.stroke();
+
+  for(let i=0;i<12;i++){
+    const a=(i/12)*Math.PI*2-Math.PI/2;
+    const r1=S/2-4,r2=S/2-(i%3===0?8:5.5);
+    c.beginPath();
+    c.moveTo(S/2+Math.cos(a)*r1,S/2+Math.sin(a)*r1);
+    c.lineTo(S/2+Math.cos(a)*r2,S/2+Math.sin(a)*r2);
+    c.strokeStyle=i%3===0?'rgba(232,196,74,.58)':'rgba(232,196,74,.28)';
+    c.lineWidth=i%3===0?1.4:.7; c.stroke();
+  }
+  const gmE=rTime*(TIME_MULT/60);
+  const totM=sH*60+sMin+gmE;
+  const h12=(totM/60)%12, m60=totM%60;
+  const ha=(h12/12)*Math.PI*2-Math.PI/2, ma=(m60/60)*Math.PI*2-Math.PI/2;
+  c.beginPath(); c.moveTo(S/2,S/2);
+  c.lineTo(S/2+Math.cos(ha)*(S/2-17),S/2+Math.sin(ha)*(S/2-17));
+  c.strokeStyle='rgba(255,214,80,.95)'; c.lineWidth=2.5; c.lineCap='round'; c.stroke();
+  c.beginPath(); c.moveTo(S/2,S/2);
+  c.lineTo(S/2+Math.cos(ma)*(S/2-7),S/2+Math.sin(ma)*(S/2-7));
+  c.strokeStyle='rgba(255,255,255,.9)'; c.lineWidth=1.4; c.lineCap='round'; c.stroke();
+  c.beginPath(); c.arc(S/2,S/2,2.4,0,Math.PI*2);
+  c.fillStyle='rgba(232,196,74,.9)'; c.fill();
+}
+
+function drawMass(){
+  const c=document.getElementById('mss').getContext('2d'), S=70;
+  c.clearRect(0,0,S,S);
+  c.beginPath(); c.arc(S/2,S/2,S/2-1,0,Math.PI*2);
+  c.fillStyle='rgba(8,4,2,.92)'; c.fill();
+  c.strokeStyle='rgba(232,196,74,.22)'; c.lineWidth=1; c.stroke();
+  const pct=Math.min(collected/OC,1);
+  const sa=Math.PI*.75, ea=Math.PI*2.25;
+  c.beginPath(); c.arc(S/2,S/2,S/2-9,sa,ea);
+  c.strokeStyle='rgba(255,255,255,.07)'; c.lineWidth=6; c.stroke();
+  if(pct>0){
+    c.beginPath(); c.arc(S/2,S/2,S/2-9,sa,sa+(ea-sa)*pct);
+    c.strokeStyle=pct>.7?'#e05a2b':pct>.4?'#e8c44a':'#4caf88';
+    c.lineWidth=6; c.stroke();
+  }
+  const na=sa+(ea-sa)*pct;
+  c.beginPath(); c.moveTo(S/2,S/2);
+  c.lineTo(S/2+Math.cos(na)*(S/2-12),S/2+Math.sin(na)*(S/2-12));
+  c.strokeStyle='#fff'; c.lineWidth=1.5; c.lineCap='round'; c.stroke();
+  c.fillStyle='rgba(232,196,74,.62)'; c.font='7px monospace';
+  c.textAlign='center'; c.fillText(`${collected}`,S/2,S/2+18);
+}
+
+function drawMinimap() {
+  const mCanvas = document.getElementById('minimap');
+  if (!mCanvas) return;
+  const mc = mCanvas.getContext('2d'), S = 90, R = S / 2 - 3;
+
+  // 1. CRITICAL: Reset the coordinate system and clear the old frame
+  mc.setTransform(1, 0, 0, 1, 0, 0); 
+  mc.clearRect(0, 0, S, S);
+
+  // 2. Start drawing fresh
+  mc.save();
+  mc.beginPath();
+  mc.arc(S / 2, S / 2, R + 1, 0, Math.PI * 2);
+  mc.clip();
+
+  // Background
+  mc.fillStyle = 'rgba(14,10,6,.96)';
+  mc.fillRect(0, 0, S, S);
+
+  const scale = R / (RC * RG);
+
+  // Shadow fill on minimap
+  if(shadowR>0.05){
+    const sr=shadowR*RG*scale;
+    const sg=mc.createRadialGradient(S/2,S/2,0,S/2,S/2,sr);
+    sg.addColorStop(0,'rgba(8,4,1,.82)');
+    sg.addColorStop(.8,'rgba(20,10,3,.55)');
+    sg.addColorStop(1,'rgba(50,22,5,0)');
+    mc.beginPath(); mc.arc(S/2,S/2,sr,0,Math.PI*2);
+    mc.fillStyle=sg; mc.fill();
+  }
+
+  // Rings
+  for(let r=1;r<=RC;r++){
+    mc.beginPath(); mc.arc(S/2,S/2,r*RG*scale,0,Math.PI*2);
+    mc.strokeStyle='rgba(180,165,140,.16)'; mc.lineWidth=.5; mc.stroke();
+  }
+
+  // Walls
+  for(let r=0;r<RC;r++){
+    for(let s=0;s<SC;s++){
+      const a1=(s/SC)*Math.PI*2, a2=((s+1)/SC)*Math.PI*2;
+      if(r>0 && walls[r][s].inner){
+        const wr=r*RG*scale;
+        mc.beginPath(); mc.arc(S/2,S/2,wr,a1,a2);
+        mc.strokeStyle='rgba(200,182,148,.45)'; mc.lineWidth=1; mc.stroke();
+      }
+      if(walls[r][s].ccw){
+        const r1w=r*RG*scale, r2w=(r+1)*RG*scale;
+        mc.beginPath();
+        mc.moveTo(S/2+Math.cos(a1)*r1w,S/2+Math.sin(a1)*r1w);
+        mc.lineTo(S/2+Math.cos(a1)*r2w,S/2+Math.sin(a1)*r2w);
+        mc.strokeStyle='rgba(200,182,148,.45)'; mc.lineWidth=1; mc.stroke();
+      }
+    }
+  }
+
+  // Orbs on minimap
+  orbList.forEach(o=>{
+    if(o.col) return;
+    const p=orbPos(o);
+    mc.beginPath(); mc.arc(S/2+p.x*scale,S/2+p.y*scale,2.2,0,Math.PI*2);
+    mc.fillStyle='rgba(232,196,74,.85)'; mc.fill();
+  });
+
+  // Lighthouse centre dot
+  const pulse=.7+.3*Math.sin(rTime*2.6);
+  mc.beginPath(); mc.arc(S/2,S/2,3,0,Math.PI*2);
+  mc.fillStyle=`rgba(255,242,155,${pulse})`; mc.fill();
+
+  // Player dot
+  mc.beginPath(); mc.arc(S/2+pWX*scale,S/2+pWY*scale,3,0,Math.PI*2);
+  mc.fillStyle='rgba(140,210,255,.96)'; mc.fill();
+  mc.strokeStyle='rgba(80,160,220,.6)'; mc.lineWidth=1; mc.stroke();
+
+  mc.restore();
+
+  // 4. Draw the border ring
+  mc.beginPath();
+  mc.arc(S / 2, S / 2, R + 1, 0, Math.PI * 2);
+  mc.strokeStyle = 'rgba(232,196,74,.22)';
+  mc.lineWidth = 1;
+  mc.stroke();
+}
+
+function updateHUD() {
+  const p = Math.min(rTime / GAM_DUR, 1);
+  const currentRadiusPx = shadowR * RG;
+  const area = Math.PI * Math.pow(shadowR, 2); // Area now grows 2x slower
+  
+  // Update Vignette (Shadow creeping in)
+  const dil = Math.pow(Math.max(0, p - .58) / .42, 2.8);
+  const vigEl = document.getElementById('vig');
+  if (vigEl) vigEl.style.opacity = dil.toFixed(3);
+
+  // LAST TIME label above clock — shows the game-clock time to escape by
+  const ltEl = document.getElementById('lastTime');
+  if (ltEl) {
+    // Compute what game-clock time it will be when shadow hits LIMIT_RING
+    const deadlineGameMins = sH * 60 + sMin + GAM_DUR * (TIME_MULT / 60);
+    const dH = Math.floor((deadlineGameMins / 60) % 24);
+    const dM = Math.floor(deadlineGameMins % 60);
+    ltEl.textContent = `${dH}:${String(dM).padStart(2,'0')}`;
+    const urgency = Math.min(rTime / GAM_DUR, 1);
+    if (urgency > 0.6) {
+      const flash = 0.6 + 0.4 * Math.sin(rTime * 5 * urgency);
+      ltEl.style.color = `rgba(224,${Math.round(80*(1-urgency))},20,${flash})`;
+      ltEl.style.fontWeight = urgency > 0.8 ? 'bold' : 'normal';
+    } else {
+      ltEl.style.color = 'rgba(232,196,74,.7)';
+      ltEl.style.fontWeight = 'normal';
+    }
+  }
+
+  // Update the new Shadow Indicator
+  const shdwEl = document.getElementById('shdw-pct');
+  if (shdwEl) {
+    // Formula: PI * (current ring radius)^2
+    const area = Math.PI * Math.pow(shadowR, 2);
+    
+    // Formula: PI * (limit ring radius)^2
+    const maxArea = Math.PI * Math.pow(LIMIT_RING, 2);
+
+    // Get Player's Current Ring
+    const pPos = cellOf(pWX, pWY);
+    const currentRing = pPos.ring + 1; // +1 because index starts at 0
+
+    // Format to 1 decimal place
+    const fmt = (n) => n.toFixed(1);
+
+    // Inline styles for bigger fonts
+    const bigStyle = "font-size: 10px; font-weight: bold; color: #fff;";
+    
+    shdwEl.innerHTML = `
+      AREA: ${fmt(area)} / <span style="${bigStyle}">${fmt(maxArea)} m²</span><br>
+      CURRENT RING: <span style="${bigStyle}">${currentRing}</span> / ${RC}
+    `;
+    
+    // Color feedback: turns red when approaching the limit
+    shdwEl.style.color = shadowR > (LIMIT_RING - 1.5) ? '#e05a2b' : '#e8c44a';
+  }
+
+  // Ensure the minimap clears itself too
+  const mCanvas = document.getElementById('minimap');
+  if (mCanvas) {
+    const mc = mCanvas.getContext('2d');
+    mc.setTransform(1, 0, 0, 1, 0, 0);
+    mc.clearRect(0, 0, 90, 90);
+  }
+  
+  document.getElementById('dlTarget') && (document.getElementById('dlTarget').textContent = `${dH}:${String(dM).padStart(2, '0')}`);
+  document.getElementById('dlTime') && (document.getElementById('dlTime').textContent = `SHADOW IN ${mLeft}:${String(sLeft).padStart(2, '0')}`);
+  document.getElementById('dlFill') && (document.getElementById('dlFill').style.width = `${(p * 100).toFixed(1)}%`);
+
+  // Draw the actual Dials
+  drawClock(); 
+  drawMass(); 
+  drawMinimap();
+}
+
+// ── Start ─────────────────────────────────────────
+let paused = false;
+let orbsNeeded = 8; // updated each game from LIMIT_RING
+let selectedMins = 5; // default difficulty
+let alarmPlayed = false; // track alarm stages
+
+// Difficulty buttons
+document.querySelectorAll('.diff-btn').forEach(b => {
+  b.addEventListener('click', e => {
+    e.stopPropagation();
+    document.querySelectorAll('.diff-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    selectedMins = parseInt(b.dataset.mins);
+  });
+});
+
+function alarmBeep(freq, dur, vol) {
+  if (!aReady) return;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'sine'; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+  o.connect(g); g.connect(AC.destination);
+  o.start(); o.stop(AC.currentTime + dur + 0.01);
+}
+
+function triggerAlarm(stage) {
+  // stage 1 (80%): two soft low pulses
+  // stage 2 (93%): rapid triple pulse
+  if (stage === 1) {
+    alarmBeep(220, 0.18, 0.09);
+    setTimeout(() => alarmBeep(220, 0.18, 0.09), 400);
+  } else {
+    alarmBeep(330, 0.12, 0.14);
+    setTimeout(() => alarmBeep(330, 0.12, 0.14), 250);
+    setTimeout(() => alarmBeep(440, 0.22, 0.16), 500);
+  }
+}
+
+function startGame(){
+  scene='play'; ended=false; paused=false; alarmPlayed = false;
+  GAM_DUR = selectedMins * 60;
+  collected=0; tScale=1; rTime=0; parts=[];
+  LIMIT_RING = 6 + Math.floor(Math.random() * 7);
+  orbsNeeded = LIMIT_RING; // orbs to win = shadow limit ring radius
+  shadowR = 0;
+  sH=6+Math.floor(Math.random()*8); sMin=Math.floor(Math.random()*60);
+  genMaze();
+  const sa=((0.5)/SC)*Math.PI*2;
+  pWX=Math.cos(sa)*1.5*RG; pWY=Math.sin(sa)*1.5*RG;
+  camX=pWX; camY=pWY;
+  document.getElementById('title').style.display='none';
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('orbc').textContent='ORBS: 0';
+  document.getElementById('vig').style.opacity='0';
+  initAudio();
+}
+
+// ── Quiz modal ────────────────────────────────────
+let quizAnswer = 0;
+let quizAttempts = 0;
+
+function openQuiz(win, outcomeText) {
+  const area = Math.PI * Math.pow(LIMIT_RING, 2);
+  quizAnswer = LIMIT_RING;
+  quizAttempts = 0;
+
+  document.getElementById('quizTitle').textContent = win ? 'ESCAPED' : 'CONSUMED';
+  document.getElementById('quizOutcome').textContent = outcomeText;
+  document.getElementById('qLimitRing').textContent = LIMIT_RING;
+  document.getElementById('qArea').textContent = area.toFixed(2);
+  document.getElementById('quizInput').value = '';
+  document.getElementById('quizFeedback').textContent = '—';
+  document.getElementById('quizFeedback').style.color = 'rgba(255,255,255,.4)';
+  document.getElementById('quizForm').style.display = 'block';
+  document.getElementById('quizSuccess').style.display = 'none';
+  document.getElementById('quiz').style.display = 'flex';
+}
+
+function checkQuizAnswer() {
+  const val = parseInt(document.getElementById('quizInput').value);
+  const fb = document.getElementById('quizFeedback');
+  if (isNaN(val) || val < 1) {
+    fb.textContent = 'Enter a whole number ring (1–15)';
+    fb.style.color = 'rgba(224,140,60,.9)';
+    return;
+  }
+  quizAttempts++;
+  const area = Math.PI * Math.pow(LIMIT_RING, 2);
+  if (val === quizAnswer) {
+    // Correct!
+    document.getElementById('quizForm').style.display = 'none';
+    document.getElementById('qSuccessRing').textContent = LIMIT_RING;
+    document.getElementById('qSuccessR').textContent = LIMIT_RING;
+    document.getElementById('qSuccessArea').textContent = area.toFixed(2);
+    document.getElementById('quizSuccess').style.display = 'flex';
+  } else {
+    const diff = val - quizAnswer;
+    const hint = diff > 0 ? '↓ Too high — try smaller' : '↑ Too low — try larger';
+    const calcHint = `Hint: √(${area.toFixed(1)} ÷ π) ≈ ${Math.sqrt(area/Math.PI).toFixed(2)}`;
+    fb.textContent = quizAttempts < 2 ? hint : `${hint} · ${calcHint}`;
+    fb.style.color = 'rgba(224,90,40,.95)';
+  }
+}
+
+document.getElementById('quizSubmit').addEventListener('click', checkQuizAnswer);
+document.getElementById('quizInput').addEventListener('keydown', e => { if (e.key === 'Enter') checkQuizAnswer(); });
+document.getElementById('quizMenuBtn').addEventListener('click', () => {
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('title').style.display = 'flex';
+  scene = 'title';
+});
+
+// ── Modals ────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'infoModal') paused = true;
+  if (id === 'mapModal')  drawBigMap();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'infoModal') paused = false;
+}
+
+document.getElementById('mapBtn').addEventListener('click',  () => openModal('mapModal'));
+document.getElementById('infoBtn').addEventListener('click', () => openModal('infoModal'));
+document.getElementById('mapClose').addEventListener('click', () => closeModal('mapModal'));
+document.getElementById('infoClose').addEventListener('click',() => closeModal('infoModal'));
+// Close on backdrop click
+['mapModal','infoModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === document.getElementById(id)) closeModal(id);
+  });
+});
+
+function drawBigMap() {
+  const modal = document.getElementById('mapModal');
+  const boxW  = Math.min(window.innerWidth * 0.9, 480);
+  const S     = Math.floor(boxW - 44); // padding
+  const mc    = document.getElementById('bigMapCanvas');
+  mc.width = S; mc.height = S;
+  const c     = mc.getContext('2d');
+  const R     = S / 2 - 6;
+  const scale = R / (RC * RG);
+
+  c.clearRect(0, 0, S, S);
+  c.save();
+  c.beginPath(); c.arc(S/2, S/2, R+1, 0, Math.PI*2); c.clip();
+  c.fillStyle = 'rgba(10,6,3,.97)'; c.fillRect(0,0,S,S);
+
+  // Shadow region
+  if (shadowR > 0.05) {
+    const sr = shadowR * RG * scale;
+    const sg = c.createRadialGradient(S/2,S/2,0,S/2,S/2,sr*1.1);
+    sg.addColorStop(0,  'rgba(8,4,1,.85)');
+    sg.addColorStop(.75,'rgba(22,10,3,.62)');
+    sg.addColorStop(1,  'rgba(55,24,6,0)');
+    c.beginPath(); c.arc(S/2,S/2,sr*1.1,0,Math.PI*2);
+    c.fillStyle=sg; c.fill();
+  }
+
+  // Rings
+  for (let r=1; r<=RC; r++) {
+    c.beginPath(); c.arc(S/2,S/2,r*RG*scale,0,Math.PI*2);
+    c.strokeStyle = r===RC ? 'rgba(232,196,74,.55)' : 'rgba(172,158,134,.18)';
+    c.lineWidth = r===RC ? 1.5 : 0.6; c.stroke();
+  }
+  // Sector lines
+  for (let s=0; s<SC; s++) {
+    const a=(s/SC)*Math.PI*2;
+    c.beginPath();
+    c.moveTo(S/2+Math.cos(a)*RG*scale, S/2+Math.sin(a)*RG*scale);
+    c.lineTo(S/2+Math.cos(a)*RC*RG*scale, S/2+Math.sin(a)*RC*RG*scale);
+    c.strokeStyle='rgba(172,158,134,.07)'; c.lineWidth=.5; c.stroke();
+  }
+  // Walls
+  for (let r=0; r<RC; r++) {
+    for (let s=0; s<SC; s++) {
+      const a1=(s/SC)*Math.PI*2, a2=((s+1)/SC)*Math.PI*2;
+      if (r>0 && walls[r][s].inner) {
+        const wr=r*RG*scale;
+        c.beginPath(); c.arc(S/2,S/2,wr,a1,a2);
+        c.strokeStyle='rgba(210,195,162,.55)'; c.lineWidth=1.4; c.stroke();
+      }
+      if (walls[r][s].ccw) {
+        const r1w=r*RG*scale, r2w=(r+1)*RG*scale;
+        c.beginPath();
+        c.moveTo(S/2+Math.cos(a1)*r1w, S/2+Math.sin(a1)*r1w);
+        c.lineTo(S/2+Math.cos(a1)*r2w, S/2+Math.sin(a1)*r2w);
+        c.strokeStyle='rgba(210,195,162,.55)'; c.lineWidth=1.4; c.stroke();
+      }
+    }
+  }
+  // Orbs
+  orbList.forEach(o => {
+    if (o.col) return;
+    const p = orbPos(o);
+    const g = c.createRadialGradient(S/2+p.x*scale,S/2+p.y*scale,0,S/2+p.x*scale,S/2+p.y*scale,5);
+    g.addColorStop(0,'rgba(255,244,180,.95)'); g.addColorStop(1,'rgba(232,196,74,0)');
+    c.beginPath(); c.arc(S/2+p.x*scale,S/2+p.y*scale,4.5,0,Math.PI*2);
+    c.fillStyle=g; c.fill();
+  });
+  // Shadow danger ring
+  if (shadowR > 0.05) {
+    const dR = shadowR*RG*scale;
+    c.beginPath(); c.arc(S/2,S/2,dR,0,Math.PI*2);
+    c.strokeStyle='rgba(224,88,40,.6)'; c.lineWidth=1.5;
+    c.setLineDash([5,4]); c.stroke(); c.setLineDash([]);
+  }
+  // Lighthouse
+  c.beginPath(); c.arc(S/2,S/2,4,0,Math.PI*2);
+  c.fillStyle='rgba(255,242,155,.9)'; c.fill();
+  // Player
+  c.beginPath(); c.arc(S/2+pWX*scale,S/2+pWY*scale,5,0,Math.PI*2);
+  c.fillStyle='rgba(140,210,255,.95)'; c.fill();
+  c.strokeStyle='rgba(80,160,220,.7)'; c.lineWidth=1.5; c.stroke();
+
+  c.restore();
+  // Border
+  c.beginPath(); c.arc(S/2,S/2,R+1,0,Math.PI*2);
+  c.strokeStyle='rgba(232,196,74,.25)'; c.lineWidth=1; c.stroke();
+}
+
+document.getElementById('title').addEventListener('click', e => {
+  if (e.target.classList.contains('diff-btn')) return; // don't trigger on diff buttons
+  startGame();
+});
+document.getElementById('title').addEventListener('touchend',e=>{
+  if (e.target.classList.contains('diff-btn')) return;
+  e.preventDefault(); startGame();
+},{passive:false});
+
+// ── Loop ──────────────────────────────────────────
+let lastTs=0;
+function loop(ts) {
+  requestAnimationFrame(loop);
+  
+  // 1. CLEAR EVERYTHING IMMEDIATELY
+  // Using W and H ensures the whole screen is wiped regardless of camera position
+  cx.setTransform(1, 0, 0, 1, 0, 0); 
+  cx.clearRect(0, 0, W, H); 
+
+  const rDt = Math.min((ts - lastTs) / 1000, .05); 
+  lastTs = ts;
+
+  if (scene !== 'play' || paused) return;
+
+  rTime += rDt;
+  shadowR = LIMIT_RING * Math.min(rTime / GAM_DUR, 1);
+  const dt = rDt * tScale;
+
+  // Alarm audio cues
+  const p_alarm = rTime / GAM_DUR;
+  if (!alarmPlayed && p_alarm >= 0.80 && p_alarm < 0.93) {
+    alarmPlayed = 1; triggerAlarm(1);
+  } else if (alarmPlayed === 1 && p_alarm >= 0.93) {
+    alarmPlayed = 2; triggerAlarm(2);
+    // Repeating triple beep every 6s in final stretch
+    const repeatAlarm = setInterval(() => {
+      if (scene !== 'play') { clearInterval(repeatAlarm); return; }
+      triggerAlarm(2);
+    }, 6000);
+  }
+
+  // Input & move
+  const{dx,dy}=inputVec();
+  if(dx||dy) doMove(dx,dy);
+
+  // Camera smoothly follows player
+  camX+=(pWX-camX)*.1; camY+=(pWY-camY)*.1;
+
+  // Draw BG
+  drawBG();
+
+  // World transform
+  cx.save();
+  cx.translate(CX, CY); // Center of screen
+  cx.scale(zoom, zoom); // Apply Zoom
+  cx.translate(-camX, -camY); // Camera world position
+
+  drawLighthouse();
+  drawMaze();
+  drawShadow();
+  drawOrbs(dt);
+  drawParts(rDt);
+  drawPlayer();
+
+  // Danger ring (shadow boundary)
+  const dR=shadowR*RG;
+  cx.beginPath(); cx.arc(0,0,dR,0,Math.PI*2);
+  cx.strokeStyle=`rgba(224,88,40,${.32+.22*Math.sin(rTime*4.5)})`;
+  cx.lineWidth=1.6; cx.setLineDash([6,5]); cx.stroke(); cx.setLineDash([]);
+
+  cx.restore();
+
+  // Helio fade
+  helios.forEach(h=>{if(h.brt>0)h.brt=Math.max(0,h.brt-rDt*.55);});
+
+  // Msg fade
+  if(msgT>0){msgT-=rDt; if(msgT<=0)document.getElementById('msg').style.opacity='0';}
+
+  checkOrbs(); checkEnd(); window.requestAnimationFrame(() => updateHUD());
+}
+requestAnimationFrame(ts=>{lastTs=ts;requestAnimationFrame(loop);});
+</script>
+</body>
+</html>

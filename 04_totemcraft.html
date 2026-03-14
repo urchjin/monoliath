@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Totemcraft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Bungee&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 10%, #ffdee9 0%, #b5fffc 100%);
+            --glass: rgba(255,255,255,0.65);
+            --glass-border: rgba(255,255,255,0.8);
+            --text-main: #2c3e50;
+            --text-light: #546e7a;
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.02em;
+            background:
+                repeating-linear-gradient(150deg,rgba(255,255,255,0.18),rgba(255,255,255,0.18) 0.5px,transparent 1px,transparent 40px),
+                repeating-linear-gradient(30deg,rgba(255,255,255,0.18),rgba(255,255,255,0.18) 0.5px,transparent 1px,transparent 40px),
+                repeating-linear-gradient(90deg,rgba(255,255,255,0.12),rgba(255,255,255,0.12) 0.5px,transparent 1px,transparent 41px),
+                var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+        #app {
+            width: 100%; min-height: 100vh;
+            display: flex; flex-direction: column;
+            padding: 16px; gap: 16px;
+        }
+        .panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column;
+        }
+        h2 {
+            margin: 0 0 12px 0; font-weight: 700; font-size: 0.95rem;
+            text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-light);
+            border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 8px;
+        }
+        #header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+        #header h2 { margin: 0; border: none; padding: 0; }
+
+        /* ── Recipe list ── */
+        #recipe-list { overflow-y: auto; max-height: 150px; padding-right: 4px; flex: 1; }
+        .recipe-card {
+            background: rgba(255,255,255,0.5); border-radius: 12px;
+            padding: 10px; margin-bottom: 8px; cursor: pointer;
+            transition: 0.2s; border-left: 4px solid transparent; position: relative;
+        }
+        .recipe-card:hover { background: rgba(255,255,255,0.8); transform: translateX(2px); }
+        .recipe-card.active { background: white; border-left-color: #2c3e50; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .recipe-card.completed { opacity: 0.6; }
+        .recipe-card.completed::after { content:"✓"; position:absolute; right:12px; top:12px; font-weight:bold; color:#2ecc71; }
+        .recipe-title { font-weight: 700; font-size: 0.9rem; }
+        .recipe-meta { font-size: 0.75rem; color: var(--text-light); margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px; }
+        .recipe-range {
+            font-size: 0.7rem; font-weight: 700; color: #7f8c8d;
+            background: rgba(0,0,0,0.06); border-radius: 6px; padding: 2px 6px; margin-top: 4px; display: inline-block;
+        }
+        .level2-badge {
+            display: inline-block; font-size: 0.6rem; background: linear-gradient(135deg,#6c5ce7,#a29bfe);
+            color: white; border-radius: 6px; padding: 1px 5px; margin-left: 4px; vertical-align: middle;
+        }
+
+        /* ── Stage ── */
+        #stage {
+            position: relative; width: 100%; min-height: 500px;
+            background: rgba(255,255,255,0.15); border-radius: 20px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding: 20px; gap: 12px; flex: 1; overflow: visible;
+        }
+        #top-hud {
+            text-align: center; width: 100%; z-index: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+            position: relative;
+        }
+        .top-actions { display: none; }
+        .pause-btn, .help-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 2px solid #bdc3c7; background: #fff; color: #2c3e50;
+            cursor: pointer; font-size: 1rem; font-weight: 800; transition: 0.2s;
+        }
+        #brand-title {
+            font-size: 2.8rem; font-weight: 800;
+            font-family: 'Bungee','Montserrat',sans-serif;
+            letter-spacing: 0.22em; text-transform: uppercase;
+        }
+        #current-target-display { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+        .hud-inline { display: inline-flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap; }
+        .hud-pill {
+            font-size: 0.82rem; color: var(--text-light);
+            background: rgba(255,255,255,0.8); padding: 5px 10px;
+            border-radius: 16px; display: inline-block;
+        }
+        #hud-weight { font-weight: 700; }
+        .range-in  { color: #27ae60 !important; }
+        .range-out { color: #e74c3c !important; }
+
+        /* ── Grid ── */
+        #grid-iso {
+            width: 100%; max-width: 700px; aspect-ratio: 1;
+            margin: 12px auto; perspective: 1200px; perspective-origin: 50% 50%;
+        }
+        #grid-container {
+            width: 100%; height: 100%; position: relative;
+            padding: 20px; background-color: transparent; border-radius: 18px; overflow: hidden;
+        }
+        #mix-progress {
+            position: absolute; right: 8px; top: 8px; width: 185px;
+            background: rgba(255,255,255,0.82); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 8px; backdrop-filter: blur(12px);
+        }
+        .mix-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6px; padding: 2px 0; }
+        .mix-label { font-weight: 700; font-size: 0.82rem; color: var(--text-main); display: flex; align-items: center; gap: 5px; }
+        .mix-pct-val { font-size: 0.75rem; text-align: right; }
+        .mix-range-status {
+            margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(0,0,0,0.12);
+            font-size: 0.72rem; font-weight: 700; text-align: center;
+        }
+
+        /* ── Feedback overlay ── */
+        #feedback-overlay {
+            position: fixed; top: 40%; left: 50%; transform: translate(-50%,-50%);
+            font-size: 2.2rem; font-weight: 800; text-align: center;
+            opacity: 0; transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+            pointer-events: none; z-index: 100;
+            text-shadow: 0 4px 20px rgba(255,255,255,0.9);
+        }
+
+        /* ── Controls bar (desktop) ── */
+        #controls-bar {
+            display: flex; flex-direction: column; gap: 8px;
+            width: 100%; padding: 8px 0; z-index: 3;
+        }
+
+        /* ── New compact material grid ── */
+        .mat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px; width: 100%;
+        }
+        .mat-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.82); border-radius: 10px;
+            padding: 6px 10px; border-left: 4px solid transparent;
+            gap: 6px;
+        }
+        .mat-card-label {
+            display: flex; align-items: center; gap: 6px;
+            font-weight: 700; font-size: 0.78rem; color: var(--text-main); flex: 1;
+            overflow: hidden; white-space: nowrap;
+        }
+        .mat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .mat-card-btns { display: flex; gap: 4px; flex-shrink: 0; }
+        .mat-mini-btn {
+            width: 30px; height: 30px; border-radius: 8px; border: none;
+            cursor: pointer; font-size: 1.1rem; font-weight: 800;
+            display: flex; align-items: center; justify-content: center;
+            color: white; box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .mat-mini-btn:active { transform: translateY(2px); box-shadow: none; }
+        .mat-mini-rm {
+            background: rgba(0,0,0,0.08) !important;
+            color: #2c3e50 !important; border: 1px solid rgba(0,0,0,0.12) !important;
+            box-shadow: none !important;
+        }
+        .mat-mini-btn[disabled] { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); }
+
+        /* ── Action row ── */
+        .controls-action-row {
+            display: flex; gap: 8px; align-items: center;
+            width: 100%; justify-content: space-between;
+        }
+        .step-control {
+            display: flex; align-items: center; gap: 4px;
+            background: rgba(255,255,255,0.9); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 4px 8px;
+            font-size: 0.78rem; font-weight: 600; color: var(--text-light);
+        }
+        .step-control input {
+            width: 46px; border: none; outline: none; background: transparent;
+            font-weight: 700; color: var(--text-main); font-size: 0.82rem; text-align: center;
+        }
+        .craft-btn {
+            flex: 1; max-width: 130px; height: 42px;
+            border-radius: 12px; border: none;
+            background: #bdc3c7; color: #95a5a6;
+            font-weight: 700; font-size: 0.9rem; cursor: not-allowed;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+            font-family: 'Montserrat', sans-serif;
+        }
+        .craft-btn.craft-ready {
+            background: #2ecc71; color: white; cursor: pointer;
+            box-shadow: 0 4px 0 #27ae60;
+            animation: craftPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes craftPulse {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .craft-btn.craft-ready:active { transform: translateY(3px); box-shadow: none; animation: none; }
+
+        .utility-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 2px solid #bdc3c7; background: #ecf0f1; color: #7f8c8d;
+            cursor: pointer; font-size: 1.1rem; font-weight: 600; transition: 0.2s;
+        }
+        .gallery-btn {
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 2px solid #4ecdc4; background: #4ecdc4;
+            color: white; cursor: pointer; font-size: 1.1rem; transition: 0.2s;
+        }
+
+        /* ── Inventory ── */
+        .display-toggle { display: inline-flex; gap: 6px; align-items: center; }
+        .toggle-btn {
+            border: 1px solid var(--glass-border); background: rgba(255,255,255,0.9);
+            color: var(--text-main); border-radius: 10px; padding: 4px 8px;
+            font-weight: 700; cursor: pointer;
+        }
+        .toggle-btn.active { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+        .inv-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 7px 0; border-bottom: 1px dashed rgba(0,0,0,0.1); font-size: 0.82rem;
+        }
+        .inv-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .inv-count {
+            font-weight: 600; color: var(--text-main);
+            background: rgba(255,255,255,0.6); padding: 2px 8px;
+            border-radius: 10px; font-size: 0.78rem;
+        }
+        #inventory-list { overflow-y: auto; max-height: 150px; padding-right: 4px; flex: 1; }
+
+        /* ── Modals ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 200; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-card {
+            background: var(--glass); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px;
+            max-width: 580px; width: 100%; position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-card.narrow { max-width: 420px; }
+        .modal-close {
+            background: #e74c3c; color: white; border: none; border-radius: 50%;
+            width: 36px; height: 36px; font-size: 20px; cursor: pointer;
+            position: absolute; top: 16px; right: 16px; display: flex;
+            align-items: center; justify-content: center;
+        }
+        #welcome-modal { z-index: 300; }
+        .start-btn {
+            width: 160px; height: 52px; border-radius: 14px;
+            background: #2c3e50; color: #fff; border: none; font-weight: 700;
+            font-size: 1rem; cursor: pointer; font-family: 'Montserrat', sans-serif;
+        }
+        .welcome-actions { display: flex; justify-content: center; gap: 12px; margin-top: 12px; }
+
+        /* Unlock modal */
+        #unlock-modal { z-index: 310; }
+        .unlock-card {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            border: 1px solid rgba(108,92,231,0.4); border-radius: 20px; padding: 28px;
+            max-width: 420px; width: 100%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(108,92,231,0.3);
+            position: relative; overflow: hidden;
+        }
+        .unlock-card h2 { color: #fff; border-color: rgba(255,255,255,0.1); }
+        .unlock-card p { color: rgba(255,255,255,0.75); }
+        .unlock-mat { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(255,255,255,0.08); margin: 6px 0; }
+        .unlock-mat-dot { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+        .unlock-mat-name { font-weight: 700; color: #fff; }
+        .unlock-mat-sub { font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-left: auto; }
+        .unlock-go-btn {
+            margin-top: 16px; padding: 12px 32px;
+            background: linear-gradient(135deg,#6c5ce7,#a29bfe);
+            color: white; border: none; border-radius: 12px;
+            font-weight: 700; font-size: 1rem; cursor: pointer; font-family: 'Montserrat',sans-serif;
+        }
+        .stars-bg {
+            position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+        }
+        .star {
+            position: absolute; background: white; border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        @keyframes twinkle { 0%{opacity:0.2;} 100%{opacity:0.8;} }
+
+        /* Gallery items */
+        .totem-item {
+            background: rgba(255,255,255,0.4); border-radius: 14px; padding: 12px; margin-bottom: 10px;
+            border-left: 4px solid var(--totem-color,#2c3e50);
+        }
+        .totem-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 6px; }
+        .totem-composition { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .totem-comp-item { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; }
+        .totem-comp-dot { width: 10px; height: 10px; border-radius: 50%; }
+        #gallery-content { max-height: 80vh; overflow-y: auto; }
+
+        /* Final modal */
+        #final-summary { font-size: 1rem; color: var(--text-main); text-align: center; line-height: 1.7; }
+
+        /* ── Level badge ── */
+        .level-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.75rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 10px;
+        }
+        .level-badge.l1 { background: rgba(52,152,219,0.15); color: #2980b9; }
+        .level-badge.l2 { background: linear-gradient(135deg,#6c5ce7,#a29bfe); color: white; }
+
+        /* ── Mobile ── */
+        @media (max-width: 900px) {
+            #controls-bar {
+                position: fixed; left: 0; right: 0; bottom: 0;
+                background: rgba(255,255,255,0.96);
+                backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+                border-top: 1px solid var(--glass-border);
+                padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+                box-shadow: 0 -8px 30px rgba(0,0,0,0.12);
+                z-index: 10;
+            }
+            #stage { padding-bottom: 220px; }
+            .mat-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
+            .mat-card { padding: 5px 8px; }
+            .mat-mini-btn { width: 34px; height: 34px; font-size: 1.2rem; }
+            .utility-btn, .gallery-btn { width: 38px; height: 38px; font-size: 0.95rem; }
+            .craft-btn { height: 38px; font-size: 0.85rem; }
+            #brand-title { font-size: clamp(1.5rem,7vw,2.4rem); letter-spacing: 0.12em; }
+            #grid-iso { max-width: 100%; aspect-ratio: 1; margin: 6px auto 10px; }
+            #mix-progress { position: fixed; right: 10px; top: 10px; width: 155px; z-index: 5; }
+            .top-actions { display: flex; position: relative; width: 100%; justify-content: flex-end; gap: 8px; margin-bottom: 6px; }
+            .help-btn, .pause-btn { position: static; }
+        }
+        @media (max-width: 380px) {
+            .mat-grid { grid-template-columns: 1fr; }
+            #stage { padding-bottom: 340px; }
+        }
+        @media (min-width: 900px) {
+            #app { flex-direction: row; max-width: 1400px; margin: 0 auto; padding: 20px; gap: 20px; align-items: stretch; min-height: 100vh; }
+            .left-panel { width: 280px; flex-shrink: 0; }
+            .right-panel { width: 280px; flex-shrink: 0; }
+            #stage { flex: 1; min-height: auto; }
+            #recipe-list { max-height: 600px; }
+            #inventory-list { max-height: 600px; }
+            .mat-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════════ WELCOME MODAL ══════════ -->
+<div id="welcome-modal" class="modal-overlay open">
+  <div class="modal-card">
+    <h2 style="text-align:center;margin-top:0;">Welcome to Totemcraft</h2>
+    <div style="font-size:0.92rem;color:var(--text-light);line-height:1.65;">
+      <p>🎯 Each totem shows a <strong>weight range</strong> (e.g., 400g–600g). Your total mix must land inside it.</p>
+      <p>⚗️ Use <strong>+</strong> / <strong>−</strong> buttons to add or remove material in steps. Match each material's target percentage exactly.</p>
+      <p>✅ Press <strong>Craft Totem</strong> when your weight is in range — it will only light up when you're ready!</p>
+      <p>🔓 Complete <strong>8 totems</strong> to unlock <strong>Level 2</strong> with new materials and prime-number percentages.</p>
+    </div>
+    <div class="welcome-actions">
+      <button class="start-btn" onclick="startGame()">Start Crafting ⚒️</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LEVEL 2 UNLOCK MODAL ══════════ -->
+<div id="unlock-modal" class="modal-overlay">
+  <div class="unlock-card">
+    <div class="stars-bg" id="stars-bg"></div>
+    <div style="font-size:3.5rem;margin-bottom:8px;position:relative;z-index:1;">🔓✨</div>
+    <h2 style="font-size:1.5rem;margin:0 0 6px;position:relative;z-index:1;">Level 2 Unlocked!</h2>
+    <p style="margin:0 0 14px;position:relative;z-index:1;">Two rare materials have been discovered:</p>
+    <div style="position:relative;z-index:1;">
+      <div class="unlock-mat">
+        <div class="unlock-mat-dot" style="background:#27ae60;box-shadow:0 0 10px #27ae60;"></div>
+        <div class="unlock-mat-name">Emerald</div>
+        <div class="unlock-mat-sub">Prime recipes only</div>
+      </div>
+      <div class="unlock-mat">
+        <div class="unlock-mat-dot" style="background:#636e72;box-shadow:0 0 10px #636e72;"></div>
+        <div class="unlock-mat-name">Obsidian</div>
+        <div class="unlock-mat-sub">Prime recipes only</div>
+      </div>
+    </div>
+    <p style="margin:12px 0 0;font-size:0.85rem;position:relative;z-index:1;">New totems use <strong style="color:#a29bfe;">prime number percentages</strong> like 7%, 13%, 29% — harder to balance!</p>
+    <button class="unlock-go-btn" onclick="closeUnlockModal()">Let's Craft! ⚒️</button>
+  </div>
+</div>
+
+<!-- ══════════ GALLERY MODAL ══════════ -->
+<div id="gallery-modal" class="modal-overlay">
+  <div class="modal-card" id="gallery-content">
+    <button class="modal-close" onclick="closeGallery()">×</button>
+    <h2 style="text-align:center;margin-top:0;">Completed Totems</h2>
+    <div id="gallery-list"></div>
+  </div>
+</div>
+
+<!-- ══════════ HELP MODAL ══════════ -->
+<div id="help-modal" class="modal-overlay">
+  <div class="modal-card narrow">
+    <button class="modal-close" onclick="closeHelp()">×</button>
+    <h2 style="text-align:center;margin-top:0;">How to Play</h2>
+    <div style="font-size:0.88rem;color:var(--text-light);line-height:1.6;">
+      <p><strong>Weight Range</strong>: Each totem has a range (e.g. 400–600g). Get your total inside it.</p>
+      <p><strong>Percentages</strong>: Hit each material's target %. The Craft button lights up when range is met.</p>
+      <p><strong>Step Size</strong>: Change the grams added per click to fine-tune your mix.</p>
+      <p><strong>Level 2</strong>: Uses <em>prime</em> percentages (7%, 13%, 29%...) — trickier ratios!</p>
+      <p><strong>Tip</strong>: Watch the progress panel (top-right on mobile) for live % vs target.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ FINAL SCORE MODAL ══════════ -->
+<div id="final-modal" class="modal-overlay">
+  <div class="modal-card narrow" style="text-align:center;">
+    <button class="modal-close" onclick="closeFinalScore()">×</button>
+    <h2 style="text-align:center;margin-top:0;">Final Score 🏆</h2>
+    <div id="final-summary"></div>
+    <div style="display:flex;justify-content:center;gap:12px;margin-top:14px;">
+      <button class="gallery-btn" onclick="openGallery()">📖</button>
+      <button class="utility-btn" onclick="resetMix()">↺</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app">
+    <div class="left-panel panel">
+        <div id="header">
+            <h2>Totems <span id="level-badge" class="level-badge l1">Lv.1</span></h2>
+            <div class="display-toggle">
+                <button class="toggle-btn active" data-mode="percent">%</button>
+                <button class="toggle-btn" data-mode="fraction">⅟</button>
+            </div>
+        </div>
+        <div id="recipe-list"></div>
+    </div>
+
+    <div id="stage">
+        <div id="top-hud">
+            <div class="top-actions">
+                <button class="pause-btn" title="Pause" onclick="togglePause()">⏸</button>
+                <button class="help-btn" title="How to Play" onclick="openHelp()">?</button>
+            </div>
+            <div id="brand-title">Totemcraft</div>
+            <div id="current-target-display">Select a Totem</div>
+            <div class="hud-inline">
+                <div class="hud-pill" id="hud-score">Score: 0</div>
+                <div class="hud-pill" id="hud-timer">Time: 0s</div>
+                <div class="hud-pill" id="hud-weight">0g</div>
+            </div>
+        </div>
+        <div id="grid-iso">
+            <div id="grid-container"></div>
+            <div id="mix-progress"></div>
+        </div>
+        <div id="feedback-overlay"></div>
+        <div id="controls-bar"></div>
+    </div>
+
+    <div class="right-panel panel">
+        <h2>Inventory</h2>
+        <div id="inventory-list"></div>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════
+const MATERIALS = [
+    { name: 'Ruby',    color: '#ff6b6b' },
+    { name: 'Teal',    color: '#4ecdc4' },
+    { name: 'Gold',    color: '#ffe66d' },
+    { name: 'DeepSea', color: '#1a535c' },
+    { name: 'Stone',   color: '#95a5a6' },
+    { name: 'Emerald', color: '#27ae60' },  // Level 2
+    { name: 'Obsidian',color: '#636e72' },  // Level 2
+];
+
+// Valid prime-% sets summing to 100 (all values are prime, 0 means material unused)
+const PRIME_SETS = [
+    [2, 3, 5, 7, 11, 13, 59],
+    [2, 3, 5, 7, 11, 19, 53],
+    [2, 3, 5, 7, 13, 17, 53],
+    [2, 3, 5, 7, 13, 23, 47],
+    [2, 3, 5, 7, 11, 31, 41],
+    [2, 3, 5, 7, 11, 29, 43],
+    [2, 3, 5, 7, 17, 19, 47],
+    [7, 11, 13, 17, 23, 29,  0],
+    [5, 7, 11, 13, 17, 47,  0],
+    [3, 7, 11, 13, 23, 43,  0],
+];
+
+const L1_NAMES = [
+    'Crystal Guardian','Flame Sentinel','Ocean Keeper','Sky Warden','Earth Protector',
+    'Shadow Watcher','Light Bringer','Storm Caller','Moon Dancer','Sun Charmer',
+    'Forest Spirit','Stone Giant','Wave Rider','Wind Whisperer','Star Seeker',
+    'Thunder Keeper','Frost Weaver','Inferno Lord','Mystic Guardian','Void Sentinel'
+];
+const L2_NAMES = [
+    'Void Serpent','Prism Drake','Quantum Wraith','Nexus Titan','Sigma Phoenix',
+    'Lambda Colossus','Omega Warden','Prime Specter','Null Sphinx','Vector Golem',
+    'Binary Oracle','Fractal Sage','Cipher Reaver','Entropy Wraith','Matrix Shaman'
+];
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let State = {
+    recipes: [],
+    activeRecipeId: -1,
+    currentMix: [],
+    inventory: [0,0,0,0,0,0,0],
+    score: 0,
+    gridCells: [],
+    completedTotems: [],
+    gameOver: false,
+    startTime: 0,
+    recipeViewMode: 'percent',
+    paused: false,
+    pauseStart: 0,
+    timerInterval: null,
+    amountPerClick: 1,
+    level: 1,
+    totalCompleted: 0,
+};
+
+// ══════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════
+function activeMaterialCount() { return State.level === 1 ? 5 : 7; }
+function getActiveMaterials() { return MATERIALS.slice(0, activeMaterialCount()); }
+
+function shadeColor(color, percent) {
+    const num = parseInt(color.replace('#',''), 16);
+    const amt = Math.round(2.55 * percent);
+    const clamp = v => Math.max(0, Math.min(255, v));
+    return '#' +
+        clamp((num >> 16) + amt).toString(16).padStart(2,'0') +
+        clamp(((num >> 8) & 0x00FF) + amt).toString(16).padStart(2,'0') +
+        clamp((num & 0x00FF) + amt).toString(16).padStart(2,'0');
+}
+
+function percentToFraction(p) {
+    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+    if (p === 0) return '0';
+    const g = gcd(p, 100);
+    return `${p/g}/${100/g}`;
+}
+
+// Win tolerance (% points): Level 1 needs to be near-exact; L2 allows 1.5% slack
+function winTolerance() { return State.level === 1 ? 0.6 : 1.5; }
+
+// ══════════════════════════════════════════
+//  AUDIO
+// ══════════════════════════════════════════
+const MonumentAudio = {
+    ctx: null, masterGain: null, bgmStarted: false,
+    init() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.connect(this.ctx.destination);
+            this.masterGain.gain.value = 0.4;
+        }
+    },
+    startBGM() {
+        if (this.bgmStarted) return;
+        this.bgmStarted = true; this.init();
+        const playLoop = () => {
+            if (!this.bgmStarted) return;
+            this.playNote(130.81, 1.0);
+            setTimeout(() => { if (this.bgmStarted) this.playNote(164.81, 1.0); }, 1100);
+            setTimeout(() => { if (this.bgmStarted) this.playNote(196.00, 1.5); }, 2200);
+            setTimeout(playLoop, 4000);
+        };
+        playLoop();
+    },
+    playNote(freq, duration) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        osc.connect(gain); gain.connect(this.masterGain);
+        gain.gain.setValueAtTime(0, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.start(this.ctx.currentTime); osc.stop(this.ctx.currentTime + duration);
+    },
+    playMaterialSound(matIdx) {
+        this.init();
+        const freqs = [392.00,523.25,659.25,293.66,349.23,523.25,261.63];
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle'; osc.frequency.value = freqs[matIdx % freqs.length];
+        osc.connect(gain); gain.connect(this.masterGain);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+        osc.start(this.ctx.currentTime); osc.stop(this.ctx.currentTime + 0.2);
+    },
+    playSuccess() {
+        this.playNote(523.25,0.3);
+        setTimeout(()=>this.playNote(659.25,0.3),150);
+        setTimeout(()=>this.playNote(783.99,0.5),300);
+    },
+    playError() { this.playNote(261.63,0.3); }
+};
+
+// ══════════════════════════════════════════
+//  RECIPE GENERATION
+// ══════════════════════════════════════════
+function createRecipe(level) {
+    level = level || 1;
+    const matCount = level === 1 ? 5 : 7;
+    let dist = Array(matCount).fill(0);
+
+    if (level === 1) {
+        // Multiples of 5, all materials used, total=100
+        let remaining = 100;
+        for (let i = 0; i < matCount - 1; i++) {
+            const slots = matCount - 1 - i;
+            const maxVal = Math.min(remaining - 5 * slots, 40);
+            const minVal = 5;
+            if (maxVal < minVal) { dist[i] = minVal; remaining -= minVal; continue; }
+            const choices = Math.floor((maxVal - minVal) / 5) + 1;
+            dist[i] = minVal + Math.floor(Math.random() * choices) * 5;
+            remaining -= dist[i];
+        }
+        dist[matCount - 1] = remaining;
+        if (dist[matCount - 1] < 5 || dist[matCount - 1] > 45) {
+            dist = [20, 20, 20, 20, 20]; // safe fallback
+        }
+        // Range: spread around a round center so players can reach the target
+        // Offer spread so player knows approximate target
+        const centerOptions = [500, 1000, 1500];
+        const center = centerOptions[Math.floor(Math.random() * centerOptions.length)];
+        return {
+            title: L1_NAMES[Math.floor(Math.random() * L1_NAMES.length)],
+            target: dist, weightMin: center - 200, weightMax: center + 200,
+            level, completed: false
+        };
+    } else {
+        // Prime percentages
+        const chosen = PRIME_SETS[Math.floor(Math.random() * PRIME_SETS.length)].slice();
+        // Shuffle
+        for (let i = chosen.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [chosen[i], chosen[j]] = [chosen[j], chosen[i]];
+        }
+        dist = chosen; // length 7
+        // Range: wide enough to accommodate prime-percentage mixes
+        const centerOptions = [1000, 2000];
+        const center = centerOptions[Math.floor(Math.random() * centerOptions.length)];
+        return {
+            title: L2_NAMES[Math.floor(Math.random() * L2_NAMES.length)],
+            target: dist, weightMin: center - 300, weightMax: center + 300,
+            level, completed: false
+        };
+    }
+}
+
+// ══════════════════════════════════════════
+//  INIT & START
+// ══════════════════════════════════════════
+function startGame() {
+    document.getElementById('welcome-modal').classList.remove('open');
+    MonumentAudio.init();
+    setTimeout(() => MonumentAudio.startBGM(), 500);
+    init();
+}
+
+function init() {
+    // Level 1: 8 recipes
+    for (let i = 0; i < 8; i++) State.recipes.push(createRecipe(1));
+
+    // Calculate inventory from recipe needs
+    calcInventory(State.recipes, 1);
+
+    State.gridCells = Array(100).fill(null);
+    State.amountPerClick = 1;
+    selectRecipe(0);
+    renderAll();
+    State.startTime = Date.now();
+    startTimer();
+}
+
+function calcInventory(recipes, level) {
+    const matCount = level === 1 ? 5 : 7;
+    const weights = Array(matCount).fill(0);
+    recipes.forEach(r => {
+        if (r.level === level) {
+            r.target.forEach((pct, idx) => { weights[idx] += (r.weightMax * pct) / 100; });
+        }
+    });
+    const total = weights.reduce((a,b)=>a+b,0);
+    if (total === 0) return;
+    const totalInv = level === 1 ? 25000 : 35000;
+    const baseShares = weights.map(w => (w / total) * totalInv);
+    const inv = baseShares.map(s => Math.floor(s / 50) * 50);
+    let diff = totalInv - inv.reduce((a,b)=>a+b,0);
+    const order = [...Array(matCount).keys()].sort((a,b)=>(baseShares[b]%50)-(baseShares[a]%50));
+    let idx = 0;
+    while (diff > 0) { inv[order[idx%matCount]] += 50; diff -= 50; idx++; }
+
+    // Assign into State.inventory
+    if (level === 1) {
+        State.inventory = [...inv, 0, 0]; // pad L2 slots with 0
+    } else {
+        // Add on top of existing
+        for (let i = 0; i < matCount; i++) State.inventory[i] += inv[i];
+    }
+}
+
+function unlockLevel2() {
+    State.level = 2;
+
+    // Generate 8 level-2 recipes
+    for (let i = 0; i < 8; i++) State.recipes.push(createRecipe(2));
+
+    // Calculate and add L2 inventory (adds on top of existing L1 amounts)
+    const l2recipes = State.recipes.filter(r => r.level === 2);
+    calcInventory(l2recipes, 2);
+
+    // Update level badge
+    const badge = document.getElementById('level-badge');
+    if (badge) { badge.textContent = 'Lv.2'; badge.className = 'level-badge l2'; }
+
+    // Show unlock modal with stars
+    buildStars();
+    document.getElementById('unlock-modal').classList.add('open');
+
+    renderAll();
+    const next = State.recipes.findIndex(r => !r.completed);
+    if (next !== -1) selectRecipe(next);
+}
+
+function buildStars() {
+    const bg = document.getElementById('stars-bg');
+    if (!bg) return;
+    bg.innerHTML = '';
+    for (let i = 0; i < 30; i++) {
+        const s = document.createElement('div');
+        s.className = 'star';
+        const size = Math.random() * 3 + 1;
+        s.style.cssText = `width:${size}px;height:${size}px;
+            top:${Math.random()*100}%;left:${Math.random()*100}%;
+            animation-delay:${Math.random()*2}s;animation-duration:${1+Math.random()}s;`;
+        bg.appendChild(s);
+    }
+}
+
+function closeUnlockModal() {
+    document.getElementById('unlock-modal').classList.remove('open');
+}
+
+// ══════════════════════════════════════════
+//  TIMER & PAUSE
+// ══════════════════════════════════════════
+function startTimer() {
+    if (State.timerInterval) clearInterval(State.timerInterval);
+    State.timerInterval = setInterval(updateTimer, 1000);
+}
+function updateTimer() {
+    const el = document.getElementById('hud-timer');
+    if (el) el.innerText = `Time: ${Math.floor((Date.now()-State.startTime)/1000)}s`;
+}
+function togglePause() {
+    const btn = document.querySelector('.pause-btn');
+    if (!State.paused) {
+        State.paused = true; State.pauseStart = Date.now();
+        if (State.timerInterval) clearInterval(State.timerInterval);
+        if (btn) btn.innerText = '▶';
+        showFeedback('Paused','bad');
+    } else {
+        State.paused = false;
+        State.startTime += Date.now() - State.pauseStart;
+        startTimer(); if (btn) btn.innerText = '⏸';
+        showFeedback('Resumed','good');
+    }
+}
+
+// ══════════════════════════════════════════
+//  SELECT RECIPE
+// ══════════════════════════════════════════
+function selectRecipe(idx) {
+    if (State.recipes[idx].completed) return;
+    resetMix();
+    State.gridCells = Array(100).fill(null);
+    State.activeRecipeId = idx;
+    const r = State.recipes[idx];
+    document.querySelectorAll('.recipe-card').forEach((el,i)=>{
+        el.classList.toggle('active', i === idx);
+    });
+    document.getElementById('current-target-display').innerText = r.title;
+    updateWeightHUD();
+    renderControls();
+    renderGrid();
+    renderMixProgress();
+}
+
+function updateWeightHUD() {
+    const r = State.recipes[State.activeRecipeId];
+    if (!r) return;
+    const totalGrams = State.currentMix.reduce((a,b)=>a+(b.grams||0),0);
+    const el = document.getElementById('hud-weight');
+    if (!el) return;
+    const inRange = totalGrams >= r.weightMin && totalGrams <= r.weightMax;
+    el.innerText = `${totalGrams}g · ${r.weightMin}–${r.weightMax}g`;
+    el.className = 'hud-pill ' + (totalGrams === 0 ? '' : inRange ? 'range-in' : 'range-out');
+}
+
+// ══════════════════════════════════════════
+//  ADD / REMOVE MATERIAL
+// ══════════════════════════════════════════
+function addMaterial(matIdx) {
+    if (State.paused) { showFeedback('Paused','bad'); return; }
+    if (State.activeRecipeId === -1) return;
+    const recipe = State.recipes[State.activeRecipeId];
+    const amount = Math.max(1, parseInt(State.amountPerClick) || 1);
+    if (State.inventory[matIdx] < amount) {
+        MonumentAudio.playError(); showFeedback('Not Enough!','bad'); return;
+    }
+    const currentGrams = State.currentMix.reduce((a,b)=>a+(b.grams||0),0);
+    if (currentGrams + amount > recipe.weightMax) {
+        MonumentAudio.playError(); showFeedback(`Max ${recipe.weightMax}g!`,'bad'); return;
+    }
+    State.inventory[matIdx] -= amount;
+    State.currentMix.push({ matId: matIdx, grams: amount });
+
+    // Place in grid
+    let empties = [];
+    for (let i=0;i<100;i++){
+        if (State.gridCells[i]===null){
+            const row=Math.floor(i/10), corners=new Set([0,9,90,99]);
+            if (!corners.has(i) && row<8) empties.push(i);
+        }
+    }
+    if (empties.length>0) State.gridCells[empties[Math.floor(Math.random()*empties.length)]]=matIdx;
+
+    MonumentAudio.playMaterialSound(matIdx);
+    renderInventory(); renderGrid(); renderMixProgress();
+    updateWeightHUD(); updateCraftButton();
+
+    if (checkAllRecipesImpossible()) {
+        State.gameOver = true;
+        const elapsedSec = Math.floor((Date.now()-State.startTime)/1000);
+        if (State.timerInterval) clearInterval(State.timerInterval);
+        openFinalScore(Math.max(0,State.totalCompleted*100-elapsedSec), elapsedSec);
+    }
+}
+
+function removeMaterial(matIdx) {
+    if (State.paused) { showFeedback('Paused','bad'); return; }
+    if (State.activeRecipeId === -1) return;
+    const idx = State.currentMix.map(m=>m.matId).lastIndexOf(matIdx);
+    if (idx === -1) { MonumentAudio.playError(); showFeedback('None to remove','bad'); return; }
+    const removed = State.currentMix.splice(idx,1)[0];
+    State.inventory[matIdx] += (removed.grams||0);
+    for (let i=State.gridCells.length-1;i>=0;i--) {
+        if (State.gridCells[i]===matIdx) { State.gridCells[i]=null; break; }
+    }
+    MonumentAudio.playMaterialSound(matIdx);
+    renderInventory(); renderGrid(); renderMixProgress();
+    updateWeightHUD(); updateCraftButton();
+}
+
+// ══════════════════════════════════════════
+//  CHECK WIN
+// ══════════════════════════════════════════
+function checkWin() {
+    if (State.paused) { showFeedback('Paused','bad'); return; }
+    const r = State.recipes[State.activeRecipeId];
+    if (!r) return;
+    const totalGrams = State.currentMix.reduce((a,b)=>a+(b.grams||0),0);
+
+    if (totalGrams < r.weightMin || totalGrams > r.weightMax) {
+        MonumentAudio.playError();
+        showFeedback(`Need ${r.weightMin}–${r.weightMax}g`,'bad');
+        return;
+    }
+
+    const matCount = activeMaterialCount();
+    const gramsPerMat = Array(matCount).fill(0);
+    State.currentMix.forEach(item => gramsPerMat[item.matId] += (item.grams||0));
+
+    const tol = winTolerance();
+    const match = r.target.every((pct, i) => {
+        if (pct === 0) return gramsPerMat[i] === 0;
+        const actualPct = (gramsPerMat[i] / totalGrams) * 100;
+        return Math.abs(actualPct - pct) <= tol;
+    });
+
+    if (match) {
+        MonumentAudio.playSuccess();
+        showFeedback('Perfect! ✨','good');
+        State.recipes[State.activeRecipeId].completed = true;
+        State.score += State.level === 1 ? 100 : 200;
+        State.totalCompleted++;
+        document.getElementById('hud-score').innerText = `Score: ${State.score}`;
+
+        const dominantIdx = gramsPerMat.indexOf(Math.max(...gramsPerMat));
+        const snapshot = captureGridSnapshot();
+        State.completedTotems.push({
+            name: r.title, target:[...r.target], level: r.level,
+            weightMin: r.weightMin, weightMax: r.weightMax, totalGrams,
+            color: MATERIALS[dominantIdx].color, snapshot
+        });
+
+        State.currentMix = [];
+
+        // Level 2 unlock?
+        const shouldUnlock = State.level === 1 && State.totalCompleted >= 8;
+        setTimeout(() => {
+            renderRecipes(); renderGrid(); renderMixProgress();
+            if (shouldUnlock) {
+                unlockLevel2();
+            } else {
+                const next = State.recipes.findIndex(r => !r.completed);
+                if (next !== -1) selectRecipe(next);
+                else showFeedback('All Done! 🏆','good');
+            }
+        }, 1500);
+    } else {
+        MonumentAudio.playError();
+        // Build helpful message
+        const offMats = r.target
+            .map((pct,i) => {
+                if (pct===0) return null;
+                const actual = (gramsPerMat[i]/totalGrams)*100;
+                if (Math.abs(actual-pct) > tol) return `${MATERIALS[i].name}: ${actual.toFixed(1)}% (need ${pct}%)`;
+                return null;
+            })
+            .filter(Boolean);
+        const msg = offMats.length ? `Off: ${offMats[0]}` : 'Wrong mix!';
+        showFeedback(msg,'bad');
+    }
+}
+
+function updateCraftButton() {
+    const r = State.recipes[State.activeRecipeId];
+    const btn = document.getElementById('craft-btn');
+    if (!btn || !r) return;
+    const total = State.currentMix.reduce((a,b)=>a+(b.grams||0),0);
+    const inRange = total >= r.weightMin && total <= r.weightMax;
+    btn.disabled = !inRange;
+    btn.classList.toggle('craft-ready', inRange);
+}
+
+// ══════════════════════════════════════════
+//  RESET
+// ══════════════════════════════════════════
+function resetMix() {
+    State.currentMix.forEach(item => { State.inventory[item.matId] += (item.grams||0); });
+    State.currentMix = [];
+    State.gridCells = Array(100).fill(null);
+    renderInventory(); renderGrid(); renderMixProgress(); updateWeightHUD(); updateCraftButton();
+}
+
+// ══════════════════════════════════════════
+//  CHECK ALL IMPOSSIBLE
+// ══════════════════════════════════════════
+function checkAllRecipesImpossible() {
+    for (let r of State.recipes) {
+        if (r.completed) continue;
+        const matCount = r.level === 1 ? 5 : 7;
+        const need = r.target.map(p => Math.round(r.weightMin * p / 100));
+        let ok = true;
+        for (let i=0; i<matCount; i++) {
+            if (need[i] > State.inventory[i]) { ok = false; break; }
+        }
+        if (ok) return false;
+    }
+    return true;
+}
+
+// ══════════════════════════════════════════
+//  RENDER: CONTROLS
+// ══════════════════════════════════════════
+function renderControls() {
+    const bar = document.getElementById('controls-bar');
+    bar.innerHTML = '';
+    const activeMats = getActiveMaterials();
+    const amount = Math.max(1, parseInt(State.amountPerClick) || 1);
+
+    // ── Material grid ──
+    const matGrid = document.createElement('div');
+    matGrid.className = 'mat-grid';
+
+    activeMats.forEach((m, i) => {
+        const card = document.createElement('div');
+        card.className = 'mat-card';
+        card.style.borderLeftColor = m.color;
+
+        const label = document.createElement('div');
+        label.className = 'mat-card-label';
+        const dot = document.createElement('span');
+        dot.className = 'mat-dot';
+        dot.style.background = m.color;
+        const nameEl = document.createElement('span');
+        nameEl.textContent = m.name;
+        label.appendChild(dot); label.appendChild(nameEl);
+
+        const btns = document.createElement('div');
+        btns.className = 'mat-card-btns';
+
+        const rm = document.createElement('button');
+        rm.className = 'mat-mini-btn mat-mini-rm';
+        rm.textContent = '−';
+        rm.title = `Remove ${amount}g of ${m.name}`;
+        rm.onclick = () => removeMaterial(i);
+
+        const add = document.createElement('button');
+        add.className = 'mat-mini-btn';
+        add.style.background = m.color;
+        add.style.boxShadow = `0 2px 0 ${shadeColor(m.color,-20)}`;
+        add.textContent = '+';
+        add.title = `Add ${amount}g of ${m.name}`;
+        add.onclick = () => addMaterial(i);
+
+        btns.appendChild(rm); btns.appendChild(add);
+        card.appendChild(label); card.appendChild(btns);
+        matGrid.appendChild(card);
+    });
+    bar.appendChild(matGrid);
+
+    // ── Action row ──
+    const actionRow = document.createElement('div');
+    actionRow.className = 'controls-action-row';
+
+    // Step control
+    const stepCtl = document.createElement('div');
+    stepCtl.className = 'step-control';
+    stepCtl.innerHTML = `<span>Step</span><input id="amount-input" type="number" min="1" step="1" value="${amount}"><span>g</span>`;
+    const stepInput = stepCtl.querySelector('#amount-input');
+    stepInput.onchange = () => {
+        const v = Math.max(1, parseInt(stepInput.value) || 1);
+        State.amountPerClick = v; renderControls();
+    };
+
+    // Craft button
+    const craftBtn = document.createElement('button');
+    craftBtn.className = 'craft-btn';
+    craftBtn.id = 'craft-btn';
+    craftBtn.innerHTML = '✓&nbsp;Craft';
+    craftBtn.disabled = true;
+    craftBtn.onclick = () => checkWin();
+
+    // Reset
+    const resetBtn = document.createElement('button');
+    resetBtn.className = 'utility-btn';
+    resetBtn.innerHTML = '↺';
+    resetBtn.title = 'Reset Mix';
+    resetBtn.onclick = resetMix;
+
+    // Gallery
+    const gallBtn = document.createElement('button');
+    gallBtn.className = 'gallery-btn';
+    gallBtn.innerHTML = '📖';
+    gallBtn.title = 'View Completed Totems';
+    gallBtn.onclick = openGallery;
+
+    actionRow.appendChild(stepCtl);
+    actionRow.appendChild(craftBtn);
+    actionRow.appendChild(resetBtn);
+    actionRow.appendChild(gallBtn);
+    bar.appendChild(actionRow);
+
+    updateCraftButton();
+}
+
+// ══════════════════════════════════════════
+//  RENDER: MIX PROGRESS
+// ══════════════════════════════════════════
+function renderMixProgress() {
+    const wrap = document.getElementById('mix-progress');
+    const r = State.recipes[State.activeRecipeId];
+    if (!wrap || !r) return;
+    wrap.innerHTML = '';
+    const totalGrams = State.currentMix.reduce((a,b)=>a+(b.grams||0),0);
+    const matCount = activeMaterialCount();
+    const gramsPerMat = Array(matCount).fill(0);
+    State.currentMix.forEach(item => gramsPerMat[item.matId] += (item.grams||0));
+    const tol = winTolerance();
+
+    getActiveMaterials().forEach((m, i) => {
+        const row = document.createElement('div');
+        row.className = 'mix-row';
+        const label = document.createElement('div');
+        label.className = 'mix-label';
+        label.innerHTML = `<span class="inv-dot" style="background:${m.color}"></span>${m.name}`;
+        const right = document.createElement('div');
+        right.className = 'mix-pct-val';
+        const actualPct = totalGrams > 0 ? (gramsPerMat[i]/totalGrams)*100 : 0;
+        const targetPct = r.target[i];
+        const isMatch = targetPct === 0
+            ? gramsPerMat[i] === 0
+            : Math.abs(actualPct - targetPct) <= tol;
+        const color = (gramsPerMat[i]===0 && targetPct===0) ? '#bdc3c7' : isMatch ? '#27ae60' : '#e74c3c';
+        right.innerHTML = `<span style="color:${color};font-weight:700;">${actualPct.toFixed(1)}%</span>
+            <br><small style="color:var(--text-light)">${gramsPerMat[i]}g / <b>${targetPct}%</b></small>`;
+        row.appendChild(label); row.appendChild(right);
+        wrap.appendChild(row);
+    });
+
+    // Range status
+    const rangeDiv = document.createElement('div');
+    rangeDiv.className = 'mix-range-status';
+    const inRange = totalGrams >= r.weightMin && totalGrams <= r.weightMax;
+    rangeDiv.style.color = inRange ? '#27ae60' : 'var(--text-light)';
+    rangeDiv.innerHTML = `${totalGrams}g<br><span style="font-weight:400;font-size:0.68rem;">${r.weightMin}–${r.weightMax}g</span>`;
+    wrap.appendChild(rangeDiv);
+}
+
+// ══════════════════════════════════════════
+//  RENDER: GRID
+// ══════════════════════════════════════════
+function renderGrid() {
+    const container = document.getElementById('grid-container');
+    container.innerHTML = '';
+    const rect = container.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS,'svg');
+    svg.setAttribute('width',w); svg.setAttribute('height',h);
+    svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+    svg.style.display = 'block';
+
+    const originX=w/2, originY=h*0.18;
+    const edge=20, ex=edge*Math.cos(Math.PI/6), ey=edge*Math.sin(Math.PI/6);
+    const depth=edge, spread=1.5;
+
+    for (let i=0;i<100;i++) {
+        const matIdx = State.gridCells[i];
+        if (matIdx===null) continue;
+        const row=Math.floor(i/10), col=i%10;
+        const cx=originX+(col-row)*ex*spread, cy=originY+(col+row)*ey*spread;
+        const color=MATERIALS[matIdx].color;
+        const g=document.createElementNS(svgNS,'g');
+        g.setAttribute('class','iso-cube');
+        const top=document.createElementNS(svgNS,'polygon');
+        top.setAttribute('points',`${cx},${cy-ey} ${cx+ex},${cy} ${cx},${cy+ey} ${cx-ex},${cy}`);
+        top.setAttribute('fill','#f6f8fb');
+        const right=document.createElementNS(svgNS,'polygon');
+        right.setAttribute('points',`${cx+ex},${cy} ${cx+ex},${cy+depth} ${cx},${cy+ey+depth} ${cx},${cy+ey}`);
+        right.setAttribute('fill',shadeColor(color,-8));
+        const left=document.createElementNS(svgNS,'polygon');
+        left.setAttribute('points',`${cx-ex},${cy} ${cx},${cy+ey} ${cx},${cy+ey+depth} ${cx-ex},${cy+depth}`);
+        left.setAttribute('fill',shadeColor(color,-16));
+        g.appendChild(top); g.appendChild(right); g.appendChild(left);
+        svg.appendChild(g);
+    }
+    container.appendChild(svg);
+    updateWeightHUD();
+}
+
+// ══════════════════════════════════════════
+//  RENDER: RECIPES
+// ══════════════════════════════════════════
+function renderRecipes() {
+    const list = document.getElementById('recipe-list');
+    list.innerHTML = '';
+    const toggleWrap = document.querySelector('.display-toggle');
+    if (toggleWrap) {
+        toggleWrap.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-mode')===State.recipeViewMode);
+            btn.onclick = () => { State.recipeViewMode = btn.getAttribute('data-mode'); renderRecipes(); };
+        });
+    }
+    State.recipes.forEach((r,i) => {
+        const div = document.createElement('div');
+        div.className = `recipe-card ${r.completed?'completed':''} ${i===State.activeRecipeId?'active':''}`;
+        let req = '';
+        r.target.forEach((pct,matIdx) => {
+            if (pct>0) {
+                const label = State.recipeViewMode==='percent' ? `${pct}%` : percentToFraction(pct);
+                req += `<span style="display:inline-flex;align-items:center;gap:2px;margin-right:3px;">
+                    <span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${MATERIALS[matIdx].color};"></span>
+                    <span style="font-size:0.7rem;">${label}</span>
+                </span>`;
+            }
+        });
+        const l2badge = r.level===2 ? `<span class="level2-badge">Prime</span>` : '';
+        div.innerHTML = `
+            <div class="recipe-title">${r.title}${l2badge}</div>
+            <div class="recipe-meta">${req}</div>
+            <div class="recipe-range">⚖️ ${r.weightMin}g – ${r.weightMax}g</div>
+        `;
+        div.onclick = () => selectRecipe(i);
+        list.appendChild(div);
+    });
+}
+
+// ══════════════════════════════════════════
+//  RENDER: INVENTORY
+// ══════════════════════════════════════════
+function renderInventory() {
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = '';
+    getActiveMaterials().forEach((m,i) => {
+        const row = document.createElement('div');
+        row.className = 'inv-item';
+        row.innerHTML = `
+            <div><span class="inv-dot" style="background:${m.color}"></span>${m.name}</div>
+            <div class="inv-count">${Math.round(State.inventory[i])}g</div>`;
+        list.appendChild(row);
+    });
+}
+
+// ══════════════════════════════════════════
+//  RENDER ALL
+// ══════════════════════════════════════════
+function renderAll() {
+    renderRecipes();
+    renderInventory();
+    renderControls();
+    renderGrid();
+    renderMixProgress();
+}
+
+// ══════════════════════════════════════════
+//  SNAPSHOT, FEEDBACK, GALLERY, HELP, FINAL
+// ══════════════════════════════════════════
+function captureGridSnapshot() {
+    const svg = document.querySelector('#grid-container svg');
+    if (!svg) return null;
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+}
+
+function showFeedback(msg, type) {
+    const el = document.getElementById('feedback-overlay');
+    el.innerText = msg;
+    el.style.color = type==='good' ? '#27ae60' : '#e74c3c';
+    el.style.opacity = 1; el.style.top = '35%';
+    setTimeout(() => { el.style.opacity = 0; el.style.top = '40%'; }, 1400);
+}
+
+function openGallery() {
+    const list = document.getElementById('gallery-list');
+    list.innerHTML = '';
+    if (State.completedTotems.length===0) {
+        list.innerHTML = '<p style="text-align:center;color:var(--text-light);">No totems completed yet. Keep crafting!</p>';
+    } else {
+        State.completedTotems.forEach((totem,idx)=>{
+            const item = document.createElement('div');
+            item.className = 'totem-item';
+            item.style.setProperty('--totem-color', totem.color);
+            let comp = '';
+            totem.target.forEach((pct,matIdx)=>{
+                if (pct>0) comp += `<div class="totem-comp-item">
+                    <div class="totem-comp-dot" style="background:${MATERIALS[matIdx].color}"></div>
+                    ${MATERIALS[matIdx].name} ${pct}%
+                </div>`;
+            });
+            const snap = totem.snapshot ? `<img src="${totem.snapshot}" alt="Grid" style="width:100%;border-radius:10px;margin:6px 0;">` : '';
+            const badge = totem.level===2 ? `<span class="level2-badge">Prime</span>` : '';
+            item.innerHTML = `
+                <div class="totem-name">${idx+1}. ${totem.name} ${badge}</div>
+                ${snap}
+                <div style="font-size:0.72rem;color:var(--text-light);margin:4px 0;">
+                    ${totem.weightMin}g–${totem.weightMax}g · used ${totem.totalGrams}g
+                </div>
+                <div class="totem-composition">${comp}</div>`;
+            list.appendChild(item);
+        });
+    }
+    document.getElementById('gallery-modal').classList.add('open');
+}
+function closeGallery() { document.getElementById('gallery-modal').classList.remove('open'); }
+function openHelp() { document.getElementById('help-modal').classList.add('open'); }
+function closeHelp() { document.getElementById('help-modal').classList.remove('open'); }
+
+function openFinalScore(score, seconds) {
+    const sum = document.getElementById('final-summary');
+    if (sum) sum.innerHTML = `Totems Crafted: ${State.completedTotems.length}<br>Level Reached: ${State.level}<br>Time: ${seconds}s<br><strong style="font-size:1.2rem;">Score: ${score}</strong>`;
+    document.getElementById('final-modal').classList.add('open');
+}
+function closeFinalScore() { document.getElementById('final-modal').classList.remove('open'); }
+</script>
+</body>
+</html>

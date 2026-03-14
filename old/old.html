@@ -3,32 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geometry Tales | Contact</title>
+    <title>Geometry Tales | Chapter 1</title>
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        /* Base CSS */
+        /* Exact same base CSS for consistency */
         :root { --bg-color: #F4EFEA; --card-bg: #FFFFFF; --primary-accent: #E69A8D; --secondary-accent: #5EBEC4; --text-main: #2C3E50; --nav-bg: rgba(244, 239, 234, 0.85); --ad-bg: #EAE3DC; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 1; padding: 0; }
         body { font-family: 'Josefin Sans', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
         nav { position: sticky; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
         .nav-links a { text-decoration: none; color: var(--text-main); font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: color 0.3s ease; }
         .nav-links a:hover { color: var(--primary-accent); }
-        main { flex: 1; width: 90%; max-width: 600px; margin: 60px auto; text-align: center; }
+        main { flex: 1; width: 90%; max-width: 1000px; margin: 40px auto; text-align: center; }
         h1, h2, h3 { font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
-        h1 { font-size: 2.5rem; color: var(--secondary-accent); }
-        p { font-weight: 300; font-size: 1.2rem; line-height: 1.6; margin-bottom: 30px; }
+        h1 { font-size: 2rem; color: var(--secondary-accent); }
         .ad-frame { width: 100%; background-color: var(--ad-bg); padding: 20px; text-align: center; border-top: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05); margin-top: auto; }
         .ad-content { width: 100%; max-width: 728px; height: 90px; margin: 0 auto; background-color: #d1c9c1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem; letter-spacing: 1px; border: 1px dashed #bbaaa0; }
         footer { text-align: center; padding: 30px; font-size: 0.9rem; font-weight: 300; letter-spacing: 1px; opacity: 0.7; }
         
-        /* Contact Form Specific CSS */
-        form { display: flex; flex-direction: column; gap: 20px; background: var(--card-bg); padding: 40px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        input, textarea { padding: 15px; font-family: 'Josefin Sans', sans-serif; font-size: 1rem; border: 1px solid #EAE3DC; border-radius: 4px; background-color: #FAFAFA; color: var(--text-main); outline: none; transition: border 0.3s; }
-        input:focus, textarea:focus { border-color: var(--secondary-accent); }
-        textarea { height: 150px; resize: vertical; }
-        button { padding: 15px; background: var(--secondary-accent); color: white; border: none; font-family: 'Josefin Sans', sans-serif; font-size: 1.1rem; font-weight: 600; cursor: pointer; border-radius: 4px; text-transform: uppercase; letter-spacing: 2px; transition: background 0.3s; }
-        button:hover { background: var(--primary-accent); }
+        /* Game Specific CSS */
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto 30px auto;
+            background-color: var(--card-bg);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        
+        iframe {
+            width: 100%;
+            height: 500px; /* Adjust based on your game's aspect ratio */
+            border: none;
+            border-radius: 4px;
+            background-color: #000; /* Black background while game loads */
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: var(--primary-accent);
+            text-decoration: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        
+        .back-link:hover {
+            color: var(--secondary-accent);
+        }
     </style>
 </head>
 <body>
@@ -36,23 +62,32 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="about.html">About</a>
-            <a href="story.html">Story</a>
+            <a href="story.html" style="color: var(--primary-accent);">Story</a>
             <a href="topics.html">Topics</a>
-            <a href="contact.html" style="color: var(--primary-accent);">Contact</a>
+            <a href="contact.html">Contact</a>
         </div>
     </nav>
+
     <main>
-        <h1>Send a Signal</h1>
-        <p>Reach out across the geometric planes. We'd love to hear if you wish to collaborate and expand on these concepts or let us know the bugs you encountered in our games.</p>
+        <a href="story.html" class="back-link">&larr; Return to Story</a>
         
-        <form action="#" method="POST">
-            <input type="text" placeholder="Your Designation (Name)" required>
-            <input type="email" placeholder="Your Frequency (Email)" required>
-            <textarea placeholder="Your Message..." required></textarea>
-            <button type="submit">Transmit Message</button>
-        </form>
+        <h1>Chapter 1: The First Vertex</h1>
+        <p>Rotate the structure to align the pathways.</p>
+
+        <div class="game-container">
+            <iframe src= monolith.html title="Simulation 1 Game"></iframe>
+        </div>
+
     </main>
-    <div class="ad-frame"><div class="ad-content">[ ADVERTISEMENT SLOT : 728 x 90 ]</div></div>
-    <footer>&copy; 2026 djinn Design Studios | MonoliATH Games. All paths lead to the start.</footer>
+
+    <div class="ad-frame">
+        <div class="ad-content">
+            [ ADVERTISEMENT SLOT : 728 x 90 ]
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 Geometry Tales. All paths lead to the start.
+    </footer>
 </body>
 </html>

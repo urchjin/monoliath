@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Mystic Monolith</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;300;400;500;600&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* Monument Valley Pastels */
+            --mv-peach: #FFD8CC;
+            --mv-coral: #FFB5A0;
+            --mv-mint: #C4E8C8;
+            --mv-sage: #9DC2A4;
+            --mv-sky: #E8F4F8;
+            --mv-powder: #B8D8E8;
+            --mv-sand: #F4E8D8;
+            --mv-stone: #D4C4B0;
+            --mv-clay: #C89884;
+            --mv-shadow: rgba(100, 80, 60, 0.15);
+            --mv-text: #5A4A3A;
+            --mv-text-light: #8A7A6A;
+        }
+        
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: linear-gradient(180deg, #FFE8D8 0%, #F8E4D8 30%, #E8D8CC 60%, #D8CCC0 100%);
+            color: var(--mv-text);
+            min-height: 100vh;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+            padding-top: 0;
+        }
+        
+        /* Top bar for battle reference */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px var(--mv-shadow);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .top-bar.active {
+            display: block;
+        }
+        
+        .top-bar-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .top-bar-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .top-bar-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--mv-text-light);
+        }
+        
+        .top-bar-value {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--mv-text);
+        }
+        
+        .monolith-moves-mini {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .move-mini {
+            background: var(--mv-sand);
+            padding: 8px 12px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            box-shadow: -2px 2px 0 var(--mv-stone);
+        }
+        
+        .move-mini.current {
+            background: var(--mv-mint);
+            box-shadow: -2px 2px 0 var(--mv-sage);
+        }
+        
+        .move-mini.used {
+            opacity: 0.4;
+        }
+        
+        /* Floating geometric shapes - Monument Valley style */
+        .mv-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .mv-shape {
+            position: absolute;
+            opacity: 0.06;
+        }
+        
+        .mv-cube {
+            width: 80px;
+            height: 80px;
+            top: 15%;
+            left: 8%;
+            background: linear-gradient(135deg, var(--mv-coral) 0%, var(--mv-peach) 100%);
+            transform: rotate(45deg) skew(15deg, 15deg);
+            animation: float 25s ease-in-out infinite;
+        }
+        
+        .mv-triangle {
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-right: 50px solid transparent;
+            border-bottom: 86px solid var(--mv-mint);
+            top: 50%;
+            right: 12%;
+            animation: float 30s ease-in-out infinite 5s;
+        }
+        
+        .mv-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--mv-powder), var(--mv-sage));
+            bottom: 20%;
+            left: 15%;
+            animation: float 20s ease-in-out infinite 10s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .container.with-topbar {
+            padding-top: 100px;
+        }
+        
+        /* Isometric header */
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            perspective: 1000px;
+        }
+        
+        h1 {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: clamp(2.5rem, 7vw, 4rem);
+            font-weight: 300;
+            color: var(--mv-text);
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 0.85rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            color: var(--mv-text-light);
+            text-transform: uppercase;
+        }
+        
+        /* Top reference bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--mv-sand);
+            padding: 15px 20px;
+            z-index: 100;
+            box-shadow: 0 4px 0 var(--mv-stone);
+            display: none;
+        }
+        
+        .top-bar.visible {
+            display: block;
+        }
+        
+        .top-bar-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .top-bar-label {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--mv-text-light);
+        }
+        
+        .top-bar-moves {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .top-move {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 8px 12px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .top-move.current {
+            background: var(--mv-mint);
+        }
+        
+        body.in-battle {
+            padding-top: 80px;
+        }
+        
+        /* Isometric cards */
+        .iso-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            border-radius: 0;
+            padding: 50px 40px;
+            margin-bottom: 40px;
+            position: relative;
+            box-shadow: 
+                -8px 8px 0 var(--mv-stone),
+                -8px 8px 30px var(--mv-shadow);
+            transform-style: preserve-3d;
+        }
+        
+        .iso-card::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: 4px;
+            bottom: 4px;
+            background: linear-gradient(135deg, var(--mv-peach), var(--mv-coral));
+            z-index: -1;
+            opacity: 0.3;
+        }
+        
+        .card-title {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 35px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--mv-text);
+        }
+        
+        /* Flat, geometric buttons */
+        .mv-btn {
+            padding: 20px 35px;
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: none;
+            background: var(--mv-mint);
+            color: var(--mv-text);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: -4px 4px 0 var(--mv-sage);
+        }
+        
+        .mv-btn:hover {
+            transform: translate(-2px, 2px);
+            box-shadow: -2px 2px 0 var(--mv-sage);
+        }
+        
+        .mv-btn:active {
+            transform: translate(0, 0);
+            box-shadow: none;
+        }
+        
+        .mv-btn.coral {
+            background: var(--mv-coral);
+            box-shadow: -4px 4px 0 var(--mv-clay);
+        }
+        
+        .mv-btn.coral:hover {
+            box-shadow: -2px 2px 0 var(--mv-clay);
+        }
+        
+        .mv-btn.powder {
+            background: var(--mv-powder);
+            box-shadow: -4px 4px 0 var(--mv-sage);
+        }
+        
+        .mv-btn.peach {
+            background: var(--mv-peach);
+            box-shadow: -4px 4px 0 var(--mv-coral);
+        }
+        
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        /* Flat pair cards */
+        .pair-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 35px;
+        }
+        
+        .pair-card {
+            background: var(--mv-sand);
+            padding: 30px 25px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: -6px 6px 0 var(--mv-stone);
+        }
+        
+        .pair-card:hover {
+            transform: translate(-3px, 3px);
+            box-shadow: -3px 3px 0 var(--mv-stone);
+        }
+        
+        .pair-card.selected {
+            background: var(--mv-mint);
+            box-shadow: -6px 6px 0 var(--mv-sage);
+        }
+        
+        .pair-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 2rem;
+            color: var(--mv-text);
+        }
+        
+        .pair-name {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 400;
+            text-align: center;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .pair-ops {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            align-items: center;
+        }
+        
+        .op-display {
+            text-align: center;
+        }
+        
+        .op-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        .op-name {
+            font-size: 0.75rem;
+            color: var(--mv-text-light);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .op-value {
+            font-size: 1.6rem;
+            font-weight: 600;
+            font-family: 'Josefin Sans', sans-serif;
+        }
+        
+        .op-value.positive {
+            color: var(--mv-sage);
+        }
+        
+        .op-value.negative {
+            color: var(--mv-clay);
+        }
+        
+        .divider {
+            width: 1px;
+            height: 60px;
+            background: var(--mv-stone);
+        }
+        
+        /* Info panels - flat design */
+        .info-panel {
+            background: var(--mv-sky);
+            padding: 25px;
+            margin: 25px 0;
+            font-size: 0.95rem;
+            line-height: 1.9;
+            box-shadow: -4px 4px 0 var(--mv-powder);
+        }
+        
+        .info-panel.warning {
+            background: var(--mv-peach);
+            box-shadow: -4px 4px 0 var(--mv-coral);
+        }
+        
+        .info-panel.success {
+            background: var(--mv-mint);
+            box-shadow: -4px 4px 0 var(--mv-sage);
+        }
+        
+        /* Monolith moves - geometric grid */
+        .monolith-moves {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .move-preview {
+            background: var(--mv-sand);
+            padding: 20px 15px;
+            text-align: center;
+            box-shadow: -3px 3px 0 var(--mv-stone);
+        }
+        
+        .move-turn {
+            font-size: 0.7rem;
+            color: var(--mv-text-light);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .move-op {
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-family: 'Josefin Sans', sans-serif;
+            color: var(--mv-text);
+        }
+        
+        /* Battle monuments - isometric */
+        .battle-stage {
+            background: linear-gradient(135deg, rgba(232, 216, 204, 0.4), rgba(212, 196, 176, 0.3));
+            padding: 40px;
+            margin: 35px 0;
+            position: relative;
+        }
+        
+        .combatants {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 25px;
+            align-items: center;
+        }
+        
+        .monument {
+            background: var(--mv-sand);
+            padding: 30px 25px;
+            box-shadow: -6px 6px 0 var(--mv-stone);
+            position: relative;
+        }
+        
+        .monument.player {
+            box-shadow: -6px 6px 0 var(--mv-sage);
+        }
+        
+        .monument.boss {
+            box-shadow: -6px 6px 0 var(--mv-clay);
+        }
+        
+        .monument-title {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .value-display {
+            font-size: 3.5rem;
+            font-weight: 300;
+            font-family: 'Josefin Sans', sans-serif;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .monument.player .value-display {
+            color: var(--mv-sage);
+        }
+        
+        .monument.boss .value-display {
+            color: var(--mv-clay);
+        }
+        
+        .vs-symbol {
+            font-size: 2.5rem;
+            color: var(--mv-text-light);
+            opacity: 0.4;
+        }
+        
+        /* Hand cards */
+        .hand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .hand-card {
+            background: var(--mv-sand);
+            padding: 30px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: -5px 5px 0 var(--mv-stone);
+        }
+        
+        .hand-card:hover {
+            transform: translate(-3px, 3px);
+            box-shadow: -2px 2px 0 var(--mv-stone);
+        }
+        
+        .hand-card.positive {
+            background: var(--mv-mint);
+            box-shadow: -5px 5px 0 var(--mv-sage);
+        }
+        
+        .hand-card.positive:hover {
+            box-shadow: -2px 2px 0 var(--mv-sage);
+        }
+        
+        .hand-card.negative {
+            background: var(--mv-peach);
+            box-shadow: -5px 5px 0 var(--mv-coral);
+        }
+        
+        .hand-card.negative:hover {
+            box-shadow: -2px 2px 0 var(--mv-coral);
+        }
+        
+        /* Ability cards */
+        .ability-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .ability-card {
+            background: var(--mv-powder);
+            padding: 35px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: -6px 6px 0 var(--mv-sage);
+        }
+        
+        .ability-card:hover {
+            transform: translate(-3px, 3px);
+            box-shadow: -3px 3px 0 var(--mv-sage);
+        }
+        
+        .ability-card.selected {
+            background: var(--mv-mint);
+        }
+        
+        .ability-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .ability-name {
+            font-family: 'Josefin Sans', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+        
+        .ability-desc {
+            font-size: 0.9rem;
+            color: var(--mv-text-light);
+            line-height: 1.6;
+        }
+        
+        /* Battle log */
+        .battle-log {
+            background: var(--mv-sky);
+            padding: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 30px;
+            box-shadow: -5px 5px 0 var(--mv-powder);
+        }
+        
+        .log-entry {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .log-entry.player {
+            box-shadow: -3px 0 0 var(--mv-sage);
+        }
+        
+        .log-entry.monolith {
+            box-shadow: -3px 0 0 var(--mv-clay);
+        }
+        
+        .log-entry.outcome {
+            font-weight: 600;
+            box-shadow: -3px 0 0 var(--mv-text);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 15px;
+            }
+            
+            .combatants {
+                grid-template-columns: 1fr;
+            }
+            
+            .vs-symbol {
+                display: none;
+            }
+            
+            .pair-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .monolith-moves {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar" id="topBar">
+        <div class="top-bar-content">
+            <div class="top-bar-label">Monolith Pattern:</div>
+            <div class="top-bar-moves" id="topBarMoves"></div>
+        </div>
+    </div>
+    
+    <div class="mv-shapes">
+        <div class="mv-shape mv-cube"></div>
+        <div class="mv-shape mv-triangle"></div>
+        <div class="mv-shape mv-circle"></div>
+    </div>
+
+    <div class="top-bar" id="topBar">
+        <div class="top-bar-content">
+            <div class="top-bar-section">
+                <span class="top-bar-label">Turn</span>
+                <span class="top-bar-value" id="topBarTurn">1 / 4</span>
+            </div>
+            <div class="top-bar-section">
+                <span class="top-bar-label">Monolith Pattern</span>
+                <div class="monolith-moves-mini" id="topBarMoves"></div>
+            </div>
+            <div class="top-bar-section">
+                <span class="top-bar-label">Score</span>
+                <span class="top-bar-value" id="topBarScore">0 / 5</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <header>
+            <h1>MONOLITH</h1>
+            <p class="subtitle">arithmetic geometry</p>
+        </header>
+
+        <div id="gameScreen"></div>
+    </div>
+
+    <script>
+        // Meditative soundscape - Monument Valley style
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Ambient drone (continuous)
+        let ambientDrone = null;
+        let chimeInterval = null;
+        
+        function startAmbience() {
+            if (ambientDrone) return;
+            
+            // Deep drone bass
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const osc3 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc3.type = 'sine';
+            osc1.frequency.value = 110; // A2
+            osc2.frequency.value = 165; // E3
+            osc3.frequency.value = 220; // A3
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = 600;
+            filter.Q.value = 0.7;
+            
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc3.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            gain.gain.setValueAtTime(0, audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 3);
+            
+            osc1.start();
+            osc2.start();
+            osc3.start();
+            
+            ambientDrone = { osc1, osc2, osc3, gain, filter };
+            
+            // Occasional chimes
+            startChimes();
+        }
+        
+        function startChimes() {
+            if (chimeInterval) return;
+            
+            const chimeFreqs = [523.25, 659.25, 783.99, 987.77]; // C5, E5, G5, B5
+            
+            const playChime = () => {
+                const freq = chimeFreqs[Math.floor(Math.random() * chimeFreqs.length)];
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                
+                filter.type = 'lowpass';
+                filter.frequency.value = freq * 2;
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 3);
+                
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 3);
+            };
+            
+            chimeInterval = setInterval(() => {
+                if (Math.random() > 0.7) playChime();
+            }, 8000);
+            
+            // Play first chime soon
+            setTimeout(playChime, 2000);
+        }
+        
+        function stopAmbience() {
+            if (!ambientDrone) return;
+            ambientDrone.gain.gain.linearRampToValueAtTime(0, audioContext.currentTime + 2);
+            setTimeout(() => {
+                if (ambientDrone) {
+                    ambientDrone.osc1.stop();
+                    ambientDrone.osc2.stop();
+                    ambientDrone.osc3.stop();
+                    ambientDrone = null;
+                }
+            }, 2000);
+            
+            if (chimeInterval) {
+                clearInterval(chimeInterval);
+                chimeInterval = null;
+            }
+        }
+        
+        const sounds = {
+            select: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                const filter = audioContext.createBiquadFilter();
+                
+                osc.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.value = 523.25; // C5
+                filter.type = 'lowpass';
+                filter.frequency.value = 2000;
+                
+                gain.gain.setValueAtTime(0, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.4);
+            },
+            success: () => {
+                [523.25, 659.25, 783.99].forEach((f, i) => {
+                    setTimeout(() => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        const filter = audioContext.createBiquadFilter();
+                        
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.type = 'sine';
+                        osc.frequency.value = f;
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 3000;
+                        
+                        gain.gain.setValueAtTime(0, audioContext.currentTime);
+                        gain.gain.linearRampToValueAtTime(0.12, audioContext.currentTime + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                        
+                        osc.start();
+                        osc.stop(audioContext.currentTime + 0.5);
+                    }, i * 120);
+                });
+            },
+            transition: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioContext.currentTime);
+                osc.frequency.linearRampToValueAtTime(220, audioContext.currentTime + 0.6);
+                
+                gain.gain.setValueAtTime(0.08, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+                
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.6);
+            },
+            victory: () => {
+                // Rising arpeggio - C major scale going up
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C, E, G, C, E, G, C
+                notes.forEach((freq, i) => {
+                    setTimeout(() => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        const filter = audioContext.createBiquadFilter();
+                        
+                        osc.connect(filter);
+                        filter.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        filter.type = 'lowpass';
+                        filter.frequency.value = 3000;
+                        
+                        const now = audioContext.currentTime;
+                        gain.gain.setValueAtTime(0, now);
+                        gain.gain.linearRampToValueAtTime(0.15, now + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                        
+                        osc.start(now);
+                        osc.stop(now + 0.6);
+                    }, i * 120);
+                });
+                
+                // Final sustained chord
+                setTimeout(() => {
+                    [523.25, 659.25, 783.99].forEach((freq, idx) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        
+                        const now = audioContext.currentTime;
+                        gain.gain.setValueAtTime(0, now);
+                        gain.gain.linearRampToValueAtTime(0.08, now + 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 2.5);
+                        
+                        osc.start(now);
+                        osc.stop(now + 2.5);
+                    });
+                }, 850);
+            }
+        };
+        
+        // Start ambience on first interaction
+        document.addEventListener('click', () => {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (!ambientDrone) {
+                startAmbience();
+            }
+        }, { once: true });
+        
+        const gameState = {
+            difficulty: null,
+            mode: 'classic',
+            playerValue: 20,
+            bossValue: 30,
+            allPairs: [],
+            selectedPairs: [],
+            playerHand: [],
+            monolithMoves: [],
+            playerAbility: null,
+            bossAbility: null,
+            abilityUsedOnTurn: null,
+            bossAbilityTurn: null,
+            playerAbilityUsed: false,
+            bossAbilityUsed: false,
+            currentTurn: 0,
+            score: 0,
+            battleSimulation: {
+                active: false,
+                plannedMoves: [],
+                simulationTurn: 0
+            }
+        };
+        
+        const pairThemes = [
+            { name: 'Ascension', positive: 'Ascend', negative: 'Descend' },
+            { name: 'Expansion', positive: 'Expand', negative: 'Compress' },
+            { name: 'Elevation', positive: 'Elevate', negative: 'Lower' },
+            { name: 'Amplify', positive: 'Amplify', negative: 'Reduce' },
+            { name: 'Rising', positive: 'Rise', negative: 'Fall' },
+            { name: 'Blooming', positive: 'Bloom', negative: 'Wither' },
+            { name: 'Surging', positive: 'Surge', negative: 'Ebb' },
+            { name: 'Doubling', positive: 'Double', negative: 'Halve' },
+            { name: 'Peaking', positive: 'Peak', negative: 'Trough' }
+        ];
+        
+        const specialAbilities = [
+            { type: 'reflection', name: 'Reflection', icon: '⟲', description: 'Exchange operations with Monolith this turn' },
+            { type: 'inversion', name: 'Inversion', icon: '⇄', description: 'Swap values before calculations' },
+            { type: 'resonance', name: 'Resonance', icon: '◉', description: 'This turn worth double points' }
+        ];
+        
+        function generatePairs(diff) {
+            const configs = {
+                novice: { adds: [3,5,7], subs: [2,3,4], mults: [2,2,3], divs: [2,2,3] },
+                adept: { adds: [5,7,10], subs: [3,5,7], mults: [2,3,3], divs: [2,3,3] },
+                master: { adds: [7,10,12], subs: [5,7,8], mults: [2,3,4], divs: [2,3,4] },
+                ascended: { adds: [10,12,15], subs: [7,8,10], mults: [3,4,5], divs: [3,4,5] }
+            };
+            const cfg = configs[diff];
+            const types = [
+                { pos: 'x', neg: '-' }, { pos: '+', neg: '/' }, { pos: 'x', neg: '/' },
+                { pos: '+', neg: '-' }, { pos: 'x', neg: '-' }, { pos: '+', neg: '/' },
+                { pos: '+', neg: '-' }, { pos: 'x', neg: '/' }, { pos: 'x', neg: '-' }
+            ];
+            const shuffled = {
+                adds: [...cfg.adds].sort(() => Math.random() - 0.5),
+                subs: [...cfg.subs].sort(() => Math.random() - 0.5),
+                mults: [...cfg.mults].sort(() => Math.random() - 0.5),
+                divs: [...cfg.divs].sort(() => Math.random() - 0.5)
+            };
+            let idx = { a: 0, s: 0, m: 0, d: 0 };
+            return types.map((t, i) => {
+                const theme = pairThemes[i];
+                let pos, neg;
+                if (t.pos === 'x') {
+                    pos = { operation: `x${shuffled.mults[idx.m % shuffled.mults.length]}`, name: theme.positive };
+                    idx.m++;
+                } else {
+                    pos = { operation: `+${shuffled.adds[idx.a % shuffled.adds.length]}`, name: theme.positive };
+                    idx.a++;
+                }
+                if (t.neg === '-') {
+                    neg = { operation: `-${shuffled.subs[idx.s % shuffled.subs.length]}`, name: theme.negative };
+                    idx.s++;
+                } else {
+                    neg = { operation: `/${shuffled.divs[idx.d % shuffled.divs.length]}`, name: theme.negative };
+                    idx.d++;
+                }
+                return { id: i, name: theme.name, positive: pos, negative: neg };
+            });
+        }
+        
+        showDifficultySelect();
+        
+        function showDifficultySelect() {
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Choose Path</div>
+                    <div class="btn-grid">
+                        <button class="mv-btn coral" onclick="selectDifficulty('novice')">Novice</button>
+                        <button class="mv-btn powder" onclick="selectDifficulty('adept')">Adept</button>
+                        <button class="mv-btn peach" onclick="selectDifficulty('master')">Master</button>
+                        <button class="mv-btn" onclick="selectDifficulty('ascended')">Ascended</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectDifficulty(diff) {
+            sounds.select();
+            startAmbience(); // Start meditative soundscape
+            gameState.difficulty = diff;
+            const configs = {
+                novice: { player: 15, boss: 25 },
+                adept: { player: 20, boss: 30 },
+                master: { player: 25, boss: 40 },
+                ascended: { player: 30, boss: 50 }
+            };
+            const cfg = configs[diff];
+            gameState.playerValue = cfg.player;
+            gameState.bossValue = cfg.boss;
+            showModeSelect();
+        }
+        
+        function showModeSelect() {
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Select Mode</div>
+                    <div class="btn-grid" style="grid-template-columns: 1fr 1fr; max-width: 600px; margin: 20px auto 0;">
+                        <button class="mv-btn powder" onclick="startMode('classic')" style="padding: 40px 30px; font-size: 1.1rem;">
+                            <div style="font-size: 2.5rem; margin-bottom: 15px;">□</div>
+                            <div>Classic</div>
+                        </button>
+                        <button class="mv-btn" onclick="startMode('special')" style="padding: 40px 30px; font-size: 1.1rem;">
+                            <div style="font-size: 2.5rem; margin-bottom: 15px;">◇</div>
+                            <div>Mystic</div>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function startMode(mode) {
+            sounds.select();
+            gameState.mode = mode;
+            gameState.allPairs = generatePairs(gameState.difficulty);
+            showPairSelection();
+        }
+        
+        function showPairSelection() {
+            const screen = document.getElementById('gameScreen');
+            screen.innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Select Two Pairs</div>
+                    <p style="text-align: center; color: var(--mv-text-light); margin-bottom: 20px; font-size: 0.95rem;">
+                        Choose 2 pairs from 9. Each pair contains positive + negative (4 operations total).
+                    </p>
+                    <div class="info-panel warning">
+                        Must contain all four operations: +, −, ×, ÷
+                    </div>
+                    <div class="pair-grid" id="pairGrid"></div>
+                    <button class="mv-btn coral" onclick="confirmPairs()" id="confirmBtn" style="width: 100%; margin-top: 35px; padding: 22px;">
+                        Select 2 Pairs
+                    </button>
+                </div>
+            `;
+            renderPairGrid();
+        }
+        
+        function renderPairGrid() {
+            const grid = document.getElementById('pairGrid');
+            grid.innerHTML = '';
+            gameState.allPairs.forEach(pair => {
+                const card = document.createElement('div');
+                card.className = `pair-card ${gameState.selectedPairs.includes(pair) ? 'selected' : ''}`;
+                card.onclick = () => togglePairSelection(pair);
+                card.innerHTML = `
+                    <div class="pair-name">${pair.name}</div>
+                    <div class="pair-ops">
+                        <div class="op-display">
+                            <span class="op-icon">△</span>
+                            <div class="op-name">${pair.positive.name}</div>
+                            <div class="op-value positive">${pair.positive.operation}</div>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="op-display">
+                            <span class="op-icon">▽</span>
+                            <div class="op-name">${pair.negative.name}</div>
+                            <div class="op-value negative">${pair.negative.operation}</div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        function togglePairSelection(pair) {
+            const idx = gameState.selectedPairs.indexOf(pair);
+            if (idx >= 0) {
+                gameState.selectedPairs.splice(idx, 1);
+            } else if (gameState.selectedPairs.length < 2) {
+                gameState.selectedPairs.push(pair);
+                sounds.select();
+            }
+            renderPairGrid();
+            updateConfirmBtn();
+        }
+        
+        function updateConfirmBtn() {
+            const btn = document.getElementById('confirmBtn');
+            const count = gameState.selectedPairs.length;
+            btn.textContent = count === 2 ? 'Continue →' : `Select ${2 - count} More`;
+        }
+        
+        function confirmPairs() {
+            if (gameState.selectedPairs.length !== 2) return;
+            
+            // Validate all 4 operations
+            const ops = new Set();
+            gameState.selectedPairs.forEach(p => {
+                ops.add(p.positive.operation[0]);
+                ops.add(p.negative.operation[0]);
+            });
+            if (!ops.has('+') || !ops.has('-') || !ops.has('x') || !ops.has('/')) {
+                alert('⚠️ Must include all four operations: +, −, ×, ÷');
+                return;
+            }
+            
+            sounds.success();
+            
+            // Build hand
+            gameState.playerHand = [];
+            gameState.selectedPairs.forEach(p => {
+                gameState.playerHand.push(p.positive);
+                gameState.playerHand.push(p.negative);
+            });
+            
+            // Generate boss moves
+            gameState.monolithMoves = [];
+            for (let i = 0; i < 4; i++) {
+                const randomGeo = gameState.playerHand[Math.floor(Math.random() * 4)];
+                gameState.monolithMoves.push(randomGeo);
+            }
+            
+            // Always show monolith preview first
+            showMonolithPreview();
+        }
+        
+        function showAbilitySelection() {
+            const screen = document.getElementById('gameScreen');
+            screen.innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Choose Power</div>
+                    <div class="ability-grid">
+                        ${specialAbilities.map((a, i) => `
+                            <div class="ability-card" onclick="selectAbility(${i})">
+                                <span class="ability-icon">${a.icon}</span>
+                                <div class="ability-name">${a.name}</div>
+                                <div class="ability-desc">${a.description}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectAbility(idx) {
+            sounds.select();
+            gameState.playerAbility = specialAbilities[idx].type;
+            const bossIdx = Math.floor(Math.random() * 3);
+            gameState.bossAbility = specialAbilities[bossIdx].type;
+            const rand = Math.random();
+            gameState.bossAbilityTurn = rand < 0.3 ? 1 : rand < 0.65 ? 2 : 3;
+            showAbilityTurnSelect();
+        }
+        
+        function showAbilityTurnSelect() {
+            const ability = specialAbilities.find(a => a.type === gameState.playerAbility);
+            const bossAbility = specialAbilities.find(a => a.type === gameState.bossAbility);
+            
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Plan Timing</div>
+                    <div class="info-panel success">
+                        <strong>Your Power:</strong> ${ability.icon} ${ability.name}<br>
+                        ${ability.description}
+                    </div>
+                    <div class="info-panel" style="margin: 20px 0;">
+                        <strong>Monolith's Pattern (for reference):</strong>
+                        <div class="monolith-moves" style="margin-top: 15px;">
+                            ${gameState.monolithMoves.map((m, i) => `
+                                <div class="move-preview">
+                                    <div class="move-turn">Turn ${i + 1}</div>
+                                    <div class="move-op">${m.operation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <p style="text-align: center; margin: 25px 0;">Choose when to activate (Turn 2-4 only)</p>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                        <button class="mv-btn" disabled style="opacity: 0.3; cursor: not-allowed;">Turn 1<br>(Locked)</button>
+                        <button class="mv-btn powder" onclick="selectAbilityTurn(1)">Turn 2</button>
+                        <button class="mv-btn" onclick="selectAbilityTurn(2)">Turn 3</button>
+                        <button class="mv-btn coral" onclick="selectAbilityTurn(3)">Turn 4</button>
+                    </div>
+                    <div class="info-panel warning" style="margin-top: 25px;">
+                        <strong>⚠️ Monolith Power:</strong> ${bossAbility.icon} ${bossAbility.name}<br>
+                        Activates on <strong>Turn ${gameState.bossAbilityTurn + 1}</strong>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectAbilityTurn(turn) {
+            sounds.select();
+            gameState.abilityUsedOnTurn = turn;
+            showPlanningPhase();
+        }
+        
+        function showMonolithPreview() {
+            const continueBtn = gameState.mode === 'special' 
+                ? `<button class="mv-btn coral" onclick="showAbilitySelection()" style="width: 100%; margin-top: 35px; padding: 22px;">
+                    Choose Your Power →
+                   </button>`
+                : `<button class="mv-btn coral" onclick="showPlanningPhase()" style="width: 100%; margin-top: 35px; padding: 22px;">
+                    Plan Your Strategy →
+                   </button>`;
+            
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Monolith Pattern</div>
+                    <p style="text-align: center; color: var(--mv-text-light); margin-bottom: 20px;">
+                        Study the predetermined transformations
+                    </p>
+                    <div class="monolith-moves">
+                        ${gameState.monolithMoves.map((m, i) => `
+                            <div class="move-preview">
+                                <div class="move-turn">Turn ${i + 1}</div>
+                                <div class="move-op">${m.operation}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${continueBtn}
+                </div>
+            `;
+        }
+        
+        function showPlanningPhase() {
+            gameState.plannedMoves = [null, null, null, null]; // Store player's planned moves
+            
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Plan All 4 Turns</div>
+                    <p style="text-align: center; color: var(--mv-text-light); margin-bottom: 10px;">
+                        Assign your operations to each turn, then watch the battle unfold
+                    </p>
+                    <p style="text-align: center; color: var(--mv-text-light); font-size: 0.85rem; margin-bottom: 20px;">
+                        💡 Click a filled slot to clear it and reassign
+                    </p>
+                    
+                    <div class="info-panel">
+                        <strong>Monolith's Pattern:</strong>
+                        <div class="monolith-moves" style="margin-top: 15px;">
+                            ${gameState.monolithMoves.map((m, i) => `
+                                <div class="move-preview">
+                                    <div class="move-turn">Turn ${i + 1}</div>
+                                    <div class="move-op">${m.operation}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 30px 0;">
+                        <div style="font-family: 'Josefin Sans', sans-serif; font-size: 1.1rem; text-align: center; margin-bottom: 20px; letter-spacing: 2px;">YOUR STRATEGY</div>
+                        <div id="turnSlots" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px;">
+                            ${[0,1,2,3].map(i => `
+                                <div class="turn-slot" id="slot${i}" onclick="clearSlot(${i})" style="cursor: pointer;">
+                                    <div class="slot-label">Turn ${i + 1}</div>
+                                    <div class="slot-content" id="slotContent${i}">
+                                        <div style="color: var(--mv-text-light); font-size: 0.85rem;">Empty</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="font-family: 'Josefin Sans', sans-serif; font-size: 1.1rem; text-align: center; margin-bottom: 20px; letter-spacing: 2px;">SELECT OPERATIONS</div>
+                    <div class="hand-grid" id="planningHand"></div>
+                    
+                    <button class="mv-btn coral" onclick="confirmPlan()" id="confirmPlanBtn" style="width: 100%; margin-top: 35px; padding: 22px; opacity: 0.5;" disabled>
+                        Plan All 4 Turns First
+                    </button>
+                </div>
+            `;
+            
+            renderPlanningHand();
+            addPlanningStyles();
+        }
+        
+        function addPlanningStyles() {
+            if (document.getElementById('planningStyles')) return;
+            const style = document.createElement('style');
+            style.id = 'planningStyles';
+            style.textContent = `
+                .turn-slot {
+                    background: var(--mv-sand);
+                    padding: 20px 15px;
+                    text-align: center;
+                    box-shadow: -4px 4px 0 var(--mv-stone);
+                    min-height: 120px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    position: relative;
+                }
+                
+                .turn-slot:hover {
+                    transform: translate(-2px, 2px);
+                    box-shadow: -2px 2px 0 var(--mv-stone);
+                }
+                
+                .slot-label {
+                    font-size: 0.8rem;
+                    color: var(--mv-text-light);
+                    margin-bottom: 10px;
+                    letter-spacing: 1px;
+                    text-transform: uppercase;
+                }
+                
+                .slot-content {
+                    font-family: 'Josefin Sans', sans-serif;
+                    font-size: 1.4rem;
+                    font-weight: 600;
+                }
+                
+                .turn-slot.filled {
+                    background: var(--mv-mint);
+                    box-shadow: -4px 4px 0 var(--mv-sage);
+                }
+                
+                .turn-slot.filled:hover {
+                    box-shadow: -2px 2px 0 var(--mv-sage);
+                }
+                
+                .turn-slot.filled::after {
+                    content: '✕';
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    font-size: 1rem;
+                    color: var(--mv-text-light);
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                }
+                
+                .turn-slot.filled:hover::after {
+                    opacity: 0.6;
+                }
+                
+                .turn-slot.filled .slot-content {
+                    color: var(--mv-text);
+                }
+                
+                .hand-card.used {
+                    opacity: 0.3;
+                    cursor: not-allowed;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        function renderPlanningHand() {
+            const grid = document.getElementById('planningHand');
+            grid.innerHTML = '';
+            
+            gameState.playerHand.forEach((geo, idx) => {
+                // Check if this operation is already in plannedMoves
+                const isUsed = gameState.plannedMoves.includes(geo);
+                const card = document.createElement('div');
+                const isPos = geo.operation[0] === '+' || geo.operation[0] === 'x';
+                card.className = `hand-card ${isPos ? 'positive' : 'negative'} ${isUsed ? 'used' : ''}`;
+                card.innerHTML = `
+                    <div class="op-icon">${isPos ? '△' : '▽'}</div>
+                    <div class="op-name">${geo.name}</div>
+                    <div class="op-value ${isPos ? 'positive' : 'negative'}">${geo.operation}</div>
+                `;
+                
+                if (!isUsed) {
+                    card.onclick = () => selectForSlot(idx);
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+        
+        let selectedOperationIdx = null;
+        
+        function selectForSlot(idx) {
+            sounds.select();
+            selectedOperationIdx = idx;
+            
+            // Highlight selected
+            document.querySelectorAll('.hand-card').forEach(c => c.style.border = '2px solid var(--stone-light)');
+            document.querySelectorAll('.hand-card')[idx].style.border = '4px solid var(--mv-text)';
+            
+            // Show instruction
+            document.querySelectorAll('.turn-slot').forEach(slot => {
+                slot.style.border = '2px dashed var(--mv-text-light)';
+                const slotIdx = parseInt(slot.id.replace('slot', ''));
+                slot.onclick = () => assignToTurn(slotIdx);
+            });
+        }
+        
+        function assignToTurn(turnIdx) {
+            if (selectedOperationIdx === null) {
+                // No operation selected - if slot is filled, clear it
+                if (gameState.plannedMoves[turnIdx] !== null) {
+                    clearSlot(turnIdx);
+                }
+                return;
+            }
+            
+            // If slot already filled, clear it first
+            if (gameState.plannedMoves[turnIdx] !== null) {
+                clearSlot(turnIdx);
+            }
+            
+            sounds.select();
+            // Store the actual operation object, not the index
+            const geo = gameState.playerHand[selectedOperationIdx];
+            gameState.plannedMoves[turnIdx] = geo;
+            
+            // Update slot display
+            const isPos = geo.operation[0] === '+' || geo.operation[0] === 'x';
+            document.getElementById(`slotContent${turnIdx}`).innerHTML = `
+                <div style="font-size: 1.2rem; margin-bottom: 5px;">${isPos ? '△' : '▽'}</div>
+                <div style="font-size: 0.9rem; color: var(--mv-text-light);">${geo.name}</div>
+                <div style="font-size: 1.3rem; font-weight: 600; color: ${isPos ? 'var(--mv-sage)' : 'var(--mv-clay)'};">${geo.operation}</div>
+            `;
+            document.getElementById(`slot${turnIdx}`).classList.add('filled');
+            
+            selectedOperationIdx = null;
+            document.querySelectorAll('.hand-card').forEach(c => c.style.border = '2px solid var(--stone-light)');
+            document.querySelectorAll('.turn-slot').forEach(s => {
+                s.style.border = 'none';
+            });
+            
+            renderPlanningHand();
+            updateConfirmPlanBtn();
+        }
+        
+        function clearSlot(turnIdx) {
+            if (gameState.plannedMoves[turnIdx] === null) return;
+            
+            sounds.select();
+            gameState.plannedMoves[turnIdx] = null;
+            
+            document.getElementById(`slotContent${turnIdx}`).innerHTML = `
+                <div style="color: var(--mv-text-light); font-size: 0.85rem;">Empty</div>
+            `;
+            document.getElementById(`slot${turnIdx}`).classList.remove('filled');
+            
+            renderPlanningHand();
+            updateConfirmPlanBtn();
+        }
+        
+        function updateConfirmPlanBtn() {
+            const btn = document.getElementById('confirmPlanBtn');
+            const allPlanned = gameState.plannedMoves.every(m => m !== null);
+            
+            if (allPlanned) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.textContent = 'Watch Battle Unfold →';
+            } else {
+                const remaining = gameState.plannedMoves.filter(m => m === null).length;
+                btn.textContent = `Assign ${remaining} More Turn${remaining > 1 ? 's' : ''}`;
+            }
+        }
+        
+        function confirmPlan() {
+            sounds.success();
+            startBattle();
+        }
+        
+        function startBattle() {
+            sounds.success();
+            gameState.currentTurn = 0;
+            gameState.score = 0;
+            playBattleAnimation();
+        }
+        
+        function playBattleAnimation() {
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">Battle in Progress</div>
+                    <div class="battle-stage">
+                        <div class="combatants">
+                            <div class="monument player">
+                                <div class="monument-title">Your Geometry</div>
+                                <div class="value-display" id="playerValue">${gameState.playerValue}</div>
+                            </div>
+                            <div class="vs-symbol">□</div>
+                            <div class="monument boss">
+                                <div class="monument-title">Monolith</div>
+                                <div class="value-display" id="bossValue">${gameState.bossValue}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-panel" id="currentTurnInfo">
+                        Preparing battle...
+                    </div>
+                    
+                    <div class="battle-log" id="battleLog">
+                        <div style="text-align: center; font-family: 'Josefin Sans', sans-serif; margin-bottom: 20px; letter-spacing: 2px;">JOURNEY LOG</div>
+                        <div id="logEntries"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Start turn-by-turn animation
+            setTimeout(() => playTurn(0), 1000);
+        }
+        
+        function playTurn(turnIdx) {
+            if (turnIdx >= 4) {
+                setTimeout(showResults, 2000);
+                return;
+            }
+            
+            const isFinal = turnIdx === 3;
+            // plannedMoves now contains the actual operation objects
+            const playerGeo = gameState.plannedMoves[turnIdx];
+            const bossGeo = gameState.monolithMoves[turnIdx];
+            
+            // Update turn info
+            document.getElementById('currentTurnInfo').innerHTML = `
+                <strong>Turn ${turnIdx + 1} / 4 ${isFinal ? '(2 points)' : ''}</strong><br>
+                You: ${playerGeo.operation} | Monolith: ${bossGeo.operation}
+            `;
+            
+            const oldP = gameState.playerValue;
+            const oldB = gameState.bossValue;
+            
+            let playerOp = playerGeo;
+            let bossOp = bossGeo;
+            
+            // Apply abilities
+            const playerUses = gameState.mode === 'special' && gameState.abilityUsedOnTurn === turnIdx;
+            const bossUses = gameState.mode === 'special' && !gameState.bossAbilityUsed && gameState.bossAbilityTurn === turnIdx;
+            
+            let ptsMult = 1;
+            
+            if (playerUses) {
+                gameState.playerAbilityUsed = true;
+                const ability = specialAbilities.find(a => a.type === gameState.playerAbility);
+                addLog(`✧ You activated: ${ability.name}!`, 'outcome');
+                
+                if (gameState.playerAbility === 'reflection') {
+                    [playerOp, bossOp] = [bossOp, playerOp];
+                    addLog(`⟲ Operations exchanged!`, 'player');
+                } else if (gameState.playerAbility === 'inversion') {
+                    [gameState.playerValue, gameState.bossValue] = [gameState.bossValue, gameState.playerValue];
+                    addLog(`⇄ Values swapped: ${oldP}→${gameState.playerValue}, ${oldB}→${gameState.bossValue}`, 'player');
+                } else if (gameState.playerAbility === 'resonance') {
+                    ptsMult *= 2;
+                    addLog(`◉ Points doubled!`, 'outcome');
+                }
+            }
+            
+            if (bossUses) {
+                gameState.bossAbilityUsed = true;
+                const ability = specialAbilities.find(a => a.type === gameState.bossAbility);
+                addLog(`✧ Monolith used: ${ability.name}!`, 'outcome');
+                
+                if (gameState.bossAbility === 'reflection') {
+                    [playerOp, bossOp] = [bossOp, playerOp];
+                } else if (gameState.bossAbility === 'inversion') {
+                    [gameState.playerValue, gameState.bossValue] = [gameState.bossValue, gameState.playerValue];
+                } else if (gameState.bossAbility === 'resonance') {
+                    ptsMult *= 2;
+                }
+            }
+            
+            // Calculate new values
+            gameState.playerValue = applyOp(gameState.playerValue, playerOp);
+            gameState.bossValue = applyOp(gameState.bossValue, bossOp);
+            
+            // Animate value changes
+            setTimeout(() => {
+                document.getElementById('playerValue').textContent = gameState.playerValue;
+                document.getElementById('bossValue').textContent = gameState.bossValue;
+                sounds.select();
+            }, 500);
+            
+            setTimeout(() => {
+                addLog(`You: ${oldP} ${playerOp.operation} = ${gameState.playerValue}`, 'player');
+                addLog(`Monolith: ${oldB} ${bossOp.operation} = ${gameState.bossValue}`, 'monolith');
+                
+                let bonus = 0;
+                if (gameState.playerValue === gameState.bossValue) {
+                    bonus = 1;
+                    addLog(`◉ Perfect Harmony! +1 (${gameState.playerValue} = ${gameState.bossValue})`, 'outcome');
+                }
+                
+                const pts = ((isFinal ? 2 : 1) * ptsMult) + bonus;
+                
+                if (gameState.playerValue >= gameState.bossValue) {
+                    gameState.score += pts;
+                    addLog(`✓ Won! +${pts} | Score: ${gameState.score}/5`, 'outcome');
+                    sounds.success();
+                } else if (bonus > 0) {
+                    gameState.score += bonus;
+                    addLog(`△ Lost, +${bonus} harmony | Score: ${gameState.score}/5`, 'outcome');
+                } else {
+                    addLog(`✗ Lost | Score: ${gameState.score}/5`, 'outcome');
+                }
+                
+                // Play next turn after delay
+                setTimeout(() => playTurn(turnIdx + 1), 2500);
+            }, 1000);
+        }
+        
+        function addLog(text, type) {
+            const log = document.getElementById('logEntries');
+            if (!log) return;
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = text;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function applyOp(val, geo) {
+            const op = geo.operation[0];
+            const num = parseInt(geo.operation.slice(1));
+            if (op === '+') return val + num;
+            if (op === '-') return val - num;
+            if (op === 'x') return Math.round(val * num);
+            if (op === '/') return Math.round(val / num);
+            return val;
+        }
+        
+        function showResults() {
+            const win = gameState.score >= 3;
+            if (win) {
+                sounds.victory();
+            }
+            
+            document.getElementById('gameScreen').innerHTML = `
+                <div class="iso-card">
+                    <div class="card-title">${win ? 'Harmony' : 'Dissonance'}</div>
+                    <div class="info-panel ${win ? 'success' : 'warning'}" style="text-align: center; padding: 40px; font-size: 1.1rem;">
+                        <div style="font-size: 4rem; margin-bottom: 20px;">${win ? '◇' : '□'}</div>
+                        <div style="font-family: 'Josefin Sans', sans-serif; font-size: 1.5rem; margin-bottom: 15px; letter-spacing: 2px;">
+                            ${win ? 'The Monolith Resonates' : 'The Path Remains'}
+                        </div>
+                        <div style="font-size: 1.3rem;">Score: <strong>${gameState.score}</strong> / 5</div>
+                    </div>
+                    <button class="mv-btn coral" onclick="location.reload()" style="width: 100%; margin-top: 30px; padding: 22px;">
+                        New Journey
+                    </button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

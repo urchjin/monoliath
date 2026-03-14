@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>Cipher</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; }
+        html,body { width:100%; height:100%; overflow:hidden; position:fixed; }
+        body {
+            font-family:'Quicksand',sans-serif;
+            background: radial-gradient(1200px 800px at 20% 20%,rgba(255,255,255,0.35),transparent 60%),
+                        linear-gradient(135deg,#1b1f3b 0%,#2a1a3c 45%,#061a2b 100%);
+            display:flex; justify-content:center; align-items:center;
+            position:relative; touch-action:manipulation; color:#e8e8ff;
+        }
+        body::before {
+            content:''; position:fixed; inset:-10%;
+            background:conic-gradient(from 0deg at 50% 50%,rgba(0,255,213,0.08),rgba(255,0,196,0.08),rgba(255,234,0,0.08),rgba(0,255,133,0.08),rgba(0,255,213,0.08));
+            filter:blur(60px); animation:spinBg 40s linear infinite; pointer-events:none; z-index:0;
+        }
+        body::after {
+            content:''; position:fixed; inset:0;
+            background: radial-gradient(circle at 10% 10%,rgba(255,255,255,0.05) 0 2px,transparent 3px) 0 0/160px 160px,
+                        radial-gradient(circle at 90% 90%,rgba(255,255,255,0.05) 0 2px,transparent 3px) 0 0/160px 160px,
+                        linear-gradient(transparent 96%,rgba(255,255,255,0.05) 96%) 0 0/100% 6px;
+            opacity:0.6; animation:driftGrid 20s linear infinite; pointer-events:none; z-index:0;
+        }
+        .bg-shape { position:absolute; opacity:0.18; animation:float 20s infinite ease-in-out; pointer-events:none; }
+        @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-30px) rotate(180deg)} }
+        @keyframes spinBg { 0%{transform:rotate(0deg) scale(1)} 50%{transform:rotate(180deg) scale(1.02)} 100%{transform:rotate(360deg) scale(1)} }
+        @keyframes driftGrid { 0%{background-position:0 0,0 0,0 0} 100%{background-position:160px 160px,-160px -160px,0 6px} }
+
+        /* ══ MAIN MENU ═════════════════════════════════════════════════ */
+        #mainMenu { position:fixed; inset:0; display:flex; justify-content:center; align-items:center; z-index:100; overflow-y:auto; }
+        .menu-container {
+            background:rgba(17,20,36,0.88); border-radius:24px; padding:32px 24px 28px;
+            box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(255,255,255,0.07),0 0 40px rgba(0,255,213,0.18),inset 0 0 40px rgba(255,255,255,0.03);
+            max-width:460px; width:92%; text-align:center; backdrop-filter:blur(16px); margin:auto;
+        }
+        .menu-title {
+            font-family:'Montserrat',sans-serif; font-size:clamp(2.2em,6vw,3.4em); font-weight:700;
+            letter-spacing:0.22em; color:#a9baff;
+            text-shadow:0 0 20px rgba(169,186,255,0.5),0 2px 30px rgba(0,255,213,0.22); margin-bottom:4px;
+        }
+        .menu-subtitle { color:#9bbfe8; font-size:clamp(0.8em,2vw,0.93em); margin-bottom:24px; }
+        .menu-section-label { font-size:0.73em; letter-spacing:0.2em; text-transform:uppercase; color:#7a7aaa; margin-bottom:11px; font-weight:600; }
+        .difficulty-cards { display:flex; gap:8px; justify-content:center; margin-bottom:20px; }
+        .diff-card { flex:1; max-width:130px; padding:13px 8px 11px; border-radius:16px; cursor:pointer; border:1.5px solid transparent; transition:all 0.25s ease; }
+        .diff-card:hover,.diff-card.selected { transform:translateY(-4px); border-color:rgba(255,255,255,0.2); }
+        .diff-card-easy  { background:linear-gradient(135deg,#1a3a2a,#0f2a1e); box-shadow:0 4px 20px rgba(38,255,130,0.15); }
+        .diff-card-easy:hover,.diff-card-easy.selected  { box-shadow:0 8px 30px rgba(38,255,130,0.4),0 0 0 1px rgba(38,255,130,0.4); }
+        .diff-card-normal{ background:linear-gradient(135deg,#1a2a3a,#0f1e2e); box-shadow:0 4px 20px rgba(100,160,255,0.15); }
+        .diff-card-normal:hover,.diff-card-normal.selected { box-shadow:0 8px 30px rgba(100,160,255,0.4),0 0 0 1px rgba(100,160,255,0.4); }
+        .diff-card-hard  { background:linear-gradient(135deg,#3a1a1a,#2a0f0f); box-shadow:0 4px 20px rgba(255,80,80,0.15); }
+        .diff-card-hard:hover,.diff-card-hard.selected  { box-shadow:0 8px 30px rgba(255,80,80,0.4),0 0 0 1px rgba(255,80,80,0.4); }
+        .diff-icon { font-size:1.65em; margin-bottom:5px; display:block; }
+        .diff-name { font-family:'Montserrat',sans-serif; font-size:0.76em; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:3px; }
+        .diff-card-easy  .diff-name { color:#26ff82; }
+        .diff-card-normal.diff-name { color:#64a0ff; }
+        .diff-card-normal .diff-name { color:#64a0ff; }
+        .diff-card-hard  .diff-name { color:#ff5050; }
+        .diff-target { font-size:0.8em; font-weight:700; margin-bottom:2px; }
+        .diff-card-easy  .diff-target { color:#8affcc; }
+        .diff-card-normal .diff-target { color:#90c0ff; }
+        .diff-card-hard  .diff-target { color:#ff9090; }
+        .diff-desc { font-size:0.64em; color:#606080; margin-top:2px; line-height:1.4; }
+        .btn-start {
+            width:100%; padding:13px; border:none; border-radius:50px;
+            font-family:'Quicksand',sans-serif; font-size:1.02em; font-weight:700; cursor:pointer;
+            background:linear-gradient(135deg,#26ffd6,#7adfb1); color:#0a2820;
+            box-shadow:0 6px 20px rgba(38,255,214,0.38); transition:all 0.25s ease; letter-spacing:0.05em;
+        }
+        .btn-start:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(38,255,214,0.5); }
+        .btn-start:active { transform:scale(0.97); }
+        .menu-rules { margin-top:16px; text-align:left; background:rgba(255,255,255,0.04); border-radius:12px; padding:10px 13px; border:1px solid rgba(255,255,255,0.06); }
+        .menu-rules-title { font-size:0.7em; letter-spacing:0.15em; text-transform:uppercase; color:#7a7aaa; font-weight:700; margin-bottom:6px; }
+        .menu-rules ul { list-style:none; padding:0; }
+        .menu-rules li { font-size:0.74em; color:#8898b8; padding:2px 0; display:flex; gap:6px; line-height:1.5; }
+        .rule-icon { flex-shrink:0; }
+
+        /* ══ GAME CONTAINER ════════════════════════════════════════════ */
+        .container {
+            background:rgba(17,20,36,0.65); border-radius:20px; padding:14px;
+            box-shadow:0 20px 50px rgba(0,0,0,0.5),0 0 0 1px rgba(255,255,255,0.06),0 0 25px rgba(0,255,213,0.15),inset 0 0 30px rgba(255,255,255,0.04);
+            max-width:900px; width:95%; max-height:95vh; overflow-y:auto;
+            position:relative; -webkit-overflow-scrolling:touch; backdrop-filter:blur(12px) saturate(120%); z-index:1;
+        }
+        .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:9px; }
+        .header-left { flex:1; }
+        h1 {
+            color:#a9baff; font-family:'Montserrat','Quicksand',sans-serif;
+            font-size:clamp(1.3em,4.5vw,2.2em); font-weight:700; text-transform:uppercase; letter-spacing:0.22em;
+            text-shadow:0 0 6px rgba(169,186,255,0.35),0 2px 20px rgba(0,255,213,0.12); margin-bottom:1px;
+        }
+        .subtitle { color:#d8c6e6; font-size:clamp(0.65em,1.7vw,0.83em); font-weight:400; }
+        .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+        .level-badge { background:linear-gradient(135deg,rgba(159,231,255,0.15),rgba(122,166,255,0.12)); border:1px solid rgba(159,231,255,0.25); border-radius:20px; padding:5px 12px; font-size:0.74em; font-weight:700; color:#9fe7ff; letter-spacing:0.08em; white-space:nowrap; }
+        .boss-badge { background:linear-gradient(135deg,rgba(255,80,80,0.25),rgba(255,150,50,0.2)); border:1px solid rgba(255,100,50,0.5); border-radius:20px; padding:5px 12px; font-size:0.68em; font-weight:700; color:#ff8060; letter-spacing:0.06em; animation:bossPulse 1s ease-in-out infinite; white-space:nowrap; display:none; }
+        @keyframes bossPulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(255,80,80,0.3)} 50%{opacity:0.75;box-shadow:0 0 20px rgba(255,80,80,0.6)} }
+
+        /* ══ MOVES LEFT BAR ════════════════════════════════════════════ */
+        .moves-section { margin-bottom:9px; }
+        .moves-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+        .moves-label { font-size:0.72em; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#9fe7aa; }
+        .moves-value { font-size:0.76em; font-weight:700; color:#9fe7ff; }
+        .moves-bar-track {
+            height:14px; background:rgba(255,255,255,0.07); border-radius:7px;
+            overflow:visible; box-shadow:inset 0 0 0 1px rgba(255,255,255,0.07);
+            position:relative; margin-top:14px;
+        }
+        .moves-bar-track::before {
+            content:'START'; position:absolute; font-size:0.5em; font-weight:700; letter-spacing:0.1em;
+            color:rgba(255,255,255,0.35); top:-13px; transform:translateX(-50%);
+            left:var(--start-pct,55.5%);
+        }
+        .moves-bar-track::after {
+            content:''; position:absolute; top:-2px; bottom:-2px; width:2px;
+            background:rgba(255,255,255,0.28); border-radius:1px;
+            left:var(--start-pct,55.5%); transform:translateX(-50%); z-index:2;
+        }
+        .moves-bar-fill {
+            height:100%; border-radius:7px; transition:width 0.4s ease, background 0.4s ease;
+            background:linear-gradient(90deg,#26ff82,#26ffd6);
+            box-shadow:0 0 10px rgba(38,255,130,0.5); position:relative;
+        }
+        .moves-bar-fill.medium { background:linear-gradient(90deg,#ffd026,#ffb026); box-shadow:0 0 10px rgba(255,200,38,0.5); }
+        .moves-bar-fill.low    { background:linear-gradient(90deg,#ff5050,#ff8060); box-shadow:0 0 10px rgba(255,80,80,0.6); animation:movesFlash 0.45s ease-in-out infinite; }
+        @keyframes movesFlash { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+        /* ══ SCORE BOARD ═══════════════════════════════════════════════ */
+        .score-board { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
+        .score-item { background:linear-gradient(135deg,rgba(245,227,216,0.16),rgba(245,212,201,0.1)); padding:7px; border-radius:11px; box-shadow:0 4px 15px rgba(0,0,0,0.25),inset 0 0 0 1px rgba(255,255,255,0.06); text-align:center; }
+        .score-label { font-size:clamp(0.6em,1.4vw,0.76em); color:#b7b7d4; font-weight:500; }
+        .score-value { font-size:clamp(0.95em,2.1vw,1.15em); color:#9fe7ff; text-shadow:0 0 10px rgba(159,231,255,0.3); font-weight:700; }
+
+        /* ══ INSTRUCTIONS ══════════════════════════════════════════════ */
+        .instructions { background:linear-gradient(135deg,rgba(212,231,245,0.15),rgba(245,227,231,0.08)); padding:8px; border-radius:13px; margin-bottom:10px; text-align:center; color:#cfe5ff; font-weight:500; font-size:clamp(0.68em,1.6vw,0.83em); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08); }
+
+        /* ══ LOCK ══════════════════════════════════════════════════════ */
+        .lock-area { display:flex; justify-content:center; align-items:center; padding:12px 0; min-height:300px; position:relative; }
+        .cipher-lock { position:relative; width:clamp(240px,68vw,400px); height:clamp(240px,68vw,400px); filter:drop-shadow(0 30px 40px rgba(0,0,0,0.45)); }
+
+        .ring {
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            border-radius:50%; transition:transform 0.3s ease; cursor:pointer;
+            box-shadow:0 0 0 2px rgba(255,255,255,0.06),inset 0 0 40px rgba(255,255,255,0.08),0 0 35px rgba(0,255,213,0.15);
+            overflow:hidden;
+        }
+        .ring::before { content:''; position:absolute; inset:-15%; border-radius:50%; background:conic-gradient(from 0deg,rgba(0,200,255,0.12),rgba(0,255,213,0.12),rgba(0,200,255,0.12)); filter:blur(18px); animation:ringAura 12s linear infinite; pointer-events:none; }
+        @keyframes ringAura { to{transform:rotate(360deg)} }
+        .ring:active { transform:translate(-50%,-50%) scale(0.98); }
+        .ring-1 { width:100%;height:100%; background:radial-gradient(60% 60% at 50% 50%,rgba(59,91,120,0.25),transparent 60%),linear-gradient(135deg,#284b63,#3b5b78); box-shadow:0 0 30px rgba(59,91,120,0.25),inset 0 0 20px rgba(255,255,255,0.18); }
+        .ring-2 { width:75%;height:75%;   background:radial-gradient(60% 60% at 50% 50%,rgba(58,199,181,0.22),transparent 60%),linear-gradient(135deg,#2a9d8f,#3ac7b5); box-shadow:0 0 25px rgba(58,199,181,0.22),inset 0 0 15px rgba(255,255,255,0.18); }
+        .ring-3 { width:50%;height:50%;   background:radial-gradient(60% 60% at 50% 50%,rgba(79,103,226,0.22),transparent 60%),linear-gradient(135deg,#4c5fd7,#6f7df5); box-shadow:0 0 20px rgba(79,103,226,0.22),inset 0 0 10px rgba(255,255,255,0.18); }
+        .ring-4 { width:25%;height:25%;   background:radial-gradient(60% 60% at 50% 50%,rgba(159,231,255,0.25),transparent 60%),linear-gradient(135deg,#7fd3ff,#a8e4ff); box-shadow:0 0 18px rgba(159,231,255,0.3),inset 0 0 8px rgba(255,255,255,0.18); }
+
+        /* Boss mode ring shimmer */
+        .boss-active .ring-1 { animation:bossRingShimmer 1.5s ease-in-out infinite; }
+        @keyframes bossRingShimmer { 0%,100%{box-shadow:0 0 30px rgba(255,80,80,0.3),inset 0 0 20px rgba(255,255,255,0.18)} 50%{box-shadow:0 0 55px rgba(255,80,80,0.7),inset 0 0 20px rgba(255,200,200,0.25)} }
+
+        /* ── Solve celebration spin ─────────────────────────── */
+        @keyframes solveCW  { 0%{transform:translate(-50%,-50%) rotate(var(--base-rot,0deg))} 40%{transform:translate(-50%,-50%) rotate(calc(var(--base-rot,0deg) + 120deg))} 70%{transform:translate(-50%,-50%) rotate(calc(var(--base-rot,0deg) + 90deg))} 100%{transform:translate(-50%,-50%) rotate(var(--base-rot,0deg))} }
+        @keyframes solveCCW { 0%{transform:translate(-50%,-50%) rotate(var(--base-rot,0deg))} 40%{transform:translate(-50%,-50%) rotate(calc(var(--base-rot,0deg) - 120deg))} 70%{transform:translate(-50%,-50%) rotate(calc(var(--base-rot,0deg) - 90deg))} 100%{transform:translate(-50%,-50%) rotate(var(--base-rot,0deg))} }
+        .ring.solve-cw  { animation:solveCW  1s cubic-bezier(0.34,1.2,0.64,1) forwards !important; }
+        .ring.solve-ccw { animation:solveCCW 1s cubic-bezier(0.34,1.2,0.64,1) forwards !important; }
+
+        /* ── Lockout shudder ────────────────────────────────── */
+        @keyframes lockoutShudder {
+            0%   { transform:translate(-50%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1); }
+            10%  { transform:translate(-46%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(2) saturate(0) sepia(1) hue-rotate(-20deg); }
+            20%  { transform:translate(-54%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.8) saturate(0) sepia(1) hue-rotate(-20deg); }
+            30%  { transform:translate(-47%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(2.2); }
+            40%  { transform:translate(-53%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.5); }
+            50%  { transform:translate(-48%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.8); }
+            60%  { transform:translate(-52%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.3); }
+            70%  { transform:translate(-49%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.5); }
+            80%  { transform:translate(-51%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.2); }
+            90%  { transform:translate(-50%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1.1); }
+            100% { transform:translate(-50%,-50%) rotate(var(--base-rot,0deg)); filter:brightness(1); }
+        }
+        .ring.lockout { animation:lockoutShudder 0.9s ease-out forwards !important; }
+
+        .slot { position:absolute; display:flex; align-items:center; justify-content:center; font-weight:700; color:#eef3ff; pointer-events:none; left:50%; top:50%; }
+        .slot-content { transition:transform 0.3s ease; letter-spacing:0.5px; display:inline-block; }
+        .ring-1 .slot { width:26px;height:26px; font-size:clamp(0.76em,1.6vw,0.96em); }
+        .ring-2 .slot { width:30px;height:30px; font-size:clamp(0.96em,2vw,1.22em); }
+        .ring-3 .slot { width:26px;height:26px; font-size:clamp(0.86em,1.8vw,1.06em); }
+        .ring-4 .slot { width:30px;height:30px; font-size:clamp(1.04em,2vw,1.3em); }
+        .alignment-marker { position:absolute; top:-14px; left:50%; transform:translateX(-50%); width:0;height:0; border-left:11px solid transparent; border-right:11px solid transparent; border-top:18px solid #ffea7a; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.2)); z-index:1000; pointer-events:none; }
+        .alignment-marker::after { content:''; position:absolute; top:-16px;left:-9px; width:18px;height:18px; background:#ffea7a; border-radius:50%; box-shadow:0 0 16px rgba(255,234,122,0.65); }
+
+        /* ══ EQUATION DISPLAY ══════════════════════════════════════════ */
+        .equation-display { background:rgba(255,255,255,0.08); padding:11px; border-radius:12px; text-align:center; margin-top:10px; backdrop-filter:blur(10px); box-shadow:0 4px 15px rgba(0,0,0,0.35),inset 0 0 0 1px rgba(255,255,255,0.06); }
+        .current-equation { font-size:clamp(1.05em,2.6vw,1.5em); font-weight:700; color:#9fe7ff; text-shadow:0 0 10px rgba(159,231,255,0.35),0 2px 20px rgba(0,255,213,0.15); margin-bottom:5px; }
+        .found-label { font-size:clamp(0.68em,1.6vw,0.82em); color:#c0c7ff; font-weight:600; margin-bottom:9px; }
+
+        /* Operator picker row */
+        .op-picker-row { display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap; }
+        .op-picker-label { font-size:0.72em; color:#8898b8; font-weight:600; margin-right:2px; white-space:nowrap; }
+        .op-btn {
+            padding:5px 14px; border-radius:20px; cursor:pointer; font-family:'Quicksand',sans-serif;
+            font-size:0.82em; font-weight:700; border:1.5px solid transparent; transition:all 0.2s ease;
+            touch-action:manipulation; white-space:nowrap;
+        }
+        .op-btn-eq  { background:rgba(159,231,255,0.1); color:#9fe7ff; border-color:rgba(159,231,255,0.25); }
+        .op-btn-lt  { background:rgba(255,159,64,0.1);  color:#ff9f40; border-color:rgba(255,159,64,0.25); }
+        .op-btn-gt  { background:rgba(255,111,160,0.1); color:#ff6fa0; border-color:rgba(255,111,160,0.25); }
+        .op-btn.active-op { transform:scale(1.1); box-shadow:0 0 12px currentColor; opacity:1; }
+        .op-btn-eq.active-op  { background:rgba(159,231,255,0.22); border-color:rgba(159,231,255,0.7); }
+        .op-btn-lt.active-op  { background:rgba(255,159,64,0.22);  border-color:rgba(255,159,64,0.7); }
+        .op-btn-gt.active-op  { background:rgba(255,111,160,0.22); border-color:rgba(255,111,160,0.7); }
+        .op-btn:not(.active-op) { opacity:0.6; }
+        .op-btn:not(.active-op):hover { opacity:0.9; transform:scale(1.04); }
+        .op-btn:active { transform:scale(0.95) !important; }
+        .op-cost { font-size:0.7em; opacity:0.75; margin-left:2px; }
+
+        /* ══ CONTROLS ══════════════════════════════════════════════════ */
+        .controls { display:flex; justify-content:center; gap:6px; margin-top:10px; flex-wrap:wrap; }
+        .btn { padding:9px 18px; border:none; border-radius:25px; font-family:'Quicksand',sans-serif; font-size:clamp(0.74em,1.6vw,0.9em); font-weight:600; cursor:pointer; transition:all 0.3s ease; box-shadow:0 5px 15px rgba(0,0,0,0.3),0 0 18px rgba(0,255,213,0.18); touch-action:manipulation; flex:1; min-width:78px; max-width:125px; color:#0f1424; }
+        .btn-hint  { background:linear-gradient(135deg,#fff9c4,#fff59d); color:#2d2d2d; }
+        .btn-check { background:linear-gradient(135deg,#26ffd6,#7adfb1); color:#143231; }
+        .btn-new   { background:linear-gradient(135deg,#9fe7ff,#7aa6ff); color:#11243c; }
+        .btn-menu  { background:linear-gradient(135deg,#c0c0de,#9090b8); color:#1a1a2e; }
+        .btn-spin  { background:linear-gradient(135deg,#f9a8d4,#f472b6); color:#3b0a25; }
+        .btn-spin:disabled { opacity:0.35; cursor:not-allowed; transform:none !important; filter:none !important; }
+        .btn:active { transform:scale(0.95); }
+        .btn:hover  { transform:translateY(-2px); box-shadow:0 10px 20px rgba(0,0,0,0.35),0 0 26px rgba(0,255,213,0.28); filter:saturate(120%); }
+
+        .ring-controls { margin-top:11px; display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.06); padding:10px; border-radius:13px; backdrop-filter:blur(10px); box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06); }
+        .ring-control-row { display:flex; align-items:center; justify-content:space-between; gap:7px; }
+        .ring-label { font-size:clamp(0.68em,1.6vw,0.82em); font-weight:600; color:#c0c0de; flex:1; text-align:left; }
+        .btn-rotate { padding:6px 16px; border:none; border-radius:20px; font-family:'Quicksand',sans-serif; font-size:clamp(0.74em,1.6vw,0.89em); font-weight:700; cursor:pointer; transition:all 0.2s ease; touch-action:manipulation; }
+        .btn-left  { background:linear-gradient(135deg,rgba(255,200,130,0.22),rgba(255,180,100,0.18)); color:#ffd080; border:1px solid rgba(255,200,130,0.3); }
+        .btn-right { background:linear-gradient(135deg,rgba(130,200,255,0.22),rgba(100,180,255,0.18)); color:#80d0ff; border:1px solid rgba(130,200,255,0.3); }
+        .btn-rotate:active { transform:scale(0.93); }
+        .btn-rotate:hover  { filter:brightness(1.2); }
+
+        .feedback { margin-top:10px; min-height:27px; display:flex; align-items:center; justify-content:center; color:#dfe6ff; text-shadow:0 0 12px rgba(223,230,255,0.3); font-size:clamp(0.75em,1.8vw,0.9em); font-weight:600; text-align:center; }
+        .feedback.success { color:#26ffd6; animation:fadeInScale 0.5s ease; text-shadow:0 0 18px rgba(38,255,214,0.45); }
+        .feedback.partial  { color:#c785e1; animation:fadeInScale 0.5s ease; text-shadow:0 0 18px rgba(199,133,225,0.45); }
+        .feedback.error    { color:#ff8ec3; animation:fadeInScale 0.5s ease; text-shadow:0 0 18px rgba(255,142,195,0.45); }
+        .feedback.combo    { color:#ffd040; animation:fadeInScale 0.5s ease; text-shadow:0 0 18px rgba(255,210,64,0.6); }
+        @keyframes fadeInScale { 0%{opacity:0;transform:scale(0.8)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes correctPulse { 0%,100%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scale(1.05)} }
+        @keyframes glowPop { 0%{filter:brightness(1)} 50%{filter:brightness(1.18)} 100%{filter:brightness(1)} }
+        @media (max-width:768px) { .lock-area{min-height:270px} }
+        @media (max-width:480px) { .lock-area{min-height:240px} }
+
+        /* ══ MODALS ════════════════════════════════════════════════════ */
+        .modal-overlay { position:fixed;inset:0;display:none;justify-content:center;align-items:center;z-index:200;background:rgba(5,8,20,0.8);backdrop-filter:blur(6px); }
+        .modal-content { background:rgba(17,20,36,0.97);border-radius:22px;padding:28px 24px 24px;max-width:370px;width:88%;text-align:center;animation:modalPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes modalPop { 0%{transform:scale(0.7);opacity:0} 100%{transform:scale(1);opacity:1} }
+        .modal-icon  { font-size:2.6em;margin-bottom:8px;display:block; }
+        .modal-title { font-family:'Montserrat',sans-serif;font-size:1.45em;font-weight:700;margin-bottom:6px;letter-spacing:0.08em; }
+        .modal-sub   { font-size:0.85em;color:#a0a8c0;margin-bottom:15px; }
+        .modal-stats { display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:18px; }
+        .modal-stat  { background:rgba(255,255,255,0.06);border-radius:11px;padding:8px;border:1px solid rgba(255,255,255,0.06); }
+        .modal-stat-label { font-size:0.68em;color:#7a80a0;margin-bottom:2px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase; }
+        .modal-stat-value { font-size:1.2em;font-weight:700;color:#9fe7ff; }
+        .modal-buttons { display:flex;gap:8px; }
+        .btn-modal { flex:1;padding:10px;border:none;border-radius:13px;font-family:'Quicksand',sans-serif;font-size:0.86em;font-weight:700;cursor:pointer;transition:all 0.2s ease; }
+        .btn-modal-menu  { background:rgba(255,255,255,0.1);color:#c0c8e8;border:1px solid rgba(255,255,255,0.15); }
+        .btn-modal-menu:hover  { background:rgba(255,255,255,0.17);transform:translateY(-1px); }
+        .btn-modal-retry { background:linear-gradient(135deg,#26ffd6,#7adfb1);color:#0a2820; }
+        .btn-modal-retry:hover { filter:brightness(1.1);transform:translateY(-1px); }
+        .btn-modal:active { transform:scale(0.95); }
+
+        #gameOverModal .modal-content { box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(255,80,80,0.35),0 0 40px rgba(255,80,80,0.18); }
+        #gameOverModal .modal-title   { color:#ff7060;text-shadow:0 0 20px rgba(255,100,80,0.5); }
+        #winModal .modal-content { box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 0 1px rgba(38,255,130,0.4),0 0 50px rgba(38,255,200,0.25); }
+        #winModal .modal-title   { color:#26ffd6;text-shadow:0 0 20px rgba(38,255,213,0.55); }
+
+        /* Boss warning overlay */
+        #bossWarning { position:fixed;inset:0;display:none;justify-content:center;align-items:center;z-index:150;background:rgba(30,5,5,0.85);backdrop-filter:blur(4px); }
+        .boss-warning-box { background:linear-gradient(135deg,rgba(50,10,10,0.98),rgba(30,10,5,0.98)); border-radius:20px;padding:26px 24px 22px;max-width:330px;width:88%;text-align:center; box-shadow:0 0 0 1px rgba(255,80,50,0.5),0 0 50px rgba(255,80,50,0.35); animation:modalPop 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+        .boss-warning-icon  { font-size:2.8em;margin-bottom:7px;display:block;animation:bossPulse 0.8s ease-in-out infinite; }
+        .boss-warning-title { font-family:'Montserrat',sans-serif;font-size:1.5em;font-weight:700;color:#ff6040;text-shadow:0 0 20px rgba(255,80,50,0.6);margin-bottom:5px;letter-spacing:0.1em; }
+        .boss-warning-sub   { font-size:0.83em;color:#cc9090;margin-bottom:5px;line-height:1.5; }
+        .boss-warning-detail{ font-size:0.76em;color:#996060;margin-bottom:16px; }
+        .btn-boss-ok { width:100%;padding:11px;border:none;border-radius:13px;font-family:'Quicksand',sans-serif;font-size:0.93em;font-weight:700;cursor:pointer;background:linear-gradient(135deg,#ff6040,#ff9060);color:#200a00;box-shadow:0 4px 18px rgba(255,80,50,0.4);transition:all 0.2s ease; }
+        .btn-boss-ok:hover { filter:brightness(1.1);transform:translateY(-1px); }
+        .btn-boss-ok:active { transform:scale(0.97); }
+    </style>
+</head>
+<body>
+    <svg class="bg-shape" style="top:10%;left:10%;width:80px" viewBox="0 0 100 100"><polygon points="50,10 90,90 10,90" fill="white"/></svg>
+    <svg class="bg-shape" style="top:60%;right:10%;width:60px;animation-delay:-5s" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" fill="white"/></svg>
+
+    <!-- ══ MAIN MENU ══════════════════════════════════════════════════ -->
+    <div id="mainMenu">
+        <div class="menu-container">
+            <div class="menu-title">CIPHER</div>
+            <p class="menu-subtitle">Solve equations · Charge the lock</p>
+
+            <div class="menu-section-label">Choose Difficulty</div>
+            <div class="difficulty-cards">
+                <div class="diff-card diff-card-easy selected" id="diffEasy" onclick="selectDifficulty('easy')">
+                    <span class="diff-icon">🟢</span>
+                    <div class="diff-name">Easy</div>
+                    <div class="diff-target">Reach 🔋20</div>
+                    <div class="diff-desc">+ and − only<br>Numbers ≤ 20</div>
+                </div>
+                <div class="diff-card diff-card-normal" id="diffNormal" onclick="selectDifficulty('normal')">
+                    <span class="diff-icon">🔵</span>
+                    <div class="diff-name">Normal</div>
+                    <div class="diff-target">Reach 🔋24</div>
+                    <div class="diff-desc">× and ÷ from<br>level 6 onwards</div>
+                </div>
+                <div class="diff-card diff-card-hard" id="diffHard" onclick="selectDifficulty('hard')">
+                    <span class="diff-icon">🔴</span>
+                    <div class="diff-name">Hard</div>
+                    <div class="diff-target">Reach 🔋27</div>
+                    <div class="diff-desc">Boss locks every<br>3rd level</div>
+                </div>
+            </div>
+
+            <button class="btn-start" onclick="startGame()">🔋 Start Game</button>
+
+            <div class="menu-rules">
+                <div class="menu-rules-title">⚙ How to Play</div>
+                <ul>
+                    <li><span class="rule-icon">🔋</span> Start with 15 moves. Charge up to the target number to WIN!</li>
+                    <li><span class="rule-icon">🔄</span> Each ring rotation uses 1 move — plan before you spin!</li>
+                    <li><span class="rule-icon">🎲</span> 7 free random spins per level — no move cost!</li>
+                    <li><span class="rule-icon">✅</span> Find a correct = equation = +7 moves · &lt; or &gt; = +2 moves (7 uses per level)</li>
+                    <li><span class="rule-icon">🔥</span> Solve 3 in a row with the same answer = +3 Combo bonus</li>
+                    <li><span class="rule-icon">📈</span> Reach the target moves to advance to the next level (moves reset to 15)</li>
+                    <li><span class="rule-icon">👑</span> Every 5th level is a Boss Lock — rings auto-spin and cost moves!</li>
+                    <li><span class="rule-icon">⚖️</span> Swap = to &lt; or &gt; for more options (costs 2 moves)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ GAME CONTAINER ════════════════════════════════════════════ -->
+    <div class="container" id="gameContainer" style="display:none">
+        <div class="header">
+            <div class="header-left">
+                <h1>CIPHER</h1>
+                <p class="subtitle">Charge the lock to win!</p>
+            </div>
+            <div class="header-right">
+                <div class="level-badge" id="levelBadge">LEVEL 1</div>
+                <div class="boss-badge" id="bossBadge">⚠ BOSS LOCK</div>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <!-- Moves Left Bar -->
+            <div class="moves-section">
+                <div class="moves-header">
+                    <span class="moves-label">🔋 Moves Left</span>
+                    <span class="moves-value" id="movesValue">15 / 20</span>
+                </div>
+                <div class="moves-bar-track" id="movesBarTrack" style="--start-pct:75%">
+                    <div class="moves-bar-fill" id="movesBarFill" style="width:75%"></div>
+                </div>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item"><div class="score-label">Score</div><div class="score-value" id="score">0</div></div>
+                <div class="score-item"><div class="score-label">Solved</div><div class="score-value" id="solved">0</div></div>
+                <div class="score-item"><div class="score-label">Level</div><div class="score-value" id="levelNum">1</div></div>
+            </div>
+
+            <div class="instructions" id="instructionText">
+                Rotate rings to align a correct equation. Each rotation costs 1 move.
+            </div>
+
+            <div class="lock-area">
+                <div class="cipher-lock" id="cipherLock">
+                    <div class="alignment-marker"></div>
+                    <div class="ring ring-1" id="ring1" data-ring="1"></div>
+                    <div class="ring ring-2" id="ring2" data-ring="2"></div>
+                    <div class="ring ring-3" id="ring3" data-ring="3"></div>
+                    <div class="ring ring-4" id="ring4" data-ring="4"></div>
+                </div>
+            </div>
+
+            <div class="equation-display">
+                <div class="current-equation" id="currentEquation">? ○ ? = ?</div>
+                <div class="found-label" id="foundLabel">Find a correct equation!</div>
+                <!-- Operator picker: always-visible buttons -->
+                <div class="op-picker-row">
+                    <span class="op-picker-label">Operator:</span>
+                    <button class="op-btn op-btn-eq active-op" id="opBtnEq" onclick="setOperator('=')">= <span class="op-cost">active</span></button>
+                    <button class="op-btn op-btn-lt" id="opBtnLt" onclick="setOperator('<')">&lt; <span class="op-cost">−2</span></button>
+                    <button class="op-btn op-btn-gt" id="opBtnGt" onclick="setOperator('>')">&gt; <span class="op-cost">−2</span></button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-spin"  id="spinBtn">🎲 Spin (7)</button>
+                <button class="btn btn-hint"  id="hintBtn">💡 Hint</button>
+                <button class="btn btn-check" id="checkBtn">✓ Check</button>
+                <button class="btn btn-new"   id="newBtn">🔄 Refresh</button>
+                <button class="btn btn-menu"  id="menuBtn">🏠 Menu</button>
+            </div>
+
+            <div class="ring-controls">
+                <div class="ring-control-row"><span class="ring-label">Outer Ring:</span><button class="btn-rotate btn-left" data-ring="1" data-direction="-1">◀</button><button class="btn-rotate btn-right" data-ring="1" data-direction="1">▶</button></div>
+                <div class="ring-control-row"><span class="ring-label">Operation:</span><button class="btn-rotate btn-left" data-ring="2" data-direction="-1">◀</button><button class="btn-rotate btn-right" data-ring="2" data-direction="1">▶</button></div>
+                <div class="ring-control-row"><span class="ring-label">Inner Ring:</span><button class="btn-rotate btn-left" data-ring="3" data-direction="-1">◀</button><button class="btn-rotate btn-right" data-ring="3" data-direction="1">▶</button></div>
+                <div class="ring-control-row"><span class="ring-label">Core:</span><button class="btn-rotate btn-left" data-ring="4" data-direction="-1">◀</button><button class="btn-rotate btn-right" data-ring="4" data-direction="1">▶</button></div>
+            </div>
+
+            <div class="feedback" id="feedback"></div>
+        </div>
+    </div>
+
+    <!-- ══ BOSS WARNING ═══════════════════════════════════════════════ -->
+    <div id="bossWarning" style="display:none">
+        <div class="boss-warning-box">
+            <span class="boss-warning-icon">⚠️</span>
+            <div class="boss-warning-title">BOSS LOCK!</div>
+            <div class="boss-warning-sub">Level <span id="bossLevelNum">5</span> is a Boss Lock!</div>
+            <div class="boss-warning-detail">Rings will auto-rotate every 10 seconds, costing 1 move each time. Think fast!</div>
+            <button class="btn-boss-ok" onclick="dismissBossWarning()">⚡ I'm Ready!</button>
+        </div>
+    </div>
+
+    <!-- ══ GAME OVER MODAL ════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="gameOverModal">
+        <div class="modal-content">
+            <span class="modal-icon">🔒</span>
+            <div class="modal-title">LOCKED OUT!</div>
+            <div class="modal-sub">You ran out of moves.</div>
+            <div class="modal-stats">
+                <div class="modal-stat"><div class="modal-stat-label">Solved</div><div class="modal-stat-value" id="finalSolved">0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Score</div><div class="modal-stat-value" id="finalScore">0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Level</div><div class="modal-stat-value" id="finalLevel">1</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Reached</div><div class="modal-stat-value" id="finalReached">0</div></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-modal-menu" onclick="goToMenu()">🏠 Menu</button>
+                <button class="btn-modal btn-modal-retry" onclick="tryAgain()">🔄 Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ WIN MODAL ══════════════════════════════════════════════════ -->
+    <div class="modal-overlay" id="winModal">
+        <div class="modal-content">
+            <span class="modal-icon">🏆</span>
+            <div class="modal-title">UNLOCKED!</div>
+            <div class="modal-sub" id="winSub">Lock charged to target!</div>
+            <div class="modal-stats">
+                <div class="modal-stat"><div class="modal-stat-label">Solved</div><div class="modal-stat-value" id="winSolved">0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Score</div><div class="modal-stat-value" id="winScore">0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Level</div><div class="modal-stat-value" id="winLevel">1</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Difficulty</div><div class="modal-stat-value" id="winDiff">—</div></div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-modal btn-modal-menu" onclick="goToMenu()">🏠 Menu</button>
+                <button class="btn-modal btn-modal-retry" onclick="tryAgain()">🔄 Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ════════════════════════════════════════════════════════════════
+    // AUDIO ENGINE
+    // ════════════════════════════════════════════════════════════════
+    let audioCtx=null,audioInitialized=false,ambientOscillators=[],ambientGains=[],beatIntervals=[],hatNoiseBuffer=null;
+    function initAudio(){
+        if(audioInitialized)return;
+        try{audioCtx=new(window.AudioContext||window.webkitAudioContext)();audioInitialized=true;startAmbientSoundscape();}catch(e){}
+    }
+    function startAmbientSoundscape(){
+        if(!audioCtx)return;
+        [{freq:174,gain:0.03},{freq:261.63,gain:0.02},{freq:329.63,gain:0.015},{freq:392,gain:0.02},{freq:523.25,gain:0.01}]
+        .forEach((s,i)=>setTimeout(()=>{
+            const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+            o.type='sine';o.frequency.value=s.freq;f.type='lowpass';f.frequency.value=800;f.Q.value=0.5;
+            g.gain.value=0;g.gain.linearRampToValueAtTime(s.gain,audioCtx.currentTime+3);
+            o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start();
+            const lfo=audioCtx.createOscillator(),lg=audioCtx.createGain();
+            lfo.frequency.value=0.1+i*0.05;lg.gain.value=0.5;lfo.connect(lg);lg.connect(o.frequency);lfo.start();
+            ambientOscillators.push(o,lfo);ambientGains.push(g);
+        },i*800));
+        createNoiseLayer();startBeatLayer();
+    }
+    function createNoiseLayer(){
+        if(!audioCtx)return;
+        const sz=audioCtx.sampleRate*2,nb=audioCtx.createBuffer(1,sz,audioCtx.sampleRate),out=nb.getChannelData(0);
+        let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+        for(let i=0;i<sz;i++){const w=Math.random()*2-1;b0=0.99886*b0+w*0.0555179;b1=0.99332*b1+w*0.0750759;b2=0.96900*b2+w*0.1538520;b3=0.86650*b3+w*0.3104856;b4=0.55000*b4+w*0.5329522;b5=-0.7616*b5-w*0.0168980;out[i]=(b0+b1+b2+b3+b4+b5+b6+w*0.5362)*0.11;b6=w*0.115926;}
+        const ns=audioCtx.createBufferSource(),nf=audioCtx.createBiquadFilter(),ng=audioCtx.createGain();
+        ns.buffer=nb;ns.loop=true;nf.type='lowpass';nf.frequency.value=400;
+        ng.gain.value=0;ng.gain.linearRampToValueAtTime(0.008,audioCtx.currentTime+4);
+        ns.connect(nf);nf.connect(ng);ng.connect(audioCtx.destination);ns.start();
+        ambientOscillators.push(ns);ambientGains.push(ng);
+    }
+    function startBeatLayer(){
+        if(!audioCtx)return;
+        if(!hatNoiseBuffer){const buf=audioCtx.createBuffer(1,Math.floor(audioCtx.sampleRate*0.06),audioCtx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;hatNoiseBuffer=buf;}
+        beatIntervals.push(setInterval(playKick,900),setInterval(playHat,450));
+    }
+    function playKick(){
+        if(!audioCtx)return;
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain(),f=audioCtx.createBiquadFilter();
+        o.type='sine';o.frequency.setValueAtTime(130,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(55,audioCtx.currentTime+0.15);
+        f.type='lowpass';f.frequency.value=900;g.gain.setValueAtTime(0.0001,audioCtx.currentTime);g.gain.linearRampToValueAtTime(0.08,audioCtx.currentTime+0.01);g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.28);
+        o.connect(f);f.connect(g);g.connect(audioCtx.destination);o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+0.3);
+    }
+    function playHat(){
+        if(!audioCtx||!hatNoiseBuffer)return;
+        const n=audioCtx.createBufferSource(),f=audioCtx.createBiquadFilter(),g=audioCtx.createGain();
+        n.buffer=hatNoiseBuffer;f.type='highpass';f.frequency.value=3000;f.Q.value=0.7;
+        g.gain.setValueAtTime(0.0001,audioCtx.currentTime);g.gain.linearRampToValueAtTime(0.025,audioCtx.currentTime+0.005);g.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.08);
+        n.connect(f);f.connect(g);g.connect(audioCtx.destination);n.start(audioCtx.currentTime);n.stop(audioCtx.currentTime+0.09);
+    }
+    function playRotateSound(){
+        if(!audioCtx)return;
+        try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=800;o.type='sine';g.gain.setValueAtTime(0.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.05);o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+0.05);
+        const b=audioCtx.createOscillator(),bg=audioCtx.createGain();b.connect(bg);bg.connect(audioCtx.destination);b.frequency.value=200;b.type='sine';bg.gain.setValueAtTime(0.08,audioCtx.currentTime);bg.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+0.08);b.start(audioCtx.currentTime);b.stop(audioCtx.currentTime+0.08);}catch(e){}
+    }
+    function playSuccessSound(){
+        if(!audioCtx)return;
+        [[523.25,659.25,783.99],[587.33,739.99,880],[659.25,830.61,987.77]].forEach((ch,ci)=>setTimeout(()=>{
+            ch.forEach(freq=>{try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type='sine';const t=audioCtx.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.12,t+0.05);g.gain.exponentialRampToValueAtTime(0.01,t+0.6);o.start(t);o.stop(t+0.6);}catch(e){}});
+        },ci*200));
+    }
+    function playWinSound(){
+        if(!audioCtx)return;
+        [[523.25,659.25,783.99,1046.5],[587.33,739.99,880,1174.66],[659.25,830.61,987.77,1318.5],[783.99,987.77,1174.66,1567.98]].forEach((ch,ci)=>setTimeout(()=>{
+            ch.forEach(freq=>{try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type='sine';const t=audioCtx.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.1,t+0.04);g.gain.exponentialRampToValueAtTime(0.01,t+0.8);o.start(t);o.stop(t+0.8);}catch(e){}});
+        },ci*180));
+    }
+    function playWarningSound(){
+        if(!audioCtx)return;
+        try{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.frequency.value=220;o.type='sawtooth';g.gain.setValueAtTime(0.07,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.3);o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+0.3);}catch(e){}
+    }
+    function playLockoutSound(){
+        if(!audioCtx)return;
+        try{
+            // Deep ominous descending tone
+            [220,180,140,100].forEach((freq,i)=>setTimeout(()=>{
+                const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+                o.connect(g);g.connect(audioCtx.destination);o.frequency.value=freq;o.type='square';
+                g.gain.setValueAtTime(0.09,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.25);
+                o.start(audioCtx.currentTime);o.stop(audioCtx.currentTime+0.28);
+            },i*120));
+        }catch(e){}
+    }
+    document.addEventListener('touchstart',initAudio,{once:true});
+    document.addEventListener('click',initAudio,{once:true});
+
+    // ════════════════════════════════════════════════════════════════
+    // CONSTANTS & STATE
+    // ════════════════════════════════════════════════════════════════
+    const START_MOVES = 15;
+    const DIFFICULTY_TARGET = { easy:20, normal:24, hard:27 };
+    const DIFFICULTY_LABELS = { easy:'Easy', normal:'Normal', hard:'Hard' };
+    const BOSS_INTERVAL     = { easy:5,  normal:5,  hard:3 };
+
+    let moves = START_MOVES;
+    let targetMoves = 20;
+    let selectedDifficulty = 'easy';
+    let score = 0;
+    let totalSolved = 0;
+    let puzzlesSolved = 0;
+    let currentPuzzle = null;
+    let foundEquations = new Set();
+    let ringRotations = [0,0,0,0];
+    let currentOperator = '=';
+    let bossTimer = null;
+    let comboStreak = [];
+    let gameActive = false;
+    let pendingBossWarning = false;
+    let animating = false; // lock input during ring animations
+    let inequalityUses = 0; // per-level counter (max 7 on normal levels)
+    let isBossLevel = false;
+    let freeSpins = 7; // free random spins per level (no move cost)
+
+    const RING_CONFIG = {
+        1:{slots:20,slotAngle:18},
+        2:{slots:4, slotAngle:90},
+        3:{slots:10,slotAngle:36},
+        4:{slots:5, slotAngle:72}
+    };
+
+    // ════════════════════════════════════════════════════════════════
+    // MENU / DIFFICULTY
+    // ════════════════════════════════════════════════════════════════
+    function selectDifficulty(diff){
+        selectedDifficulty=diff;
+        document.querySelectorAll('.diff-card').forEach(c=>c.classList.remove('selected'));
+        document.getElementById('diff'+diff.charAt(0).toUpperCase()+diff.slice(1)).classList.add('selected');
+    }
+
+    function startGame(){
+        targetMoves=DIFFICULTY_TARGET[selectedDifficulty];
+        moves=START_MOVES;
+        score=0;totalSolved=0;puzzlesSolved=0;
+        comboStreak=[];currentOperator='=';
+        gameActive=true;pendingBossWarning=false;animating=false;inequalityUses=0;freeSpins=7;
+        document.getElementById('mainMenu').style.display='none';
+        document.getElementById('gameContainer').style.display='block';
+        document.getElementById('gameOverModal').style.display='none';
+        document.getElementById('winModal').style.display='none';
+        document.getElementById('bossWarning').style.display='none';
+        updateMovesBar();updateScoreDisplay();
+        setOperatorUI('=');
+        newPuzzle();
+    }
+
+    function goToMenu(){
+        stopBossTimer();gameActive=false;
+        document.getElementById('gameOverModal').style.display='none';
+        document.getElementById('winModal').style.display='none';
+        document.getElementById('bossWarning').style.display='none';
+        document.getElementById('gameContainer').style.display='none';
+        document.getElementById('mainMenu').style.display='flex';
+    }
+
+    function tryAgain(){ startGame(); }
+
+    // ════════════════════════════════════════════════════════════════
+    // MOVES SYSTEM
+    // ════════════════════════════════════════════════════════════════
+    function spendMoves(amount){
+        if(!gameActive)return false;
+        moves=Math.max(0,moves-amount);
+        updateMovesBar();
+        if(moves<=0){ triggerLockout(); return false; }
+        return true;
+    }
+
+    function gainMoves(amount){
+        if(!gameActive)return;
+        moves+=amount;
+        updateMovesBar();
+        if(moves>=targetMoves){ triggerLevelComplete(); }
+    }
+
+    function updateMovesBar(){
+        const pct=Math.min(100,Math.max(0,(moves/targetMoves)*100));
+        const startPct=(START_MOVES/targetMoves)*100;
+        const fill=document.getElementById('movesBarFill');
+        const val=document.getElementById('movesValue');
+        const track=document.getElementById('movesBarTrack');
+        fill.style.width=pct+'%';
+        val.textContent=`${moves} / ${targetMoves}`;
+        track.style.setProperty('--start-pct',startPct+'%');
+        fill.classList.remove('medium','low');
+        if(moves<=3)      fill.classList.add('low');
+        else if(moves<=6) fill.classList.add('medium');
+    }
+
+    function updateScoreDisplay(){
+        document.getElementById('score').textContent=score;
+        document.getElementById('solved').textContent=totalSolved;
+        document.getElementById('levelNum').textContent=getLevel();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // WIN / LOCKOUT
+    // ════════════════════════════════════════════════════════════════
+    function triggerLockout(){
+        gameActive=false; stopBossTimer(); playLockoutSound();
+        // Animate rings shuddering before showing modal
+        const rings=document.querySelectorAll('.ring');
+        rings.forEach((r,i)=>{
+            r.style.setProperty('--base-rot', ringRotations[i]+'deg');
+            r.classList.add('lockout');
+        });
+        setTimeout(()=>{
+            rings.forEach(r=>r.classList.remove('lockout'));
+            document.getElementById('finalSolved').textContent=totalSolved;
+            document.getElementById('finalScore').textContent=score;
+            document.getElementById('finalLevel').textContent=getLevel();
+            document.getElementById('finalReached').textContent=moves;
+            document.getElementById('gameOverModal').style.display='flex';
+        },950);
+    }
+
+    function triggerLevelComplete(){
+        // Reset moves to 15, advance level, load next puzzle
+        moves=START_MOVES;
+        puzzlesSolved++;
+        inequalityUses=0;freeSpins=7;
+        updateMovesBar();
+        updateScoreDisplay();
+        stopBossTimer();
+        setOperatorUI('=');
+        foundEquations.clear();
+        document.getElementById('foundLabel').textContent=`🎉 Level ${getLevel()-1} complete! Welcome to Level ${getLevel()}!`;
+        document.getElementById('levelBadge').textContent=`LEVEL ${getLevel()}`;
+        showFeedback(`🏆 Level ${getLevel()-1} cleared! Moves reset to ${START_MOVES}.`,'combo');
+        setTimeout(()=>{
+            if(!gameActive)return;
+            if(isBossPuzzle()) showBossWarning(()=>loadPuzzle(true));
+            else loadPuzzle(false);
+        },1500);
+    }
+
+    function triggerWin(){
+        gameActive=false; stopBossTimer(); playWinSound();
+        document.getElementById('winSolved').textContent=totalSolved;
+        document.getElementById('winScore').textContent=score;
+        document.getElementById('winLevel').textContent=getLevel();
+        document.getElementById('winDiff').textContent=DIFFICULTY_LABELS[selectedDifficulty];
+        document.getElementById('winSub').textContent=`Lock charged to ${targetMoves}!`;
+        document.getElementById('winModal').style.display='flex';
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // LEVEL LOGIC
+    // ════════════════════════════════════════════════════════════════
+    function getLevel(){ return puzzlesSolved+1; }
+
+    function getLevelOpsAndNumbers(){
+        const lvl=getLevel();
+        if(lvl<=5)  return{ops:['+','-'],      maxA:20,  maxB:20, maxResult:40};
+        if(lvl<=10) return{ops:['×','÷'],      maxA:12,  maxB:9,  maxResult:108};
+        return          {ops:['+','-','×','÷'],maxA:100, maxB:20, maxResult:200};
+    }
+
+    function isBossPuzzle(){
+        const lvl=getLevel(), interval=BOSS_INTERVAL[selectedDifficulty];
+        return lvl>1 && lvl%interval===0;
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BOSS WARNING
+    // ════════════════════════════════════════════════════════════════
+    function showBossWarning(onConfirm){
+        document.getElementById('bossLevelNum').textContent=getLevel();
+        document.getElementById('bossWarning').style.display='flex';
+        pendingBossWarning=true;
+        window._bossCallback=onConfirm;
+    }
+    function dismissBossWarning(){
+        document.getElementById('bossWarning').style.display='none';
+        pendingBossWarning=false;
+        if(window._bossCallback){window._bossCallback();window._bossCallback=null;}
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // BOSS TIMER
+    // ════════════════════════════════════════════════════════════════
+    function startBossTimer(){
+        stopBossTimer();
+        document.getElementById('cipherLock').classList.add('boss-active');
+        document.getElementById('bossBadge').style.display='block';
+        document.getElementById('instructionText').textContent='⚠ BOSS LOCK! Rings auto-rotate every 10s, costing 1 move each time!';
+        bossTimer=setInterval(()=>{
+            if(!gameActive){stopBossTimer();return;}
+            const rn=Math.floor(Math.random()*4)+1,dir=Math.random()>0.5?1:-1;
+            ringRotations[rn-1]=(ringRotations[rn-1]+RING_CONFIG[rn].slotAngle*dir)%360;
+            document.getElementById(`ring${rn}`).style.transform=`translate(-50%,-50%) rotate(${ringRotations[rn-1]}deg)`;
+            updateSlotRotations(rn);updateCurrentEquation();
+            playWarningSound();
+            moves=Math.max(0,moves-1);updateMovesBar();
+            showFeedback('⚠ Boss rotated a ring! −1 move','error');
+            if(moves<=0) triggerLockout();
+        },10000);
+    }
+    function stopBossTimer(){
+        if(bossTimer){clearInterval(bossTimer);bossTimer=null;}
+        const lock=document.getElementById('cipherLock');
+        if(lock) lock.classList.remove('boss-active');
+        const badge=document.getElementById('bossBadge');
+        if(badge) badge.style.display='none';
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // PUZZLE GENERATION
+    // ════════════════════════════════════════════════════════════════
+    function generatePuzzle(){
+        const{ops,maxA,maxB,maxResult}=getLevelOpsAndNumbers();
+        const equations=[],usedResults=new Set();
+        let attempts=0;
+        while(equations.length<3&&attempts<600){
+            attempts++;
+            const a=Math.floor(Math.random()*maxA)+1,b=Math.floor(Math.random()*maxB)+1;
+            const op=ops[Math.floor(Math.random()*ops.length)];
+            let result;
+            if(op==='+') result=a+b;
+            else if(op==='-'){if(a<b)continue;result=a-b;}
+            else if(op==='×'){result=a*b;if(result>maxResult)continue;}
+            else{if(b===0||a%b!==0)continue;result=a/b;}
+            if(result<1||result>maxResult||usedResults.has(result))continue;
+            equations.push({a,op,b,result});usedResults.add(result);
+        }
+        while(equations.length<3){
+            const a=Math.floor(Math.random()*8)+1,b=Math.floor(Math.random()*8)+1,r=a+b;
+            if(!usedResults.has(r)){equations.push({a,op:'+',b,result:r});usedResults.add(r);}
+        }
+        // ring2 must have exactly 4 slots (90° each). Fill it with the level's allowed ops,
+        // repeating to pad to 4 so × and ÷ never appear on early levels.
+        const opsForRing = ops.length >= 4 ? ops : [...ops, ...ops].slice(0, 4);
+        const ring1=new Array(20).fill(null),ring2=opsForRing,ring3=new Array(10).fill(null),ring4=new Array(5).fill(null);
+        const used1=new Set(),used3=new Set(),used4=new Set();
+        equations.forEach(eq=>{
+            let r4;do{r4=Math.floor(Math.random()*5);}while(used4.has(r4));used4.add(r4);ring4[r4]=eq.result;
+            let r3=r4*2;while(used3.has(r3))r3=(r3+1)%10;used3.add(r3);ring3[r3]=eq.b;
+            const r2=ring2.indexOf(eq.op),base=r2*5;let r1=base;
+            while(used1.has(r1)){r1=(r1+1)%20;if(r1===base)break;}used1.add(r1);ring1[r1]=eq.a;
+        });
+        const{maxA:fa,maxB:fb,maxResult:fr}=getLevelOpsAndNumbers();
+        for(let i=0;i<20;i++) if(ring1[i]===null) ring1[i]=Math.floor(Math.random()*fa)+1;
+        for(let i=0;i<10;i++) if(ring3[i]===null) ring3[i]=Math.floor(Math.random()*Math.min(fb,20))+1;
+        for(let i=0;i<5;i++)  if(ring4[i]===null) ring4[i]=Math.floor(Math.random()*Math.min(fr,100))+1;
+        return{rings:[ring1,ring2,ring3,ring4],solutions:equations};
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // RING RENDERING
+    // ════════════════════════════════════════════════════════════════
+    function createRingSlots(ringNum,content){
+        const ring=document.getElementById(`ring${ringNum}`);
+        ring.innerHTML='';
+        const config=RING_CONFIG[ringNum];
+        const radius=(ring.offsetWidth||500)/2;
+        content.forEach((value,index)=>{
+            const slot=document.createElement('div');
+            slot.className='slot';
+            const rad=(index*config.slotAngle-90)*Math.PI/180,r=radius*0.85;
+            slot.style.transform=`translate(-50%,-50%) translate(${Math.cos(rad)*r}px,${Math.sin(rad)*r}px)`;
+            if(value!==null){const sp=document.createElement('span');sp.className='slot-content';sp.textContent=value;slot.appendChild(sp);}
+            ring.appendChild(slot);
+        });
+        updateSlotRotations(ringNum);
+    }
+    function updateSlotRotations(ringNum){
+        const rot=ringRotations[ringNum-1];
+        document.getElementById(`ring${ringNum}`).querySelectorAll('.slot-content').forEach(c=>{c.style.transform=`rotate(-${rot}deg)`;});
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SOLVE CELEBRATION ANIMATION
+    // ════════════════════════════════════════════════════════════════
+    function playRingSolveAnimation(callback){
+        animating=true;
+        const rings=document.querySelectorAll('.ring');
+        rings.forEach((r,i)=>{
+            r.style.setProperty('--base-rot',ringRotations[i]+'deg');
+            // Alternate: odd rings CW, even rings CCW
+            r.classList.remove('solve-cw','solve-ccw');
+            void r.offsetWidth; // reflow to restart animation
+            r.classList.add(i%2===0 ? 'solve-cw' : 'solve-ccw');
+        });
+        setTimeout(()=>{
+            rings.forEach(r=>r.classList.remove('solve-cw','solve-ccw'));
+            animating=false;
+            if(callback) callback();
+        },1050);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ROTATION — costs 1 move
+    // ════════════════════════════════════════════════════════════════
+    function rotateRing(ringNum,degrees){
+        if(!gameActive||pendingBossWarning||animating)return;
+        if(!spendMoves(1))return;
+        ringRotations[ringNum-1]=(ringRotations[ringNum-1]+degrees)%360;
+        const ring=document.getElementById(`ring${ringNum}`);
+        ring.style.transform=`translate(-50%,-50%) rotate(${ringRotations[ringNum-1]}deg)`;
+        updateSlotRotations(ringNum);
+        playRotateSound();updateCurrentEquation();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // ALIGNMENT & CHECK
+    // ════════════════════════════════════════════════════════════════
+    function getCurrentAlignment(){
+        return currentPuzzle.rings.map((ring,ri)=>{
+            const cfg=RING_CONFIG[ri+1];
+            const norm=((360-ringRotations[ri])%360);
+            return ring[Math.round(norm/cfg.slotAngle)%cfg.slots];
+        });
+    }
+    function computeResult(n1,op,n2){
+        if(op==='+')return n1+n2;if(op==='-')return n1-n2;if(op==='×')return n1*n2;
+        if(op==='÷'){if(n2===0||n1%n2!==0)return null;return n1/n2;}return null;
+    }
+    function updateCurrentEquation(){
+        const[n1,op,n2,res]=getCurrentAlignment();
+        const d1=n1!==null?n1:'?',dop=op?op:'○',d2=n2!==null?n2:'?',dr=res!==null?res:'?';
+        const sym=currentOperator==='<'?'&lt;':currentOperator==='>'?'&gt;':'=';
+        document.getElementById('currentEquation').innerHTML=`${d1} ${dop} ${d2} <span style="color:#ffd070">${sym}</span> ${dr}`;
+    }
+
+    function checkAlignment(){
+        if(!gameActive||pendingBossWarning||animating)return;
+        const[n1,op,n2,res]=getCurrentAlignment();
+        if(n1===null||op===null||n2===null||res===null){showFeedback('Align all rings for a complete equation!','error');return;}
+        const calc=computeResult(n1,op,n2);
+        if(calc===null){showFeedback('Invalid operation at this alignment.','error');return;}
+
+        let correct=false;
+        if(currentOperator==='=') correct=calc===res;
+        else if(currentOperator==='<') correct=calc<res;
+        else if(currentOperator==='>') correct=calc>res;
+
+        if(correct){
+            if(currentOperator==='='){
+                const key=`${n1}${op}${n2}=${res}`;
+                if(foundEquations.has(key)){showFeedback('Already solved this one! Keep rotating!','partial');return;}
+                foundEquations.add(key);
+                totalSolved++;score+=50;updateScoreDisplay();
+
+                // Combo check
+                comboStreak.push(res);
+                if(comboStreak.length>3) comboStreak.shift();
+                const isCombo=comboStreak.length===3&&comboStreak[0]===comboStreak[1]&&comboStreak[1]===comboStreak[2];
+
+                playSuccessSound();
+
+                // Spin animation, then award moves and check level completion
+                playRingSolveAnimation(()=>{
+                    gainMoves(7);
+                    if(!gameActive)return;
+                    if(isCombo){
+                        gainMoves(3);
+                        score+=30;updateScoreDisplay();
+                        showFeedback('🔥 COMBO! Same result ×3! +7 +3 moves!','combo');
+                        comboStreak=[];
+                        if(!gameActive)return;
+                    } else {
+                        showFeedback('✓ Correct! +7 moves charged!','success');
+                    }
+                    if(gameActive){
+                        document.getElementById('foundLabel').textContent=`✓ Equation solved! Keep going!`;
+                    }
+                });
+            } else {
+                // Inequality — max 5 uses per level (unlimited on boss levels)
+                const ineqCap = isBossLevel ? Infinity : 7;
+                if(inequalityUses>=ineqCap){
+                    showFeedback('⚠ Inequality limit reached for this level! (7 max)','error');
+                    return;
+                }
+                inequalityUses++;
+                const ineqLeft = isBossLevel ? '∞' : (7-inequalityUses);
+                playSuccessSound();
+                gainMoves(2);
+                if(!gameActive)return;
+                score+=20;updateScoreDisplay();
+                showFeedback(`✓ ${n1}${op}${n2} ${currentOperator} ${res} ✓ +2 moves! (inequalities left: ${ineqLeft})`,'success');
+            }
+        } else {
+            const sym=currentOperator==='<'?'<':currentOperator==='>'?'>':'=';
+            showFeedback(`✗ ${n1}${op}${n2} ${sym} ${res} is not correct.`,'error');
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // OPERATOR SELECTION (always-visible buttons, costs 2 moves to switch)
+    // ════════════════════════════════════════════════════════════════
+    function setOperator(op){
+        if(!gameActive||pendingBossWarning)return;
+        if(op===currentOperator)return; // already active, free
+        if(moves<2){showFeedback('Not enough moves to change operator! (costs 2)','error');return;}
+        if(!spendMoves(2))return;
+        currentOperator=op;
+        setOperatorUI(op);
+        updateCurrentEquation();
+        const lbl={'=':'equals','<':'less than','>':'greater than'};
+        showFeedback(`⚖️ Operator → ${op} (${lbl[op]}) −2 moves`,'partial');
+    }
+
+    function setOperatorUI(op){
+        currentOperator=op;
+        const btns={
+            '=': document.getElementById('opBtnEq'),
+            '<': document.getElementById('opBtnLt'),
+            '>': document.getElementById('opBtnGt')
+        };
+        Object.entries(btns).forEach(([k,btn])=>{
+            btn.classList.toggle('active-op',k===op);
+            // Update cost label
+            const span=btn.querySelector('.op-cost');
+            if(k===op) span.textContent='active';
+            else span.textContent='−2';
+        });
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // NEW PUZZLE / NEXT LEVEL
+    // ════════════════════════════════════════════════════════════════
+    // Refresh button: regenerate puzzles for the SAME level, no advancement.
+    function newPuzzle(){
+        if(!gameActive||animating)return;
+        stopBossTimer();
+        setOperatorUI('=');
+        foundEquations.clear();
+        const isFirst=(currentPuzzle===null);
+        document.getElementById('levelBadge').textContent=`LEVEL ${getLevel()}`;
+        if(isFirst&&isBossPuzzle()) showBossWarning(()=>loadPuzzle(true));
+        else loadPuzzle(false);
+    }
+
+    function loadPuzzle(isBoss){
+        isBossLevel=isBoss;
+        currentPuzzle=generatePuzzle();
+        if(isBoss){
+            document.getElementById('instructionText').textContent='⚠ BOSS LOCK! Rings auto-rotate every 10s, costing 1 move!';
+            setTimeout(()=>startBossTimer(),500);
+        } else {
+            document.getElementById('bossBadge').style.display='none';
+            document.getElementById('instructionText').textContent='Rotate rings to align a correct equation. Each rotation costs 1 move.';
+        }
+        currentPuzzle.rings.forEach((r,i)=>createRingSlots(i+1,r));
+        // Randomise start position (not on a solution)
+        let ok=false,tries=0;
+        while(!ok&&tries<50){
+            ringRotations=[
+                Math.floor(Math.random()*20)*RING_CONFIG[1].slotAngle,
+                Math.floor(Math.random()*4)*RING_CONFIG[2].slotAngle,
+                Math.floor(Math.random()*10)*RING_CONFIG[3].slotAngle,
+                Math.floor(Math.random()*5)*RING_CONFIG[4].slotAngle
+            ];
+            document.querySelectorAll('.ring').forEach((r,i)=>r.style.transform=`translate(-50%,-50%) rotate(${ringRotations[i]}deg)`);
+            for(let i=1;i<=4;i++) updateSlotRotations(i);
+            const[n1,o,n2,r]=getCurrentAlignment();
+            if(n1===null||o===null||n2===null||r===null) ok=true;
+            else{const c=computeResult(n1,o,n2);if(c!==r)ok=true;}
+            tries++;
+        }
+        if(!ok){ringRotations[0]=RING_CONFIG[1].slotAngle;document.getElementById('ring1').style.transform=`translate(-50%,-50%) rotate(${ringRotations[0]}deg)`;updateSlotRotations(1);}
+        document.getElementById('foundLabel').textContent='Find a correct equation!';
+        document.getElementById('spinBtn').textContent=`🎲 Spin (${freeSpins})`;
+        document.getElementById('spinBtn').disabled=false;
+        document.getElementById('feedback').textContent='';
+        updateCurrentEquation();updateScoreDisplay();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // HINT
+    // ════════════════════════════════════════════════════════════════
+    function randomSpin(){
+        if(!gameActive||pendingBossWarning||animating)return;
+        if(freeSpins<=0){ showFeedback('No free spins left this level!','error'); return; }
+        freeSpins--;
+        document.getElementById('spinBtn').textContent=`🎲 Spin (${freeSpins})`;
+        document.getElementById('spinBtn').disabled=(freeSpins<=0);
+        // Spin all 4 rings a random number of steps — no move cost
+        [1,2,3,4].forEach(rn=>{
+            const steps=Math.floor(Math.random()*RING_CONFIG[rn].slots)+1;
+            const deg=steps*RING_CONFIG[rn].slotAngle*(Math.random()>0.5?1:-1);
+            ringRotations[rn-1]=(ringRotations[rn-1]+deg)%360;
+            document.getElementById(`ring${rn}`).style.transform=`translate(-50%,-50%) rotate(${ringRotations[rn-1]}deg)`;
+            updateSlotRotations(rn);
+        });
+        playRotateSound();
+        updateCurrentEquation();
+        showFeedback(`🎲 Free spin! ${freeSpins} remaining this level.`,'partial');
+    }
+
+    function showHint(){
+        if(!currentPuzzle)return;
+        const unsolved=currentPuzzle.solutions.filter(eq=>!foundEquations.has(`${eq.a}${eq.op}${eq.b}=${eq.result}`));
+        if(!unsolved.length){showFeedback('All equations found on this puzzle! Tap Refresh to try a new one.','partial');return;}
+        const eq=unsolved[Math.floor(Math.random()*unsolved.length)];
+        const hints=[`💡 Find ${eq.a} on the outer ring`,`💡 Try the ${eq.op} operation`,`💡 The answer is ${eq.result}`,`💡 Second number is ${eq.b}`];
+        showFeedback(hints[Math.floor(Math.random()*hints.length)],'partial');
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // FEEDBACK
+    // ════════════════════════════════════════════════════════════════
+    let _fbT=null;
+    function showFeedback(msg,type){
+        const fb=document.getElementById('feedback');
+        fb.textContent=msg;fb.className=`feedback ${type}`;
+        if(_fbT)clearTimeout(_fbT);
+        _fbT=setTimeout(()=>{fb.textContent='';fb.className='feedback';},msg.includes('💡')?5000:3500);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════════════════
+    document.addEventListener('DOMContentLoaded',()=>{
+        document.getElementById('spinBtn').addEventListener('click',randomSpin);
+        document.getElementById('spinBtn').addEventListener('touchstart',e=>{e.preventDefault();randomSpin();});
+        document.getElementById('hintBtn').addEventListener('click',showHint);
+        document.getElementById('hintBtn').addEventListener('touchstart',e=>{e.preventDefault();showHint();});
+        document.getElementById('checkBtn').addEventListener('click',checkAlignment);
+        document.getElementById('checkBtn').addEventListener('touchstart',e=>{e.preventDefault();checkAlignment();});
+        document.getElementById('newBtn').addEventListener('click',newPuzzle);
+        document.getElementById('newBtn').addEventListener('touchstart',e=>{e.preventDefault();newPuzzle();});
+        document.getElementById('menuBtn').addEventListener('click',goToMenu);
+        document.getElementById('menuBtn').addEventListener('touchstart',e=>{e.preventDefault();goToMenu();});
+
+        // Operator buttons
+        ['opBtnEq','opBtnLt','opBtnGt'].forEach(id=>{
+            const el=document.getElementById(id);
+            const op={'opBtnEq':'=','opBtnLt':'<','opBtnGt':'>'}[id];
+            el.addEventListener('touchstart',e=>{e.preventDefault();setOperator(op);});
+        });
+
+        // Directional rotate buttons
+        document.querySelectorAll('.btn-rotate').forEach(btn=>{
+            const handle=e=>{e.preventDefault();const rn=parseInt(btn.dataset.ring);rotateRing(rn,RING_CONFIG[rn].slotAngle*parseInt(btn.dataset.direction));};
+            btn.addEventListener('touchstart',handle);btn.addEventListener('click',handle);
+        });
+
+        // Click ring to rotate clockwise
+        document.querySelectorAll('.ring').forEach(ring=>{
+            const rn=parseInt(ring.dataset.ring);
+            const handle=e=>{e.preventDefault();e.stopPropagation();rotateRing(rn,RING_CONFIG[rn].slotAngle);};
+            ring.addEventListener('touchstart',handle);ring.addEventListener('click',handle);
+        });
+    });
+    </script>
+</body>
+</html>

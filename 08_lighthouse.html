@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighthouse</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;800&family=Quicksand:wght@400;600&display=swap');
+
+:root {
+  --bg: #0a1122;
+  --panel: rgba(10,18,36,0.82);
+  --green: #98e3c6;
+  --dim-green: rgba(152,227,198,0.18);
+  --cyan: #9ad7ff;
+  --border: rgba(150,170,200,0.30);
+  --orange: #f6b47b;
+  --red: #ef6f7a;
+  --yellow: #ffe59e;
+  --text-dim: rgba(200,220,240,0.55);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 40%, rgba(120,160,200,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, rgba(120,160,200,0.08) 0%, transparent 55%);
+  font-family: 'Quicksand', 'Raleway', 'Share Tech Mono', sans-serif;
+  color: var(--green);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logo {
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.3em;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: 0 0 10px rgba(154,215,255,0.35);
+  letter-spacing: 3px;
+}
+
+.scores {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.s-item {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.s-label { font-size: 0.65em; color: var(--text-dim); letter-spacing: 1px; }
+.s-val {
+  font-size: 1.25em;
+  color: var(--cyan);
+  text-shadow: none;
+  font-family: 'Orbitron', sans-serif;
+}
+.s-val.danger { color: var(--red); text-shadow: none; }
+
+/* ── LAYOUT ── */
+.arena {
+  display: grid;
+  grid-template-columns: 210px 1fr 210px;
+  gap: 10px;
+  width: 100%;
+  max-width: 1080px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .arena { grid-template-columns: 1fr; }
+  #cWrap { order: -1; }
+}
+
+/* ── PANEL ── */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 10px;
+  backdrop-filter: blur(14px);
+}
+
+.panel + .panel { margin-top: 10px; }
+
+.p-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.68em;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  text-align: center;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── LH CONTROL ── */
+.lhc {
+  margin-bottom: 12px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  transition: border-color 0.25s, background 0.25s;
+}
+.lhc:hover { border-color: rgba(0,212,255,0.4); background: rgba(0,50,80,0.2); }
+.lhc:last-child { margin-bottom: 0; }
+
+.lhc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.dial {
+  width:100px; height:100px; margin:8px auto 0; position:relative;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, rgba(154,215,255,0.08), rgba(0,0,0,0.3));
+  border:1px solid var(--border);
+  box-shadow: inset 0 0 12px rgba(154,215,255,0.2);
+  cursor:pointer;
+}
+.dial-needle {
+  position:absolute; left:50%; top:50%;
+  width:2px; height:40px; background:currentColor;
+  transform-origin: 50% 100%;
+  box-shadow:0 0 8px currentColor;
+}
+.dial-center {
+  position:absolute; left:50%; top:50%;
+  width:10px; height:10px; margin-left:-5px; margin-top:-5px;
+  border-radius:50%; background:currentColor;
+}
+
+.lhc-name {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82em;
+}
+
+.lhc-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  box-shadow: 0 0 7px currentColor;
+  flex-shrink: 0;
+}
+
+.lhc-val {
+  font-size: 1.25em;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--cyan);
+  text-shadow: 0 0 8px var(--cyan);
+  min-width: 48px;
+  text-align: right;
+}
+
+.angle-badge {
+  display: inline-block;
+  font-size: 0.68em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  margin: 3px 0 4px;
+  letter-spacing: 0.5px;
+}
+.ab-zero     { background:rgba(255,255,255,0.1); color:#ccc; }
+.ab-acute    { background:rgba(0,212,255,0.14); color:var(--cyan); }
+.ab-right    { background:rgba(0,255,136,0.14); color:var(--green); }
+.ab-obtuse   { background:rgba(255,213,0,0.14); color:var(--yellow); }
+.ab-straight { background:rgba(255,115,0,0.14); color:var(--orange); }
+.ab-reflex   { background:rgba(255,31,90,0.14); color:var(--red); }
+
+input[type=range] {
+  width:100%; appearance:none; -webkit-appearance:none;
+  height:4px; border-radius:2px;
+  background: var(--dim-green);
+  outline:none; cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:15px; height:15px; border-radius:50%;
+  cursor:pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform:scale(1.35);
+}
+
+/* ── CANVAS WRAP ── */
+#cWrap {
+  display:flex; justify-content:center; align-items:flex-start;
+}
+
+#gc {
+  display:block;
+  border-radius:50%;
+  box-shadow:
+    0 0 0 2px rgba(0,180,255,0.35),
+    0 0 40px rgba(0,100,200,0.18),
+    0 0 100px rgba(0,50,130,0.22);
+  touch-action: none;
+}
+
+.dial { touch-action: none; }
+
+/* ── MOBILE CONTROLS ── */
+#mobileControls {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  padding: 10px 12px;
+  background: rgba(10,18,36,0.93);
+  border-top: 1px solid var(--border);
+  display: none;
+  z-index: 300;
+}
+#mobileControls .mc-row {
+  display: flex; align-items: center; gap: 10px;
+}
+#mobileControls .mc-tabs {
+  display: flex; gap: 8px;
+}
+#mobileControls .mc-tab {
+  min-width: 36px; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid var(--border); text-align: center;
+  font-family: 'Orbitron', sans-serif; font-size: 0.78em;
+}
+#mobileControls .mc-tab.active {
+  box-shadow: 0 0 12px currentColor;
+  border-color: currentColor;
+}
+#mobileControls .mc-slider {
+  flex: 1;
+}
+@media (max-width: 900px) {
+  #mobileControls { display: block; }
+  .arena { padding-bottom: 80px; }
+  #cWrap { padding: 8px; }
+}
+
+/* ── ANGLE GUIDE ── */
+.ag-row {
+  display:flex; align-items:center; gap:8px;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(0,80,160,0.15);
+  font-size: 0.8em;
+}
+.ag-row:last-child { border-bottom:none; }
+.ag-svg { width:30px; height:30px; flex-shrink:0; }
+.ag-range { color:var(--text-dim); font-size:0.78em; margin-top:1px; }
+
+/* ── VELOCITY PANEL ── */
+.vel-box {
+  background:rgba(0,80,160,0.06);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:8px;
+  font-size:0.8em;
+  line-height:1.6;
+}
+
+/* ── MISSION LOG ── */
+.log-box {
+  max-height:90px; overflow-y:auto;
+  font-size:0.74em; line-height:1.5;
+}
+.log-box::-webkit-scrollbar { width:3px; }
+.log-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+.le { padding:1px 0; }
+.le.ok  { color:var(--green); }
+.le.bad { color:var(--orange); }
+.le.crit{ color:var(--red); }
+.le.dim { color:var(--text-dim); }
+
+/* ── FOOTER HINT ── */
+.hint {
+  width:100%; max-width:1080px;
+  text-align:center;
+  font-size:0.8em; color:var(--text-dim);
+  margin-top:10px;
+  padding:7px 12px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--panel);
+}
+
+/* ── STARS ── */
+#stars {
+  position:fixed; inset:0; pointer-events:none; z-index:-1; overflow:hidden;
+}
+.star {
+  position:absolute; background:#fff; border-radius:50%;
+  animation: tw var(--dur) ease-in-out infinite;
+  animation-delay: var(--del);
+}
+@keyframes tw { 0%,100%{opacity:0.08} 50%{opacity:0.65} }
+
+/* ── SPLASH ── */
+#splash {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(0,10,22,0.97);
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:14px; padding:30px;
+}
+#splash h1 {
+  font-family:'Raleway',sans-serif;
+  font-size:clamp(1.5em,4vw,2.8em);
+  color:var(--cyan); text-shadow:0 0 25px var(--cyan);
+  text-align:center;
+  letter-spacing: 4px;
+}
+#splash .sub { color:var(--green); font-size:1.1em; text-align:center; max-width:600px; line-height:1.7; }
+#splash .keys {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; max-width:500px; width:100%; margin-top:4px;
+}
+#splash .settings {
+  display:grid; grid-template-columns:1fr 1fr 1fr;
+  gap:8px; max-width:600px; width:100%; margin-top:8px;
+}
+#splash .settings .opt {
+  background:rgba(0,50,80,0.5); border:1px solid var(--border);
+  border-radius:8px; padding:8px 12px; color:var(--text-dim);
+}
+#splash .settings label { display:block; color:var(--cyan); margin-bottom:4px; letter-spacing:1px; }
+#splash select, #splash input[type="range"] {
+  width:100%;
+}
+#splash select {
+  appearance:none;
+  background:linear-gradient(135deg, rgba(0,170,85,0.25), rgba(0,136,204,0.25));
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:8px 12px;
+  font-family:'Raleway',sans-serif;
+  font-weight:700;
+  color:var(--cyan);
+  letter-spacing:1px;
+  box-shadow:0 0 12px rgba(154,215,255,0.15) inset, 0 0 8px rgba(0,0,0,0.3);
+}
+#splash select:focus {
+  outline:none;
+  box-shadow:0 0 20px rgba(154,215,255,0.35);
+  border-color: var(--cyan);
+}
+#splash .key-item {
+  background:rgba(0,50,80,0.5); border:1px solid var(--border);
+  border-radius:8px; padding:8px 12px;
+  font-size:0.85em; color:var(--text-dim);
+}
+#splash .key-item span { color:var(--cyan); display:block; font-size:1.1em; margin-bottom:2px; }
+#splash button {
+  margin-top:6px;
+  padding:12px 40px;
+  background:linear-gradient(135deg,#00aa55,#0088cc);
+  color:#000; border:none; border-radius:8px;
+  font-family:'Raleway',sans-serif; font-size:1.1em; font-weight:700;
+  cursor:pointer; letter-spacing:2px;
+  box-shadow:0 0 25px rgba(0,200,100,0.4);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+#splash button:hover {
+  transform:scale(1.04);
+  box-shadow:0 0 35px rgba(0,200,100,0.6);
+}
+
+#final {
+  position:fixed; inset:0; z-index:200;
+  background:rgba(10,18,36,0.95);
+  display:none; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:14px; padding:30px;
+}
+#final h2 {
+  font-family:'Raleway',sans-serif;
+  font-size:clamp(1.4em,4vw,2.4em);
+  color:var(--cyan);
+  text-shadow:0 0 18px rgba(154,215,255,0.35);
+}
+#final .score {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:500px;
+  color:var(--green);
+  font-family:'Quicksand',sans-serif;
+}
+#final .row { display:flex; justify-content:space-between; padding:6px 10px; border:1px solid var(--border); border-radius:8px; }
+#final .rating { font-family:'Raleway',sans-serif; font-weight:800; color:var(--yellow); letter-spacing:2px; }
+</style>
+</head>
+<body>
+
+<!-- ── STARS BG ── -->
+<div id="stars"></div>
+
+<!-- ── SPLASH SCREEN ── -->
+<div id="splash">
+  <h1>LIGHTHOUSE</h1>
+  <p class="sub">Guide ships safely with your <strong style="color:var(--cyan)">3–4 lighthouses</strong>. Click a lighthouse on the ring or its beam and drag to rotate the light direction. Lit ships slow down and avoid collisions.</p>
+  <div class="keys">
+    <div class="key-item"><span>� Control</span>Drag a lighthouse icon or its beam to change direction. Beams don’t overlap.</div>
+    <div class="key-item"><span>◆ Ships</span>Blue = normal, green = lit & safe, orange = warning. Red flash shows a collision.</div>
+    <div class="key-item"><span>⚠️ Alerts</span>Faint red dots mark predicted collision points. Watch the angle callout at the top.</div>
+    <div class="key-item"><span>� Events</span>Occasionally a big ship appears from the border — you’ll get a warning.</div>
+  </div>
+  <div class="settings">
+    <div class="opt">
+      <label for="optShips">Ships</label>
+      <select id="optShips">
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10" selected>10</option>
+        <option value="11">11</option>
+        <option value="12">12</option>
+      </select>
+    </div>
+    <div class="opt">
+      <label for="optLH">Lighthouses</label>
+      <select id="optLH">
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+      </select>
+    </div>
+    <div class="opt">
+      <label for="optSpeed">Speed</label>
+      <select id="optSpeed">
+        <option value="slow">Slow</option>
+        <option value="normal" selected>Normal</option>
+        <option value="fast">Fast</option>
+      </select>
+    </div>
+    <div class="opt">
+      <label for="optTime">Time</label>
+      <select id="optTime">
+        <option value="60" selected>1 min</option>
+        <option value="90">1.5 mins</option>
+        <option value="120">2 mins</option>
+      </select>
+    </div>
+  </div>
+  <button onclick="startGame()">BEGIN MISSION</button>
+</div>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="logo">LIGHTHOUSE</div>
+  <div class="scores">
+    <div class="s-item"><span class="s-label">SHIPS LIT</span><span class="s-val" id="sc-lit">0/7</span></div>
+    <div class="s-item"><span class="s-label">SAVES</span><span class="s-val" id="sc-saves">0</span></div>
+    <div class="s-item"><span class="s-label">BIG SAVES</span><span class="s-val" id="sc-big">0</span></div>
+    <div class="s-item"><span class="s-label">COLLISIONS</span><span class="s-val danger" id="sc-coll">0</span></div>
+    <div class="s-item"><span class="s-label">TIME</span><span class="s-val" id="sc-time">0:00</span></div>
+  </div>
+</div>
+
+<!-- ── MAIN GRID ── -->
+<div class="arena">
+
+  <!-- LEFT: LH 1-3 -->
+  <div>
+    <div class="panel">
+      <div class="p-title">⚡ LIGHTHOUSES</div>
+      <div id="lh-left"></div>
+    </div>
+    <div class="panel" style="margin-top:10px">
+      <div class="p-title">📋 MISSION LOG</div>
+      <div class="log-box" id="log-box"></div>
+    </div>
+  </div>
+
+  <!-- CENTER: Canvas -->
+  <div id="cWrap" style="width:100%;display:flex;justify-content:center">
+    <canvas id="gc"></canvas>
+  </div>
+  <div id="mobileControls">
+    <div class="mc-row">
+      <div class="mc-tabs" id="mc-tabs"></div>
+      <input class="mc-slider" id="mc-angle" type="range" min="0" max="360" step="1" value="0" />
+    </div>
+  </div>
+
+  <!-- RIGHT: LH 4-5 + Guide + Velocity -->
+  <div>
+    <div class="panel">
+      <div class="p-title">⚡ LIGHTHOUSES</div>
+      <div id="lh-right"></div>
+    </div>
+    <div class="panel">
+      <div class="p-title">📐 ANGLE TYPES (MOE)</div>
+      <div id="ag"></div>
+    </div>
+    <div class="panel">
+      <div class="p-title">💨 RELATIVE SPEED</div>
+      <div class="vel-box" id="vel-box">Watching ships…</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── HINT ── -->
+<div class="hint">
+  🎯 <strong style="color:var(--cyan)">GOAL:</strong> Keep ships illuminated! Adjust the 3–4 lighthouse angles so every ship is always in a beam. Ships in the light slow down and stay safe. Ships in the dark may collide!
+</div>
+
+<!-- ── FINAL OVERLAY ── -->
+<div id="final">
+  <h2>MISSION COMPLETE</h2>
+  <div class="score">
+    <div class="row"><span>Ships Lit</span><span id="final-lit">0/0</span></div>
+    <div class="row"><span>Saves</span><span id="final-saves">0</span></div>
+    <div class="row"><span>Big Ship Saves</span><span id="final-big">0</span></div>
+    <div class="row"><span>Collisions</span><span id="final-coll">0</span></div>
+    <div class="row"><span>Rating</span><span class="rating" id="final-rating">PERFECT</span></div>
+  </div>
+  <button onclick="location.reload()">PLAY AGAIN</button>
+  <div style="color:var(--text-dim);font-size:0.9em">You had one minute to guide the harbour.</div>
+</div>
+<script>
+// =====================================================
+//  STARS
+// =====================================================
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 90; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = (Math.random() * 1.8 + 0.3).toFixed(1);
+  s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--dur:${(2+Math.random()*4).toFixed(1)}s;--del:${(Math.random()*4).toFixed(1)}s`;
+  starsEl.appendChild(s);
+}
+
+// =====================================================
+//  CANVAS + CONSTANTS
+// =====================================================
+const canvas = document.getElementById('gc');
+const ctx    = canvas.getContext('2d');
+let W = 520, H = 520, CX = 260, CY = 260;
+let R = 228;          // radar circle radius
+const BEAM_HALF = 22.5;   // ±22.5° → 45° beam coverage
+let N_LH  = 4;
+let DRAW_SCALE = 1;
+let N_SHIPS = 8;
+const COLL_WARN  = 72;
+const COLL_CRASH = 22;  // px – actual collision
+
+function setupCanvasSize() {
+  const wrap = document.getElementById('cWrap');
+  const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+  const size = Math.min(680, wrap.clientWidth - 8);
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  W = canvas.width;
+  H = canvas.height;
+  CX = Math.floor(W / 2);
+  CY = Math.floor(H / 2);
+  R = Math.floor(Math.min(W, H) / 2) - Math.floor(22 * dpr / 2);
+  DRAW_SCALE = R / 228;
+  lhs.forEach(lh => {
+    const posRad = lh.posAngleDeg * Math.PI / 180;
+    lh.x = CX + R * Math.cos(posRad);
+    lh.y = CY + R * Math.sin(posRad);
+  });
+}
+
+const LH_COLORS = ['#98e3c6','#9ad7ff','#ffe59e','#f6b47b','#d6b8ef'];
+const LH_NAMES  = ['Alpha','Beta','Gamma','Delta','Echo'];
+
+// =====================================================
+//  LIGHTHOUSE DATA
+// =====================================================
+function buildLighthouses(count) {
+  return Array.from({length: count}, (_, i) => {
+    const posAngleDeg = i * (360 / count) - 90;  // evenly spaced from top
+    const posRad = posAngleDeg * Math.PI / 180;
+    const beamAngle = ((posAngleDeg + 180) % 360 + 360) % 360; // default: point inward
+    return {
+      id: i,
+      posAngleDeg,
+      x: CX + R * Math.cos(posRad),
+      y: CY + R * Math.sin(posRad),
+      beamAngle,
+      halfWidthDeg: BEAM_HALF,
+      color: LH_COLORS[i],
+      name: LH_NAMES[i]
+    };
+  });
+}
+let lhs = buildLighthouses(N_LH);
+
+// =====================================================
+//  SHIP DATA
+// =====================================================
+function newShip(i) {
+  const baseAngle = (i / N_SHIPS) * Math.PI * 2 + Math.random() * 0.6;
+  const dist = 40 + Math.random() * (R * 0.6);
+  const spd  = (0.08 + Math.random() * 0.14) * speedScale;
+  const dir  = Math.random() * Math.PI * 2;
+  const size = 0.65 + Math.random() * 0.25;
+  const width = 18 + Math.random() * 12;
+  const destAngle = Math.floor(Math.random() * 360);
+  return {
+    id: i,
+    x: CX + dist * Math.cos(baseAngle),
+    y: CY + dist * Math.sin(baseAngle),
+    vx: spd * Math.cos(dir),
+    vy: spd * Math.sin(dir),
+    len: 8 * size,
+    wid: width,
+    destAngle,
+    docked: false,
+    reappearAt: 0,
+    lit: false,
+    warn: false,
+    warnWith: -1,
+    trail: [],
+    name: `S-${i+1}`,
+    flash: 0
+  };
+}
+let ships = [];
+function newBigShip() {
+  const i = ships.length;
+  const s = newShip(i);
+  s.len = 22;
+  s.wid = 28;
+  s.name = `XL-${i+1}`;
+  s.big = true;
+  return s;
+}
+function spawnBigShip() {
+  const s = newBigShip();
+  // Place safely on border
+  let ang = Math.random() * 360;
+  const rad = R - 18;
+  let guard = 0;
+  while (guard++ < 48) {
+    const sx = CX + rad * Math.cos((ang - 90) * Math.PI / 180);
+    const sy = CY + rad * Math.sin((ang - 90) * Math.PI / 180);
+    let ok = true;
+    for (let j = 0; j < ships.length; j++) {
+      const d = Math.hypot(sx - ships[j].x, sy - ships[j].y);
+      if (d < COLL_WARN + 12) { ok = false; break; }
+    }
+    if (ok) { s.x = sx; s.y = sy; break; }
+    ang = normDeg(ang + 7);
+  }
+  const tx = CX + (R - 40) * Math.cos((s.destAngle - 90) * Math.PI / 180);
+  const ty = CY + (R - 40) * Math.sin((s.destAngle - 90) * Math.PI / 180);
+  const gx = tx - s.x, gy = ty - s.y;
+  const gl = Math.hypot(gx, gy) || 1;
+  s.vx = 0.018 * (gx / gl);
+  s.vy = 0.018 * (gy / gl);
+  s.bigCounted = false;
+  ships.push(s);
+  addLog('🚢 Big ship incoming — steer beams to slow it!', 'bad');
+}
+
+// =====================================================
+//  GAME STATE
+// =====================================================
+let sweep = 0;
+let saves = 0, collisions = 0;
+let startMs = Date.now();
+let missionDurationSec = 60;
+let speedScale = 1.0;
+let nextBigShipMs = 0;
+let bigWarnPlayed = false;
+let bigSaves = 0;
+let lastTickWarnSec = -1;
+let logEntries = [];
+const pairCooldown = {}; // key "i-j" → last collision/warning time
+let running = false;
+let raf;
+let audioCtx = null;
+let masterGain = null;
+let chimeGain = null;
+let musicTimer = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.12;
+  masterGain.connect(audioCtx.destination);
+  chimeGain = audioCtx.createGain();
+  chimeGain.gain.value = 0.0;
+  chimeGain.connect(audioCtx.destination);
+  const lp = audioCtx.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 1200;
+  lp.Q.value = 0.5;
+  lp.connect(masterGain);
+  const scale = [0, 2, 4, 7, 9];
+  const roots = [196, 220, 246, 262];
+  let rootIdx = 0;
+  function pluck(freq) {
+    const osc = audioCtx.createOscillator();
+    const g   = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = freq;
+    g.gain.value = 0.0;
+    osc.connect(g);
+    g.connect(lp);
+    const now = audioCtx.currentTime;
+    g.gain.setValueAtTime(0.0, now);
+    g.gain.linearRampToValueAtTime(0.16, now + 0.03);
+    g.gain.linearRampToValueAtTime(0.0, now + 0.38);
+    osc.start(now);
+    osc.stop(now + 0.42);
+  }
+  let step = 0;
+  musicTimer = setInterval(() => {
+    const base = roots[rootIdx % roots.length];
+    const pick = () => scale[Math.floor(Math.random() * scale.length)];
+    const d1 = pick(), d2 = pick(), d3 = pick();
+    pluck(base * Math.pow(2, d1/12));
+    setTimeout(() => pluck(base * Math.pow(2, d2/12) * 2), 220);
+    setTimeout(() => pluck(base * Math.pow(2, d3/12) * 0.5), 440);
+    step++;
+    if (step % 4 === 0) rootIdx++;
+  }, 1200);
+}
+
+function playBigShipWarn() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sawtooth';
+  o.frequency.value = 220;
+  g.gain.value = 0.0;
+  o.connect(g);
+  g.connect(masterGain);
+  const now = audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0, now);
+  g.gain.linearRampToValueAtTime(0.12, now + 0.08);
+  g.gain.linearRampToValueAtTime(0.0, now + 0.6);
+  o.start(now);
+  o.stop(now + 0.62);
+}
+
+function playCountdownTick() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'triangle';
+  o.frequency.value = 520;
+  g.gain.value = 0.0;
+  o.connect(g);
+  g.connect(masterGain);
+  const now = audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0, now);
+  g.gain.linearRampToValueAtTime(0.10, now + 0.04);
+  g.gain.linearRampToValueAtTime(0.0, now + 0.22);
+  o.start(now);
+  o.stop(now + 0.24);
+}
+function playChime() {
+  if (!audioCtx || !chimeGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.value = 880;
+  gain.gain.value = 0.0;
+  osc.connect(gain);
+  gain.connect(chimeGain);
+  osc.start();
+  const now = audioCtx.currentTime;
+  gain.gain.cancelScheduledValues(now);
+  gain.gain.setValueAtTime(0.0, now);
+  gain.gain.linearRampToValueAtTime(0.35, now + 0.05);
+  gain.gain.linearRampToValueAtTime(0.0, now + 0.6);
+  osc.stop(now + 0.6);
+}
+
+function playAlarm() {
+  if (!audioCtx) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'sine';
+  o.frequency.value = 660;
+  g.gain.value = 0.0;
+  o.connect(g);
+  g.connect(masterGain);
+  const now = audioCtx.currentTime;
+  g.gain.setValueAtTime(0.0, now);
+  g.gain.linearRampToValueAtTime(0.14, now + 0.06);
+  g.gain.linearRampToValueAtTime(0.0, now + 0.45);
+  o.start(now);
+  o.stop(now + 0.47);
+}
+
+function playCollision() {
+  if (!audioCtx) return;
+  const tones = [392, 349, 311];
+  tones.forEach((f, i) => {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    g.gain.value = 0.0;
+    o.connect(g);
+    g.connect(masterGain);
+    const t = audioCtx.currentTime + i * 0.02;
+    g.gain.setValueAtTime(0.0, t);
+    g.gain.linearRampToValueAtTime(0.38, t + 0.06);
+    g.gain.linearRampToValueAtTime(0.0, t + 0.45);
+    o.start(t);
+    o.stop(t + 0.48);
+  });
+  const noise = audioCtx.createBufferSource();
+  const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+  noise.buffer = buffer;
+  const ng = audioCtx.createGain();
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'bandpass';
+  nf.frequency.value = 500;
+  nf.Q.value = 1.2;
+  noise.connect(nf);
+  nf.connect(ng);
+  ng.connect(masterGain);
+  const now = audioCtx.currentTime;
+  ng.gain.setValueAtTime(0.0, now);
+  ng.gain.linearRampToValueAtTime(0.25, now + 0.02);
+  ng.gain.linearRampToValueAtTime(0.0, now + 0.14);
+  noise.start(now);
+  noise.stop(now + 0.16);
+}
+
+function playVictory() {
+  if (!audioCtx) return;
+  const seq = [262, 329, 392, 523];
+  seq.forEach((f, i) => {
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = 'triangle';
+    o.frequency.value = f;
+    g.gain.value = 0.0;
+    o.connect(g);
+    g.connect(masterGain);
+    const t = audioCtx.currentTime + i * 0.12;
+    g.gain.setValueAtTime(0.0, t);
+    g.gain.linearRampToValueAtTime(0.25, t + 0.05);
+    g.gain.linearRampToValueAtTime(0.0, t + 0.4);
+    o.start(t);
+    o.stop(t + 0.42);
+  });
+}
+
+// =====================================================
+//  ANGLE UTILITIES
+// =====================================================
+function normDeg(d) { return ((d % 360) + 360) % 360; }
+
+function angDiff(a, b) {
+  // Signed shortest angular diff  a–b, in [-180,180]
+  let d = normDeg(a) - normDeg(b);
+  if (d >  180) d -= 360;
+  if (d < -180) d += 360;
+  return d;
+}
+
+function angleType(deg) {
+  const d = normDeg(deg);
+  if (d === 0)              return {label:'Zero',     cls:'ab-zero'};
+  if (d > 0   && d <  90)  return {label:'Acute',    cls:'ab-acute'};
+  if (d === 90)             return {label:'Right',    cls:'ab-right'};
+  if (d > 90  && d < 180)  return {label:'Obtuse',   cls:'ab-obtuse'};
+  if (d === 180)            return {label:'Straight', cls:'ab-straight'};
+  return                          {label:'Reflex',    cls:'ab-reflex'};
+}
+
+function clamp01(x){ return Math.max(0, Math.min(1, x)); }
+function segDist(ax,ay,bx,by,cx,cy,dx,dy) {
+  const ux = bx - ax, uy = by - ay;
+  const vx = dx - cx, vy = dy - cy;
+  const wx = ax - cx, wy = ay - cy;
+  const a = ux*ux + uy*uy;
+  const b = ux*vx + uy*vy;
+  const c = vx*vx + vy*vy;
+  const d = ux*wx + uy*wy;
+  const e = vx*wx + vy*wy;
+  const denom = a*c - b*b;
+  let s, t;
+  if (denom <= 1e-8) {
+    s = 0;
+    t = clamp01(e / c);
+  } else {
+    s = clamp01((b*e - c*d) / denom);
+    t = clamp01((a*e - b*d) / denom);
+  }
+  const px = ax + s*ux, py = ay + s*uy;
+  const qx = cx + t*vx, qy = cy + t*vy;
+  return Math.hypot(px - qx, py - qy);
+}
+function shipCapsule(ship) {
+  const len = (ship.len || 16) * DRAW_SCALE;
+  const wid = (ship.wid || 8)  * DRAW_SCALE;
+  const spd = Math.hypot(ship.vx, ship.vy);
+  let lx = 1, ly = 0;
+  if (spd > 0) { lx = ship.vx / spd; ly = ship.vy / spd; }
+  else {
+    const ang = (ship.destAngle - 90) * Math.PI / 180;
+    lx = Math.cos(ang); ly = Math.sin(ang);
+  }
+  const headX = ship.x + lx * len;
+  const headY = ship.y + ly * len;
+  const tailX = ship.x - lx * (len * 0.4);
+  const tailY = ship.y - ly * (len * 0.4);
+  return { ax: tailX, ay: tailY, bx: headX, by: headY, rad: wid * 0.5 };
+}
+function segIntersect(x1,y1,x2,y2,x3,y3,x4,y4) {
+  const den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  if (Math.abs(den) < 1e-6) return null;
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+  const u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / den;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  const xi = x1 + t * (x2 - x1);
+  const yi = y1 + t * (y2 - y1);
+  return {x: xi, y: yi};
+}
+// =====================================================
+//  BUILD CONTROLS
+// =====================================================
+function buildControls() {
+  const leftEl  = document.getElementById('lh-left');
+  const rightEl = document.getElementById('lh-right');
+
+  lhs.forEach((lh, i) => {
+    const parent = i < Math.ceil(N_LH / 2) ? leftEl : rightEl;
+    const at = angleType(lh.beamAngle);
+    const angle = normDeg(lh.beamAngle);
+
+    const div = document.createElement('div');
+    div.className = 'lhc';
+    div.id = `lhc-${i}`;
+    div.innerHTML = `
+      <div class="lhc-top">
+        <div class="lhc-name" style="color:${lh.color}">
+          <div class="lhc-dot" style="background:${lh.color};color:${lh.color}"></div>
+          LH-${lh.name}
+        </div>
+        <div class="lhc-val" id="lhv-${i}" style="color:${lh.color}">${Math.round(lh.beamAngle)}°</div>
+      </div>
+      <div class="angle-badge ${at.cls}" id="lhb-${i}">${at.label} Angle</div>
+    `;
+    parent.appendChild(div);
+    refreshLHDisplay(i);
+  });
+}
+
+let dialActive = { idx: -1 };
+function setupDial(i) {
+  const el = document.getElementById(`lhd-${i}`);
+  if (!el) return;
+  const onMove = (e) => {
+    if (dialActive.idx !== i) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
+    const x = e.clientX - cx;
+    const y = e.clientY - cy;
+    const deg = Math.round(((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360);
+    onSlide(i, deg);
+  };
+  el.addEventListener('pointerdown', (e) => {
+    dialActive.idx = i;
+    el.setPointerCapture(e.pointerId);
+    onMove(e);
+  });
+  el.addEventListener('pointermove', onMove);
+  el.addEventListener('pointerup', () => { dialActive.idx = -1; });
+  el.addEventListener('pointerleave', () => { dialActive.idx = -1; });
+}
+function refreshLHDisplay(i) {
+  const angle = normDeg(lhs[i].beamAngle);
+  const at = angleType(angle);
+  const v = document.getElementById(`lhv-${i}`);
+  const b = document.getElementById(`lhb-${i}`);
+  if (v) v.textContent = Math.round(lhs[i].beamAngle) + '°';
+  if (b) { b.className = `angle-badge ${at.cls}`; b.textContent = at.label + ' Angle'; }
+}
+
+// =====================================================
+//  SLIDER COUPLING
+//  When slider i moves by delta, others shift by -delta/4 each
+//  Total angle sum preserved → shows "360° in a full circle"
+// =====================================================
+function setBeamAngle(idx, ang) {
+  let a = ang;
+  let changed = true;
+  let guard = 0;
+  while (changed && guard++ < 10) {
+    changed = false;
+    for (let j = 0; j < lhs.length; j++) {
+      if (j === idx) continue;
+      const d = angDiff(a, lhs[j].beamAngle);
+      const sep = lhs[idx].halfWidthDeg + lhs[j].halfWidthDeg + 2;
+      if (Math.abs(d) < sep) {
+        a = normDeg(lhs[j].beamAngle + (d > 0 ? sep : -sep));
+        changed = true;
+      }
+    }
+  }
+  lhs[idx].beamAngle = a;
+  refreshLHDisplay(idx);
+}
+
+function setBeamWidth(idx, half) {
+  const minW = 4, maxW = 40;
+  let hw = Math.max(minW, Math.min(maxW, Math.round(half)));
+  let maxAllow = maxW;
+  for (let j = 0; j < lhs.length; j++) {
+    if (j === idx) continue;
+    const d = Math.abs(angDiff(lhs[idx].beamAngle, lhs[j].beamAngle));
+    const allow = Math.max(minW, Math.floor(d - lhs[j].halfWidthDeg - 2));
+    if (allow < maxAllow) maxAllow = allow;
+  }
+  lhs[idx].halfWidthDeg = Math.max(minW, Math.min(maxAllow, hw));
+  refreshLHDisplay(idx);
+}
+
+// =====================================================
+//  BUILD ANGLE GUIDE (MOE vocabulary)
+// =====================================================
+function buildAngleGuide() {
+  const ag = document.getElementById('ag');
+  const types = [
+    { name:'Zero',     range:'= 0°',        color:'#cccccc', icon: drawZeroIcon },
+    { name:'Acute',    range:'0° to 90°',   color:'#00d4ff', icon: drawAcuteIcon },
+    { name:'Right',    range:'= 90°',       color:'#00ff88', icon: drawRightIcon },
+    { name:'Obtuse',   range:'90° to 180°', color:'#ffd500', icon: drawObtuseIcon },
+    { name:'Straight', range:'= 180°',      color:'#ff7300', icon: drawStraightIcon },
+    { name:'Reflex',   range:'180° to 360°',color:'#ff4090', icon: drawReflexIcon },
+  ];
+
+  types.forEach(t => {
+    const row = document.createElement('div');
+    row.className = 'ag-row';
+
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS,'svg');
+    svg.setAttribute('viewBox','0 0 30 30');
+    svg.setAttribute('class','ag-svg');
+    t.icon(svg, svgNS, t.color);
+
+    const info = document.createElement('div');
+    info.innerHTML = `<div style="color:${t.color}">${t.name}</div><div class="ag-range">${t.range}</div>`;
+
+    row.appendChild(svg);
+    row.appendChild(info);
+    ag.appendChild(row);
+  });
+}
+
+// ── Mobile controls (tabs + slider) ──
+function buildMobileControls() {
+  const tabs = document.getElementById('mc-tabs');
+  const slider = document.getElementById('mc-angle');
+  if (!tabs || !slider) return;
+  tabs.innerHTML = '';
+  lhs.forEach((lh, i) => {
+    const b = document.createElement('button');
+    b.className = 'mc-tab';
+    b.style.color = lh.color;
+    b.textContent = `LH-${lh.name}`;
+    b.addEventListener('click', () => {
+      activeIdx = i;
+      document.querySelectorAll('.mc-tab').forEach(el => el.classList.remove('active'));
+      b.classList.add('active');
+      slider.value = Math.round(normDeg(90 - lhs[activeIdx].beamAngle));
+    });
+    tabs.appendChild(b);
+    if (i === 0) b.classList.add('active');
+  });
+  slider.addEventListener('input', () => {
+    if (activeIdx === -1) activeIdx = 0;
+    const val = parseInt(slider.value, 10) || 0;
+    const internal = normDeg(90 - val);
+    setBeamAngle(activeIdx, internal);
+    draw();
+  });
+  slider.value = Math.round(normDeg(90 - lhs[activeIdx === -1 ? 0 : activeIdx].beamAngle));
+}
+let activeIdx = -1;
+let activeMode = '';
+function canvasPosFromClient(e) {
+  const rect = canvas.getBoundingClientRect();
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  return {
+    x: (e.clientX - rect.left) * sx,
+    y: (e.clientY - rect.top) * sy
+  };
+}
+function findLhAt(x, y) {
+  let best = -1, bd = Infinity;
+  for (let i = 0; i < lhs.length; i++) {
+    const d = Math.hypot(x - lhs[i].x, y - lhs[i].y);
+    if (d < 28 && d < bd) { bd = d; best = i; }
+  }
+  return best;
+}
+canvas.addEventListener('pointerdown', (e) => {
+  const p = canvasPosFromClient(e);
+  const idxIcon = findLhAt(p.x, p.y);
+  const ang = normDeg(Math.atan2(p.y - CY, p.x - CX) * 180 / Math.PI);
+  const dist = Math.hypot(p.x - CX, p.y - CY);
+  let idxBeam = -1;
+  if (idxIcon === -1) {
+    for (let i = 0; i < lhs.length; i++) {
+      const w = lhs[i].halfWidthDeg + 10;
+      if (Math.abs(angDiff(ang, lhs[i].beamAngle)) <= w && dist <= R) { idxBeam = i; break; }
+    }
+  }
+  if (idxIcon !== -1) { activeIdx = idxIcon; activeMode = 'angle'; canvas.setPointerCapture(e.pointerId); }
+  else if (idxBeam !== -1) { activeIdx = idxBeam; activeMode = 'angle'; canvas.setPointerCapture(e.pointerId); }
+  const mc = document.getElementById('mc-angle');
+  if (mc && activeIdx !== -1) mc.value = Math.round(normDeg(90 - lhs[activeIdx].beamAngle));
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (activeIdx === -1) return;
+  const p = canvasPosFromClient(e);
+  const deg = normDeg(Math.atan2(p.y - CY, p.x - CX) * 180 / Math.PI);
+  if (activeMode === 'angle') setBeamAngle(activeIdx, deg);
+});
+canvas.addEventListener('pointerup', () => { activeIdx = -1; activeMode = ''; });
+canvas.addEventListener('pointerleave', () => { activeIdx = -1; activeMode = ''; });
+
+function svgLine(parent, ns, x1,y1,x2,y2,col,w=1.8) {
+  const l = document.createElementNS(ns,'line');
+  l.setAttribute('x1',x1); l.setAttribute('y1',y1);
+  l.setAttribute('x2',x2); l.setAttribute('y2',y2);
+  l.setAttribute('stroke',col); l.setAttribute('stroke-width',w);
+  parent.appendChild(l);
+}
+function svgArc(parent, ns, cx,cy,r,a1,a2, col, large=0) {
+  const p = document.createElementNS(ns,'path');
+  const x1 = cx+r*Math.cos(a1), y1 = cy+r*Math.sin(a1);
+  const x2 = cx+r*Math.cos(a2), y2 = cy+r*Math.sin(a2);
+  p.setAttribute('d',`M${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2}`);
+  p.setAttribute('fill','none'); p.setAttribute('stroke',col); p.setAttribute('stroke-width',1.5);
+  parent.appendChild(p);
+}
+
+function drawZeroIcon(svg, ns, c) { svgLine(svg,ns,4,15,26,15,c); }
+function drawAcuteIcon(svg, ns, c) {
+  svgLine(svg,ns,7,20,23,20,c); svgLine(svg,ns,7,20,19,8,c);
+  svgArc(svg,ns,7,20,8,-Math.PI/2*0.4,0,c);
+}
+function drawRightIcon(svg, ns, c) {
+  svgLine(svg,ns,6,21,24,21,c); svgLine(svg,ns,6,21,6,8,c);
+  const rr = document.createElementNS(ns,'rect');
+  rr.setAttribute('x',6); rr.setAttribute('y',14); rr.setAttribute('width',7); rr.setAttribute('height',7);
+  rr.setAttribute('fill','none'); rr.setAttribute('stroke',c); rr.setAttribute('stroke-width',1.5);
+  svg.appendChild(rr);
+}
+function drawObtuseIcon(svg, ns, c) {
+  svgLine(svg,ns,4,20,26,20,c); svgLine(svg,ns,4,20,13,8,c);
+  svgArc(svg,ns,4,20,8,-Math.PI/2*0.7,0,c);
+}
+function drawStraightIcon(svg, ns, c) {
+  svgLine(svg,ns,4,15,26,15,c);
+  svgArc(svg,ns,15,15,6,Math.PI,2*Math.PI,c);
+}
+function drawReflexIcon(svg, ns, c) {
+  svgLine(svg,ns,6,20,22,20,c); svgLine(svg,ns,6,20,6,10,c);
+  svgArc(svg,ns,6,20,9,-Math.PI/2,Math.PI/2,c,1);
+}
+
+// =====================================================
+//  ILLUMINATION
+// =====================================================
+function isLit(ship) {
+  for (const lh of lhs) {
+    const dx = ship.x - CX;
+    const dy = ship.y - CY;
+    const shipAngle = normDeg(Math.atan2(dy, dx) * 180 / Math.PI);
+    if (Math.abs(angDiff(shipAngle, lh.beamAngle)) <= lh.halfWidthDeg) return true;
+  }
+  return false;
+}
+
+// =====================================================
+//  ADD LOG
+// =====================================================
+function addLog(msg, type='dim') {
+  logEntries.unshift({msg, type});
+  if (logEntries.length > 30) logEntries.pop();
+  renderLog();
+}
+
+function renderLog() {
+  const box = document.getElementById('log-box');
+  box.innerHTML = logEntries.map(e =>
+    `<div class="le ${e.type}">${e.msg}</div>`
+  ).join('');
+}
+
+// =====================================================
+//  UPDATE VELOCITY PANEL
+// =====================================================
+function updateVelPanel() {
+  let minDist = Infinity;
+  let closest = null;
+  for (let i = 0; i < ships.length; i++) {
+    for (let j = i+1; j < ships.length; j++) {
+      const d = Math.hypot(ships[i].x - ships[j].x, ships[i].y - ships[j].y);
+      if (d < minDist) { minDist = d; closest = [ships[i], ships[j]]; }
+    }
+  }
+
+  if (!closest) return;
+  const [a, b] = closest;
+  const relVx = a.vx - b.vx, relVy = a.vy - b.vy;
+  const relSpd = Math.hypot(relVx, relVy).toFixed(2);
+  const aSpd   = Math.hypot(a.vx, a.vy).toFixed(2);
+  const bSpd   = Math.hypot(b.vx, b.vy).toFixed(2);
+  const risky  = parseFloat(relSpd) > 1.0;
+  const distLbl = (minDist / 10).toFixed(1);
+
+  document.getElementById('vel-box').innerHTML = `
+    <div style="color:var(--text-dim);margin-bottom:4px">Closest pair:</div>
+    <div>${a.name} — speed: <span style="color:var(--cyan)">${aSpd} kn</span></div>
+    <div>${b.name} — speed: <span style="color:var(--cyan)">${bSpd} kn</span></div>
+    <div>Distance: <span style="color:${minDist<COLL_WARN?'var(--orange)':'var(--green)'}">${distLbl} nm</span></div>
+    <div>Relative speed: <span style="color:${risky?'var(--orange)':'var(--green)'}">${relSpd} kn</span></div>
+    <div style="color:var(--text-dim);font-size:0.82em;margin-top:5px;line-height:1.5">
+      ${risky
+        ? '⚠️ They\'re moving fast relative to each other — shine a beam!'
+        : '✅ Relative speed is low — ships look safe for now.'}
+    </div>
+    <div style="color:var(--text-dim);font-size:0.78em;margin-top:5px;border-top:1px solid var(--border);padding-top:5px">
+      💡 <em>Relative velocity</em> = how fast ships move toward each other, not just their own speed!
+    </div>
+  `;
+}
+
+// =====================================================
+//  GAME LOOP
+// =====================================================
+let lastTs = 0;
+
+function loop(ts) {
+  if (!running) return;
+  const dt = Math.min((ts - lastTs) / 16.67, 3);
+  lastTs = ts;
+
+  sweep = (sweep + 0.35 * dt) % 360;
+  const nowMs = Date.now();
+  if (!bigWarnPlayed && nowMs >= nextBigShipMs - 3500 && nowMs < nextBigShipMs) {
+    playBigShipWarn();
+    bigWarnPlayed = true;
+  }
+  if (nowMs >= nextBigShipMs) {
+    spawnBigShip();
+    nextBigShipMs = nowMs + 20000 + Math.floor(Math.random() * 15000);
+    bigWarnPlayed = false;
+  }
+
+  // ── Update ships ──
+  ships.forEach(ship => {
+    if (ship.docked) {
+      if (Date.now() >= ship.reappearAt) {
+        ship.docked = false;
+        ship.destAngle = normDeg(ship.destAngle + 80 + Math.random() * 160);
+        let spawnAng = normDeg(ship.destAngle + 150 + Math.random() * 60);
+        const br = R - 18;
+        let guard = 0;
+        while (guard++ < 36) {
+          const sx = CX + br * Math.cos((spawnAng - 90) * Math.PI / 180);
+          const sy = CY + br * Math.sin((spawnAng - 90) * Math.PI / 180);
+          let ok = true;
+          for (let k = 0; k < ships.length; k++) {
+            const other = ships[k];
+            if (other.id === ship.id || other.docked) continue;
+            const d = Math.hypot(sx - other.x, sy - other.y);
+            if (d < COLL_WARN + 8) { ok = false; break; }
+          }
+          if (ok) { ship.x = sx; ship.y = sy; break; }
+          spawnAng = normDeg(spawnAng + 8);
+        }
+        const tx = CX + (R - 40) * Math.cos((ship.destAngle - 90) * Math.PI / 180);
+        const ty = CY + (R - 40) * Math.sin((ship.destAngle - 90) * Math.PI / 180);
+        const gx = tx - ship.x, gy = ty - ship.y;
+        const gl = Math.hypot(gx, gy) || 1;
+        ship.vx = 0.02 * (gx / gl);
+        ship.vy = 0.02 * (gy / gl);
+      } else {
+        return;
+      }
+    }
+    ship.lit  = isLit(ship);
+    ship.warn = false;
+    ship.warnWith = -1;
+    if (ship.flash > 0) ship.flash -= dt;
+
+    const spd = (ship.lit ? 0.12 : 0.34) * speedScale;
+    const trgRad = R - 40;
+    const tx = CX + trgRad * Math.cos((ship.destAngle - 90) * Math.PI / 180);
+    const ty = CY + trgRad * Math.sin((ship.destAngle - 90) * Math.PI / 180);
+    const gx = tx - ship.x;
+    const gy = ty - ship.y;
+    const gl = Math.hypot(gx, gy) || 1;
+    const ux = gx / gl, uy = gy / gl;
+    ship.vx = ship.vx * 0.97 + ux * 0.06;
+    ship.vy = ship.vy * 0.97 + uy * 0.06;
+    ship.x += ship.vx * spd * dt;
+    ship.y += ship.vy * spd * dt;
+    if (gl < 12) {
+      const dockRad = R - 18;
+      ship.x = CX + dockRad * Math.cos((ship.destAngle - 90) * Math.PI / 180);
+      ship.y = CY + dockRad * Math.sin((ship.destAngle - 90) * Math.PI / 180);
+      ship.vx = 0; ship.vy = 0;
+      ship.docked = true;
+      ship.reappearAt = Date.now() + 500;
+      if (ship.big && !ship.bigCounted) {
+        bigSaves++;
+        document.getElementById('sc-big').textContent = bigSaves;
+        ship.bigCounted = true;
+      }
+      return;
+    }
+
+    // Trail
+    ship.trail.push({x: ship.x, y: ship.y});
+    if (ship.trail.length > 14) ship.trail.shift();
+
+    // Boundary bounce and inner-radius guard
+    const dFromCenter = Math.hypot(ship.x - CX, ship.y - CY);
+    if (dFromCenter > R - 18) {
+      const ang = Math.atan2(ship.y - CY, ship.x - CX);
+      ship.x = CX + (R - 20) * Math.cos(ang);
+      ship.y = CY + (R - 20) * Math.sin(ang);
+      const nx = Math.cos(ang), ny = Math.sin(ang);
+      const dot = ship.vx * nx + ship.vy * ny;
+      ship.vx -= 2 * dot * nx;
+      ship.vy -= 2 * dot * ny;
+    } else if (dFromCenter < R * 0.28) {
+      const ang = Math.atan2(ship.y - CY, ship.x - CX);
+      ship.x = CX + (R * 0.30) * Math.cos(ang);
+      ship.y = CY + (R * 0.30) * Math.sin(ang);
+      const nx = -Math.cos(ang), ny = -Math.sin(ang);
+      const dot = ship.vx * nx + ship.vy * ny;
+      ship.vx -= 2 * dot * nx;
+      ship.vy -= 2 * dot * ny;
+    }
+  });
+
+  // ── Collision detection ──
+  let litCount = 0;
+  ships.forEach(s => { if (s.lit) litCount++; });
+  document.getElementById('sc-lit').textContent = `${litCount}/${ships.length}`;
+
+  for (let i = 0; i < ships.length; i++) {
+    for (let j = i+1; j < ships.length; j++) {
+      const s1 = ships[i], s2 = ships[j];
+      const cap1 = shipCapsule(s1);
+      const cap2 = shipCapsule(s2);
+      const segd = segDist(cap1.ax,cap1.ay,cap1.bx,cap1.by, cap2.ax,cap2.ay,cap2.bx,cap2.by);
+      const crashThresh = cap1.rad + cap2.rad;
+      const warnThresh  = COLL_WARN + crashThresh * 0.6;
+      const key  = `${i}-${j}`;
+      const now  = Date.now();
+
+      if (segd < warnThresh) {
+        if (!s1.lit && !s2.lit) {
+          s1.warn = true; s2.warn = true;
+          s1.warnWith = j; s2.warnWith = i;
+
+          if (segd <= crashThresh) {
+            // Collision!
+            if (!pairCooldown[key] || now - pairCooldown[key] > 2500) {
+              collisions++;
+              document.getElementById('sc-coll').textContent = collisions;
+              pairCooldown[key] = now;
+              s1.flash = 25; s2.flash = 25;
+              addLog(`💥 ${s1.name} & ${s2.name} collided!`, 'crit');
+              playCollision();
+              // Despawn and respawn later to prevent chain collisions
+              s1.docked = true; s2.docked = true;
+              s1.reappearAt = Date.now() + 900;
+              s2.reappearAt = Date.now() + 900;
+              s1.trail = []; s2.trail = [];
+            }
+          } else {
+            const rvx = s2.vx - s1.vx, rvy = s2.vy - s1.vy;
+            const rdx = s2.x - s1.x, rdy = s2.y - s1.y;
+            const v2 = rvx*rvx + rvy*rvy;
+            let tStar = v2 > 0 ? - (rdx*rvx + rdy*rvy) / v2 : Infinity;
+            if (tStar < 0) tStar = Infinity;
+            const px = s1.x + s1.vx * tStar;
+            const py = s1.y + s1.vy * tStar;
+            const qx = s2.x + s2.vx * tStar;
+            const qy = s2.y + s2.vy * tStar;
+            const mx = (px + qx) / 2;
+            const my = (py + qy) / 2;
+            const angleDeg = normDeg(Math.atan2(my - CY, mx - CX) * 180 / Math.PI);
+            const dmin = Math.hypot(px - qx, py - qy);
+            if (tStar !== Infinity && tStar <= 7) {
+              if (!pairCooldown[`a-${key}`] || now - pairCooldown[`a-${key}`] > 2500) {
+                addLog(`⚠️ Angle alert ${angleDeg | 0}° — ${s1.name} & ${s2.name} in ~${tStar.toFixed(1)}s`, 'bad');
+                pairCooldown[`a-${key}`] = now;
+              }
+            } else {
+              if (!pairCooldown[`w-${key}`] || now - pairCooldown[`w-${key}`] > 2000) {
+                addLog(`⚠️ ${s1.name} & ${s2.name} on collision course!`, 'bad');
+                playAlarm();
+                pairCooldown[`w-${key}`] = now;
+              }
+            }
+          }
+        } else {
+          // At least one illuminated → safe!
+          if (pairCooldown[`w-${key}`]) {
+            saves++;
+            document.getElementById('sc-saves').textContent = saves;
+            delete pairCooldown[`w-${key}`];
+            addLog(`✅ Collision avoided — well done!`, 'ok');
+          }
+        }
+      }
+    }
+  }
+
+  // ── Time ──
+  const elapsed = Math.floor((Date.now() - startMs) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = String(elapsed % 60).padStart(2,'0');
+  document.getElementById('sc-time').textContent = `${m}:${s}`;
+  const remaining = missionDurationSec - elapsed;
+  if (remaining <= 10 && remaining >= 0) {
+    if (lastTickWarnSec !== remaining) {
+      playCountdownTick();
+      if (remaining <= 3) playAlarm();
+      lastTickWarnSec = remaining;
+    }
+  }
+  if (elapsed >= missionDurationSec) {
+    running = false;
+    if (raf) cancelAnimationFrame(raf);
+    showFinal();
+    return;
+  }
+
+  updateVelPanel();
+  draw();
+  raf = requestAnimationFrame(loop);
+}
+
+function showFinal() {
+  const final = document.getElementById('final');
+  if (!final) return;
+  const rating = collisions === 0 ? 'PERFECT' : (collisions <= 2 ? 'GREAT' : 'TRY AGAIN');
+  final.querySelector('#final-lit').textContent = document.getElementById('sc-lit').textContent;
+  final.querySelector('#final-saves').textContent = document.getElementById('sc-saves').textContent;
+  final.querySelector('#final-big').textContent = document.getElementById('sc-big').textContent;
+  final.querySelector('#final-coll').textContent = document.getElementById('sc-coll').textContent;
+  final.querySelector('#final-rating').textContent = rating;
+  final.style.display = 'flex';
+  if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+  playVictory();
+}
+// =====================================================
+//  DRAW
+// =====================================================
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // ── Circular clip ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI*2);
+  ctx.clip();
+
+  // ── Ocean background ──
+  const bg = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+  bg.addColorStop(0,   '#1c2740');
+  bg.addColorStop(0.6, '#131c2f');
+  bg.addColorStop(1,   '#0d1526');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // ── Big ship incoming banner (draw later for clear centering) ──
+  const warnWindow = nextBigShipMs - Date.now();
+
+  // ── Subtle wave texture (horizontal scan lines) ──
+  for (let y = 0; y < H; y += 6) {
+    ctx.fillStyle = 'rgba(200,220,240,0.02)';
+    ctx.fillRect(0, y, W, 1);
+  }
+
+  // ── Grid circles ──
+  for (let r = 45; r <= R; r += 45) {
+    ctx.beginPath();
+    ctx.arc(CX, CY, r, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(170,190,210,0.15)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    // Range label
+    if (r % 90 === 0) {
+      ctx.font = '8px Share Tech Mono';
+      ctx.fillStyle = 'rgba(200,220,240,0.35)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${r/R * 100 | 0}nm`, CX + r + 2, CY);
+    }
+  }
+
+  // ── Grid spokes ──
+  for (let a = 0; a < 360; a += 30) {
+    const rad = (a - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + R*Math.cos(rad), CY + R*Math.sin(rad));
+    ctx.strokeStyle = 'rgba(170,190,210,0.12)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+  // Isometric spokes overlay (60°)
+  for (let a = 0; a < 360; a += 60) {
+    const rad = (a - 90) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + R*Math.cos(rad), CY + R*Math.sin(rad));
+    ctx.strokeStyle = 'rgba(200,220,240,0.08)';
+    ctx.lineWidth = 1.0;
+    ctx.stroke();
+  }
+
+  // ── Degree tick labels on outer edge ──
+  ctx.font = '8px Share Tech Mono';
+  ctx.fillStyle = 'rgba(200,220,240,0.45)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let a = 0; a < 360; a += 30) {
+    const rad = (a - 90) * Math.PI / 180;
+    const lr  = R - 14;
+    ctx.fillText(a + '°', CX + lr*Math.cos(rad), CY + lr*Math.sin(rad));
+  }
+
+  // ── Radar sweep ──
+  const sweepRad = (sweep - 90) * Math.PI / 180;
+  const trailDeg = 65;
+  const trailRad = trailDeg * Math.PI / 180;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.arc(CX, CY, R, sweepRad - trailRad, sweepRad);
+  ctx.closePath();
+  const sg = ctx.createRadialGradient(CX,CY,0, CX,CY,R);
+  sg.addColorStop(0,   'rgba(152,227,198,0.0)');
+  sg.addColorStop(0.7, 'rgba(152,227,198,0.06)');
+  sg.addColorStop(1,   'rgba(152,227,198,0.12)');
+  ctx.fillStyle = sg;
+  ctx.fill();
+  ctx.restore();
+
+  // Sweep line
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(CX + R*Math.cos(sweepRad), CY + R*Math.sin(sweepRad));
+  ctx.strokeStyle = 'rgba(152,227,198,0.85)';
+  ctx.lineWidth = 2;
+  ctx.shadowColor = '#98e3c6';
+  ctx.shadowBlur = 8;
+  ctx.stroke();
+  ctx.restore();
+
+  // ── Lighthouse beams (behind ships) ──
+  lhs.forEach(lh => drawBeam(lh));
+
+  // ── Big ship overlay behind lighthouse icons ──
+  if (warnWindow > 0 && warnWindow < 3500) {
+    ctx.save();
+    ctx.font = 'bold 18px Orbitron, Share Tech Mono';
+    ctx.fillStyle = 'rgba(255,90,90,0.20)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    lhs.forEach(lh => ctx.fillText('BIG SHIP INCOMING', lh.x, lh.y));
+    ctx.restore();
+  }
+
+  for (let i = 0; i < ships.length; i++) {
+    for (let j = i+1; j < ships.length; j++) {
+      const s1 = ships[i], s2 = ships[j];
+      if (s1.lit || s2.lit) continue;
+      const rvx = s2.vx - s1.vx, rvy = s2.vy - s1.vy;
+      const rdx = s2.x - s1.x, rdy = s2.y - s1.y;
+      const v2 = rvx*rvx + rvy*rvy;
+      let tStar = v2 > 0 ? - (rdx*rvx + rdy*rvy) / v2 : Infinity;
+      if (tStar < 0) tStar = Infinity;
+      const px = s1.x + s1.vx * tStar;
+      const py = s1.y + s1.vy * tStar;
+      const qx = s2.x + s2.vx * tStar;
+      const qy = s2.y + s2.vy * tStar;
+      const dmin = Math.hypot(px - qx, py - qy);
+      if (tStar !== Infinity && tStar <= 7 && dmin < COLL_WARN) {
+        const mx = (px + qx) / 2;
+        const my = (py + qy) / 2;
+        const angleDeg = normDeg(Math.atan2(my - CY, mx - CX) * 180 / Math.PI);
+        ctx.save();
+        ctx.font = 'bold 11px Orbitron, Share Tech Mono';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(`ANGLE ${angleDeg | 0}° — ~${tStar.toFixed(1)}s`, CX, 8);
+        // Faint collision dot
+        ctx.beginPath();
+        ctx.arc(mx, my, 3, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,80,80,0.28)';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  // ── Ship trails ──
+  ships.forEach(ship => {
+    const t = ship.trail;
+    if (t.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(t[0].x, t[0].y);
+    for (let k = 1; k < t.length; k++) ctx.lineTo(t[k].x, t[k].y);
+    ctx.strokeStyle = ship.lit
+      ? 'rgba(152,227,198,0.28)'
+      : ship.warn
+        ? 'rgba(246,180,123,0.30)'
+        : 'rgba(154,215,255,0.20)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([2, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  // Predicted path to destination
+  ships.forEach(ship => {
+    const trgRad = R - 40;
+    const tx = CX + trgRad * Math.cos((ship.destAngle - 90) * Math.PI / 180);
+    const ty = CY + trgRad * Math.sin((ship.destAngle - 90) * Math.PI / 180);
+    ctx.beginPath();
+    ctx.moveTo(ship.x, ship.y);
+    ctx.lineTo(tx, ty);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth = 1.4;
+    ctx.setLineDash([4, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+  for (let i = 0; i < ships.length; i++) {
+    const si = ships[i];
+    const ri = R - 40;
+    const txi = CX + ri * Math.cos((si.destAngle - 90) * Math.PI / 180);
+    const tyi = CY + ri * Math.sin((si.destAngle - 90) * Math.PI / 180);
+    for (let j = i+1; j < ships.length; j++) {
+      const sj = ships[j];
+      const rj = R - 40;
+      const txj = CX + rj * Math.cos((sj.destAngle - 90) * Math.PI / 180);
+      const tyj = CY + rj * Math.sin((sj.destAngle - 90) * Math.PI / 180);
+      const pt = segIntersect(si.x, si.y, txi, tyi, sj.x, sj.y, txj, tyj);
+      if (pt) {
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 4, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255,80,80,0.35)';
+        ctx.fill();
+      }
+    }
+  }
+  // ── Ships ──
+  ships.forEach(ship => drawShip(ship));
+
+  // ── Lighthouse icons ──
+  lhs.forEach(lh => drawLighthouseIcon(lh));
+
+  ctx.restore(); // release clip
+
+  // ── Outer border ring ──
+  ctx.beginPath();
+  ctx.arc(CX, CY, R, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(170,190,210,0.40)';
+  ctx.lineWidth = Math.max(2, 2 * DRAW_SCALE);
+  ctx.stroke();
+
+  // Center dot
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CX, CY, 4, 0, Math.PI*2);
+  ctx.fillStyle = '#98e3c6';
+  ctx.shadowColor = '#98e3c6';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.restore();
+}
+
+// ── Draw a lighthouse beam ──
+function drawBeam(lh) {
+  const bRad = lh.beamAngle * Math.PI / 180;
+  const hRad = lh.halfWidthDeg * Math.PI / 180;
+  const len  = R * 2.2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.arc(CX, CY, len, bRad - hRad, bRad + hRad);
+  ctx.closePath();
+
+  const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, len);
+  const hex = lh.color;
+  g.addColorStop(0,   hex + 'cc');
+  g.addColorStop(0.25, hex + '55');
+  g.addColorStop(1,   hex + '00');
+  ctx.fillStyle = g;
+  ctx.shadowColor = hex;
+  ctx.shadowBlur  = 18;
+  ctx.fill();
+
+  // Edge lines
+  ctx.beginPath();
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(CX + len*Math.cos(bRad - hRad), CY + len*Math.sin(bRad - hRad));
+  ctx.moveTo(CX, CY);
+  ctx.lineTo(CX + len*Math.cos(bRad + hRad), CY + len*Math.sin(bRad + hRad));
+  ctx.strokeStyle = hex + '44';
+  ctx.lineWidth = 1;
+  ctx.shadowBlur = 0;
+  ctx.stroke();
+  if (typeof activeIdx === 'number' && lhs[activeIdx] && lhs[activeIdx].id === lh.id) {
+    ctx.beginPath();
+    ctx.moveTo(CX, CY);
+    ctx.lineTo(CX + len*Math.cos(bRad), CY + len*Math.sin(bRad));
+    ctx.strokeStyle = hex + 'aa';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+
+  // Faint angle label at beam target point
+  const lx = CX + (R - 10) * Math.cos(bRad);
+  const ly = CY + (R - 10) * Math.sin(bRad);
+  ctx.font = 'bold ' + Math.round(18 * Math.max(1, DRAW_SCALE)) + 'px Orbitron, Share Tech Mono';
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 2.2;
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const txt = `${Math.round(normDeg(90 - lh.beamAngle))}°`;
+  ctx.strokeText(txt, lx, ly);
+  ctx.fillText(txt, lx, ly);
+
+  ctx.restore();
+}
+
+// ── Draw a ship ──
+function drawShip(ship) {
+  if (ship.docked) return;
+  const len = (ship.len || 16) * DRAW_SCALE;
+  const wid = (ship.wid || 8) * DRAW_SCALE;
+  ctx.save();
+  ctx.translate(ship.x, ship.y);
+
+  // Collision flash
+  if (ship.flash > 0) {
+    const p = ship.flash / 25;
+    ctx.beginPath();
+    ctx.arc(0, 0, 30 * p, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(255,30,60,${0.5*p})`;
+    ctx.fill();
+  }
+
+  // Warning pulse ring
+  if (ship.warn && !ship.lit) {
+    const pulse = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(Date.now() * 0.012));
+    ctx.beginPath();
+    ctx.arc(0, 0, 24, 0, Math.PI*2);
+    ctx.strokeStyle = `rgba(246,180,123,${pulse})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Shadow / glow
+  if (ship.lit) {
+    ctx.shadowColor = '#98e3c6';
+    ctx.shadowBlur  = 18;
+  }
+
+  const spd = Math.hypot(ship.vx, ship.vy);
+  let ax = 0, ay = 0;
+  if (spd > 0) {
+    ax = (ship.vx / spd) * len;
+    ay = (ship.vy / spd) * len;
+  }
+  const ang = Math.atan2(ay, ax);
+  const lx = Math.cos(ang), ly = Math.sin(ang);
+  const px = ax, py = ay;
+  const bx1x = -lx * wid + px * 0.2;
+  const bx1y = -ly * wid + py * 0.2;
+  const bx2x = lx * wid + px * 0.2;
+  const bx2y = ly * wid + py * 0.2;
+
+  // Shaft
+  ctx.beginPath();
+  ctx.moveTo(-lx * (len * 0.4), -ly * (len * 0.4));
+  ctx.lineTo(px, py);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = Math.max(2, 2.0 * DRAW_SCALE);
+  ctx.stroke();
+
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(px, py);
+  ctx.lineTo(bx1x, bx1y);
+  ctx.lineTo(bx2x, bx2y);
+  ctx.closePath();
+  if (ship.flash > 0) {
+    ctx.fillStyle   = '#ef6f7a';
+    ctx.strokeStyle = '#ffffff';
+  } else if (ship.lit) {
+    ctx.fillStyle   = '#98e3c6';
+    ctx.strokeStyle = '#cfeee3';
+  } else if (ship.warn) {
+    ctx.fillStyle   = '#f6b47b';
+    ctx.strokeStyle = '#ffd0a9';
+  } else {
+    ctx.fillStyle   = '#9ad7ff';
+    ctx.strokeStyle = '#cde8ff';
+  }
+  ctx.lineWidth = 2.2;
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Heading label (degrees)
+  const deg = Math.round(normDeg(ship.destAngle));
+  ctx.font = 'bold ' + Math.round(16 * Math.max(1, DRAW_SCALE)) + 'px Quicksand, Raleway, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(`${deg}°`, 0, -ly * (len * 0.6));
+
+  ctx.restore();
+}
+
+// ── Draw lighthouse tower icon on edge ──
+function drawLighthouseIcon(lh) {
+  ctx.save();
+  ctx.translate(lh.x, lh.y);
+
+  // Outer glow
+  ctx.beginPath();
+  ctx.arc(0, 0, 13, 0, Math.PI*2);
+  ctx.fillStyle = '#000c1a';
+  ctx.strokeStyle = lh.color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = lh.color;
+  ctx.shadowBlur  = 18;
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Tower body (thin rect)
+  ctx.fillStyle = lh.color;
+  ctx.fillRect(-2, -8, 4, 10);
+
+  // Base
+  ctx.fillRect(-5, 2, 10, 3);
+
+  // Light bulb
+  ctx.beginPath();
+  ctx.arc(0, -9, 3, 0, Math.PI*2);
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = lh.color;
+  ctx.shadowBlur  = 12;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Name label (positioned outside circle)
+  const labelRad = (lh.posAngleDeg) * Math.PI / 180;
+  const lx = Math.cos(labelRad) * 20;
+  const ly = Math.sin(labelRad) * 20;
+
+  ctx.font = 'bold 8px Orbitron, Share Tech Mono';
+  ctx.fillStyle   = lh.color;
+  ctx.textAlign   = lx > 0 ? 'left' : lx < -2 ? 'right' : 'center';
+  ctx.textBaseline = ly > 2 ? 'top' : ly < -2 ? 'bottom' : 'middle';
+  ctx.fillText(lh.name, lx, ly);
+
+  ctx.restore();
+}
+
+// =====================================================
+//  START
+// =====================================================
+function startGame() {
+  document.getElementById('splash').style.display = 'none';
+  running   = true;
+  startMs   = Date.now();
+  lastTs    = performance.now();
+  // Read difficulty
+  const shipsSel = document.getElementById('optShips');
+  const speedSel = document.getElementById('optSpeed');
+  const timeSel  = document.getElementById('optTime');
+  const lhSel    = document.getElementById('optLH');
+  if (shipsSel) N_SHIPS = parseInt(shipsSel.value, 10) || N_SHIPS;
+  if (speedSel) {
+    const map = {slow:0.75, normal:0.90, fast:1.05};
+    speedScale = map[speedSel.value] ?? 1.0;
+  }
+  if (timeSel) missionDurationSec = parseInt(timeSel.value, 10) || 60;
+  if (lhSel) {
+    const newCnt = parseInt(lhSel.value, 10) || N_LH;
+    if (newCnt !== N_LH) {
+      N_LH = newCnt;
+      lhs = buildLighthouses(N_LH);
+      setupCanvasSize();
+      const leftEl  = document.getElementById('lh-left');
+      const rightEl = document.getElementById('lh-right');
+      if (leftEl) leftEl.innerHTML = '';
+      if (rightEl) rightEl.innerHTML = '';
+      buildControls();
+      buildMobileControls();
+    }
+  }
+  // Build ships for this mission
+  ships = Array.from({length: N_SHIPS}, (_, i) => newShip(i));
+  initAudio();
+  nextBigShipMs = Date.now() + 15000 + Math.floor(Math.random() * 10000);
+  bigWarnPlayed = false;
+  bigSaves = 0;
+  document.getElementById('sc-big').textContent = bigSaves;
+  lastTickWarnSec = -1;
+  // Place ships at ring ports on start
+  const ports = Array.from({length: N_SHIPS}, (_, i) => i * (360 / N_SHIPS));
+  ships.forEach((ship, i) => {
+    let ang = ports[i % ports.length];
+    const rad = R - 18;
+    let guard = 0;
+    while (guard++ < 24) {
+      const sx = CX + rad * Math.cos((ang - 90) * Math.PI / 180);
+      const sy = CY + rad * Math.sin((ang - 90) * Math.PI / 180);
+      let ok = true;
+      for (let j = 0; j < i; j++) {
+        const d = Math.hypot(sx - ships[j].x, sy - ships[j].y);
+        if (d < COLL_WARN + 8) { ok = false; break; }
+      }
+      if (ok) { ship.x = sx; ship.y = sy; break; }
+      ang = normDeg(ang + (360 / N_SHIPS) * 0.33);
+    }
+    ship.vx = 0.01 * Math.cos((ang - 90) * Math.PI / 180);
+    ship.vy = 0.01 * Math.sin((ang - 90) * Math.PI / 180);
+    ship.destAngle = normDeg(ang + 60 + Math.random() * 180);
+    ship.docked = false;
+    ship.reappearAt = 0;
+    ship.trail = [];
+  });
+  document.getElementById('sc-lit').textContent = `0/${ships.length}`;
+  addLog('🟢 Radar online. Ships detected.', 'ok');
+  addLog('🔦 Adjust lighthouse angles to guide them.', 'dim');
+  raf = requestAnimationFrame(loop);
+}
+
+// =====================================================
+//  INIT UI (called immediately so controls are ready)
+// =====================================================
+setupCanvasSize();
+buildControls();
+buildAngleGuide();
+buildMobileControls();
+
+// Draw one static frame so canvas isn't blank on load
+(function staticDraw() {
+  draw();
+})();
+window.addEventListener('resize', () => {
+  setupCanvasSize();
+  draw();
+});
+</script>
+</body>
+</html>
