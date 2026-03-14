@@ -34,7 +34,7 @@
         }
 
         /* --- TOP BAR --- */
-      /* --- UPDATED NAVIGATION --- */
+        /* --- UPDATED NAVIGATION --- */
 nav {
     position: sticky;
     top: 0;
@@ -98,6 +98,68 @@ nav {
             border: none; 
         }
 
+/* --- INSTRUCTIONAL MODAL --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85); /* Darken background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Above nav and game */
+    backdrop-filter: blur(5px);
+}
+
+.modal-box {
+    background: var(--bg-color);
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-box h2 {
+    color: var(--primary-accent);
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+}
+
+.modal-body {
+    text-align: left;
+    margin-bottom: 25px;
+    line-height: 1.6;
+    font-weight: 300;
+}
+
+.modal-body p {
+    margin-bottom: 15px;
+}
+
+.close-modal-btn {
+    background-color: var(--text-main);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-family: 'Josefin Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.close-modal-btn:hover {
+    background-color: var(--primary-accent);
+}
+
         /* --- AD BAR --- */
 .ad-frame { 
     width: 100%; 
@@ -123,6 +185,7 @@ nav {
     border: 1px dashed #bbaaa0; 
 }
 	
+	
 
     </style>
 </head>
@@ -147,6 +210,25 @@ nav {
             [ ADVERTISEMENT SLOT : 728 x 90 ]
         </div>
     </div>
+
+<div id="instructionModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2>HOW TO PLAY</h2>
+        <div class="modal-body">
+            <p><strong>Goal:</strong> Navigate Dovit through the spatial complexity of the Monoliath. Use logic and geometric reasoning to survive.</p>
+            <p><strong>Controls:</strong> Click or tap to interact with the simulation elements. Master the physical laws to progress.</p>
+            <p><strong>How it helps:</strong> This simulation strengthens spatial reasoning and multi-dimensional thinking by challenging you to solve geometric puzzles in real-time.</p>
+        </div>
+        <button onclick="closeModal()" class="close-modal-btn">BEGIN SIMULATION</button>
+    </div>
+</div>
+
+<script>
+    function closeModal() {
+        const modal = document.getElementById('instructionModal');
+        modal.style.display = 'none';
+    }
+</script>
 
 </body>
 </html>
