@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Tales | About</title>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Exact same base CSS as index.html */
+        :root { --bg-color: #F4EFEA; --card-bg: #FFFFFF; --primary-accent: #E69A8D; --secondary-accent: #5EBEC4; --text-main: #2C3E50; --nav-bg: rgba(244, 239, 234, 0.85); --ad-bg: #EAE3DC; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Josefin Sans', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        nav { position: sticky; top: 0; width: 100%; background: var(--nav-bg); backdrop-filter: blur(10px); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px 0; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        .nav-links a { text-decoration: none; color: var(--text-main); font-size: 1.1rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; transition: color 0.3s ease; }
+        .nav-links a:hover { color: var(--primary-accent); }
+        main { flex: 1; width: 90%; max-width: 800px; margin: 60px auto; text-align: center; }
+        h1, h2, h3 { font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+        h1 { font-size: 2.5rem; color: var(--secondary-accent); }
+        p { font-weight: 300; font-size: 1.2rem; line-height: 1.6; margin-bottom: 30px; }
+        .ad-frame { width: 100%; background-color: var(--ad-bg); padding: 20px; text-align: center; border-top: 1px solid rgba(0,0,0,0.05); border-bottom: 1px solid rgba(0,0,0,0.05); margin-top: auto; }
+        .ad-content { width: 100%; max-width: 728px; height: 90px; margin: 0 auto; background-color: #d1c9c1; display: flex; align-items: center; justify-content: center; color: #888; font-size: 0.9rem; letter-spacing: 1px; border: 1px dashed #bbaaa0; }
+        footer { text-align: center; padding: 30px; font-size: 0.9rem; font-weight: 300; letter-spacing: 1px; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="about.html" style="color: var(--primary-accent);">About</a>
+            <a href="story.html">Story</a>
+            <a href="topics.html">Topics</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+    <main>
+        <h1>The Architects</h1>
+        <p>We are a collective of designers and mathematicians dedicated to making the abstract tangible. This project was born from the desire to make mathematical concepts feel as solid as stone and as fluid as water.</p>
+        <p>Every simulation is carefully crafted to bend your perspective, challenging what you know about space, logic, and geometry. Step carefully, and trust the path.</p>
+        <img src="https://via.placeholder.com/400x400/5EBEC4/FFFFFF?text=Abstract+Architecture" alt="About Image" style="width: 100%; max-width: 400px; border-radius: 8px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+    </main>
+    <div class="ad-frame"><div class="ad-content">[ ADVERTISEMENT SLOT : 728 x 90 ]</div></div>
+    <footer>&copy; 2026 Geometry Tales. All paths lead to the start.</footer>
+</body>
+</html>

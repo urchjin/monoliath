@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometry Tales | Playing Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Base Variables - Keeps your Monument Valley theme consistent */
+        :root { 
+            --bg-color: #F4EFEA; 
+            --primary-accent: #E69A8D; 
+            --text-main: #2C3E50; 
+            --nav-bg: rgba(244, 239, 234, 1); /* Solid background for cleaner look */
+            --ad-bg: #EAE3DC; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* CRITICAL CHANGES FOR FULLSCREEN:
+           height: 100vh makes the body exactly the height of the screen.
+           overflow: hidden prevents the page from scrolling. 
+        */
+        body { 
+            font-family: 'Josefin Sans', sans-serif; 
+            background-color: var(--bg-color); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* --- TOP BAR --- */
+        nav { 
+            width: 100%; 
+            background: var(--nav-bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 15px 0; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        .nav-links { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+        .nav-links a { 
+            text-decoration: none; 
+            color: var(--text-main); 
+            font-size: 1.1rem; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            transition: color 0.3s ease; 
+        }
+        .nav-links a:hover { color: var(--primary-accent); }
+        .back-btn { font-weight: 300 !important; opacity: 0.7; }
+
+        /* --- THE GAME AREA --- */
+        /* flex: 1 forces this container to stretch and fill all remaining vertical space */
+        main.game-wrapper { 
+            flex: 1; 
+            width: 100%; 
+            display: flex; 
+            background-color: #000; /* Black background behind the game */
+        }
+        
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+
+        /* --- AD BAR --- */
+        .ad-frame { 
+            width: 100%; 
+            background-color: var(--ad-bg); 
+            padding: 10px; 
+            text-align: center; 
+            border-top: 1px solid rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+        .ad-content { 
+            width: 100%; 
+            max-width: 728px; 
+            height: 90px; 
+            margin: 0 auto; 
+            background-color: #d1c9c1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #888; 
+            font-size: 0.9rem; 
+            letter-spacing: 1px; 
+            border: 1px dashed #bbaaa0; 
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-links">
+            <a href="story.html" class="back-btn">&larr; Exit Simulation</a>
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="story.html" style="color: var(--primary-accent);">Story</a>
+            <a href="topics.html">Topics</a>
+        </div>
+    </nav>
+
+    <main class="game-wrapper">
+        <iframe src="monolith.html" title="Simulation 1"></iframe>
+    </main>
+
+    <div class="ad-frame">
+        <div class="ad-content">
+            [ ADVERTISEMENT SLOT : 728 x 90 ]
+        </div>
+    </div>
+
+</body>
+</html>
