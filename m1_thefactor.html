@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Factor | Elite Command</title>
+    <style>
+        :root {
+            --bg: #F4F7F9; --accent: #A29BFE; --enemy: #D1B3C4; --friend: #B3D1CF;
+            --text: #5B5B7B; --glass: rgba(255, 255, 255, 0.85); --hyper: #00F2FF;
+            --alert: #FF7675; --boss: #2D3436;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        body { margin: 0; background: var(--bg); font-family: 'Helvetica Neue', Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; touch-action: none; }
+        
+        .overlay { position: fixed; inset: 0; z-index: 2000; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 40px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.05); border: 1px solid #EEE; width: 100%; max-width: 440px; }
+        
+        /* INSTRUCTIONS STYLE */
+        .instr { font-size: 0.7rem; color: #888; text-align: left; background: #F9FAFB; padding: 12px; border-radius: 15px; margin: 10px 0; line-height: 1.4; border: 1px dashed #DDD; }
+        .instr b { color: var(--accent); }
+
+        .toggle-row { margin: 6px 0; display: flex; background: #F0F0F0; border-radius: 50px; padding: 4px; }
+        .t-btn { flex: 1; border: none; padding: 8px; border-radius: 50px; cursor: pointer; background: none; color: #888; font-weight: bold; font-size: 0.6rem; letter-spacing: 1px; }
+        .t-btn.active { background: white; color: var(--accent); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        #btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; width: 100%; }
+        .n-btn { width: 100%; aspect-ratio: 1; border: 1px solid #EEE; background: #FFF; border-radius: 12px; font-weight: bold; font-size: 1.1rem; color: var(--text); cursor: pointer; box-shadow: 0 4px 0 #F0F0F0; }
+
+        #hud { position: absolute; top: 20px; width: 100%; max-width: 500px; display: none; justify-content: space-between; padding: 0 20px; z-index: 500; pointer-events: none; }
+        .chip { background: var(--glass); backdrop-filter: blur(10px); padding: 8px 12px; border-radius: 15px; border: 1px solid #FFF; box-shadow: 0 8px 25px rgba(0,0,0,0.03); text-align: center; min-width: 80px; }
+        #fire-btn { position: absolute; bottom: 40px; right: 40px; width: 85px; height: 85px; background: var(--accent); border-radius: 50%; border: 4px solid #FFF; z-index: 600; box-shadow: 0 20px 40px rgba(162,155,254,0.3); display: none; align-items: center; justify-content: center; color: #FFF; font-weight: 900; }
+        
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="splash" class="overlay">
+        <div class="card">
+            <h1 style="font-weight:200; letter-spacing:4px; margin:0; font-size: 1.2rem; color: var(--text);">THE FACTOR</h1>
+            
+            <div class="instr">
+                <b>TOUCH:</b> Drag anywhere to move. Tap FIRE button.<br>
+                <b>KEYBOARD:</b> [WASD] or [ARROWS] to fly. [SPACE] to fire.<br>
+                <b>RULES:</b> Shoot multiples of your target. Avoid others.<br>
+                <b>BOSS:</b> Monolith arrives at 75s. <b>DON'T TOUCH IT!</b>
+            </div>
+
+            <div class="toggle-row"><button class="t-btn active" id="c-on">HINT ON</button><button class="t-btn" id="c-off">HINT OFF</button></div>
+            <div class="toggle-row"><button class="t-btn" id="s-slow">SLOW</button><button class="t-btn active" id="s-norm">NORM</button><button class="t-btn" id="s-fast">FAST</button></div>
+            <div class="toggle-row"><button class="t-btn active" id="m-std">STANDARD</button><button class="t-btn" id="m-chlg">CHALLENGE</button><button class="t-btn" id="m-surv">SURVIVAL</button></div>
+            <div id="btn-grid"></div>
+        </div>
+    </div>
+
+    <div id="end-screen" class="overlay" style="display:none">
+        <div class="card">
+            <h2 id="end-title" style="letter-spacing: 5px; font-weight: 300;">MISSION COMPLETE</h2>
+            <p id="end-msg" style="color: #888; font-size: 0.9rem; margin: 20px 0;"></p>
+            <div id="end-stats" style="font-weight: bold; color: var(--text); margin-bottom: 20px;"></div>
+            <button style="background: var(--accent); color: white; border: none; padding: 15px; border-radius: 50px; width: 100%; cursor: pointer;" onclick="location.reload()">RE-DEPLOY</button>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="chip"><div id="timer-label" style="font-size:8px; color:#AAA">TIME</div><b id="timer">2:00</b></div>
+        <div class="chip" id="power-chip" style="background:var(--accent); color:white"><div style="font-size:8px">TARGET</div><b>x4</b></div>
+        <div class="chip"><div style="font-size:8px; color:#AAA">LIVES</div><b id="lives-txt" style="color:#FFADAD">●●●●●</b></div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <div id="fire-btn">FIRE</div>
+
+<script>
+const SFX = (() => {
+    let ctx = null, masterGain = null;
+    const init = () => {
+        if (!ctx) {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = ctx.createGain(); masterGain.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+    };
+    const play = (freq, type, dur, vol, panX = 0) => {
+        if (!ctx) return;
+        const osc = ctx.createOscillator(), g = ctx.createGain(), panner = ctx.createPanner();
+        osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        g.gain.setValueAtTime(vol, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
+        panner.panningModel = 'equalpower'; panner.setPosition(panX, 0, 1 - Math.abs(panX));
+        osc.connect(g); g.connect(panner); panner.connect(masterGain);
+        osc.start(); osc.stop(ctx.currentTime + dur);
+    };
+    return { init, shoot: () => play(900, 'sine', 0.1, 0.04), hit: () => play(440, 'triangle', 0.1, 0.06), bonus: () => { play(523, 'sine', 0.4, 0.1); play(659, 'sine', 0.5, 0.1); }, fail: () => play(150, 'sine', 0.5, 0.2), boss: () => play(80, 'sine', 2, 0.3), alarm: () => { play(200, 'sawtooth', 0.5, 0.05); play(150, 'sawtooth', 0.5, 0.05); }, note: (f, v, p, d=1.5) => play(f, 'sine', d, v, p) };
+})();
+
+const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
+
+let G = {
+    active: false, mode: 'std', factor: 0, lives: 5, time: 120, colorHint: true, 
+    bossSpawned: false, warning: false, shake: 0,
+    w: window.innerWidth, h: window.innerHeight,
+    enemySpeed: 0.8, spawnRate: 2200,
+    player: { x: window.innerWidth/2, y: window.innerHeight - 180, hyper: 0, invincible: 0 },
+    touch: { active: false, lastX: 0, lastY: 0 },
+    keys: {}, // Keyboard tracking
+    entities: [], bullets: [], powerups: [], fragments: [],
+    lastSpawn: 0, lastFire: 0, lastPSpawn: 0, lastShield: 0, mtnPos: window.innerHeight + 200,
+    musicState: 'none',
+    notesNormal: [261.63, 293.66, 329.63, 392.00, 440.00], 
+    notesVictory: [130.81, 155.56, 174.61, 196.00, 233.08]
+};
+
+function setup() {
+    canvas.width = G.w; canvas.height = G.h;
+    const grid = document.getElementById('btn-grid');
+    for(let i=2; i<=12; i++) {
+        const b = document.createElement('button'); b.className = 'n-btn'; b.innerText = i;
+        b.onclick = () => start(i); grid.appendChild(b);
+    }
+    // Listeners
+    document.getElementById('c-on').onclick = () => { G.colorHint = true; updateT(); };
+    document.getElementById('c-off').onclick = () => { G.colorHint = false; updateT(); };
+    document.getElementById('m-std').onclick = () => { G.mode = 'std'; G.time = 120; updateT(); };
+    document.getElementById('m-chlg').onclick = () => { G.mode = 'chlg'; G.time = 120; updateT(); };
+    document.getElementById('m-surv').onclick = () => { G.mode = 'surv'; G.time = 0; updateT(); };
+    document.getElementById('s-slow').onclick = () => { G.enemySpeed = 0.4; updateT(); };
+    document.getElementById('s-norm').onclick = () => { G.enemySpeed = 0.8; updateT(); };
+    document.getElementById('s-fast').onclick = () => { G.enemySpeed = 1.6; updateT(); };
+    
+    window.addEventListener('keydown', e => G.keys[e.code] = true);
+    window.addEventListener('keyup', e => G.keys[e.code] = false);
+}
+
+function updateT() {
+    document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(G.colorHint ? 'c-on' : 'c-off').classList.add('active');
+    document.getElementById('m-' + G.mode).classList.add('active');
+    const sId = G.enemySpeed === 0.4 ? 's-slow' : G.enemySpeed === 0.8 ? 's-norm' : 's-fast';
+    document.getElementById(sId).classList.add('active');
+}
+
+function musicLoop() {
+    if (!G.active && G.musicState !== 'victory') return;
+    let delay = 600;
+    if (G.musicState === 'normal' && !G.warning && !G.bossSpawned) {
+        SFX.note(G.notesNormal[Math.floor(Math.random() * G.notesNormal.length)], 0.02, (Math.random() - 0.5) * 2, 0.8);
+        delay = 500 + Math.random() * 500;
+    } else if (G.musicState === 'victory') {
+        SFX.note(G.notesVictory[Math.floor(Math.random() * G.notesVictory.length)], 0.05, (Math.random() - 0.5) * 2, 2.0);
+        delay = 800 + Math.random() * 1000;
+    }
+    setTimeout(musicLoop, delay);
+}
+
+function start(f) {
+    SFX.init(); G.factor = f; G.active = true; G.musicState = 'normal'; G.bossSpawned = false;
+    document.getElementById('splash').style.opacity = '0';
+    document.getElementById('power-chip').innerHTML = `<div style="font-size:8px">TARGET</div><b>x${f}</b>`;
+    setTimeout(() => { document.getElementById('splash').style.display = 'none'; musicLoop(); }, 500);
+    document.getElementById('hud').style.display = 'flex'; document.getElementById('fire-btn').style.display = 'flex';
+    setInterval(() => {
+        if(!G.active) return;
+        if(G.mode === 'surv') { G.time++; if(G.time % 20 === 0) G.spawnRate = Math.max(800, G.spawnRate - 200); }
+        else { 
+            G.time--; 
+            if(G.time === 50) { G.warning = true; SFX.alarm(); } 
+            if(G.time === 45) { G.warning = false; spawnBoss(); } 
+            if(G.time <= 0) end(true); 
+            if(G.mode === 'chlg' && G.time % 15 === 0) { G.factor = Math.floor(Math.random()*11)+2; document.getElementById('power-chip').innerHTML = `<div style="font-size:8px">TARGET</div><b>x${G.factor}</b>`; SFX.bonus(); } 
+        }
+        let m = Math.floor(G.time/60), s = G.time%60;
+        document.getElementById('timer').innerText = (G.mode==='surv')?G.time+"s":`${m}:${s<10?'0':''}${s}`;
+    }, 1000);
+    loop(0);
+}
+
+function spawnBoss() {
+    G.bossSpawned = true; SFX.boss();
+    let val = G.factor * (25 + Math.floor(Math.random()*6));
+    G.entities.push({ x: G.w/2, y: -220, val, isE: true, hp: val, hits: 0, isBoss: true, w: 160, h: 220, speed: 0.2, color: "#2D3436" });
+}
+
+function end(win) {
+    G.active = false; G.musicState = win ? 'victory' : 'none';
+    const screen = document.getElementById('end-screen');
+    document.getElementById('end-title').innerText = win ? "MISSION COMPLETE" : "DEFEAT";
+    document.getElementById('end-title').style.color = win ? "#A29BFE" : "#FF7675";
+    document.getElementById('end-msg').innerText = win ? "The Valley is at peace once again." : "The Monolith has breached the defense.";
+    document.getElementById('end-stats').innerText = `Table: x${G.factor}`;
+    screen.style.display = 'flex'; screen.style.opacity = '1';
+    if(!win) SFX.fail();
+}
+
+// 1:1 DIRECT LINK & KEYBOARD COMBO
+canvas.addEventListener('touchstart', (e) => { const t = e.touches[0]; G.touch.active = true; G.touch.lastX = t.clientX; G.touch.lastY = t.clientY; SFX.init(); });
+canvas.addEventListener('touchmove', (e) => {
+    if(!G.touch.active) return;
+    const t = e.touches[0];
+    G.player.x = Math.max(30, Math.min(G.w-30, G.player.x + (t.clientX - G.touch.lastX)));
+    G.player.y = Math.max(100, Math.min(G.h-100, G.player.y + (t.clientY - G.touch.lastY)));
+    G.touch.lastX = t.clientX; G.touch.lastY = t.clientY;
+});
+canvas.addEventListener('touchend', () => G.touch.active = false);
+document.getElementById('fire-btn').addEventListener('touchstart', (e) => { e.preventDefault(); fire(); });
+
+function fire() {
+    const rate = G.player.hyper>0?100:300;
+    if(Date.now()-G.lastFire > rate) {
+        G.bullets.push({x:G.player.x, y:G.player.y-30, h:G.player.hyper>0}); G.lastFire=Date.now(); SFX.shoot();
+    }
+}
+
+function drawBG(t) {
+    ctx.save(); ctx.globalAlpha = 0.2; 
+    ctx.setLineDash([5, 15]);
+    const isH = G.player.hyper > 0;
+    ctx.strokeStyle = isH ? "rgba(0, 242, 255, 0.4)" : "rgba(162, 155, 254, 0.3)";
+    let lO = (t * (isH ? 8 : 2)) % 100;
+    for (let x = 50; x < G.w; x += 100) { ctx.beginPath(); ctx.moveTo(x, -100 + lO); ctx.lineTo(x, G.h + 100 + lO); ctx.stroke(); }
+    ctx.setLineDash([]);
+    G.mtnPos -= 0.35; if(G.mtnPos < -800) G.mtnPos = G.h + 200;
+    ctx.fillStyle = "#C2CBD4"; ctx.beginPath(); ctx.moveTo(-100, G.mtnPos+400); ctx.lineTo(G.w*0.3, G.mtnPos); ctx.lineTo(G.w*0.7, G.mtnPos+500); ctx.lineTo(G.w+150, G.mtnPos+300); ctx.fill();
+    ctx.fillStyle = "#A7AFB8"; ctx.beginPath(); ctx.moveTo(-150, G.mtnPos+700); ctx.lineTo(G.w*0.2, G.mtnPos+150); ctx.lineTo(G.w*0.5, G.mtnPos+50); ctx.lineTo(G.w*0.8, G.mtnPos+180); ctx.lineTo(G.w+150, G.mtnPos+700); ctx.fill();
+    ctx.fillStyle = "#FFF"; ctx.beginPath(); ctx.moveTo(G.w*0.42, G.mtnPos+110); ctx.lineTo(G.w*0.5, G.mtnPos+50); ctx.lineTo(G.w*0.58, G.mtnPos+110); ctx.fill();
+    ctx.restore();
+}
+
+function loop(t) {
+    if(!G.active) { if(G.musicState === 'victory') { ctx.clearRect(0,0,G.w, G.h); drawBG(t); requestAnimationFrame(loop); } return; }
+    
+    // KEYBOARD MOVEMENT
+    const kSpeed = 8;
+    if(G.keys['ArrowUp'] || G.keys['KeyW']) G.player.y = Math.max(100, G.player.y - kSpeed);
+    if(G.keys['ArrowDown'] || G.keys['KeyS']) G.player.y = Math.min(G.h-100, G.player.y + kSpeed);
+    if(G.keys['ArrowLeft'] || G.keys['KeyA']) G.player.x = Math.max(30, G.player.x - kSpeed);
+    if(G.keys['ArrowRight'] || G.keys['KeyD']) G.player.x = Math.min(G.w-30, G.player.x + kSpeed);
+    if(G.keys['Space']) fire();
+
+    ctx.save();
+    if(G.shake > 0) { ctx.translate((Math.random()-0.5)*G.shake, (Math.random()-0.5)*G.shake); G.shake *= 0.9; }
+    ctx.clearRect(0,0,G.w, G.h); drawBG(t);
+
+    if(G.player.hyper > 0) G.player.hyper -= 16;
+    if(G.player.invincible > 0) G.player.invincible -= 16;
+
+    if(G.warning && Math.floor(t/800)%2===0) { ctx.fillStyle = "rgba(255,118,115,0.05)"; ctx.fillRect(0,0,G.w,G.h); ctx.fillStyle = "#FF7675"; ctx.font = "bold 24px sans-serif"; ctx.textAlign="center"; ctx.fillText("! ANOMALY DETECTED !", G.w/2, G.h/2); }
+
+    if(G.bossSpawned) {
+        let boss = G.entities.find(e => e.isBoss);
+        if(boss && t - G.lastShield > 5000) {
+            let sVal = G.factor * 2;
+            G.entities.push({ x: boss.x - 65, y: boss.y + 110, val: sVal, isE: true, hp: sVal, hits: 0, w: 50, h: 50, speed: boss.speed, isShield: true, color: "#FFD93D" });
+            G.entities.push({ x: boss.x + 65, y: boss.y + 110, val: sVal, isE: true, hp: sVal, hits: 0, w: 50, h: 50, speed: boss.speed, isShield: true, color: "#FFD93D" });
+            G.lastShield = t;
+        }
+    }
+
+    if(t - G.lastSpawn > G.spawnRate) {
+        const isE = Math.random() > 0.4;
+        let val = isE ? G.factor * (Math.floor(Math.random()*11)+1) : Math.floor(Math.random()*50)+1;
+        if(!isE && val % G.factor === 0) val++;
+        G.entities.push({ x: 50 + Math.random()*(G.w-100), y: -100, val, isE, hp: val, hits: 0, w: 50, h: 50, speed: G.enemySpeed, color: G.colorHint?(isE?"#D1B3C4":"#B3D1CF"):"#D1D1D1" });
+        G.lastSpawn = t;
+    }
+
+    if(t - G.lastPSpawn > 12000) { G.powerups.push({ x: 50 + Math.random()*(G.w-100), y: -50, type: Math.random() > 0.6 ? 'L' : 'H' }); G.lastPSpawn = t; }
+
+    for(let i=G.powerups.length-1; i>=0; i--) {
+        let p = G.powerups[i]; p.y += 2;
+        ctx.fillStyle = p.type === 'L' ? "#FFADAD" : "#00F2FF";
+        ctx.beginPath(); ctx.arc(p.x, p.y, 18, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle="white"; ctx.font="bold 12px sans-serif"; ctx.textAlign="center"; ctx.fillText(p.type, p.x, p.y+4);
+        if(Math.hypot(p.x - G.player.x, p.y - G.player.y) < 40) {
+            if(p.type === 'L') { G.lives = Math.min(5, G.lives + 1); updateLivesUI(); }
+            else G.player.hyper = 7000; SFX.bonus(); G.powerups.splice(i, 1);
+        } else if(p.y > G.h) G.powerups.splice(i, 1);
+    }
+
+    // Process Entities
+    for(let i=G.entities.length-1; i>=0; i--) {
+        let e = G.entities[i]; e.y += e.speed;
+        
+        // COLLISION: Boss touches Player
+        if(e.isBoss && G.player.invincible <= 0) {
+            if(Math.abs(G.player.x - e.x) < e.w/2 + 20 && Math.abs(G.player.y - e.y) < e.h/2 + 20) {
+                damage(); G.player.invincible = 1500; // 1.5s invulnerability
+            }
+        }
+
+        ctx.fillStyle = e.color; ctx.fillRect(e.x - e.w/2, e.y - e.h/2, e.w, e.h);
+        ctx.fillStyle = (G.colorHint && e.isE) || e.isBoss ? "#FFF" : "#5B5B7B";
+        ctx.font = e.isBoss ? "bold 34px sans-serif" : "bold 16px sans-serif"; ctx.textAlign="center"; 
+        ctx.fillText(G.colorHint ? e.hp : e.val, e.x, e.y + (e.isBoss ? 12 : 6));
+        if(e.isE && e.hits > 0) { ctx.fillStyle = e.isBoss ? "#FF7675" : "#5B5B7B"; ctx.font = "bold 11px sans-serif"; ctx.fillText(`${e.hits} HITS`, e.x, e.y - (e.h/2 + 12)); }
+        
+        for(let j=G.bullets.length-1; j>=0; j--) {
+            let b = G.bullets[j];
+            if(Math.abs(b.x - e.x) < e.w/2 + 5 && Math.abs(b.y - e.y) < e.h/2 + 5) {
+                G.bullets.splice(j, 1);
+                if(e.isE) { 
+                    e.hp -= G.factor; e.hits++; SFX.hit(); G.shake = 3;
+                    if(e.hp <= 0) { 
+                        if(e.isBoss) { G.bossSpawned = false; G.entities = G.entities.filter(ent => !ent.isShield); G.shake = 15; }
+                        G.entities.splice(i, 1); 
+                    } 
+                } else { G.entities.splice(i, 1); damage(); }
+                break;
+            }
+        }
+        if(e.y > G.h + 100) { if(e.isBoss) end(false); else if(e.isE) damage(); G.entities.splice(i, 1); }
+    }
+
+    G.bullets.forEach((b, i) => { b.y -= 45; ctx.fillStyle = b.h ? "#00F2FF" : "#A29BFE"; ctx.fillRect(b.x-2, b.y, 4, 25); if(b.y < -50) G.bullets.splice(i, 1); });
+    
+    // PLAYER RENDER (with flickering invincibility)
+    if(G.player.invincible % 200 < 100) {
+        ctx.fillStyle = G.player.hyper > 0 ? "#00F2FF" : "#5B5B7B";
+        ctx.beginPath(); ctx.arc(G.player.x, G.player.y, 25, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#FFF"; ctx.font="bold 16px sans-serif"; ctx.fillText("x"+G.factor, G.player.x, G.player.y+6);
+    }
+
+    ctx.restore();
+    requestAnimationFrame(loop);
+}
+
+function damage() { SFX.fail(); G.lives--; updateLivesUI(); G.shake = 10; if(G.lives <= 0) end(false); }
+function updateLivesUI() { document.getElementById('lives-txt').innerText = "●●●●●".slice(0, Math.max(0, G.lives)) + "○".repeat(5-Math.max(0, G.lives)); }
+
+setup();
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         /* Base CSS */
-        :root { --bg-color: #F4EFEA; --card-bg: #FFFFFF; --primary-accent: #E69A8D; --secondary-accent: #5EBEC4; --text-main: #2C3E50; --nav-bg: rgba(244, 239, 234, 0.85); --ad-bg: #EAE3DC; }
+        :root { --bg-color: #E69A8D; --card-bg: #FFFFFF; --primary-accent: #636363; --secondary-accent: #505050; --text-main: #2C3E50; --nav-bg: rgba(244, 239, 234, 0.85); --ad-bg: #EAE3DC; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Josefin Sans', sans-serif; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
         
@@ -126,66 +126,18 @@
             <span style="color: var(--text-main);">&</span> 
             <a href="story_monoliath.html" class="title-link glow-monoliath">MonoliATH</a>
         </h1>
-        <p>Follow the journey of Dovit from small-scale survival to a grand, harmonic integration with the MonoliATH. By aligning the narrative beats with primary mathematics concepts, the curriculum evolves alongside Dovit’s growing relationship with the giant.</p>
+        <p>All shall bow before the great MonoliATH. </p>
 
         <script>
             // 1. Create a list of objects containing both Title and Description
             const chapters = [
                 {
-                    title: "Dovit",
-                    description: "Dovit establishes his identity. He is small but significant. He moves across digit-platforms where his position determines his value."
+                    title: "The Factor",
+                    description: "An anomaly designated 'Dovit' has breached the Valley's numerical defenses. I have deployed my variables to test its validity. As it aggressively targets my multiples, I am forced to manifest my core physical form to purge this erratic element from the system."
                 },
                 {
-                    title: "Orb",
-                    description: "In the shadow of the MonoliATH, Dovit must collect light while maintaining a specific radius from danger."
-                },
-                {
-                    title: "Vertex",
-                    description: "Dovit begins to map MonoliATH’s surface, connecting vertices to claim territory and understand the boundaries of this new world."
-                },
-                {
-                    title: "Totemcraft",
-                    description: "Dovit crafts totems and offers to the MonoliATH — by balancing specific masses. He learns that the giant values precision and balance."
-                },
-                {
-                    title: "Ascend",
-                    description: "Dovit begins the vertical climb. Each level of the MonoliATH requires him to calculate the space he occupies to fit through the giant's shifting mechanisms."
-                },
-                {
-                    title: "Fragment",
-                    description: "On the steep slopes, Dovit learns to divide himself or his power into fractions. He realizes he is a fragment of MonoliATH's world, yet essential to its completion."
-                },
-                 {
-                    title: "Cipher",
-                    description: "Dovit encounters the giant's internal logic. By rotating numerical rings, he solves the equations that keep the MonoliATH’s systems running."
-                },
-                {
-                    title: "Lighthouse",
-                    description: "Dovit uses beams of light to guide others through MonoliATH’s influence, learning the precise angles required for peaceful communication."
-                },
-                {
-                    title: "Angle Defender",
-                    description: "MonoliATH tests Dovit's resolve. Dovit doesn't attack; he uses geometric precision to deflect chaos, turning defense into a display of mathematical mastery."
-                },
-                 {
-                    title: "Eurythmy",
-                    description: "Dovit moves in rhythm with MonoliATH’s heartbeat. He follows patterns on a grid, proving he can exist in perfect synchronization with the Monoliath."
-                },
-                {
-                    title: "Architect",
-                    description: "Dovit helps MonoliATH rebuild itself. By placing 3D geometric shapes in time with the music, he repairs the giant’s fragmented form."
-                },
-                 {
-                    title: "Illuminate",
-                    description: "Dovit brings total light to MonoliATH’s psyche. By playing cards that charge the grid, he banishes the remaining shadows of fear and conflict."
-                },
-                {
-                    title: "Monolith",
-                    description: "Dovit navigates the final, beautiful isometric puzzles of MonoliATH’s mind. The world is no longer flat but a complex, multi-dimensional reality."
-                },
-                {
-                    title: "MonoliATH",
-                    description: "The final state of equilibrium. Dovit and MonoliATH exist in a balanced state of area and volume. The MonoliATH has been integrated, and the world is at peace."
+                    title: "The Forge",
+                    description: "The physical conflict is over; now begins the test of equilibrium within the ethereal plane. I present absolute mathematical laws—ratios, sums, and limits. The anomaly must catch the falling fragments of logic and adapt its form to match mine, proving it is worthy of integration."
                 }
             ];
             
@@ -197,11 +149,11 @@
                 // Notice we are now using ${chapter.title} and ${chapter.description}
                 document.write(`
                 <div class="story-step">
-                    <h2>Chapter ${levelNum}: ${chapter.title}</h2>
+                    <h2>${chapter.title}</h2>
                     <p>${chapter.description}</p>
                     <img src="https://via.placeholder.com/800x250/${color}/FFFFFF?text=Chapter+${levelNum}+Preview" alt="${chapter.title}">
                     <br>
-                    <a href="simulation-${levelNum}.html" class="play-btn">Play Chapter ${levelNum}</a>
+                    <a href="simulation-m${levelNum}.html" class="play-btn">Play Game ${levelNum}</a>
                 </div>
                 `);
             });

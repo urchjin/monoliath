@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>THE FORGE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;400;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc; /* Light, airy background */
+            --p1: #2dd4bf;
+            --p2: #38bdf8;
+            --gold: #f59e0b;
+            --text: #1e293b;
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: 'Montserrat', sans-serif; overflow: hidden;
+            touch-action: none; user-select: none;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            position: fixed; inset: 0; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(248, 250, 252, 0.9);
+        }
+
+        #result-screen { display: none; }
+
+        h1 { font-weight: 900; letter-spacing: 10px; font-size: clamp(2rem, 8vw, 3rem); text-align: center; margin-bottom: 30px; color: var(--text); }
+        
+        .btn {
+            background: white; border: 2px solid var(--text); color: var(--text);
+            padding: 15px 40px; cursor: pointer; font-family: 'Montserrat';
+            font-weight: 900; letter-spacing: 2px; text-transform: uppercase; transition: 0.3s;
+        }
+        .btn:hover { background: var(--text); color: white; transform: translateY(-3px); }
+
+        /* --- HUD --- */
+        #hud {
+            position: absolute; top: 0; width: 100%; display: none;
+            justify-content: space-between; padding: 30px 50px; box-sizing: border-box;
+            z-index: 10; pointer-events: none;
+        }
+        .m-text { font-size: 0.8rem; font-weight: 900; color: var(--gold); text-transform: uppercase; min-height: 2.5rem; letter-spacing: 1px; }
+        .m-val-display { font-size: 4rem; font-weight: 100; margin-top: -10px; }
+        #timer { font-size: 2.5rem; font-weight: 900; opacity: 0.2; }
+
+        /* --- Gallery --- */
+        .gallery { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .result-card {
+            background: white; border: 1px solid #e2e8f0;
+            padding: 20px; width: 240px; border-radius: 12px; text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        .result-card.winner { border-color: var(--gold); background: #fffbeb; }
+        .mini-canvas { background: #f1f5f9; margin: 15px 0; border-radius: 8px; width: 100%; height: 150px; }
+        .res-val { font-size: 3rem; font-weight: 100; margin: 5px 0; }
+
+        #game-container { display: flex; width: 100vw; height: 100vh; background: #fff; }
+        canvas { width: 50%; height: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="start-screen" class="screen">
+    <h1>THE<br>FORGE</h1>
+    <p style="letter-spacing: 2px; font-size: 0.7rem; margin-bottom: 30px; opacity: 0.6;">ETHEREAL ZEN MODE</p>
+    <div style="display: flex; gap: 20px;">
+        <button class="btn" onclick="boot(false)">PVP</button>
+        <button class="btn" onclick="boot(true)">VS AI</button>
+    </div>
+</div>
+
+<div id="result-screen" class="screen">
+    <h1 id="victory-title">EVALUATION</h1>
+    <div class="gallery" id="end-gallery">
+        <div class="result-card" id="card-p1">
+            <div id="p1-res-m" style="font-size: 0.6rem; font-weight: 900; color: var(--gold); height: 30px;"></div>
+            <canvas id="p1-mini" class="mini-canvas"></canvas>
+            <div class="res-val" id="p1-res-v">0</div>
+            <div id="p1-res-status" style="font-weight:900; font-size:0.6rem; letter-spacing: 1px;">TRY AGAIN</div>
+        </div>
+        <div class="result-card" id="card-p2">
+            <div id="p2-res-m" style="font-size: 0.6rem; font-weight: 900; color: var(--gold); height: 30px;"></div>
+            <canvas id="p2-mini" class="mini-canvas"></canvas>
+            <div class="res-val" id="p2-res-v">0</div>
+            <div id="p2-res-status" style="font-weight:900; font-size:0.6rem; letter-spacing: 1px;">FAILED</div>
+        </div>
+    </div>
+    <button class="btn" style="margin-top: 40px;" onclick="location.reload()">Play Again</button>
+</div>
+
+<div id="hud">
+    <div class="mission-group">
+        <div class="m-text" id="hud-p1-m"></div>
+        <div class="m-val-display" id="hud-p1-v">5</div>
+    </div>
+    <div id="timer">60</div>
+    <div class="mission-group" style="text-align: right;">
+        <div class="m-text" id="hud-p2-m"></div>
+        <div class="m-val-display" id="hud-p2-v">5</div>
+    </div>
+</div>
+
+<div id="game-container">
+    <canvas id="p1Canvas"></canvas>
+    <canvas id="p2Canvas"></canvas>
+</div>
+
+<script>
+// --- LIGHTHEARTED AUDIO ENGINE ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSfx(freq, type, decay, vol) {
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + decay);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + decay);
+}
+
+function startZenSparkle() {
+    const notes = [523.25, 659.25, 783.99, 987.77]; // C5, E5, G5, B5 (C Major 7)
+    
+    function chime() {
+        if(!gameActive) return;
+        const note = notes[Math.floor(Math.random() * notes.length)];
+        playSfx(note, 'sine', 3, 0.02);
+        setTimeout(chime, 2000 + Math.random() * 3000);
+    }
+    chime();
+}
+
+// --- GAMEPLAY LOGIC ---
+const p1Canvas = document.getElementById('p1Canvas');
+const p2Canvas = document.getElementById('p2Canvas');
+const ctx1 = p1Canvas.getContext('2d');
+const ctx2 = p2Canvas.getContext('2d');
+
+let gameActive = false, isAI = false, timeLeft = 60;
+
+const missions = [
+    { text: "Be 3 units taller", check: (a, b) => a === b + 3 },
+    { text: "Be exactly half", check: (a, b) => a === b / 2 },
+    { text: "Be 2 units shorter", check: (a, b) => a === b - 2 },
+    { text: "Match their height", check: (a, b) => a === b },
+    { text: "Reach total of 10", check: (a, b) => a + b === 10 },
+    { text: "The whole is 12", check: (a, b) => a + b === 12 },
+    { text: "Be the missing part to make 24", check: (a, b) => a + b === 24 },
+    { text: "Difference must be 4", check: (a, b) => Math.abs(a - b) === 4},
+    { text: "Be between 5 and 10", check: (a, b) => a > 5 && a < 10},
+    { text: "Be an odd number", check: (a, b) => a % 2 !== 0},
+    { text: "Be an even number", check: (a, b) => a % 2 == 0},
+    { text: "Be a multiple of 2", check: (a, b) => a % 2 === 0},
+    { text: "Be a multiple of 3", check: (a, b) => a % 3 === 0},
+    { text: "Be a multiple of 5", check: (a, b) => a % 5 === 0},
+    { text: "Be 3 times as tall", check: (a, b) => a === b * 3}
+];
+
+class Player {
+    constructor(ctx, color, isP1) {
+        this.ctx = ctx; this.color = color; this.isP1 = isP1;
+        this.score = 5; this.x = 0.5; this.blocks = [];
+        this.mission = missions[0]; this.isMet = false;
+    }
+
+    update(otherScore) {
+        if (Math.random() < 0.02) {
+            this.blocks.push({ x: Math.random() * 0.8 + 0.1, y: -50, val: [1, -1, 2, -2][Math.floor(Math.random() * 4)] });
+        }
+        
+        let wasMet = this.isMet;
+        this.isMet = this.mission.check(this.score, otherScore);
+        
+        if (this.isMet && !wasMet) playSfx(1046.5, 'sine', 1.5, 0.05); // High C ping
+
+        for (let i = this.blocks.length - 1; i >= 0; i--) {
+            let b = this.blocks[i]; b.y += 4;
+            let pY = this.ctx.canvas.height - (this.score * 22) - 100;
+            let pX = this.x * this.ctx.canvas.width;
+
+            if (b.y > pY && b.y < pY + 40 && Math.abs((b.x * this.ctx.canvas.width) - pX) < 50) {
+                this.score = Math.max(1, Math.min(25, this.score + b.val));
+                this.blocks.splice(i, 1);
+                playSfx(this.isP1 ? 880 : 659, 'sine', 0.4, 0.08); // High, soft pings
+            } else if (b.y > this.ctx.canvas.height) this.blocks.splice(i, 1);
+        }
+    }
+
+    draw(isMini = false, mCtx = null) {
+        const c = mCtx || this.ctx; const cvs = c.canvas;
+        if(!isMini) c.clearRect(0,0,cvs.width,cvs.height);
+        
+        const px = isMini ? (cvs.width/2 - 30) : (this.x * cvs.width - 40);
+        const unitH = isMini ? 6 : 20, unitW = isMini ? 60 : 80;
+
+        for(let i=0; i<this.score; i++) {
+            let y = cvs.height - (i+1)*(unitH+2) - (isMini ? 10 : 100);
+            c.fillStyle = this.isMet ? "#f59e0b" : this.color;
+            c.fillRect(px, y, unitW, unitH);
+            c.strokeStyle = "rgba(0,0,0,0.05)";
+            c.strokeRect(px, y, unitW, unitH);
+        }
+
+        if(!isMini) {
+            this.blocks.forEach(b => {
+                c.fillStyle = b.val > 0 ? "#2dd4bf" : "#fb7185";
+                c.beginPath(); c.arc(b.x * cvs.width, b.y, 14, 0, Math.PI*2); c.fill();
+                c.fillStyle = "white"; c.font = "bold 12px Montserrat"; c.textAlign = "center";
+                c.fillText((b.val > 0 ? "+" : "") + b.val, b.x * cvs.width, b.y + 5);
+            });
+        }
+    }
+}
+
+let p1, p2;
+
+function boot(vsAI) {
+    isAI = vsAI;
+    audioCtx.resume();
+    gameActive = true;
+    startZenSparkle();
+    document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('hud').style.display = 'flex';
+    p1 = new Player(ctx1, '#2dd4bf', true);
+    p2 = new Player(ctx2, '#38bdf8', false);
+    p1.mission = missions[Math.floor(Math.random() * missions.length)];
+    p2.mission = missions[Math.floor(Math.random() * missions.length)];
+    resize();
+    
+    setInterval(() => {
+        if(!gameActive) return;
+        timeLeft--;
+        document.getElementById('timer').innerText = timeLeft;
+        playSfx(1200, 'sine', 0.02, 0.01); // Tiny toy-clock tink
+        if(timeLeft <= 0) end();
+    }, 1000);
+    loop();
+}
+
+function end() {
+    gameActive = false;
+    document.getElementById('result-screen').style.display = 'flex';
+    const show = (p, id) => {
+        document.getElementById(`${id}-res-v`).innerText = p.score;
+        document.getElementById(`${id}-res-m`).innerText = p.mission.text;
+        const s = document.getElementById(`${id}-res-status`);
+        if(p.isMet) {
+            s.innerText = "MISSION SUCCESS"; s.style.color = "#059669";
+            document.getElementById(`card-${id}`).classList.add('winner');
+        }
+        const mc = document.getElementById(`${id}-mini`);
+        mc.width = 240; mc.height = 150;
+        p.draw(true, mc.getContext('2d'));
+    };
+    show(p1, 'p1'); show(p2, 'p2');
+}
+
+function loop() {
+    if(!gameActive) return;
+    p1.update(p2.score); p2.update(p1.score);
+    if(isAI) p2.x += (p2.blocks.length > 0 ? p2.blocks[0].x - p2.x : 0) * 0.04;
+    p1.draw(); p2.draw();
+    document.getElementById('hud-p1-m').innerText = p1.mission.text;
+    document.getElementById('hud-p2-m').innerText = p2.mission.text;
+    document.getElementById('hud-p1-v').innerText = p1.score;
+    document.getElementById('hud-p2-v').innerText = p2.score;
+    requestAnimationFrame(loop);
+}
+
+window.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft') p1.x = Math.max(0.1, p1.x - 0.08);
+    if(e.key === 'ArrowRight') p1.x = Math.min(0.9, p1.x + 0.08);
+    if(!isAI) {
+        if(e.key.toLowerCase() === 'a') p2.x = Math.max(0.1, p2.x - 0.08);
+        if(e.key.toLowerCase() === 'd') p2.x = Math.min(0.9, p2.x + 0.08);
+    }
+});
+
+function move(e) {
+    if(!gameActive) return;
+    let t = e.touches ? e.touches[0] : e;
+    let n = t.clientX / window.innerWidth;
+    if(n < 0.5) p1.x = n * 2; else if(!isAI) p2.x = (n-0.5)*2;
+}
+window.addEventListener('mousemove', e => { if(e.buttons > 0) move(e); });
+window.addEventListener('touchmove', e => { e.preventDefault(); move(e); }, {passive: false});
+
+function resize() {
+    p1Canvas.width = p2Canvas.width = window.innerWidth / 2;
+    p1Canvas.height = p2Canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+</script>
+</body>
+</html>
