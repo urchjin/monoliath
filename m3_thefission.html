@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Fission</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;800&display=swap');
+
+        :root {
+            --bg: #0B0E14; --text: #E2E8F0; --th: #A0AEC0; 
+            --h: #38B2AC; --t: #ED8936; --o: #ECC94B; 
+            --panel: rgba(20, 25, 35, 0.95);
+            --shadow-glow: 0 10px 25px rgba(56, 178, 172, 0.15);
+            --grid-line: rgba(255,255,255,0.05);
+            --shadow-drag: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        html, body {
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: var(--bg); color: var(--text);
+            font-family: 'Montserrat', sans-serif; 
+            user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+            position: fixed; overflow: hidden; overscroll-behavior: none;
+        }
+
+        h1, h2, h3 { margin: 0; font-weight: 500; letter-spacing: 1px; }
+        button { border: none; font-family: inherit; font-weight: 800; cursor: pointer; transition: 0.2s; touch-action: manipulation; }
+        button:disabled { opacity: 0.3; transform: scale(0.95); }
+
+        /* --- SCREENS --- */
+        .screen {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: none; flex-direction: column; align-items: center;
+            overflow-y: auto; overflow-x: hidden; padding: 20px; box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+        #menu-screen { display: flex; justify-content: center; }
+
+        /* --- MENU --- */
+        .menu-box { background: var(--panel); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px;}
+        .level-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0; }
+        .lvl-btn { width: 45px; height: 45px; border-radius: 12px; background: #2D3748; color: white; font-size: 1.1rem; }
+        .lvl-btn.primary { background: var(--h); color: #000; width: 100%; height: 50px; border-radius: 25px; margin-top: 10px;}
+
+        /* --- GAME UI --- */
+        .game-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .game-title { font-size: 1.1rem; font-weight: 800; color: var(--h); letter-spacing: 2px; text-transform: uppercase; }
+        .hud-btn { background: #2D3748; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; text-transform: uppercase; }
+
+        /* --- DYNAMIC SOKOBAN MAP --- */
+        .map-wrapper { width: 100%; max-width: 450px; margin-bottom: 20px; display: flex; justify-content: center; }
+        #map-container {
+            position: relative; width: 100%; 
+            background: #12161F; border-radius: 12px; border: 2px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        
+        .tile { position: absolute; box-sizing: border-box; border: 1px solid var(--grid-line); display: flex; align-items: center; justify-content: center; transition: left 0.15s ease-out, top 0.15s ease-out; }
+        .tile-wall { background: #2D3748; border-radius: 4px; transform: scale(0.9); box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1); }
+        .tile-target { border: 2px dashed var(--h); border-radius: 8px; flex-direction: column; background: rgba(56, 178, 172, 0.05); }
+        .target-val { font-size: 0.65rem; color: var(--h); font-weight: 800; text-align: center; }
+        
+        .tile-block { border-radius: 8px; font-weight: 800; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2; cursor: pointer; border: 2px solid transparent; }
+        
+        .tile-block.old-core { background: #2D3748; border-color: #718096; color: #FFF; }
+        .tile-block.new-core { background: #1A202C; border-color: var(--h); color: var(--h); }
+        
+        .tile-block.selected { border-color: var(--o) !important; background: var(--o) !important; color: #000 !important; box-shadow: 0 0 15px var(--o); transform: scale(1.05); }
+        .tile-block.resolved { border-color: var(--h) !important; background: rgba(56, 178, 172, 0.2) !important; color: var(--h) !important; }
+        
+        .tile-player { z-index: 3; transition: left 0.15s ease-out, top 0.15s ease-out; }
+        .player-core { width: 60%; height: 60%; background: var(--o); border-radius: 50%; box-shadow: 0 0 15px var(--o); }
+
+        /* --- INVENTORY & CONTROLS --- */
+        .bottom-hud { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; flex: 1; }
+        
+        .inventory-panel { background: var(--panel); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        .inv-title { font-size: 0.65rem; color: var(--th); font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .inv-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+        
+        .inv-slot { 
+            flex-shrink: 0; width: 45px; height: 45px; border-radius: 10px; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; border: 2px solid transparent; transition: 0.2s; cursor: pointer;
+        }
+        .inv-slot.filled.old-core { background: #2D3748; border-color: #718096; color: #FFF; box-shadow: var(--shadow-glow); }
+        .inv-slot.filled.new-core { background: #1A202C; border-color: rgba(255,255,255,0.1); color: var(--h); box-shadow: var(--shadow-glow); }
+        .inv-slot.selected { border-color: var(--o) !important; background: var(--o) !important; color: #000 !important; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(236, 201, 75, 0.3); }
+
+        .control-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .action-cluster { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-right: 20px; }
+        .action-cluster button { padding: 15px; border-radius: 12px; font-size: 0.8rem; background: #2D3748; color: white; }
+        .action-cluster button.primary { background: var(--t); color: #000; }
+
+        .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; }
+        .d-btn { background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--h); font-size: 1.5rem; }
+        .d-btn:active { background: var(--h); color: #000; transform: scale(0.9); }
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+        .d-down { grid-column: 2; grid-row: 3; }
+
+        /* --- REFINERY LAB --- */
+        .lab-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--panel); border-radius: 18px; margin-bottom: 15px; width: 100%; max-width: 500px;}
+        .lab-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 500px; flex: 1; min-height: 0; }
+        .lab-section { background: rgba(0,0,0,0.3); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; flex: 1; min-height: 0; border: 1px solid rgba(255,255,255,0.02); }
+        .bottom-half { display: flex; gap: 12px; flex: 1.2; min-height: 0; }
+        .bottom-half .lab-section { flex: 1; }
+
+        .section-title { font-size: 0.6rem; font-weight: 800; color: var(--th); letter-spacing: 2px; text-align: center; margin-bottom: 8px; }
+        .pv-container { display: flex; flex: 1; gap: 6px; min-height: 0; }
+        .pv-col {
+            flex: 1; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; padding-bottom: 30px;
+            display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px;
+            position: relative; border: 2px dashed rgba(255,255,255,0.1); transition: 0.2s; overflow-y: auto;
+        }
+        .pv-col.drag-over { border-color: var(--h); background: rgba(56, 178, 172, 0.1); }
+        .pv-col.split-over { border-color: var(--o); background: rgba(236, 201, 75, 0.1); }
+        .col-label { position: absolute; bottom: 6px; left: 0; width: 100%; text-align: center; font-size: 0.55rem; color: #718096; font-weight: 800; pointer-events: none; }
+
+        .block { border-radius: 4px; cursor: grab; position: relative; touch-action: none; pointer-events: auto; }
+        .b-100 { width: 34px; height: 34px; background: var(--h); }
+        .b-10 { width: 10px; height: 34px; background: var(--t); }
+        .b-1 { width: 14px; height: 14px; background: var(--o); }
+        .block.is-dragging { position: fixed; pointer-events: none; z-index: 99999; transform: scale(1.15) rotate(-2deg); box-shadow: var(--shadow-drag); }
+
+        .drag-badge { position: absolute; top: -8px; right: -8px; background: #E53E3E; color: white; font-size: 0.6rem; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+
+        .particle { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 999999; transition: transform 0.6s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.6s ease; }
+        .shockwave { position: fixed; width: 50px; height: 50px; border-radius: 50%; border: 4px solid white; pointer-events: none; z-index: 999998; transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.5s ease; }
+        .screen-flash { position: fixed; inset: 0; background: white; z-index: 9999999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out; }
+
+        button.mode-toggle { background: #2D3748; color: var(--th); border: 1px solid rgba(255,255,255,0.1); }
+        button.mode-toggle.active { background: var(--o); color: #000; }
+
+        .victory-stats { background: rgba(0,0,0,0.5); border-radius: 15px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px; width: 100%; max-width: 400px; }
+        .victory-stats .stat-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 0.85rem; margin: 10px 0; color: var(--th); }
+        .victory-stats .stat-val { color: #FFF; }
+        .victory-stats .stat-val.old { color: var(--th); }
+        .victory-stats .stat-val.new { color: var(--h); }
+
+        @media (max-width: 450px) { .d-pad { grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); } .b-100{width:28px;height:28px;} .b-10{height:28px;} .equation-display { font-size: 1.1rem; } }
+    </style>
+</head>
+<body>
+
+<div id="screen-flash" class="screen-flash"></div>
+
+<div id="menu-screen" class="screen" style="display: flex;">
+    <div class="menu-box">
+        <h1 style="color: var(--h); margin-bottom: 10px; font-weight: 1000; letter-spacing: 4px;">THE FISSION</h1>
+        <p style="color: var(--th); font-size: 0.8rem; margin-bottom: 20px; font-weight: 500;">
+            Push derelict cores onto targets. Extract or Inject energy in the Lab. <br><br>
+            <span style="color:#FFF;">Challenge:</span> Try to power the factory using as much recycled Derelict Energy (Light) as possible!
+        </p>
+        <div class="level-grid" id="level-grid"></div>
+        <button class="lvl-btn primary" onclick="window.startGame(-1)">Generate Random Sector</button>
+    </div>
+</div>
+
+<div id="game-screen" class="screen">
+    <div class="game-header">
+        <div class="game-title" id="lvl-title">SECTOR 1</div>
+        <div>
+            <button class="hud-btn" onclick="window.restartLevel()">Restart</button>
+            <button class="hud-btn" onclick="window.goToMenu()">Menu</button>
+        </div>
+    </div>
+
+    <div class="map-wrapper">
+        <div id="map-container"></div>
+    </div>
+
+    <div class="bottom-hud">
+        <div class="inventory-panel">
+            <div class="inv-title"><span>INVENTORY CHEST</span><span id="inv-count">0/7</span></div>
+            <div class="inv-grid" id="inv-grid"></div>
+        </div>
+
+        <div class="control-panel">
+            <div class="action-cluster">
+                <button id="btn-split" disabled onclick="window.openLab('split')">EXTRACT (SPLIT)</button>
+                <button id="btn-fuse" class="primary" disabled onclick="window.openLab('fuse')">INJECT (FUSE)</button>
+            </div>
+            <div class="d-pad">
+                <div class="d-btn d-up" onclick="window.movePlayer(0, -1)">▲</div>
+                <div class="d-btn d-left" onclick="window.movePlayer(-1, 0)">◀</div>
+                <div class="d-btn d-right" onclick="window.movePlayer(1, 0)">▶</div>
+                <div class="d-btn d-down" onclick="window.movePlayer(0, 1)">▼</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="lab-screen" class="screen">
+    <div class="lab-header">
+        <div id="lab-equation" style="font-size:1.3rem; font-weight:800; color:#FFF;">0 = 0 + 0</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-magnet" class="mode-toggle" onclick="window.gameToggleMagnet()" style="padding: 10px 12px; font-size: 0.7rem; border-radius: 8px;">SELECT ALL: OFF</button>
+            <button onclick="window.closeLab()" style="padding: 10px 12px; font-size: 0.7rem; background: #2D3748; border-radius: 8px;">Abort</button>
+            <button class="primary" id="btn-confirm" disabled onclick="window.confirmLab()" style="padding: 10px 12px; font-size: 0.7rem; color:#000; border-radius: 8px;">Execute</button>
+        </div>
+    </div>
+
+    <div class="lab-grid">
+        <div class="lab-section" id="sec-top">
+            <div class="section-title" id="title-top">UNIFIED CORE</div>
+            <div class="pv-container">
+                <div class="pv-col" data-pv="100"><div class="col-label">100s</div></div>
+                <div class="pv-col" data-pv="10"><div class="col-label">10s</div></div>
+                <div class="pv-col" data-pv="1"><div class="col-label">1s</div></div>
+            </div>
+        </div>
+        <div class="bottom-half">
+            <div class="lab-section" id="sec-left">
+                <div class="section-title" id="title-left">ALPHA</div>
+                <div class="pv-container">
+                    <div class="pv-col" data-pv="100"></div><div class="pv-col" data-pv="10"></div><div class="pv-col" data-pv="1"></div>
+                </div>
+            </div>
+            <div class="lab-section" id="sec-right">
+                <div class="section-title" id="title-right">BETA</div>
+                <div class="pv-container">
+                    <div class="pv-col" data-pv="100"></div><div class="pv-col" data-pv="10"></div><div class="pv-col" data-pv="1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fullscreen-overlay" id="victory-overlay" style="display: none; justify-content: flex-start; padding-top: 8vh; overflow-y: auto;">
+    <h1 style="color: var(--h); font-size: 2.2rem; margin-bottom: 10px; font-weight: 800;">SECTOR CLEAR</h1>
+    
+    <div class="victory-stats" id="final-stats">
+        </div>
+    
+    <button class="primary" onclick="window.goToMenu()">RETURN TO MENU</button>
+</div>
+
+<script>
+    // --- ES5 UTILS ---
+    function safeRemove(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
+    
+    // --- AUDIO & PARTICLES ---
+    var colorMap = { '100': '#38B2AC', '10': '#ED8936', '1': '#ECC94B' };
+    var freqMap = { '100': 261.63, '10': 392.00, '1': 523.25 };
+    var mvScale = [146.83, 174.61, 196.00, 207.65, 220.00, 261.63, 293.66];
+
+    var ParticleEngine = {
+        flash: function() { var f = document.getElementById('screen-flash'); if(f){ f.style.opacity='0.2'; setTimeout(function(){f.style.opacity='0';}, 100); } },
+        burst: function(x, y, targetPv) {
+            this.flash(); var c = colorMap[targetPv] || '#FFF';
+            for(var i=0; i<12; i++) {
+                var p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = c;
+                p.style.left = x+'px'; p.style.top = y+'px'; p.style.boxShadow = "0 0 10px "+c; document.body.appendChild(p);
+                var a = Math.random()*360*Math.PI/180, d = Math.random()*60+20;
+                var tx = Math.cos(a)*d, ty = Math.sin(a)*d;
+                (function(part, dx, dy) {
+                    void part.offsetWidth;
+                    setTimeout(function() { part.style.transform = 'translate('+dx+'px, '+dy+'px) scale(0)'; part.style.opacity = '0'; }, 10);
+                    setTimeout(function() { safeRemove(part); }, 600);
+                })(p, tx, ty);
+            }
+        },
+        shockwave: function(x, y, targetPv) {
+            this.flash(); var p = document.createElement('div'); p.className = 'shockwave';
+            p.style.borderColor = colorMap[targetPv] || '#FFF'; p.style.left = x+'px'; p.style.top = y+'px'; document.body.appendChild(p);
+            void p.offsetWidth;
+            setTimeout(function() { p.style.transform = 'translate(-50%, -50%) scale(3)'; p.style.opacity = '0'; }, 10);
+            setTimeout(function() { safeRemove(p); }, 500);
+        }
+    };
+
+    var GameAudio = {
+        ctx: null, bgmStarted: false,
+        init: function() { try { var A = window.AudioContext || window.webkitAudioContext; if(A) this.ctx = new A(); } catch(e){} },
+        play: function(f, t, d, v) {
+            if(!this.ctx) return;
+            try { if(this.ctx.state==='suspended') this.ctx.resume();
+                var o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = t; o.frequency.value = f; g.gain.setValueAtTime(v, this.ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + d);
+                o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + d);
+            } catch(e){}
+        },
+        startBGM: function() {
+            if(this.bgmStarted) return; this.bgmStarted = true;
+            var self = this;
+            function playDrone() { if(self.ctx) self.play(73.42, 'sine', 5.0, 0.08); setTimeout(playDrone, 5000); }
+            function playMelody() {
+                if(self.ctx) { var note = mvScale[Math.floor(Math.random() * mvScale.length)]; self.play(note, 'triangle', 2.5, 0.05); }
+                setTimeout(playMelody, Math.floor(Math.random() * 800) + 400);
+            }
+            playDrone(); playMelody();
+        },
+        sfxStep: function() { this.play(150, 'triangle', 0.1, 0.05); },
+        sfxPush: function() { this.play(100, 'square', 0.2, 0.1); },
+        sfxSelect: function() { this.play(600, 'sine', 0.1, 0.03); },
+        sfxPick: function(pv) { this.play(freqMap[pv]||400, 'triangle', 0.1, 0.05); },
+        sfxDrop: function(pv) { this.play(freqMap[pv]||300, 'sine', 0.15, 0.05); },
+        sfxShatter: function(pv) { var s=this; var b=freqMap[pv]||500; this.play(100,'square',0.3,0.1); for(var i=0;i<5;i++){(function(x){setTimeout(function(){s.play(b+(x*30),'triangle',0.2,0.05);},x*30);})(i);} },
+        sfxFuse: function(pv) { var s=this; var b=freqMap[pv]||400; this.play(80,'square',0.4,0.1); [b*0.5, b, b*1.5].forEach(function(f,i){setTimeout(function(){s.play(f,'sine',0.4,0.05);},i*50);}); },
+        sfxWin: function() { var s=this; [523, 659, 783, 1046].forEach(function(f,i){setTimeout(function(){s.play(f,'triangle',0.8,0.05);},i*120);}); }
+    };
+
+    // --- 20 VERIFIED SOKOBAN LEVELS ---
+    var rawLevels = [
+        { M: ["#####","#T B@#","#####"] },
+        { M: ["######","#T .@#","# B  #","######"] },
+        { M: ["#####","#T .#","# B #","# @ #","#####"] },
+        { M: ["#######","#T B  #","#T B @#","#######"] },
+        { M: ["#######","#T   @#","#  B  #","#T B  #","#######"] },
+        { M: ["#######","#T # T#","#  B  #","#  B @#","#######"] },
+        { M: ["########","#T  # T#","# B   B#","#   @  #","########"] },
+        { M: ["########","#T T T #","# B B B#","#   @  #","########"] },
+        { M: ["########","#T # T #","#  B  T#","# B B@ #","########"] },
+        { M: ["#########","#T  T  T#","#   B   #","# B @ B #","#########"] },
+        { M: ["#########","#T  #  T#","# B T B #","#   B   #","#   @   #","#########"] },
+        { M: ["#########","#T  B  T#","#   #   #","#T  B  @#","#   B   #","#########"] },
+        { M: ["##########","#T  B B T#","#   @    #","#T  B B T#","##########"] },
+        { M: ["##########","#T T  T T#","#        #","# B B B B#","#   @    #","##########"] },
+        { M: ["##########","#T  ##  T#","# B    B #","# B @  B #","#T  ##  T#","##########"] },
+        { M: ["##########","#T #  # T#","#  B  B  #","#  B  B  #","#T #@ # T#","##########"] },
+        { M: ["###########","#T  T T  T#","#  B  B   #","#    @    #","#  B  B   #","###########"] },
+        { M: ["###########","#T    T  T#","#   B B   #","# B  @  B #","#T   B   T#","###########"] },
+        { M: ["###########","#T  T    T#","#  B B B  #","#  B @ B  #","#T       T#","###########"] },
+        { M: ["############","#T   ##   T#","# B B  B B #","#   B  B   #","#T T  @ T T#","############"] }
+    ];
+
+    // --- GAME STATE ---
+    var curLvlIdx = 0;
+    var mapGrid = []; 
+    var cols = 0, rows = 0;
+    var player = {x:0, y:0};
+    
+    // Inventory and Blocks store objects: {val, isOld, id, x, y}
+    var blocks = []; 
+    var targets = []; 
+    var inventory = [];
+    var maxInv = 7;
+    
+    var selectedInvIndices = []; 
+    var selectedBlockId = -1;
+    
+    var labContext = ''; 
+    var magnetMode = false;
+    var dragData = { block: null, ox: 0, oy: 0, p: null, siblings: [] };
+    
+    var splitsInitiated = 0;
+    var fusesInitiated = 0;
+
+    // --- INIT ---
+    window.onload = function() {
+        var lg = document.getElementById('level-grid');
+        for(var i=0; i<rawLevels.length; i++) {
+            var b = document.createElement('button');
+            b.className = 'lvl-btn'; b.innerText = i+1;
+            (function(idx){ b.onclick = function(){ window.startGame(idx); }; })(i);
+            lg.appendChild(b);
+        }
+    };
+
+    window.goToMenu = function() {
+        document.getElementById('victory-overlay').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('lab-screen').style.display = 'none';
+        document.getElementById('menu-screen').style.display = 'flex';
+    };
+
+    window.startGame = function(lvlIdx) {
+        GameAudio.init(); GameAudio.startBGM(); 
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        curLvlIdx = lvlIdx; window.restartLevel();
+    };
+
+    window.restartLevel = function() {
+        var lData;
+        if(curLvlIdx === -1) {
+            // --- GUARANTEED SAFE PROCEDURAL GENERATOR ---
+            var validMap = false;
+            var mArr = [];
+            while(!validMap) {
+                mArr = [];
+                var w = Math.floor(Math.random()*3)+7, h = Math.floor(Math.random()*3)+7;
+                for(var r=0; r<h; r++) {
+                    var rowStr = "";
+                    for(var c=0; c<w; c++) { 
+                        if(r===0||r===h-1||c===0||c===w-1) rowStr += "#"; 
+                        else if (r>1 && r<h-2 && c>1 && c<w-2 && Math.random()<0.15) rowStr += "#"; 
+                        else rowStr += "."; 
+                    }
+                    mArr.push(rowStr);
+                }
+                
+                var isSafeForBlock = function(r, c) {
+                    if(mArr[r][c] !== '.') return false;
+                    for(var dy=-1; dy<=1; dy++) {
+                        for(var dx=-1; dx<=1; dx++) {
+                            if(mArr[r+dy][c+dx] === '#' || mArr[r+dy][c+dx] === 'B') return false;
+                        }
+                    }
+                    return true;
+                };
+
+                var placeBlock = function() {
+                    for(var a=0; a<50; a++) {
+                        var px = Math.floor(Math.random()*(w-4))+2, py = Math.floor(Math.random()*(h-4))+2;
+                        if(isSafeForBlock(py, px)) { 
+                            mArr[py] = mArr[py].substring(0,px) + "B" + mArr[py].substring(px+1); 
+                            return true; 
+                        }
+                    }
+                    return false;
+                };
+
+                var placeEntity = function(char) {
+                    for(var a=0; a<50; a++) {
+                        var px = Math.floor(Math.random()*(w-2))+1, py = Math.floor(Math.random()*(h-2))+1;
+                        if(mArr[py][px] === '.') { 
+                            mArr[py] = mArr[py].substring(0,px) + char + mArr[py].substring(px+1); 
+                            return true; 
+                        }
+                    }
+                    return false;
+                };
+                
+                placeEntity('@');
+                var targetCount = Math.floor(Math.random()*2)+3; // 3 to 4 targets
+                var placedCount = 0;
+                
+                // Ensure 1:1 mapping between blocks and targets
+                for(var e=0; e<targetCount; e++) { 
+                    if(placeBlock()) {
+                        if(placeEntity('T')) {
+                            placedCount++;
+                        } else { break; }
+                    }
+                }
+                if(placedCount >= 2) validMap = true;
+            }
+            lData = { M: mArr };
+            document.getElementById('lvl-title').innerText = "RANDOM SECTOR";
+        } else {
+            lData = rawLevels[curLvlIdx];
+            document.getElementById('lvl-title').innerText = "SECTOR " + (curLvlIdx+1);
+        }
+
+        parseMap(lData.M);
+        generateProceduralMath();
+        
+        selectedInvIndices = []; selectedBlockId = -1;
+        splitsInitiated = 0; fusesInitiated = 0;
+        renderMap(); renderInventory(); updateActionButtons();
+    };
+
+    function parseMap(mapArray) {
+        mapGrid = []; blocks = []; targets = [];
+        rows = mapArray.length; cols = mapArray[0].length;
+        var bCount = 0;
+
+        for(var y=0; y<rows; y++) {
+            var rowArr = [];
+            for(var x=0; x<cols; x++) {
+                var ch = mapArray[y][x];
+                if(ch === '#') rowArr.push(1); else rowArr.push(0);
+                if(ch === '@') { player.x = x; player.y = y; }
+                if(ch === 'B') { blocks.push({x: x, y: y, val: 0, id: bCount, isOld: true}); bCount++; }
+                if(ch === 'T') { targets.push({x: x, y: y, targetVal: 0}); }
+            }
+            mapGrid.push(rowArr);
+        }
+    }
+
+    function generateProceduralMath() {
+        inventory = [];
+        var totalInv = 0;
+        for(var i=0; i<5; i++) {
+            var v = (Math.floor(Math.random()*10) + 1) * 5; 
+            if(v < 5) v = 5;
+            inventory.push({val: v, isOld: false}); // New/Injected Energy
+            totalInv += v;
+        }
+        
+        var totalBlockEnergy = 0;
+        blocks.forEach(function(b) {
+            b.val = (Math.floor(Math.random()*15) + 5) * 10; // Old/Derelict Energy
+            totalBlockEnergy += b.val;
+        });
+        
+        var energyPool = totalInv + totalBlockEnergy;
+        var ePerTarget = Math.floor(energyPool / targets.length); 
+        var remainingEnergy = energyPool;
+        var variance = Math.floor((curLvlIdx > 0 ? curLvlIdx : 1) * 2); 
+        
+        for(var t=0; t<targets.length; t++) {
+            if (t === targets.length - 1) {
+                targets[t].targetVal = Math.floor(remainingEnergy);
+            } else {
+                var fluctuation = (Math.floor(Math.random() * variance) - Math.floor(variance/2)) * 5;
+                var finalTarget = Math.floor(ePerTarget + fluctuation);
+                if(finalTarget < 10) finalTarget = 10;
+                if(finalTarget > remainingEnergy - 10) finalTarget = remainingEnergy - 10;
+                
+                targets[t].targetVal = finalTarget;
+                remainingEnergy -= finalTarget;
+            }
+        }
+    }
+
+    // --- RENDER SOKOBAN ---
+    function renderMap() {
+        var cont = document.getElementById('map-container');
+        cont.innerHTML = '';
+        var ratio = (rows / cols) * 100;
+        cont.style.paddingBottom = Math.floor(ratio) + '%';
+        
+        for(var y=0; y<rows; y++) {
+            for(var x=0; x<cols; x++) {
+                if(mapGrid[y][x] === 1) {
+                    var w = document.createElement('div'); w.className = 'tile tile-wall';
+                    positionTile(w, x, y); cont.appendChild(w);
+                }
+            }
+        }
+
+        targets.forEach(function(t) {
+            var tg = document.createElement('div'); tg.className = 'tile tile-target';
+            tg.innerHTML = '<div class="target-val">' + Math.floor(t.targetVal) + '</div>';
+            positionTile(tg, t.x, t.y); cont.appendChild(tg);
+        });
+
+        blocks.forEach(function(b) {
+            var blk = document.createElement('div'); 
+            var isResolved = targets.some(function(t){ return t.x===b.x && t.y===b.y && b.val === t.targetVal; });
+            
+            var purityClass = b.isOld ? 'old-core' : 'new-core';
+            blk.className = 'tile tile-block ' + purityClass + (b.id === selectedBlockId ? ' selected' : '') + (isResolved ? ' resolved' : '');
+            blk.innerText = Math.floor(b.val);
+            blk.onclick = function() { selectBlock(b.id); };
+            positionTile(blk, b.x, b.y); cont.appendChild(blk);
+        });
+
+        var p = document.createElement('div'); p.className = 'tile tile-player';
+        p.innerHTML = '<div class="player-core"></div>';
+        positionTile(p, player.x, player.y); cont.appendChild(p);
+    }
+
+    function positionTile(el, x, y) {
+        el.style.width = (100/cols) + '%'; el.style.height = (100/rows) + '%';
+        el.style.left = (x*100/cols) + '%'; el.style.top = (y*100/rows) + '%';
+    }
+
+    function renderInventory() {
+        var grid = document.getElementById('inv-grid'); grid.innerHTML = '';
+        document.getElementById('inv-count').innerText = inventory.length + "/" + maxInv;
+        
+        for(var i=0; i<maxInv; i++) {
+            var slot = document.createElement('div');
+            if(i < inventory.length) {
+                var purityClass = inventory[i].isOld ? 'old-core' : 'new-core';
+                slot.className = 'inv-slot filled ' + purityClass + (selectedInvIndices.indexOf(i) > -1 ? ' selected' : '');
+                slot.innerText = Math.floor(inventory[i].val);
+                (function(idx){ slot.onclick = function(){ selectInv(idx); }; })(i);
+            } else { slot.className = 'inv-slot'; }
+            grid.appendChild(slot);
+        }
+    }
+
+    // --- SELECTION & ACTIONS ---
+    function selectBlock(id) {
+        var b = blocks.find(function(x){return x.id === id;});
+        if(!b) return;
+        var dx = Math.abs(b.x - player.x), dy = Math.abs(b.y - player.y);
+        if((dx===1 && dy===0) || (dx===0 && dy===1)) {
+            GameAudio.sfxSelect();
+            selectedBlockId = (selectedBlockId === id) ? -1 : id;
+            renderMap(); updateActionButtons();
+        }
+    }
+
+    function selectInv(idx) {
+        GameAudio.sfxSelect();
+        var pos = selectedInvIndices.indexOf(idx);
+        if (pos > -1) selectedInvIndices.splice(pos, 1);
+        else if (selectedInvIndices.length < 2) selectedInvIndices.push(idx);
+        renderInventory(); updateActionButtons();
+    }
+
+    function updateActionButtons() {
+        var bSplit = document.getElementById('btn-split');
+        var bFuse = document.getElementById('btn-fuse');
+        
+        var canSplit = ((selectedBlockId !== -1 && selectedInvIndices.length === 0) || 
+                        (selectedBlockId === -1 && selectedInvIndices.length === 1)) 
+                        && inventory.length < maxInv;
+                        
+        var canFuse = (selectedBlockId !== -1 && selectedInvIndices.length === 1) || 
+                      (selectedBlockId === -1 && selectedInvIndices.length === 2);
+                      
+        bSplit.disabled = !canSplit;
+        bFuse.disabled = !canFuse;
+    }
+
+    // --- MOVEMENT LOGIC ---
+    window.movePlayer = function(dx, dy) {
+        var nx = player.x + dx, ny = player.y + dy;
+        if(nx<0||nx>=cols||ny<0||ny>=rows||mapGrid[ny][nx] === 1) return; 
+        
+        var bIdx = blocks.findIndex(function(b){ return b.x===nx && b.y===ny; });
+        if(bIdx !== -1) {
+            var b = blocks[bIdx];
+            var bnx = b.x + dx, bny = b.y + dy;
+            if(bnx<0||bnx>=cols||bny<0||bny>=rows||mapGrid[bny][bnx] === 1 || blocks.some(function(ob){ return ob.x===bnx && ob.y===bny; })) return; 
+            
+            b.x = bnx; b.y = bny; GameAudio.sfxPush();
+        } else {
+            GameAudio.sfxStep();
+        }
+        
+        player.x = nx; player.y = ny;
+        
+        if(selectedBlockId !== -1) {
+            var sb = blocks.find(function(x){return x.id === selectedBlockId;});
+            if(sb && Math.abs(sb.x-player.x)+Math.abs(sb.y-player.y) > 1) selectedBlockId = -1;
+        }
+
+        renderMap(); updateActionButtons(); checkWin();
+    };
+
+    function checkWin() {
+        var win = true;
+        var oldUsed = 0; var newUsed = 0;
+        
+        for(var i=0; i<targets.length; i++) {
+            var t = targets[i];
+            var b = blocks.find(function(x){ return x.x===t.x && x.y===t.y; });
+            if(!b || b.val !== t.targetVal) { win = false; break; }
+            else {
+                if(b.isOld) oldUsed += b.val;
+                else newUsed += b.val;
+            }
+        }
+        
+        if(win && targets.length > 0) {
+            setTimeout(function(){
+                GameAudio.sfxWin();
+                
+                document.getElementById('game-screen').style.display = 'none';
+                document.getElementById('victory-overlay').style.display = 'flex';
+                
+                var finalHtml = '<div class="stat-row"><span>LAB ACTIONS:</span> <span class="stat-val">' + (splitsInitiated+fusesInitiated) + ' ('+splitsInitiated+'S / '+fusesInitiated+'F)</span></div>' +
+                                '<div class="stat-row"><span>DERELICT ENERGY SAVED:</span> <span class="stat-val old">' + Math.floor(oldUsed) + '</span></div>' +
+                                '<div class="stat-row"><span>NEW ENERGY INJECTED:</span> <span class="stat-val new">' + Math.floor(newUsed) + '</span></div>';
+                
+                document.getElementById('final-stats').innerHTML = finalHtml;
+                
+            }, 300);
+        }
+    }
+
+    // --- REFINERY LAB CONTEXT LOGIC ---
+    window.gameToggleMagnet = function() {
+        magnetMode = !magnetMode;
+        var b = document.getElementById('btn-magnet');
+        b.innerText = magnetMode ? "SELECT ALL: ON" : "SELECT ALL: OFF";
+        b.className = magnetMode ? "mode-toggle active" : "mode-toggle";
+        GameAudio.sfxSelect();
+    };
+
+    window.openLab = function(mode) {
+        document.getElementById('game-screen').style.display = 'none';
+        document.getElementById('lab-screen').style.display = 'flex';
+        document.querySelectorAll('.pv-col').forEach(function(c) { c.innerHTML = c.dataset.pv ? "<div class='col-label'>"+c.dataset.pv+"s</div>" : ''; });
+        
+        var mBlock = selectedBlockId !== -1 ? blocks.find(function(x){return x.id === selectedBlockId;}) : null;
+        
+        if (mode === 'split') {
+            if (mBlock) {
+                labContext = 'map-split';
+                document.getElementById('title-top').innerText = "UNIFIED CORE (MAP)";
+                document.getElementById('title-left').innerText = "ALPHA (MAP)";
+                document.getElementById('title-right').innerText = "BETA (INVENTORY)";
+                spawnToSection('sec-top', mBlock.val);
+            } else {
+                labContext = 'inv-split';
+                document.getElementById('title-top').innerText = "UNIFIED CORE (INVENTORY)";
+                document.getElementById('title-left').innerText = "ALPHA (INVENTORY)";
+                document.getElementById('title-right').innerText = "BETA (INVENTORY)";
+                spawnToSection('sec-top', inventory[selectedInvIndices[0]].val);
+            }
+        } else {
+            if (mBlock) {
+                labContext = 'map-inv-fuse';
+                document.getElementById('title-top').innerText = "UNIFIED CORE (MAP)";
+                document.getElementById('title-left').innerText = "ALPHA (MAP)";
+                document.getElementById('title-right').innerText = "BETA (INVENTORY)";
+                spawnToSection('sec-left', mBlock.val);
+                spawnToSection('sec-right', inventory[selectedInvIndices[0]].val);
+            } else {
+                labContext = 'inv-inv-fuse';
+                document.getElementById('title-top').innerText = "UNIFIED CORE (INVENTORY)";
+                document.getElementById('title-left').innerText = "ALPHA (INVENTORY 1)";
+                document.getElementById('title-right').innerText = "BETA (INVENTORY 2)";
+                spawnToSection('sec-left', inventory[selectedInvIndices[0]].val);
+                spawnToSection('sec-right', inventory[selectedInvIndices[1]].val);
+            }
+        }
+        updateEquation();
+    };
+
+    function spawnToSection(id, val) {
+        var sec = document.getElementById(id); var rem = val;
+        [100, 10, 1].forEach(function(pv) {
+            var count = Math.floor(rem / pv); rem %= pv;
+            var col = sec.querySelector("[data-pv='" + pv + "']");
+            for(var i=0; i<count; i++) createBlock(pv, col);
+        });
+    }
+
+    function createBlock(pv, parent) {
+        var b = document.createElement('div'); b.className = "block b-" + pv; 
+        b.dataset.val = pv; b.addEventListener('pointerdown', handleDragStart);
+        parent.appendChild(b); return b;
+    }
+
+    function handleDragStart(e) {
+        if (e.button !== 0 && e.type === 'pointerdown' && e.pointerType === 'mouse') return;
+        e.preventDefault(); e.stopPropagation();
+        dragData.block = e.target; dragData.p = dragData.block.parentElement;
+        GameAudio.sfxPick(dragData.block.dataset.val);
+
+        var r = dragData.block.getBoundingClientRect();
+        dragData.ox = e.clientX - r.left; dragData.oy = e.clientY - r.top;
+        
+        dragData.siblings = [];
+        if (magnetMode) {
+            var all = dragData.p.querySelectorAll(".block.b-"+dragData.block.dataset.val);
+            for(var i=0; i<all.length; i++) {
+                if(all[i] !== dragData.block) {
+                    all[i].style.display = 'none';
+                    dragData.siblings.push(all[i]);
+                }
+            }
+            if(dragData.siblings.length > 0) {
+                var badge = document.createElement('div'); badge.className='drag-badge';
+                badge.innerText = dragData.siblings.length + 1; dragData.block.appendChild(badge);
+            }
+        }
+        
+        dragData.block.classList.add('is-dragging');
+        document.body.appendChild(dragData.block);
+        moveGhost(e.clientX, e.clientY);
+        document.addEventListener('pointermove', handleDragMove, {passive: false});
+        document.addEventListener('pointerup', handleDragEnd);
+    }
+
+    function moveGhost(cx, cy) {
+        dragData.block.style.left = (cx - dragData.ox) + 'px';
+        dragData.block.style.top = (cy - dragData.oy) + 'px';
+    }
+
+    function handleDragMove(e) {
+        if (!dragData.block) return;
+        e.preventDefault(); moveGhost(e.clientX, e.clientY);
+        document.querySelectorAll('.pv-col').forEach(function(c) { c.classList.remove('drag-over','split-over'); });
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        if (el) {
+            var dz = el.closest('.pv-col');
+            if (dz) {
+                var v = parseInt(dragData.block.dataset.val);
+                if (dz.dataset.pv === v.toString()) dz.classList.add('drag-over'); 
+                else if (v > 1 && dz.dataset.pv === (Math.floor(v / 10)).toString()) dz.classList.add('split-over'); 
+            }
+        }
+    }
+
+    function handleDragEnd(e) {
+        document.removeEventListener('pointermove', handleDragMove);
+        document.removeEventListener('pointerup', handleDragEnd);
+        if (!dragData.block) return;
+        
+        var el = document.elementFromPoint(e.clientX, e.clientY);
+        var dz = el ? el.closest('.pv-col') : null;
+        var v = parseInt(dragData.block.dataset.val);
+        var count = dragData.siblings.length + 1;
+
+        document.querySelectorAll('.pv-col').forEach(function(c) { c.classList.remove('drag-over','split-over'); });
+
+        if (dz && v > 1 && dz.dataset.pv === (Math.floor(v / 10)).toString()) {
+            var targetPv = dz.dataset.pv;
+            var rect = dz.getBoundingClientRect();
+            var cX = rect.left + rect.width/2, cY = rect.top + rect.height/2;
+
+            GameAudio.sfxShatter(targetPv); ParticleEngine.burst(cX, cY, targetPv);
+            safeRemove(dragData.block);
+            dragData.siblings.forEach(safeRemove);
+            for(var i=0; i<count*10; i++) createBlock(targetPv, dz);
+            dragData.block = null; updateEquation(); return;
+        }
+
+        dragData.block.classList.remove('is-dragging');
+        dragData.block.style.position = 'relative'; dragData.block.style.left = '0'; dragData.block.style.top = '0';
+        var bd = dragData.block.querySelector('.drag-badge'); safeRemove(bd);
+
+        if (dz && dz.dataset.pv === v.toString()) {
+            dz.appendChild(dragData.block); 
+            dragData.siblings.forEach(function(s){ s.style.display='block'; dz.appendChild(s); });
+            GameAudio.sfxDrop(v); triggerAutoFusion(dz); 
+        } else {
+            dragData.p.appendChild(dragData.block); 
+            dragData.siblings.forEach(function(s){ s.style.display='block'; dragData.p.appendChild(s); });
+            GameAudio.sfxDrop(v);
+        }
+        dragData.block = null; updateEquation();
+    }
+
+    function triggerAutoFusion(col) {
+        var blks = Array.prototype.slice.call(col.querySelectorAll('.block'));
+        if (blks.length >= 10) {
+            for(var i=0; i<10; i++) safeRemove(blks.pop());
+            var nextPv = col.dataset.pv === '1' ? '10' : '100';
+            var nextCol = col.parentElement.querySelector("[data-pv='" + nextPv + "']");
+            if (nextCol) { 
+                var r = col.getBoundingClientRect();
+                ParticleEngine.shockwave(r.left+r.width/2, r.top+r.height/2, nextPv);
+                GameAudio.sfxFuse(nextPv);
+                createBlock(nextPv, nextCol); setTimeout(function(){triggerAutoFusion(nextCol);}, 150); 
+            }
+        }
+    }
+
+    function calcSec(id) { 
+        var t = 0; var blks = document.getElementById(id).querySelectorAll('.block');
+        for(var i=0; i<blks.length; i++) t += Math.floor(parseInt(blks[i].dataset.val)); return t; 
+    }
+    
+    function updateEquation() {
+        var t = Math.floor(calcSec('sec-top')), l = Math.floor(calcSec('sec-left')), r = Math.floor(calcSec('sec-right'));
+        document.getElementById('lab-equation').innerText = t + " = " + l + " + " + r;
+        var btn = document.getElementById('btn-confirm');
+        var mBlock = selectedBlockId !== -1 ? blocks.find(function(x){return x.id === selectedBlockId;}) : null;
+        
+        if (labContext === 'map-split') {
+            btn.disabled = (t !== 0) || (l + r !== Math.floor(mBlock.val));
+        } else if (labContext === 'inv-split') {
+            btn.disabled = (t !== 0) || (l + r !== Math.floor(inventory[selectedInvIndices[0]].val));
+        } else if (labContext === 'map-inv-fuse') {
+            btn.disabled = (t !== Math.floor(mBlock.val) + Math.floor(inventory[selectedInvIndices[0]].val)) || (l !== 0) || (r !== 0);
+        } else if (labContext === 'inv-inv-fuse') {
+            btn.disabled = (t !== Math.floor(inventory[selectedInvIndices[0]].val) + Math.floor(inventory[selectedInvIndices[1]].val)) || (l !== 0) || (r !== 0);
+        }
+    }
+
+    window.closeLab = function() {
+        document.getElementById('lab-screen').style.display='none';
+        document.getElementById('game-screen').style.display='flex';
+    };
+
+    window.confirmLab = function() {
+        var t = Math.floor(calcSec('sec-top')), l = Math.floor(calcSec('sec-left')), r = Math.floor(calcSec('sec-right'));
+        var mBlock = selectedBlockId !== -1 ? blocks.find(function(x){return x.id === selectedBlockId;}) : null;
+
+        if (labContext === 'map-split') {
+            splitsInitiated++;
+            var wasOld = mBlock.isOld;
+            if(l > 0) { mBlock.val = l; } 
+            else { blocks = blocks.filter(function(x){return x.id !== selectedBlockId;}); selectedBlockId = -1; }
+            if(r > 0) inventory.push({val: r, isOld: wasOld}); 
+        } 
+        else if (labContext === 'map-inv-fuse') {
+            fusesInitiated++;
+            var invItem = inventory[selectedInvIndices[0]];
+            mBlock.val = t;
+            if (!invItem.isOld) mBlock.isOld = false; 
+            inventory.splice(selectedInvIndices[0], 1);
+        }
+        else if (labContext === 'inv-split') {
+            splitsInitiated++;
+            var original = inventory[selectedInvIndices[0]];
+            inventory.splice(selectedInvIndices[0], 1);
+            if(l > 0) inventory.push({val: l, isOld: original.isOld});
+            if(r > 0) inventory.push({val: r, isOld: original.isOld});
+        }
+        else if (labContext === 'inv-inv-fuse') {
+            fusesInitiated++;
+            var i1 = inventory[selectedInvIndices[0]];
+            var i2 = inventory[selectedInvIndices[1]];
+            var newIsOld = i1.isOld && i2.isOld; 
+            selectedInvIndices.sort(function(a,b){return b-a;}).forEach(function(idx){ inventory.splice(idx, 1); });
+            inventory.push({val: t, isOld: newIsOld});
+        }
+        
+        selectedInvIndices = [];
+        window.closeLab(); renderMap(); renderInventory(); updateActionButtons(); checkWin();
+    };
+
+    document.addEventListener('touchmove', function(e){ if(dragData && dragData.block) e.preventDefault(); }, {passive:false});
+</script>
+</body>
+</html>
