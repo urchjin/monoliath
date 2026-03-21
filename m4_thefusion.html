@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>The Architect's Ascent: Factory Builder</title>
+<style>
+/* Grittier factory palette */
+:root { --main-bg: #090a10; --accent: #6eb5b3; --accent-hover: #9adcd9; --danger: #d85c6b; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;background:var(--main-bg);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Helvetica Neue',Arial,sans-serif;color:#CDD8F8;}
+#wrap{position:relative;width:100vw;height:100vh;overflow:hidden;}
+canvas{display:block;width:100%;height:100%; cursor: crosshair; touch-action:none;}
+
+/* UI Overlays */
+.ov{display:none;position:absolute;inset:0;background:radial-gradient(ellipse at 50% 38%,rgba(12,14,38,.97),rgba(4,5,14,.99));
+    justify-content:center;align-items:center;z-index:20;backdrop-filter:blur(10px);}
+.ov.show{display:flex;}
+.card{background:rgba(12,14,36,.96);border:1px solid rgba(61,157,155,.16);border-radius:16px;
+      box-shadow:0 0 50px rgba(61,157,155,.05),0 20px 45px rgba(0,0,0,.7);
+      padding:24px 22px;width:94%;max-width:420px;text-align:center;}
+.eyebrow{color:var(--accent);font-size:10px;letter-spacing:4px;text-transform:uppercase;margin-bottom:10px;font-weight:700;}
+.headline{color:#EDE6D2;font-size:24px;margin-bottom:12px;font-weight:200;letter-spacing:2px;}
+.bodytxt{color:#7A85B0;font-size:13px;line-height:1.6;margin-bottom:20px;white-space:pre-line;}
+
+.cta{display:inline-block;padding:12px 24px;background:var(--danger);border:none;border-radius:28px;
+     color:#FFF;font-weight:700;letter-spacing:1px;font-size:12px;cursor:pointer;transition:transform .1s; margin-top:5px;}
+.cta:active{transform:translateY(2px);}
+.cta.alt{background:rgba(61,157,155,.1);border:1px solid rgba(61,157,155,.3);color:var(--accent-hover);}
+.cta.sm{padding:8px 16px;font-size:10px;}
+
+.lv-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px;}
+.lv-cell{background:rgba(0,0,0,.3);border:1px solid rgba(61,157,155,.15);border-radius:8px;
+         padding:12px;cursor:pointer;transition:background .1s;}
+.lv-cell:active{background:rgba(61,157,155,.2);}
+.lv-num{color:var(--accent);font-size:9px;font-weight:700;margin-bottom:4px;}
+.lv-name{color:#FFF;font-size:12px;}
+
+/* In-Game HUD */
+#hud{position:absolute;top:45px;left:15px;right:15px;display:none;justify-content:space-between;z-index:10;pointer-events:none; align-items: flex-start;}
+.hud-cluster{display:flex;gap:10px;pointer-events:auto; flex-wrap: wrap;}
+.hud-box{background:rgba(8,9,20,.9);border:1px solid rgba(61,157,155,.4);padding:8px 16px;border-radius:8px;text-align:center;}
+.hud-lbl{color:var(--accent);font-size:9px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+.hud-val{color:#EDE6D2;font-size:16px;font-weight:700;}
+
+/* Inventory Readout */
+#inventory{display:flex; gap:8px; pointer-events:none;}
+.inv-badge{background:rgba(8,9,20,.9); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:6px 12px; color:#FFF; display:flex; flex-direction:column; align-items:center;}
+.inv-lbl{font-size:9px; opacity:0.8; margin-bottom:2px; text-transform:uppercase;}
+.inv-val{font-size:16px; font-weight:bold;}
+
+/* Architect Toolbar */
+#archToolbar{display:none; position:absolute; bottom:25px; left:50%; transform:translateX(-50%); background:rgba(8,9,20,.95); border:1px solid var(--accent); border-radius:12px; padding:10px; gap:8px; z-index:15; flex-wrap:wrap; justify-content:center; width:94%; max-width:600px; pointer-events:auto; box-shadow:0 10px 30px rgba(0,0,0,0.8);}
+.arch-tool{background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#CDD8F8; padding:10px 14px; border-radius:6px; font-size:11px; font-weight:bold; cursor:pointer; text-transform:uppercase; letter-spacing:1px;}
+.arch-tool.sel{border-color:var(--accent-hover); background:rgba(61,157,155,.2); color:#FFF;}
+.arch-tool.del{border-color:#d85c6b; color:#d85c6b;}
+.arch-tool.del.sel{background:rgba(216,92,107,.2);}
+
+select { background:rgba(0,0,0,0.5); border:1px solid var(--accent); color:#fff; padding:10px; border-radius:8px; font-family:inherit; font-size:14px; width:100%; margin-bottom:15px; outline:none; }
+
+/* Mobile Touch Controls - PUSHED UP */
+#touchControls{display:none;position:absolute;bottom:60px;left:15px;right:15px;z-index:10;user-select:none;}
+.tc-row{display:flex;justify-content:space-between;align-items:flex-end;}
+.tc-cluster{display:flex;gap:8px;pointer-events:none;transition:opacity 0.2s;}
+.tc-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#FFF;
+        border-radius:50%;width:55px;height:55px;display:flex;align-items:center;justify-content:center;
+        font-size:22px;touch-action:none;pointer-events:auto;}
+.tc-btn:active{background:rgba(61,157,155,.4);border-color:var(--accent-hover);}
+@media(pointer:coarse){#touchControls{display:block;}}
+
+/* Fusion Transfer UI */
+.pv-container{display:flex;flex-direction:column;gap:8px;margin-bottom:15px;}
+.pv-zone{background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px;}
+.pv-title{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:10px;text-align:left;}
+.pv-title span{color:#EDE6D2;font-weight:700;font-size:16px;}
+.pv-cols{display:flex;gap:8px;}
+.pv-col{flex:1;min-height:70px;background:rgba(255,255,255,.03);border:2px dashed rgba(255,255,255,.1);
+        border-radius:8px;position:relative;display:flex;flex-wrap:wrap;gap:4px;padding:8px;
+        align-content:flex-start;cursor:pointer;}
+.pv-col:active{background:rgba(61,157,155,.08);}
+.pv-col::before{content:attr(data-label);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                color:rgba(255,255,255,.08);font-weight:700;font-size:16px;pointer-events:none;}
+.token{cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;
+       font-weight:700;color:#FFF;box-shadow:0 2px 5px rgba(0,0,0,.36);z-index:100;
+       transition:transform .1s,outline .08s;-webkit-tap-highlight-color:transparent;}
+.token:active{transform:scale(1.2);}
+.t-100{width:36px;height:36px;background:linear-gradient(135deg,#2D4B9A,#182E70);border-radius:6px;border:1px solid rgba(100,140,255,.3);}
+.t-10{width:24px;height:34px;background:linear-gradient(135deg,#C08820,#8B5510);border-radius:4px;border:1px solid rgba(255,200,80,.3);}
+.t-1{width:20px;height:20px;background:linear-gradient(135deg,#2A9E98,#186660);border-radius:50%;border:1px solid rgba(80,200,195,.3);}
+.instructions{font-size:11px;color:#7A85B0;margin-bottom:12px;font-style:italic;line-height:1.6;}
+.rot-toggle{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:15px;font-size:14px;color:#CDD8F8;}
+.rot-toggle input{width:20px;height:20px;accent-color:var(--danger);cursor:pointer;}
+
+/* Notifications */
+#notif{position:absolute;top:45px;left:50%;transform:translateX(-50%);background:rgba(61,157,155,.2);
+       border:1px solid var(--accent);border-radius:8px;padding:10px 20px;font-weight:700;color:var(--accent-hover);
+       opacity:0;transition:opacity .3s;z-index:30;pointer-events:none;}
+#notif.show{opacity:1;}
+</style>
+</head>
+<body>
+<div id="wrap">
+    <canvas id="cv"></canvas>
+
+    <div id="hud">
+        <div class="hud-cluster" style="flex-direction: column;">
+            <div class="hud-box" id="phaseBox" style="align-self: flex-start;">
+                <span class="hud-lbl">Phase</span>
+                <span class="hud-val" id="uiPhase" style="color:#ffcc00;">BUILD</span>
+            </div>
+            <div id="inventory">
+                <div class="inv-badge btn-100">
+                    <span class="inv-lbl">100s</span>
+                    <span class="inv-val" id="ui100">0</span>
+                </div>
+                <div class="inv-badge btn-10">
+                    <span class="inv-lbl">10s</span>
+                    <span class="inv-val" id="ui10">0</span>
+                </div>
+                <div class="inv-badge btn-1">
+                    <span class="inv-lbl">1s</span>
+                    <span class="inv-val" id="ui1">0</span>
+                </div>
+            </div>
+        </div>
+        <div class="hud-cluster" style="align-items:center; align-self: flex-start;">
+            <button class="cta sm" id="btnZoomIn">+</button>
+            <button class="cta sm" id="btnZoomOut">-</button>
+            <button class="cta alt sm" id="btnMenu">Quit</button>
+            <button class="cta sm" id="btnTogglePhase">TEST CLIMB</button>
+        </div>
+    </div>
+
+    <div id="archToolbar">
+        <div class="arch-tool sel" onclick="setArchTool('slab', this)">Slab</div>
+        <div class="arch-tool" onclick="setArchTool('pillar', this)">Pillar</div>
+        <div class="arch-tool" onclick="setArchTool('scale', this)">Scale</div>
+        <div class="arch-tool" onclick="setArchTool('wheel', this)">Wheel</div>
+        <div class="arch-tool" onclick="setArchTool('catapult', this)">Catapult</div>
+        <div class="arch-tool" onclick="setArchTool('exit', this)" style="color:#ffcc00; border-color:#ffcc00;">Summit</div>
+        <div class="arch-tool del" onclick="setArchTool('delete', this)">Delete</div>
+    </div>
+
+    <div id="touchControls">
+        <div class="tc-row">
+            <div class="tc-cluster" id="tcMoveGrp" style="opacity:0.2;">
+                <div class="tc-btn" id="tLeft">◀</div>
+                <div class="tc-btn" id="tRight">▶</div>
+            </div>
+            <div class="tc-cluster" id="tcJumpGrp" style="opacity:0.2;">
+                <div class="tc-btn" id="tJump">▲</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notif">Notification</div>
+
+    <div class="ov show" id="ovMenu">
+        <div class="card">
+            <div class="eyebrow">✦ architect's ascent ✦</div>
+            <div class="headline">THE FUSION</div>
+            <div class="bodytxt">Tap to build. Use the Fusion UI to split, combine, and infuse exact block sizes. The bigger the value, the larger the block.</div>
+            <button class="cta" id="btnStoryMode">Story Realms</button><br>
+            <button class="cta alt" id="btnRandomMode">Random Generation</button><br><br>
+            <button class="cta alt" id="btnArchitectSetup" style="border-color:#ffcc00; color:#ffcc00;">Create Custom Puzzle</button>
+        </div>
+    </div>
+
+    <div class="ov" id="ovArchSetup">
+        <div class="card">
+            <div class="eyebrow">✦ Sandbox ✦</div>
+            <div class="headline">Architect Mode</div>
+            <div class="bodytxt">Design a custom factory puzzle. Choose the height of your shaft to begin drafting.</div>
+            <select id="selArchHeight">
+                <option value="3500">Standard Facility (3500px)</option>
+                <option value="5500">Tall Shaft (5500px)</option>
+                <option value="8000">Atmospheric Skyscraper (8000px)</option>
+            </select>
+            <button class="cta" id="btnStartArch">Start Drafting</button>
+            <button class="cta alt" onclick="document.getElementById('ovArchSetup').classList.remove('show'); document.getElementById('ovMenu').classList.add('show');">Cancel</button>
+        </div>
+    </div>
+
+    <div class="ov" id="ovLevelSelect">
+        <div class="card" style="max-width: 500px;">
+            <div class="eyebrow">✦ choose difficulty ✦</div>
+            <div class="lv-grid" id="levelGrid"></div>
+            <button class="cta alt sm" id="btnBackToMenu">← Back</button>
+        </div>
+    </div>
+
+    <div class="ov" id="ovTransfer">
+        <div class="card">
+            <div class="headline">Value Fusion</div>
+            <div class="instructions">TAP token to pick it up · TAP column to place it<br>Split: move 100s to 10s · Combine: move ten 1s to 10s</div>
+            
+            <div class="rot-toggle" id="rotRow">
+                <input type="checkbox" id="rotCheck">
+                <label for="rotCheck">Rotate 90° (Lay block horizontally)</label>
+            </div>
+
+            <div class="pv-container">
+                <div class="pv-zone">
+                    <div class="pv-title">Blueprint Value: <span id="ui-m-total">0</span></div>
+                    <div class="pv-cols">
+                        <div class="pv-col" data-owner="m" data-val="100" data-label="100s" id="m-100-col"></div>
+                        <div class="pv-col" data-owner="m" data-val="10"  data-label="10s"  id="m-10-col"></div>
+                        <div class="pv-col" data-owner="m" data-val="1"   data-label="1s"   id="m-1-col"></div>
+                    </div>
+                </div>
+                <div class="pv-zone">
+                    <div class="pv-title">Inventory: <span id="ui-p-total">0</span></div>
+                    <div class="pv-cols">
+                        <div class="pv-col" data-owner="p" data-val="100" data-label="100s" id="p-100-col"></div>
+                        <div class="pv-col" data-owner="p" data-val="10"  data-label="10s"  id="p-10-col"></div>
+                        <div class="pv-col" data-owner="p" data-val="1"   data-label="1s"   id="p-1-col"></div>
+                    </div>
+                </div>
+            </div>
+            <button class="cta" id="btnApplyTransfer">Fuse & Build</button>
+            <button class="cta alt" id="btnCancelTransfer">Cancel</button>
+        </div>
+    </div>
+
+    <div class="ov" id="ovWin">
+        <div class="card">
+            <div class="eyebrow">✦ Beacon Lit ✦</div>
+            <div class="headline">Summit Reached!</div>
+            <div class="bodytxt">Excellent design. The path is secured.</div>
+            <button class="cta" id="btnNext">Continue</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+let CW = window.innerWidth, CH = window.innerHeight;
+cv.width = CW; cv.height = CH;
+
+window.addEventListener('resize', () => { CW = window.innerWidth; CH = window.innerHeight; cv.width = CW; cv.height = CH; });
+
+// Game Constants
+const GRAV=0.55, JF=-11.5, SPD=4.2, PW=20, PH=20, BW=50;
+
+const P={
+  skyT:'#0a0b12',skyB:'#1c1d29', gnd:'#111424',gndE:'#232648',
+  slabF:'#225452',slabT:'#368C88',slabS:'#112A29', pilF:'#243E34',pilT:'#346050',pilS:'#142419',
+  whlF:'#223C22',whlT:'#34603A',whlS:'#112011', catF:'#4A3060',catT:'#6A48A0',catS:'#2A1840',
+  blkF:'#CAC2AE',blkT:'#E6DEC8',blkS:'#867060',blkTx:'#2A2010',
+  hubF:'#B86E2C',hubT:'#D88A3C',hubS:'#72400E', catWF:'#8A5898',catWT:'#A870C8',catWS:'#5A3068',
+  pl:'#FFFFFF',plI:'#BED0F0',shd:'rgba(0,0,0,.35)', bea:'#E85D75',beaSp:'#F8A0B0',beaPs:'#5E1828',beaBs:'#2E0C12',
+  v100F: '#2D4B9A', v100T: '#4D6BBA', v100S: '#182E70', 
+  v10F:  '#C08820', v10T:  '#E0A840', v10S:  '#8B5510', 
+  v1F:   '#2A9E98', v1T:   '#4ABEB8', v1S:   '#186660'  
+};
+
+/* ══ AUDIO ══ */
+const SFX=(()=>{
+  let ac=null;
+  function init(){if(!ac)try{ac=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+  function t(f,d,v=.1,s='sine'){if(!ac)return;try{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=s;o.frequency.value=f;const n=ac.currentTime;g.gain.setValueAtTime(v,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.start(n);o.stop(n+d+.05);}catch(e){}}
+  return{
+    unlock(){init();if(ac&&ac.state==='suspended')ac.resume();},
+    jump(){t(320,.1,.07,'triangle');},land(){t(110,.07,.08,'square');},
+    fuse(){t(600,.05,.08);t(880,.1,.09);}, shatter(){t(300,.1,.1,'sawtooth');},
+    beacon(){[440,554,659,880].forEach((f,i)=>setTimeout(()=>t(f,.28,.12),i*130));},
+    launch(){t(90,.08,.2,'square');t(200,.18,.16,'triangle');}
+  };
+})();
+
+/* ══ STATE & DATA ══ */
+let gameState = 'MENU';
+let gameMode = 'STORY';
+let currentLevel = 0;
+let world = null, player = null, startNode = {x:60, y:0};
+let cam = {x:0, y:0, z:0.85}; 
+let winTriggered = false;
+
+let archTool = 'slab';
+let archNextId = 1;
+
+let playerInv = { 100: 0, 10: 0, 1: 0 };
+let uiState = { p: {100:0,10:0,1:0}, m: {100:0,10:0,1:0} };
+let activeBuildCoords = null;
+let activeFrag = null;
+
+const calcTotal=o=>o[100]*100+o[10]*10+o[1];
+const parsePV=v=>({100:Math.floor(v/100),10:Math.floor((v%100)/10),1:v%10});
+
+/* ══ INPUT & GESTURES ══ */
+const KEY = {};
+window.addEventListener('keydown', e=>{ KEY[e.code]=true; SFX.unlock(); });
+window.addEventListener('keyup', e=>KEY[e.code]=false);
+
+let activePointers = new Map();
+let lastPointerPos = {x:0, y:0};
+let lastPinchDist = null;
+let isDragging = false;
+let startTapPos = {x:0, y:0};
+
+document.getElementById('hud').addEventListener('pointerdown', e => e.stopPropagation());
+document.getElementById('ovTransfer').addEventListener('pointerdown', e => e.stopPropagation());
+document.getElementById('archToolbar').addEventListener('pointerdown', e => e.stopPropagation());
+
+cv.addEventListener('pointerdown', e => {
+    SFX.unlock();
+    activePointers.set(e.pointerId, {x: e.clientX, y: e.clientY});
+    lastPointerPos = {x: e.clientX, y: e.clientY};
+    if(activePointers.size === 1) {
+        startTapPos = {x: e.clientX, y: e.clientY};
+        isDragging = false;
+    }
+});
+
+cv.addEventListener('pointermove', e => {
+    if(!activePointers.has(e.pointerId)) return;
+    lastPointerPos = {x: e.clientX, y: e.clientY};
+    let ptr = activePointers.get(e.pointerId);
+    let dx = e.clientX - ptr.x;
+    let dy = e.clientY - ptr.y;
+    ptr.x = e.clientX; ptr.y = e.clientY;
+
+    if(activePointers.size === 1) {
+        if(Math.hypot(e.clientX - startTapPos.x, e.clientY - startTapPos.y) > 12) isDragging = true;
+        if((gameState === 'BUILD' || gameState === 'ARCHITECT') && isDragging) { 
+            cam.x -= dx / cam.z; cam.y -= dy / cam.z; 
+        }
+    } else if (activePointers.size === 2) {
+        isDragging = true;
+        let pts = Array.from(activePointers.values());
+        let dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        if(lastPinchDist) {
+            let zoomDelta = (dist - lastPinchDist) * 0.005;
+            cam.z = clamp(cam.z + zoomDelta, 0.4, 2.5);
+        }
+        lastPinchDist = dist;
+    }
+});
+
+const handlePointerUp = e => {
+    if(!activePointers.has(e.pointerId)) return;
+    activePointers.delete(e.pointerId);
+    if(activePointers.size < 2) lastPinchDist = null;
+
+    if(gameState === 'BUILD' && !isDragging) handleBuildClick(lastPointerPos.x, lastPointerPos.y);
+    if(gameState === 'ARCHITECT' && !isDragging) handleArchitectClick(lastPointerPos.x, lastPointerPos.y);
+};
+
+cv.addEventListener('pointerup', handlePointerUp);
+cv.addEventListener('pointercancel', handlePointerUp);
+cv.addEventListener('wheel', e => {
+    if(gameState === 'BUILD' || gameState === 'ARCHITECT') cam.z = clamp(cam.z - e.deltaY * 0.001, 0.4, 2.5);
+});
+
+function bindTouch(id,code){
+    const el=document.getElementById(id); if(!el)return;
+    el.addEventListener('pointerdown', e=>{e.preventDefault(); KEY[code]=true; SFX.unlock();});
+    el.addEventListener('pointerup', e=>{e.preventDefault(); KEY[code]=false;});
+    el.addEventListener('pointercancel', e=>KEY[code]=false);
+}
+bindTouch('tLeft','ArrowLeft'); bindTouch('tRight','ArrowRight'); bindTouch('tJump','Space');
+
+/* ══ UI CONTROLS ══ */
+document.getElementById('btnStoryMode').onclick = () => { buildLevelGrid(); document.getElementById('ovMenu').classList.remove('show'); document.getElementById('ovLevelSelect').classList.add('show'); SFX.unlock(); };
+document.getElementById('btnRandomMode').onclick = () => { gameMode='RANDOM'; playerInv = {100:2, 10:10, 1:20}; startLevel(); };
+document.getElementById('btnArchitectSetup').onclick = () => { document.getElementById('ovMenu').classList.remove('show'); document.getElementById('ovArchSetup').classList.add('show'); SFX.unlock(); };
+document.getElementById('btnStartArch').onclick = () => { document.getElementById('ovArchSetup').classList.remove('show'); startArchitect(parseInt(document.getElementById('selArchHeight').value)); };
+
+document.getElementById('btnBackToMenu').onclick = () => { document.getElementById('ovLevelSelect').classList.remove('show'); document.getElementById('ovMenu').classList.add('show'); };
+document.getElementById('btnMenu').onclick = () => { gameState='MENU'; document.getElementById('hud').style.display='none'; document.getElementById('archToolbar').style.display='none'; document.getElementById('ovMenu').classList.add('show'); };
+
+document.getElementById('btnZoomIn').onclick = () => { if(gameState==='BUILD'||gameState==='ARCHITECT') cam.z=clamp(cam.z+0.2, 0.4, 2.5); };
+document.getElementById('btnZoomOut').onclick = () => { if(gameState==='BUILD'||gameState==='ARCHITECT') cam.z=clamp(cam.z-0.2, 0.4, 2.5); };
+
+document.getElementById('btnTogglePhase').onclick = () => {
+    if(gameState === 'BUILD') {
+        gameState = 'PLAY';
+        document.getElementById('uiPhase').innerText = 'CLIMB';
+        document.getElementById('uiPhase').style.color = '#4CAF50';
+        document.getElementById('btnTogglePhase').innerText = 'EDIT LAYOUT';
+        document.getElementById('tcMoveGrp').style.opacity = '1'; document.getElementById('tcJumpGrp').style.opacity = '1';
+        document.getElementById('inventory').style.opacity = '0.3';
+        player = mkPlayer(startNode.x, startNode.y);
+    } else if(gameState === 'PLAY') {
+        resetToBuild();
+    } else if(gameState === 'ARCHITECT') {
+        let input = prompt("Puzzle ready! Set budget (100s, 10s, 1s) separated by commas:", "3,15,30");
+        if(input) {
+            let pts = input.split(',');
+            playerInv = { 100: parseInt(pts[0])||0, 10: parseInt(pts[1])||0, 1: parseInt(pts[2])||0 };
+            document.getElementById('archToolbar').style.display = 'none';
+            document.getElementById('inventory').style.display = 'flex';
+            world.placedFrags = []; 
+            resetToBuild();
+            updateHUD();
+            showNotif("Testing Custom Puzzle!");
+        }
+    }
+};
+
+function showNotif(msg){ const el=document.getElementById('notif'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2000); }
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+const boxOv = (a,b) => a.x<b.x+b.w && a.x+a.w>b.x && a.y<b.y+b.h && a.y+a.h>b.y;
+
+/* ══ ARCHITECT MODE MECHANICS ══ */
+function setArchTool(tool, element) {
+    archTool = tool;
+    document.querySelectorAll('.arch-tool').forEach(el => el.classList.remove('sel'));
+    element.classList.add('sel');
+    SFX.unlock();
+}
+
+function startArchitect(height) {
+    document.getElementById('hud').style.display='flex';
+    document.getElementById('inventory').style.display='none';
+    document.getElementById('archToolbar').style.display='flex';
+    
+    document.getElementById('uiPhase').innerText = 'ARCHITECT';
+    document.getElementById('uiPhase').style.color = '#B86E2C';
+    document.getElementById('btnTogglePhase').innerText = 'TEST PUZZLE';
+    document.getElementById('tcMoveGrp').style.opacity = '0.2'; document.getElementById('tcJumpGrp').style.opacity = '0.2';
+    
+    const WW = 2500;
+    const GY = height;
+    const plats=[],blocks=[],wheels=[],scales=[],cats=[];
+    plats.push({x:0,y:GY,w:WW,h:200,kind:'ground', parentId:0});
+    plats.push({x:50,y:GY-50,w:120,h:20,kind:'slab', parentId:0}); 
+
+    world = {width:WW, height:GY+800, groundY:GY, plats, blocks, wheels, scales, cats, exit:null, placedFrags:[]};
+    startNode = {x: 70, y: GY-70};
+    
+    gameState = 'ARCHITECT';
+    player = mkPlayer(startNode.x, startNode.y);
+    cam.z = 0.85; cam.x = player.x - (CW/cam.z)/2; cam.y = player.y - (CH/cam.z)/2;
+    showNotif("Drafting Mode Engaged");
+}
+
+function handleArchitectClick(cx, cy) {
+    let wx = (cx / cam.z) + cam.x;
+    let wy = (cy / cam.z) + cam.y;
+    
+    const G = 25;
+    let snX = Math.floor(wx/G)*G;
+    let snY = Math.floor(wy/G)*G;
+
+    if(archTool === 'delete') {
+        let hitId = null;
+        const pt = {x: wx, y: wy, w: 1, h: 1};
+        for(let p of world.plats) if(p.parentId && boxOv(pt, p)) { hitId = p.parentId; break; }
+        if(!hitId) for(let b of world.blocks) if(b.parentId && boxOv(pt, b)) { hitId = b.parentId; break; }
+        if(!hitId && world.exit && boxOv(pt, world.exit)) world.exit = null;
+        
+        if(hitId) {
+            world.plats = world.plats.filter(x => x.parentId !== hitId);
+            world.blocks = world.blocks.filter(x => x.parentId !== hitId);
+            world.wheels = world.wheels.filter(x => x.parentId !== hitId);
+            world.scales = world.scales.filter(x => x.parentId !== hitId);
+            world.cats = world.cats.filter(x => x.parentId !== hitId);
+            SFX.shatter();
+        }
+        return;
+    }
+
+    let id = archNextId++;
+
+    if(archTool === 'slab') {
+        world.plats.push({x: snX, y: snY, w: 150, h: 20, kind: 'slab', parentId: id});
+    } else if(archTool === 'pillar') {
+        world.plats.push({x: snX, y: snY, w: 40, h: 250, kind: 'pillar', parentId: id});
+    } else if(archTool === 'scale') {
+        const sc = { cx: snX+125, cy: snY, baseY: snY+150, parentId: id,
+            platL: {x: snX, y: snY+150, w: 60, h: 12, kind: 'scale', parentId: id},
+            platR: {x: snX+190, y: snY+150, w: 60, h: 12, kind: 'scale', parentId: id} };
+        world.scales.push(sc); world.plats.push(sc.platL, sc.platR);
+        world.blocks.push({x: sc.platR.x+10, y: snY+110, vx: 0, vy: 0, pv: 0, h: 40, isLocked: false, isFlat: false, parentId: id});
+    } else if(archTool === 'wheel') {
+        const hub = {x: snX+120-25, y: snY-20, vx: 0, vy: 0, pv: 0, h: 40, isHub: true, req: 10, parentId: id};
+        world.blocks.push(hub);
+        const wP=[]; 
+        for(let j=0; j<4; j++){ 
+            let p = {x: 0, y: 0, w: 60, h: 12, kind: 'wheel', angleOffset: j*(Math.PI/2), parentId: id};
+            wP.push(p); world.plats.push(p); 
+        }
+        world.wheels.push({cx: snX+120, cy: snY, r: 120, angle: 0, hub, plats: wP, parentId: id});
+    } else if(archTool === 'catapult') {
+        const cPL = {x: snX, y: snY+100, w: 60, h: 10, kind: 'catapult', parentId: id};
+        const cPR = {x: snX+150, y: snY+100, w: 60, h: 10, kind: 'catapult', parentId: id};
+        const cWB = {x: cPR.x+10, y: snY+60, vx: 0, vy: 0, pv: 0, h: 40, isFlat: false, isCatW: true, catReq: 20, parentId: id};
+        world.cats.push({cx: snX+105, cy: snY+100, platL: cPL, platR: cPR, weightBlock: cWB, req: 20, tilt: 0, launchCd: 0, parentId: id});
+        world.plats.push(cPL, cPR); world.blocks.push(cWB);
+    } else if(archTool === 'exit') {
+        world.exit = {x: snX, y: snY-56, w: 40, h: 56, parentId: id};
+    }
+    SFX.fuse();
+}
+
+/* ══ BUILD MECHANICS (FUSION UI) ══ */
+function handleBuildClick(cx, cy) {
+    let wx = (cx / cam.z) + cam.x;
+    let wy = (cy / cam.z) + cam.y;
+
+    for(let i=0; i<world.placedFrags.length; i++) {
+        let f = world.placedFrags[i];
+        if(wx >= f.x && wx <= f.x+f.w && wy >= f.y && wy <= f.y+f.h) {
+            openTransferUI(f, null); return;
+        }
+    }
+
+    for(let b of world.blocks) {
+        if(b.isLocked) continue;
+        let cw = b.isFlat?b.h:BW, ch = b.isFlat?BW:b.h;
+        if(wx >= b.x && wx <= b.x+cw && wy >= b.y && wy <= b.y+ch) {
+            openTransferUI(b, null); return;
+        }
+    }
+
+    const G = 25;
+    let snX = Math.floor(wx/G)*G;
+    let snY = Math.floor(wy/G)*G;
+    openTransferUI(null, {x: snX, y: snY});
+}
+
+function openTransferUI(target, coords) {
+    activeFrag = target;
+    activeBuildCoords = coords;
+    uiState.p = { 100: playerInv[100], 10: playerInv[10], 1: playerInv[1] };
+    
+    if(target) {
+        if(target.buckets) uiState.m = { ...target.buckets }; 
+        else uiState.m = parsePV(target.pv); 
+        
+        document.getElementById('rotCheck').checked = !!target.isRotated;
+        document.getElementById('rotRow').style.display = (target.isHub || target.isCatW) ? 'none' : 'flex';
+    } else {
+        uiState.m = {100:0, 10:0, 1:0};
+        document.getElementById('rotCheck').checked = false;
+        document.getElementById('rotRow').style.display = 'flex';
+    }
+    
+    renderTransferUI();
+    document.getElementById('ovTransfer').classList.add('show');
+}
+
+function renderTransferUI() {
+    ['m','p'].forEach(owner=>{
+        document.getElementById(`ui-${owner}-total`).innerText=calcTotal(uiState[owner]);
+        [100,10,1].forEach(val=>{
+            const col=document.getElementById(`${owner}-${val}-col`);
+            col.innerHTML='';
+            for(let i=0;i<uiState[owner][val];i++){
+                const t=document.createElement('div');
+                t.className=`token t-${val}`; t.innerText=val;
+                t.dataset.owner=owner; t.dataset.val=val;
+                col.appendChild(t);
+            }
+        });
+    });
+    bindDraggables();
+}
+
+let selToken=null;
+function clearSel(){if(selToken){selToken.style.outline='';selToken.style.transform='';selToken=null;}}
+
+function bindDraggables(){
+    clearSel();
+    document.querySelectorAll('.token').forEach(t=>{
+        t.onpointerdown=e=>{
+            e.stopPropagation();e.preventDefault();SFX.unlock();
+            if(selToken===t){clearSel();return;}
+            clearSel(); selToken=t;
+            t.style.outline='2.5px solid rgba(255,255,255,.95)';
+            t.style.transform='scale(1.18)';
+        };
+    });
+    
+    document.querySelectorAll('.pv-col').forEach(col=>{
+        col.onpointerdown=e=>{
+            e.stopPropagation();e.preventDefault();SFX.unlock();
+            const o=col.dataset.owner, v=parseInt(col.dataset.val);
+            if(selToken){
+                const sO=selToken.dataset.owner, sv=parseInt(selToken.dataset.val);
+                clearSel();
+                if(sv===v && sO!==o){
+                    uiState[sO][sv]--; uiState[o][v]++; SFX.fuse();
+                } else if(sv>v && sO===o && ((sv===100&&v===10)||(sv===10&&v===1))){
+                    uiState[o][sv]--; uiState[o][v]+=10; SFX.shatter();
+                } else if(sv<v && sO===o && ((sv===1&&v===10)||(sv===10&&v===100)) && uiState[o][sv]>=10){
+                    uiState[o][sv]-=10; uiState[o][v]++; SFX.fuse();
+                }
+                renderTransferUI();
+            } else {
+                if(v===1 && uiState[o][1]>=10){ uiState[o][1]-=10; uiState[o][10]++; SFX.fuse(); renderTransferUI(); }
+                else if(v===10 && uiState[o][10]>=10){ uiState[o][10]-=10; uiState[o][100]++; SFX.fuse(); renderTransferUI(); }
+            }
+        };
+    });
+}
+
+document.getElementById('btnCancelTransfer').onclick = () => document.getElementById('ovTransfer').classList.remove('show');
+
+document.getElementById('btnApplyTransfer').onclick = () => {
+    playerInv = { ...uiState.p };
+    let newPv = calcTotal(uiState.m);
+    let isRot = document.getElementById('rotCheck').checked;
+
+    if (activeFrag) {
+        if (newPv === 0) {
+            if (world.placedFrags.includes(activeFrag)) world.placedFrags.splice(world.placedFrags.indexOf(activeFrag), 1);
+            else activeFrag.pv = 0; 
+            SFX.shatter();
+        } else {
+            activeFrag.pv = newPv;
+            if (world.placedFrags.includes(activeFrag)) {
+                activeFrag.buckets = { ...uiState.m };
+                activeFrag.isRotated = isRot;
+                let l = 15 + newPv * 10;
+                activeFrag.w = isRot ? l : 25;
+                activeFrag.h = isRot ? 25 : l;
+            } else if (!activeFrag.isHub && !activeFrag.isCatW) {
+                activeFrag.h = Math.max(40, 40 + newPv * 1.5);
+            }
+            SFX.fuse();
+        }
+    } else if (newPv > 0) {
+        let l = 15 + newPv * 10;
+        let w = isRot ? l : 25;
+        let h = isRot ? 25 : l;
+        world.placedFrags.push({
+            x: activeBuildCoords.x, y: activeBuildCoords.y,
+            w: w, h: h, pv: newPv, buckets: { ...uiState.m },
+            isRotated: isRot, kind: 'fragment'
+        });
+        SFX.fuse();
+    }
+    updateHUD(); document.getElementById('ovTransfer').classList.remove('show');
+};
+
+function updateHUD() { 
+    document.getElementById('ui100').innerText = playerInv[100];
+    document.getElementById('ui10').innerText = playerInv[10];
+    document.getElementById('ui1').innerText = playerInv[1];
+}
+
+// Added jump buffer and coyote time to Player
+function mkPlayer(x,y){return{x,y,vx:0,vy:0,onGround:false,jcd:0,riding:null,coyote:0,jumpBuf:0,jumpHeld:false};}
+
+function resetToBuild() {
+    gameState = 'BUILD';
+    document.getElementById('inventory').style.display='flex';
+    document.getElementById('uiPhase').innerText = 'BUILD';
+    document.getElementById('uiPhase').style.color = '#ffcc00';
+    document.getElementById('btnTogglePhase').innerText = 'TEST CLIMB';
+    document.getElementById('tcMoveGrp').style.opacity = '0.2'; document.getElementById('tcJumpGrp').style.opacity = '0.2';
+    document.getElementById('inventory').style.opacity = '1';
+    player = mkPlayer(startNode.x, startNode.y);
+    cam.z = 0.85; cam.x = player.x - (CW/cam.z)/2; cam.y = player.y - (CH/cam.z)/2;
+}
+
+/* ══ LEVEL DATA ══ */
+const LEVELS = [
+  {name:'1', text:'Build stairs to cross the wall.', inv: {100:0, 10:4, 1:8}},
+  {name:'2', text:'Rotate a rod to bridge the gap.', inv: {100:0, 10:2, 1:5}},
+  {name:'3', text:'Inject fragments into the scale to lift the path.', inv: {100:0, 10:5, 1:10}},
+  {name:'4', text:'Power the Ferris Wheel hub (needs 10).', inv: {100:0, 10:2, 1:15}},
+  {name:'5', text:'Load the catapult. Heavy blocks launch further.', inv: {100:0, 10:3, 1:5}},
+  {name:'6', text:'The Factory Floor. Ride the wheel, bridge the gap, and weigh the scale.', inv: {100:0, 10:4, 1:20}},
+  {name:'7', text:'Ascension Protocol. Launch from the catapult and cross the void to the wheel.', inv: {100:0, 10:6, 1:15}},
+  {name:'8', text:'The Gear Shaft. Lift, power the wheel, and scale the massive wall.', inv: {100:0, 10:6, 1:20}},
+  {name:'9', text:'Heavy Industry. Catapult across the chasm to the scale, then to the wheel.', inv: {100:0, 10:10, 1:20}},
+  {name:'10', text:'The Ultimate Factory. A grueling gauntlet of all mechanisms.', inv: {100:1, 10:12, 1:30}}
+];
+
+function buildLevelGrid() {
+    const g = document.getElementById('levelGrid'); g.innerHTML='';
+    LEVELS.forEach((lv, i) => {
+        const c = document.createElement('div'); c.className='lv-cell';
+        c.innerHTML=`<div class="lv-num">REALM ${lv.name}</div><div class="lv-name">${lv.text}</div>`;
+        c.onclick=()=>{ gameMode='STORY'; currentLevel=i; playerInv = { 100: lv.inv[100], 10: lv.inv[10], 1: lv.inv[1] }; startLevel(); };
+        g.appendChild(c);
+    });
+}
+
+function startLevel() {
+    document.querySelectorAll('.ov').forEach(el=>el.classList.remove('show'));
+    document.getElementById('hud').style.display='flex';
+    document.getElementById('archToolbar').style.display='none';
+    winTriggered = false;
+    world = genWorld(gameMode === 'RANDOM' ? 'random' : currentLevel);
+    startNode.x = world.plats[1].x + 20; 
+    startNode.y = world.plats[1].y - PH - 20;
+    world.placedFrags = []; 
+    resetToBuild(); updateHUD();
+    showNotif(gameMode === 'RANDOM' ? "Uncharted Realm generated." : `Realm ${currentLevel+1} Started.`);
+}
+
+/* ══ WORLD GENERATION ENGINE ══ */
+function genWorld(idx){
+  const WW=2500, WH=5000, GY=4000;
+  const plats=[],blocks=[],wheels=[],scales=[],cats=[];
+  plats.push({x:0,y:GY,w:WW,h:200,kind:'ground', parentId:0});
+  plats.push({x:50,y:GY-50,w:120,h:20,kind:'slab', parentId:0}); 
+
+  if(idx==='random') {
+      let curY = GY - 50;
+      let numStages = 4 + Math.floor(Math.random() * 3); 
+      let seq = [];
+      for(let i=0; i<numStages; i++) seq.push(Math.floor(Math.random() * 4)); 
+
+      seq.forEach((m, i) => {
+          let startX = 50 + (i % 2) * (350 + Math.random()*150); 
+          let id = archNextId++;
+          plats.push({x: startX, y: curY, w: 120, h: 20, kind: 'slab', parentId: id});
+
+          if (m === 0) { // Scale
+              let scCX = startX + 220; 
+              const sc = {
+                  cx: scCX, cy: curY - 150, baseY: curY, parentId: id,
+                  platL: {x: scCX - 90, y: curY, w: 60, h: 12, kind: 'scale', parentId: id},
+                  platR: {x: scCX + 50, y: curY, w: 60, h: 12, kind: 'scale', parentId: id}
+              };
+              scales.push(sc); plats.push(sc.platL, sc.platR);
+              blocks.push({x: sc.platR.x + 10, y: curY - 40, vx: 0, vy: 0, pv: 0, h: 40, isLocked: false, isFlat: false, parentId: id});
+              curY -= (230 + Math.random()*70); 
+          } else if (m === 1) { // Wheel
+              let wCX = startX + 180; let wCY = curY - 120;
+              const hub = {x: wCX - BW/2, y: wCY - 20, vx: 0, vy: 0, pv: 0, h: 40, isHub: true, req: 10 + Math.floor(Math.random()*2)*10, parentId: id};
+              blocks.push(hub);
+              const wP=[]; 
+              for(let j=0; j<4; j++){ 
+                  let p = {x: 0, y: 0, w: 60, h: 12, kind: 'wheel', angleOffset: j*(Math.PI/2), parentId: id};
+                  wP.push(p); plats.push(p); 
+              }
+              wheels.push({cx: wCX, cy: wCY, r: 120, angle: 0, hub, plats: wP, parentId: id});
+              curY -= (220 + Math.random()*60);
+          } else if (m === 2) { // Catapult
+              let cCX = startX + 200;
+              const cPL = {x: cCX - 80, y: curY, w: 60, h: 10, kind: 'catapult', parentId: id};
+              const cPR = {x: cCX + 70, y: curY, w: 60, h: 10, kind: 'catapult', parentId: id};
+              const cWB = {x: cPR.x + 10, y: curY - 40, vx: 0, vy: 0, pv: 0, h: 40, isFlat: false, isCatW: true, catReq: 10 + Math.floor(Math.random()*2)*10, parentId: id};
+              cats.push({cx: cCX, cy: curY, platL: cPL, platR: cPR, weightBlock: cWB, req: cWB.catReq, tilt: 0, launchCd: 0, parentId: id});
+              plats.push(cPL, cPR); blocks.push(cWB);
+              curY -= (250 + Math.random()*50); 
+          } else if (m === 3) { // Wall
+              plats.push({x: startX + 150, y: curY - 250, w: 40, h: 250, kind: 'pillar', parentId: id});
+              curY -= (250 + Math.random()*50);
+          }
+      });
+
+      let exitX = 50 + (seq.length % 2) * 400 + Math.random() * 100;
+      let eId = archNextId++;
+      plats.push({x: exitX, y: curY, w: 150, h: 20, kind: 'slab', parentId: eId});
+      var exit = {x: exitX + 50, y: curY - 56, w: 40, h: 56, parentId: eId};
+  } 
+  else if (idx >= 0 && idx <= 4) {
+      if(idx===0){
+        plats.push({x:300,y:GY-250,w:20,h:250,kind:'pillar'});
+        plats.push({x:320,y:GY-250,w:150,h:20,kind:'slab'});
+        var exit={x:380,y:GY-306,w:40,h:56};
+      } else if(idx===1){
+        plats.push({x:380,y:GY-50,w:150,h:20,kind:'slab'});
+        var exit={x:420,y:GY-106,w:40,h:56};
+      } else if(idx===2){
+        const sc={cx:350,cy:GY-150,baseY:GY-100,platL:{x:250,y:GY-100,w:60,h:12,kind:'scale'},platR:{x:410,y:GY-100,w:60,h:12,kind:'scale'}};
+        scales.push(sc); plats.push(sc.platL, sc.platR);
+        blocks.push({x:415,y:GY-140,vx:0,vy:0,pv:0,h:40,isLocked:false,isFlat:false});
+        plats.push({x:100,y:GY-300,w:150,h:20,kind:'slab'});
+        var exit={x:150,y:GY-356,w:40,h:56};
+      } else if(idx===3){
+        const hub={x:325,y:GY-170,vx:0,vy:0,pv:0,h:40,isHub:true,req:10}; blocks.push(hub);
+        const wP=[]; for(let j=0;j<4;j++){const p={x:0,y:0,w:60,h:12,kind:'wheel',angleOffset:j*(Math.PI/2)}; wP.push(p); plats.push(p);}
+        wheels.push({cx:350,cy:GY-150,r:110,angle:0,hub,plats:wP});
+        plats.push({x:400,y:GY-300,w:150,h:20,kind:'slab'});
+        var exit={x:450,y:GY-356,w:40,h:56};
+      } else if(idx===4){
+        const cPL={x:250,y:GY-100,w:60,h:10,kind:'catapult'}, cPR={x:400,y:GY-100,w:60,h:10,kind:'catapult'};
+        const cWB={x:405,y:GY-140,vx:0,vy:0,pv:0,h:40,isFlat:false,isCatW:true,catReq:20};
+        cats.push({cx:330,cy:GY-100,platL:cPL,platR:cPR,weightBlock:cWB,req:20,tilt:0,launchCd:0});
+        plats.push(cPL, cPR); blocks.push(cWB);
+        plats.push({x:200,y:GY-350,w:200,h:20,kind:'slab'});
+        var exit={x:300,y:GY-406,w:40,h:56};
+      }
+  } else if (idx >= 5 && idx <= 9) {
+      let seq = [];
+      if (idx === 5) seq = [1, 0]; 
+      else if (idx === 6) seq = [2, 1]; 
+      else if (idx === 7) seq = [0, 1, 3]; 
+      else if (idx === 8) seq = [2, 0, 1]; 
+      else if (idx === 9) seq = [0, 1, 2, 3]; 
+
+      let curY = GY - 50;
+      
+      seq.forEach((m, i) => {
+          let startX = 50 + (i % 2) * 450; 
+          plats.push({x: startX, y: curY, w: 120, h: 20, kind: 'slab'});
+
+          if (m === 0) { // Scale
+              let scCX = startX + 220; 
+              const sc = {
+                  cx: scCX, cy: curY - 150, baseY: curY,
+                  platL: {x: scCX - 90, y: curY, w: 60, h: 12, kind: 'scale'},
+                  platR: {x: scCX + 50, y: curY, w: 60, h: 12, kind: 'scale'}
+              };
+              scales.push(sc); plats.push(sc.platL, sc.platR);
+              blocks.push({x: sc.platR.x + 10, y: curY - 40, vx: 0, vy: 0, pv: 0, h: 40, isLocked: false, isFlat: false});
+              curY -= 250; 
+          } else if (m === 1) { // Wheel
+              let wCX = startX + 180; let wCY = curY - 120;
+              const hub = {x: wCX - BW/2, y: wCY - 20, vx: 0, vy: 0, pv: 0, h: 40, isHub: true, req: 10};
+              blocks.push(hub);
+              const wP=[]; 
+              for(let j=0; j<4; j++){ wP.push({x: 0, y: 0, w: 60, h: 12, kind: 'wheel', angleOffset: j*(Math.PI/2)}); plats.push(wP[j]); }
+              wheels.push({cx: wCX, cy: wCY, r: 120, angle: 0, hub, plats: wP});
+              curY -= 240;
+          } else if (m === 2) { // Catapult
+              let cCX = startX + 200;
+              const cPL = {x: cCX - 80, y: curY, w: 60, h: 10, kind: 'catapult'};
+              const cPR = {x: cCX + 70, y: curY, w: 60, h: 10, kind: 'catapult'};
+              const cWB = {x: cPR.x + 10, y: curY - 40, vx: 0, vy: 0, pv: 0, h: 40, isFlat: false, isCatW: true, catReq: 20};
+              cats.push({cx: cCX, cy: curY, platL: cPL, platR: cPR, weightBlock: cWB, req: 20, tilt: 0, launchCd: 0});
+              plats.push(cPL, cPR); blocks.push(cWB);
+              curY -= 300;
+          } else if (m === 3) { // Massive Wall
+              plats.push({x: startX + 150, y: curY - 250, w: 40, h: 250, kind: 'pillar'});
+              curY -= 250;
+          }
+      });
+
+      let exitX = 50 + (seq.length % 2) * 450;
+      plats.push({x: exitX, y: curY, w: 150, h: 20, kind: 'slab'});
+      var exit = {x: exitX + 50, y: curY - 56, w: 40, h: 56};
+  }
+
+  return{width:WW,height:WH,groundY:GY,plats,blocks,wheels,scales,cats,exit,placedFrags:[]};
+}
+
+/* ══ PHYSICS ══ */
+function tickDynamics(){
+  world.scales.forEach(sc=>{
+    let mL=0,mR=0;
+    if(player.riding===sc.platL)mL+=15;
+    if(player.riding===sc.platR)mR+=15;
+    world.blocks.forEach(b=>{const w=Math.max(2,b.pv*1.5);if(b.riding===sc.platL)mL+=w;if(b.riding===sc.platR)mR+=w;});
+    const diff=mR-mL;
+    
+    const tL=clamp(sc.baseY-diff*5.5,sc.baseY-300,Math.min(sc.baseY+300,world.groundY-20));
+    const tR=clamp(sc.baseY+diff*5.5,sc.baseY-300,Math.min(sc.baseY+300,world.groundY-20));
+    
+    const dyL=(tL-sc.platL.y)*.1, dyR=(tR-sc.platR.y)*.1;
+    sc.platL.y+=dyL; sc.platR.y+=dyR;
+    if(player.riding===sc.platL)player.y+=dyL;
+    if(player.riding===sc.platR)player.y+=dyR;
+    world.blocks.forEach(b=>{if(b.riding===sc.platL)b.y+=dyL;if(b.riding===sc.platR)b.y+=dyR;});
+  });
+
+  world.wheels.forEach(wh=>{
+    if(wh.hub.pv>=wh.hub.req)wh.angle+=.016;
+    wh.plats.forEach(p=>{
+      const nx=wh.cx+Math.cos(wh.angle+p.angleOffset)*wh.r-p.w/2;
+      const ny=wh.cy+Math.sin(wh.angle+p.angleOffset)*wh.r-p.h/2;
+      const dx=nx-p.x, dy=ny-p.y;
+      p.x=nx; p.y=ny;
+      if(player.riding===p){player.x+=dx;player.y+=dy;}
+    });
+  });
+
+  world.cats.forEach(cat=>{
+    const wt=cat.weightBlock.pv*1.5;
+    cat.tilt=clamp(wt/(cat.req*1.5),0,1);
+    const newLy=cat.cy-cat.tilt*50, newRy=cat.cy+cat.tilt*28;
+    const dyL=newLy-cat.platL.y, dyR=newRy-cat.platR.y;
+    cat.platL.y=newLy; cat.platR.y=newRy;
+    if(player.riding===cat.platL)player.y+=dyL;
+    if(player.riding===cat.platR)player.y+=dyR;
+    if(cat.launchCd>0)cat.launchCd--;
+    if(cat.weightBlock.pv>=cat.req&&!(cat.launchCd>0)&&player.riding===cat.platL){
+      cat.launchCd=80; player.vy=-18; player.riding=null; player.onGround=false; SFX.launch(); 
+    }
+  });
+}
+
+function tickPlayer(){
+  const p=player; p.vx=0;
+  if(KEY.ArrowLeft||KEY.KeyA)p.vx=-SPD;
+  if(KEY.ArrowRight||KEY.KeyD)p.vx=SPD;
+  
+  // Jump Buffering
+  let jumpInput = KEY.Space || KEY.ArrowUp || KEY.KeyW;
+  if (jumpInput) {
+      if (!p.jumpHeld) { p.jumpBuf = 8; p.jumpHeld = true; }
+  } else { p.jumpHeld = false; }
+  
+  if (p.jumpBuf > 0) p.jumpBuf--;
+  if (p.coyote > 0) p.coyote--;
+
+  // Coyote Time execution
+  if(p.jumpBuf > 0 && p.coyote > 0 && p.jcd <= 0){
+      p.vy=JF; p.onGround=false; p.coyote=0; p.jumpBuf=0; p.jcd=12; SFX.jump(); p.riding=null;
+  }
+  
+  if(p.jcd>0)p.jcd--; p.vy=Math.min(p.vy+GRAV,18);
+
+  const pushBlks=world.blocks.filter(b=>!b.isHub&&!b.isCatW);
+  const hCols=[...world.plats.filter(pl=>pl.kind==='pillar'),...pushBlks, ...world.placedFrags];
+  
+  p.x=clamp(p.x+p.vx,0,world.width-PW);
+  for(const c of hCols){
+    const cw=c.isFlat?c.h:(c.w||BW), ch=c.isFlat?BW:(c.h||40);
+    if(boxOv({x:p.x,y:p.y,w:PW,h:PH},{x:c.x,y:c.y,w:cw,h:ch})){
+      if(p.vx>0) p.x=c.x-PW;
+      else if(p.vx<0) p.x=c.x+cw;
+    }
+  }
+
+  const vCols=[...world.plats, ...pushBlks, ...world.placedFrags];
+  p.y+=p.vy; p.onGround=false; let newRiding=null;
+  for(const c of vCols){
+    const cw=c.isFlat?c.h:(c.w||BW), ch=c.isFlat?BW:(c.h||40);
+    if(!boxOv({x:p.x,y:p.y,w:PW,h:PH},{x:c.x,y:c.y,w:cw,h:ch}))continue;
+    
+    // True solid vertical collisions
+    if(p.vy>=0){
+        if((p.y - p.vy + PH) <= c.y + 15){ 
+            p.y=c.y-PH; p.vy=0; p.onGround=true; newRiding=c;
+        }
+    } else if(p.vy<0 && (pushBlks.includes(c) || world.placedFrags.includes(c) || c.kind==='pillar')){
+        if((p.y - p.vy) >= c.y + ch - 15){
+            p.y=c.y+ch; p.vy=0;
+        }
+    }
+  }
+  
+  // Set coyote time if we land
+  if(p.onGround){ p.coyote = 6; p.riding=newRiding; } else { p.riding=null; }
+  
+  if(p.y+PH>=world.groundY){
+      showNotif("Fell to the depths! Tweaking architecture...");
+      resetToBuild();
+  }
+}
+
+function tickBlocks(){
+    for(const bl of world.blocks){
+        if(bl.isHub || bl.isCatW) continue;
+        const cw=bl.isFlat?bl.h:BW, ch=bl.isFlat?BW:bl.h;
+        bl.vy=Math.min(bl.vy+GRAV,18);
+        bl.y+=bl.vy; bl.onGround=false; let nr=null;
+        for(const pl of world.plats){
+            if(boxOv({x:bl.x,y:bl.y,w:cw,h:ch},pl)&&bl.vy>=0){
+                if((bl.y - bl.vy + ch) <= pl.y + 15){ 
+                    bl.y=pl.y-ch;bl.vy=0;bl.onGround=true;nr=pl;
+                }
+            }
+        }
+        bl.riding=nr;
+    }
+}
+
+function tickCam(){
+  if(gameState === 'PLAY') {
+      const targetX = player.x - (CW/cam.z)/2;
+      const targetY = player.y + PH/2 - (CH/cam.z)*0.65;
+      cam.x += (targetX - cam.x) * 0.12;
+      cam.y += (targetY - cam.y) * 0.12;
+  } else if (gameState === 'BUILD' || gameState === 'ARCHITECT') {
+      if(KEY.ArrowLeft||KEY.KeyA) cam.x -= 15/cam.z;
+      if(KEY.ArrowRight||KEY.KeyD) cam.x += 15/cam.z;
+      if(KEY.ArrowUp||KEY.KeyW) cam.y -= 15/cam.z;
+      if(KEY.ArrowDown||KEY.KeyS) cam.y += 15/cam.z;
+  }
+  
+  if(world) {
+      let maxCamX = Math.max(0, world.width - CW/cam.z);
+      let maxCamY = Math.max(0, world.height - CH/cam.z);
+      cam.x = clamp(cam.x, 0, maxCamX);
+      cam.y = clamp(cam.y, 0, maxCamY);
+  }
+}
+
+function checkExit(){
+  if(gameState!=='PLAY' || winTriggered || !world.exit)return;
+  if(!boxOv({x:player.x,y:player.y,w:PW,h:PH},world.exit))return;
+  winTriggered=true; SFX.beacon();
+  document.getElementById('ovWin').classList.add('show');
+  document.getElementById('hud').style.display='none';
+  document.getElementById('btnNext').onclick = () => {
+      document.getElementById('ovWin').classList.remove('show');
+      if(gameMode==='STORY'){
+          currentLevel++;
+          if(currentLevel>=LEVELS.length){ document.getElementById('ovMenu').classList.add('show'); gameState='MENU'; }
+          else{ 
+              playerInv = { 100: LEVELS[currentLevel].inv[100], 10: LEVELS[currentLevel].inv[10], 1: LEVELS[currentLevel].inv[1] };
+              startLevel(); 
+          }
+      } else { 
+          playerInv = {100:2, 10:10, 1:20}; 
+          startLevel(); 
+      }
+  };
+}
+
+/* ══ DRAWING ENGINE ══ */
+function iso(dx,dy,w,h,face,top,side,D=3){
+  if(h<6){ctx.fillStyle=face;ctx.fillRect(dx,dy,w,h);return;}
+  ctx.fillStyle=side;ctx.beginPath();ctx.moveTo(dx+w,dy);ctx.lineTo(dx+w+D,dy-D);ctx.lineTo(dx+w+D,dy+h-D);ctx.lineTo(dx+w,dy+h);ctx.closePath();ctx.fill();
+  ctx.fillStyle=top;ctx.beginPath();ctx.moveTo(dx,dy);ctx.lineTo(dx+w,dy);ctx.lineTo(dx+w+D,dy-D);ctx.lineTo(dx+D,dy-D);ctx.closePath();ctx.fill();
+  ctx.fillStyle=face;ctx.fillRect(dx,dy,w,h);
+}
+
+function drawFog() {
+    let t = Date.now() / 2000;
+    ctx.fillStyle = '#6e7f91'; 
+    for(let i=0; i<30; i++) {
+        let fogY = world.groundY - i * 180 + Math.sin(t + i)*40;
+        let fogX = ((i * 300 + t * (20 + (i%5)*10)) % (world.width + 1000)) - 500;
+        
+        ctx.globalAlpha = 0.05 + 0.05 * Math.sin(t + i*2);
+        ctx.beginPath(); 
+        ctx.ellipse(fogX, fogY, 400, 150, 0, 0, Math.PI*2); 
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+}
+
+function drawScene() {
+    ctx.save();
+    ctx.scale(cam.z, cam.z);
+    ctx.translate(-cam.x, -cam.y);
+    
+    drawFog();
+
+    for(const pl of world.plats){
+        if(pl.kind==='ground'){
+            ctx.fillStyle=P.gnd; ctx.fillRect(pl.x,pl.y,pl.w,pl.h);
+            ctx.fillStyle='#ff2244'; ctx.fillRect(pl.x,pl.y,pl.w,5); 
+        } else if(pl.kind==='scale'){ iso(pl.x,pl.y,pl.w,pl.h,'#224468','#336898','#112234'); }
+        else if(pl.kind==='wheel'){ iso(pl.x,pl.y,pl.w,pl.h,P.whlF,P.whlT,P.whlS); }
+        else if(pl.kind==='catapult'){ iso(pl.x,pl.y,pl.w,pl.h,P.catF,P.catT,P.catS); }
+        else if(pl.kind==='pillar'){ iso(pl.x,pl.y,pl.w,pl.h,P.pilF,P.pilT,P.pilS); }
+        else { iso(pl.x,pl.y,pl.w,pl.h,P.slabF,P.slabT,P.slabS); }
+    }
+
+    world.scales.forEach(sc=>{
+        ctx.strokeStyle='rgba(255,255,255,.2)'; ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(sc.platL.x+30,sc.platL.y);ctx.lineTo(sc.cx,sc.cy);ctx.lineTo(sc.platR.x+30,sc.platR.y);ctx.stroke();
+        ctx.fillStyle='#555'; ctx.fillRect(sc.cx-5,sc.cy-5,10,10);
+    });
+    world.wheels.forEach(wh=>{
+        const pwr=wh.hub.pv>=wh.hub.req;
+        ctx.strokeStyle=pwr?'rgba(70,190,140,.8)':'rgba(255,255,255,.2)'; ctx.lineWidth=4;
+        ctx.beginPath();ctx.arc(wh.cx,wh.cy,wh.r,0,Math.PI*2);ctx.stroke();
+        for(let i=0;i<4;i++){
+            let a = wh.angle + i*Math.PI/2;
+            ctx.beginPath();ctx.moveTo(wh.cx,wh.cy);ctx.lineTo(wh.cx+Math.cos(a)*wh.r,wh.cy+Math.sin(a)*wh.r);ctx.stroke();
+        }
+    });
+
+    ctx.textAlign='center';
+    for(const bl of world.blocks){
+        const cw=bl.isFlat?bl.h:BW, ch=bl.isFlat?BW:bl.h;
+        if(bl.isHub){
+            iso(bl.x,bl.y,cw,ch,P.hubF,P.hubT,P.hubS);
+            ctx.fillStyle='#FFF';ctx.font='bold 11px Helvetica'; ctx.fillText(`${bl.pv}/${bl.req}`,bl.x+cw/2,bl.y+ch/2+4);
+        } else if(bl.isCatW){
+            iso(bl.x,bl.y,cw,ch,P.catWF,P.catWT,P.catWS);
+            ctx.fillStyle='#FFF';ctx.font='bold 11px Helvetica'; ctx.fillText(`${bl.pv}/${bl.catReq}`,bl.x+cw/2,bl.y+ch/2+4);
+        } else {
+            iso(bl.x,bl.y,cw,ch,P.blkF,P.blkT,P.blkS);
+            ctx.fillStyle=P.blkTx;ctx.font=`bold 14px Helvetica`; ctx.fillText(bl.pv,bl.x+cw/2,bl.y+ch/2+5);
+        }
+    }
+
+    for(const f of world.placedFrags) {
+        let fF, fT, fS;
+        if (f.buckets[100] > 0) { fF = P.v100F; fT = P.v100T; fS = P.v100S; }
+        else if (f.buckets[10] > 0) { fF = P.v10F; fT = P.v10T; fS = P.v10S; }
+        else { fF = P.v1F; fT = P.v1T; fS = P.v1S; }
+        
+        iso(f.x,f.y,f.w,f.h,fF,fT,fS);
+        
+        ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
+        ctx.beginPath();
+        for(let gridY=25; gridY<f.h; gridY+=25) { ctx.moveTo(f.x, f.y+gridY); ctx.lineTo(f.x+f.w, f.y+gridY); }
+        for(let gridX=25; gridX<f.w; gridX+=25) { ctx.moveTo(f.x+gridX, f.y); ctx.lineTo(f.x+gridX, f.y+f.h); }
+        ctx.stroke();
+    }
+
+    if(world.exit) {
+        const e=world.exit;
+        const grdLaser = ctx.createLinearGradient(0, e.y, 0, e.y - 3500);
+        grdLaser.addColorStop(0, 'rgba(232,93,117,0.6)');
+        grdLaser.addColorStop(1, 'rgba(232,93,117,0)');
+        ctx.fillStyle = grdLaser; ctx.fillRect(e.x + 10, e.y - 3500, 20, 3500);
+        
+        ctx.fillStyle='rgba(232,93,117,0.4)'; ctx.fillRect(e.x-10,e.y-20,60,80);
+        ctx.fillStyle=P.bea; ctx.beginPath();ctx.moveTo(e.x+20,e.y+10);ctx.lineTo(e.x+30,e.y+40);ctx.lineTo(e.x+10,e.y+40);ctx.fill();
+    }
+
+    ctx.save();
+    if(gameState === 'BUILD' || gameState === 'ARCHITECT') ctx.globalAlpha = 0.5;
+    ctx.fillStyle=P.shd; ctx.beginPath();ctx.ellipse(player.x+PW/2,player.y+PH+3,PW/2+2,3.5,0,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=P.pl; ctx.fillRect(player.x,player.y,PW,PH);
+    ctx.restore();
+
+    if(gameState==='BUILD' || gameState === 'ARCHITECT') {
+        ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1/cam.z;
+        let startX = Math.floor(cam.x/25)*25, endX = cam.x + (CW/cam.z);
+        let startY = Math.floor(cam.y/25)*25, endY = cam.y + (CH/cam.z);
+        ctx.beginPath();
+        for(let x=startX; x<endX; x+=25) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
+        for(let y=startY; y<endY; y+=25) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+        ctx.stroke();
+    }
+
+    ctx.restore();
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  
+  if(gameState !== 'MENU') {
+      if(gameState === 'PLAY') {
+          tickPlayer();
+          tickBlocks();
+          tickDynamics();
+          checkExit();
+      }
+      tickCam();
+  }
+  
+  const grd=ctx.createLinearGradient(0,0,0,CH);grd.addColorStop(0,P.skyT);grd.addColorStop(1,P.skyB);
+  ctx.fillStyle=grd;ctx.fillRect(0,0,CW,CH);
+  
+  if(world && gameState !== 'MENU') drawScene();
+  
+  flushJUST();
+}
+
+requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>

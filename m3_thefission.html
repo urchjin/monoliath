@@ -5,21 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Fission</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Datatype:wght@300;500;800&display=swap');
 
         :root {
             --bg: #0B0E14; --text: #E2E8F0; --th: #A0AEC0; 
             --h: #38B2AC; --t: #ED8936; --o: #ECC94B; 
             --panel: rgba(20, 25, 35, 0.95);
             --shadow-glow: 0 10px 25px rgba(56, 178, 172, 0.15);
-            --grid-line: rgba(255,255,255,0.05);
-            --shadow-drag: 0 20px 40px rgba(0,0,0,0.3);
+            --grid-line: rgba(255,255,255,0.03);
+            --shadow-drag: 0 20px 40px rgba(0,0,0,0.4);
         }
 
         html, body {
             margin: 0; padding: 0; width: 100%; height: 100%; 
             background: var(--bg); color: var(--text);
-            font-family: 'Montserrat', sans-serif; 
+            font-family: 'Datatype', sans-serif; 
             user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
             position: fixed; overflow: hidden; overscroll-behavior: none;
         }
@@ -32,7 +32,7 @@
         .screen {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             display: none; flex-direction: column; align-items: center;
-            overflow-y: auto; overflow-x: hidden; padding: 20px; box-sizing: border-box;
+            overflow-y: auto; overflow-x: hidden; padding: 15px; box-sizing: border-box;
             -webkit-overflow-scrolling: touch;
         }
         #menu-screen { display: flex; justify-content: center; }
@@ -40,61 +40,63 @@
         /* --- MENU --- */
         .menu-box { background: var(--panel); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 400px;}
         .level-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 20px 0; }
-        .lvl-btn { width: 45px; height: 45px; border-radius: 12px; background: #2D3748; color: white; font-size: 1.1rem; }
+        .lvl-btn { width: 45px; height: 45px; border-radius: 12px; background: #2D3748; color: white; font-size: 1.1rem; transition: 0.3s; }
+        .lvl-btn.solved { background: var(--o); color: #000; box-shadow: 0 0 15px rgba(236, 201, 75, 0.4); border: 2px solid #FFF; }
         .lvl-btn.primary { background: var(--h); color: #000; width: 100%; height: 50px; border-radius: 25px; margin-top: 10px;}
 
         /* --- GAME UI --- */
-        .game-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .game-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .game-title { font-size: 1.1rem; font-weight: 800; color: var(--h); letter-spacing: 2px; text-transform: uppercase; }
         .hud-btn { background: #2D3748; color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; text-transform: uppercase; }
 
         /* --- DYNAMIC SOKOBAN MAP --- */
-        .map-wrapper { width: 100%; max-width: 450px; margin-bottom: 20px; display: flex; justify-content: center; }
+        .map-wrapper { width: 100%; max-width: 500px; margin-bottom: 15px; display: flex; justify-content: center; }
         #map-container {
             position: relative; width: 100%; 
-            background: #12161F; border-radius: 12px; border: 2px solid rgba(255,255,255,0.08);
+            background: #12161F; border-radius: 8px; border: 2px solid rgba(255,255,255,0.08);
             box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
         }
         
         .tile { position: absolute; box-sizing: border-box; border: 1px solid var(--grid-line); display: flex; align-items: center; justify-content: center; transition: left 0.15s ease-out, top 0.15s ease-out; }
-        .tile-wall { background: #2D3748; border-radius: 4px; transform: scale(0.9); box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1); }
-        .tile-target { border: 2px dashed var(--h); border-radius: 8px; flex-direction: column; background: rgba(56, 178, 172, 0.05); }
-        .target-val { font-size: 0.65rem; color: var(--h); font-weight: 800; text-align: center; }
+        .tile-wall { background: #2D3748; border-radius: 2px; transform: scale(0.9); box-shadow: inset 2px 2px 5px rgba(255,255,255,0.1); }
+        .tile-target { border: 2px dashed var(--h); border-radius: 4px; flex-direction: column; background: rgba(56, 178, 172, 0.05); }
         
-        .tile-block { border-radius: 8px; font-weight: 800; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2; cursor: pointer; border: 2px solid transparent; }
+        .target-val { font-size: 0.45rem; color: var(--h); font-weight: 800; text-align: center; }
+        .tile-block { border-radius: 4px; font-weight: 800; font-size: 0.55rem; padding: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2; cursor: pointer; border: 1px solid transparent; }
         
+        /* PURITY STYLING */
         .tile-block.old-core { background: #2D3748; border-color: #718096; color: #FFF; }
         .tile-block.new-core { background: #1A202C; border-color: var(--h); color: var(--h); }
         
-        .tile-block.selected { border-color: var(--o) !important; background: var(--o) !important; color: #000 !important; box-shadow: 0 0 15px var(--o); transform: scale(1.05); }
+        .tile-block.selected { border-color: var(--o) !important; background: var(--o) !important; color: #000 !important; box-shadow: 0 0 15px var(--o); transform: scale(1.15); z-index: 5;}
         .tile-block.resolved { border-color: var(--h) !important; background: rgba(56, 178, 172, 0.2) !important; color: var(--h) !important; }
         
         .tile-player { z-index: 3; transition: left 0.15s ease-out, top 0.15s ease-out; }
-        .player-core { width: 60%; height: 60%; background: var(--o); border-radius: 50%; box-shadow: 0 0 15px var(--o); }
+        .player-core { width: 70%; height: 70%; background: var(--o); border-radius: 50%; box-shadow: 0 0 15px var(--o); }
 
         /* --- INVENTORY & CONTROLS --- */
         .bottom-hud { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; flex: 1; }
         
-        .inventory-panel { background: var(--panel); padding: 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
-        .inv-title { font-size: 0.65rem; color: var(--th); font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .inv-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .inventory-panel { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); }
+        .inv-title { font-size: 0.65rem; color: var(--th); font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .inv-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 5px; }
         
         .inv-slot { 
-            flex-shrink: 0; width: 45px; height: 45px; border-radius: 10px; background: rgba(255,255,255,0.05); 
-            display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; border: 2px solid transparent; transition: 0.2s; cursor: pointer;
+            flex-shrink: 0; width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: white; border: 2px solid transparent; transition: 0.2s; cursor: pointer;
         }
         .inv-slot.filled.old-core { background: #2D3748; border-color: #718096; color: #FFF; box-shadow: var(--shadow-glow); }
         .inv-slot.filled.new-core { background: #1A202C; border-color: rgba(255,255,255,0.1); color: var(--h); box-shadow: var(--shadow-glow); }
         .inv-slot.selected { border-color: var(--o) !important; background: var(--o) !important; color: #000 !important; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(236, 201, 75, 0.3); }
 
-        .control-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .control-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         
-        .action-cluster { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-right: 20px; }
-        .action-cluster button { padding: 15px; border-radius: 12px; font-size: 0.8rem; background: #2D3748; color: white; }
+        .action-cluster { display: flex; flex-direction: column; gap: 10px; flex: 1; margin-right: 15px; }
+        .action-cluster button { padding: 14px; border-radius: 12px; font-size: 0.8rem; background: #2D3748; color: white; }
         .action-cluster button.primary { background: var(--t); color: #000; }
 
-        .d-pad { display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; }
-        .d-btn { background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--h); font-size: 1.5rem; }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 5px; }
+        .d-btn { background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--h); font-size: 1.2rem; }
         .d-btn:active { background: var(--h); color: #000; transform: scale(0.9); }
         .d-up { grid-column: 2; grid-row: 1; }
         .d-left { grid-column: 1; grid-row: 2; }
@@ -102,45 +104,102 @@
         .d-down { grid-column: 2; grid-row: 3; }
 
         /* --- REFINERY LAB --- */
-        .lab-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: var(--panel); border-radius: 18px; margin-bottom: 15px; width: 100%; max-width: 500px;}
-        .lab-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 500px; flex: 1; min-height: 0; }
-        .lab-section { background: rgba(0,0,0,0.3); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; flex: 1; min-height: 0; border: 1px solid rgba(255,255,255,0.02); }
-        .bottom-half { display: flex; gap: 12px; flex: 1.2; min-height: 0; }
+        .lab-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: var(--panel); border-radius: 18px; margin-bottom: 10px; width: 100%; max-width: 500px;}
+        .lab-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 500px; flex: 1; min-height: 0; }
+        .lab-section { background: rgba(0,0,0,0.3); border-radius: 15px; padding: 10px; display: flex; flex-direction: column; flex: 1; min-height: 0; border: 1px solid rgba(255,255,255,0.02); }
+        .bottom-half { display: flex; gap: 10px; flex: 1.2; min-height: 0; }
         .bottom-half .lab-section { flex: 1; }
 
-        .section-title { font-size: 0.6rem; font-weight: 800; color: var(--th); letter-spacing: 2px; text-align: center; margin-bottom: 8px; }
-        .pv-container { display: flex; flex: 1; gap: 6px; min-height: 0; }
+        .section-title { font-size: 0.55rem; font-weight: 800; color: var(--th); letter-spacing: 2px; text-align: center; margin-bottom: 5px; }
+        .pv-container { display: flex; flex: 1; gap: 4px; min-height: 0; }
         .pv-col {
-            flex: 1; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px; padding-bottom: 30px;
-            display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px;
+            flex: 1; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 6px; padding-bottom: 25px;
+            display: flex; flex-wrap: wrap; align-content: flex-start; gap: 4px;
             position: relative; border: 2px dashed rgba(255,255,255,0.1); transition: 0.2s; overflow-y: auto;
         }
         .pv-col.drag-over { border-color: var(--h); background: rgba(56, 178, 172, 0.1); }
         .pv-col.split-over { border-color: var(--o); background: rgba(236, 201, 75, 0.1); }
-        .col-label { position: absolute; bottom: 6px; left: 0; width: 100%; text-align: center; font-size: 0.55rem; color: #718096; font-weight: 800; pointer-events: none; }
+        .col-label { position: absolute; bottom: 4px; left: 0; width: 100%; text-align: center; font-size: 0.5rem; color: #718096; font-weight: 800; pointer-events: none; }
 
-        .block { border-radius: 4px; cursor: grab; position: relative; touch-action: none; pointer-events: auto; }
-        .b-100 { width: 34px; height: 34px; background: var(--h); }
-        .b-10 { width: 10px; height: 34px; background: var(--t); }
-        .b-1 { width: 14px; height: 14px; background: var(--o); }
-        .block.is-dragging { position: fixed; pointer-events: none; z-index: 99999; transform: scale(1.15) rotate(-2deg); box-shadow: var(--shadow-drag); }
+        .block { border-radius: 3px; cursor: grab; position: relative; touch-action: none; pointer-events: auto; }
+        .b-100 { width: 30px; height: 30px; background: var(--h); }
+        .b-10 { width: 10px; height: 30px; background: var(--t); }
+        .b-1 { width: 12px; height: 12px; background: var(--o); }
+        .block.is-dragging { position: fixed; pointer-events: none; z-index: 99999; transform: scale(1.2) rotate(-2deg); box-shadow: var(--shadow-drag); }
+        .drag-badge { position: absolute; top: -6px; right: -6px; background: #E53E3E; color: white; font-size: 0.55rem; font-weight: 800; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 
-        .drag-badge { position: absolute; top: -8px; right: -8px; background: #E53E3E; color: white; font-size: 0.6rem; font-weight: 800; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-
-        .particle { position: fixed; width: 6px; height: 6px; border-radius: 50%; pointer-events: none; z-index: 999999; transition: transform 0.6s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.6s ease; }
-        .shockwave { position: fixed; width: 50px; height: 50px; border-radius: 50%; border: 4px solid white; pointer-events: none; z-index: 999998; transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.5s ease; }
+        .particle { position: fixed; width: 5px; height: 5px; border-radius: 50%; pointer-events: none; z-index: 999999; transition: transform 0.6s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.6s ease; }
+        .shockwave { position: fixed; width: 40px; height: 40px; border-radius: 50%; border: 3px solid white; pointer-events: none; z-index: 999998; transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.3, 1), opacity 0.5s ease; }
         .screen-flash { position: fixed; inset: 0; background: white; z-index: 9999999; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out; }
 
         button.mode-toggle { background: #2D3748; color: var(--th); border: 1px solid rgba(255,255,255,0.1); }
         button.mode-toggle.active { background: var(--o); color: #000; }
 
-        .victory-stats { background: rgba(0,0,0,0.5); border-radius: 15px; padding: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 30px; width: 100%; max-width: 400px; }
-        .victory-stats .stat-row { display: flex; justify-content: space-between; font-weight: 800; font-size: 0.85rem; margin: 10px 0; color: var(--th); }
-        .victory-stats .stat-val { color: #FFF; }
-        .victory-stats .stat-val.old { color: var(--th); }
-        .victory-stats .stat-val.new { color: var(--h); }
+        /* --- DASHBOARD VICTORY SCREEN --- */
+        .fullscreen-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--bg);
+            display: none; flex-direction: column; align-items: center;
+            justify-content: center;
+            padding: 20px; box-sizing: border-box;
+            z-index: 100; overflow-y: auto;
+        }
 
-        @media (max-width: 450px) { .d-pad { grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); } .b-100{width:28px;height:28px;} .b-10{height:28px;} .equation-display { font-size: 1.1rem; } }
+        .victory-badge {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(56,178,172,0.25), transparent 70%);
+            border: 2px solid var(--h);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; margin-bottom: 18px;
+            box-shadow: 0 0 30px rgba(56,178,172,0.3);
+            animation: badgePop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;
+        }
+        @keyframes badgePop {
+            from { transform: scale(0); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .victory-title {
+            color: var(--h); font-size: 2rem; font-weight: 800;
+            letter-spacing: 4px; margin: 0 0 4px 0; text-align: center;
+        }
+        .victory-sub {
+            color: var(--th); font-size: 0.65rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 3px;
+            margin: 0 0 24px 0;
+        }
+
+        .victory-dashboard {
+            display: flex; gap: 10px; width: 100%; max-width: 380px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            flex: 1; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px; padding: 14px 8px; text-align: center;
+        }
+        .stat-card-label {
+            font-size: 0.5rem; color: var(--th); text-transform: uppercase;
+            letter-spacing: 1.5px; margin-bottom: 6px; font-weight: 800;
+        }
+        .stat-card-value { font-size: 1.6rem; font-weight: 800; color: #FFF; }
+        .val-old { color: var(--th); }
+        .val-new { color: var(--h); }
+
+        .victory-actions {
+            display: flex; flex-direction: column; gap: 10px;
+            width: 100%; max-width: 380px;
+        }
+        .victory-actions .btn-row {
+            display: flex; gap: 10px;
+        }
+        .victory-actions button {
+            flex: 1; padding: 14px; border-radius: 25px; font-size: 0.75rem;
+        }
+        .btn-ghost { background: rgba(255,255,255,0.07); color: var(--th) !important; }
+        .btn-ghost:active { background: rgba(255,255,255,0.12); }
+
+        @media (max-width: 380px) { .d-pad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); } .b-100{width:24px;height:24px;} .b-10{height:24px;width:8px;} .inv-slot{width:38px;height:38px;font-size:0.7rem;} }
     </style>
 </head>
 <body>
@@ -149,10 +208,10 @@
 
 <div id="menu-screen" class="screen" style="display: flex;">
     <div class="menu-box">
-        <h1 style="color: var(--h); margin-bottom: 10px; font-weight: 1000; letter-spacing: 4px;">THE FISSION</h1>
+        <h1 style="color: var(--h); margin-bottom: 10px; font-weight: 800; letter-spacing: 8px;">THE FISSION</h1>
         <p style="color: var(--th); font-size: 0.8rem; margin-bottom: 20px; font-weight: 500;">
-            Push derelict cores onto targets. Extract or Inject energy in the Lab. <br><br>
-            <span style="color:#FFF;">Challenge:</span> Try to power the factory using as much recycled Derelict Energy (Light) as possible!
+            Navigate claustrophobic sectors. Push derelict cores onto targets. Extract and inject energy.<br><br>
+            <span style="color:#FFF;">Objective:</span> Power the factory using as much recycled Derelict Energy (Light) as possible!
         </p>
         <div class="level-grid" id="level-grid"></div>
         <button class="lvl-btn primary" onclick="window.startGame(-1)">Generate Random Sector</button>
@@ -195,11 +254,11 @@
 
 <div id="lab-screen" class="screen">
     <div class="lab-header">
-        <div id="lab-equation" style="font-size:1.3rem; font-weight:800; color:#FFF;">0 = 0 + 0</div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-            <button id="btn-magnet" class="mode-toggle" onclick="window.gameToggleMagnet()" style="padding: 10px 12px; font-size: 0.7rem; border-radius: 8px;">SELECT ALL: OFF</button>
-            <button onclick="window.closeLab()" style="padding: 10px 12px; font-size: 0.7rem; background: #2D3748; border-radius: 8px;">Abort</button>
-            <button class="primary" id="btn-confirm" disabled onclick="window.confirmLab()" style="padding: 10px 12px; font-size: 0.7rem; color:#000; border-radius: 8px;">Execute</button>
+        <div id="lab-equation" style="font-size:1.2rem; font-weight:800; color:#FFF;">0 = 0 + 0</div>
+        <div style="display: flex; gap: 6px; align-items: center;">
+            <button id="btn-magnet" class="mode-toggle" onclick="window.gameToggleMagnet()" style="padding: 10px 10px; font-size: 0.65rem; border-radius: 8px;">ALL: OFF</button>
+            <button onclick="window.closeLab()" style="padding: 10px 10px; font-size: 0.65rem; background: #2D3748; border-radius: 8px;">Abort</button>
+            <button class="primary" id="btn-confirm" disabled onclick="window.confirmLab()" style="padding: 10px 10px; font-size: 0.65rem; color:#000; border-radius: 8px;">Execute</button>
         </div>
     </div>
 
@@ -229,23 +288,374 @@
     </div>
 </div>
 
-<div class="fullscreen-overlay" id="victory-overlay" style="display: none; justify-content: flex-start; padding-top: 8vh; overflow-y: auto;">
-    <h1 style="color: var(--h); font-size: 2.2rem; margin-bottom: 10px; font-weight: 800;">SECTOR CLEAR</h1>
-    
-    <div class="victory-stats" id="final-stats">
+<div class="fullscreen-overlay" id="victory-overlay">
+    <div class="victory-badge">⚡</div>
+    <h1 class="victory-title">SECTOR CLEAR</h1>
+    <p class="victory-sub" id="victory-sub-label">Efficiency Logged</p>
+
+    <div class="victory-dashboard" id="final-stats"></div>
+
+    <div class="victory-actions">
+        <button id="btn-next-sector" class="primary" onclick="window.nextSector()" style="display:none; color:#000;">▶ NEXT SECTOR</button>
+        <div class="btn-row">
+            <button class="btn-ghost" onclick="window.tryAgain()">↺ TRY AGAIN</button>
+            <button class="btn-ghost" onclick="window.goToMenu()">⌂ MENU</button>
         </div>
-    
-    <button class="primary" onclick="window.goToMenu()">RETURN TO MENU</button>
+    </div>
 </div>
 
 <script>
-    // --- ES5 UTILS ---
+    // --- ES5 UTILS & SEEDED RNG ---
     function safeRemove(el) { if (el && el.parentNode) el.parentNode.removeChild(el); }
     
+    var RND = Math.random;
+    function seedRNG(seed) {
+        return function() {
+            seed |= 0; seed = seed + 0x9e3779b9 | 0;
+            var t = seed ^ seed >>> 16; t = Math.imul(t, 0x21f0aaad);
+            t = t ^ t >>> 15; t = Math.imul(t, 0x735a2d97);
+            return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+        };
+    }
+
+    var completedLevels = [];
+    try { completedLevels = JSON.parse(localStorage.getItem('fusion_completed') || '[]'); } catch(e){}
+
+    function saveProgress(idx) {
+        if(idx >= 0 && completedLevels.indexOf(idx) === -1) {
+            completedLevels.push(idx);
+            try { localStorage.setItem('fusion_completed', JSON.stringify(completedLevels)); } catch(e){}
+        }
+    }
+
+    // =====================================================================
+    // ALLIBALLIBABA-INSPIRED LEVEL GENERATION ENGINE
+    // Core idea: reverse-simulate from solved state. Assign negative cost to
+    // player path cells (forces longer routes). Optimizer walls off cells
+    // never traversed — tightening solution corridors by difficulty tier.
+    // =====================================================================
+
+    // BFS: find all floor cells reachable by the player (mArr format)
+    function bfsReachableMArr(mArr, blocks, px, py) {
+        var h = mArr.length, w = mArr[0].length;
+        var D = [[1,0],[-1,0],[0,1],[0,-1]];
+        var bk = {};
+        for(var i = 0; i < blocks.length; i++) bk[blocks[i].y+'_'+blocks[i].x] = true;
+        var vis = {}, q = [{x:px,y:py}], res = [];
+        vis[py+'_'+px] = true;
+        while(q.length) {
+            var c = q.shift(); res.push({x:c.x,y:c.y});
+            for(var d = 0; d < 4; d++) {
+                var nx = c.x+D[d][0], ny = c.y+D[d][1];
+                if(ny < 0 || ny >= h || nx < 0 || nx >= w || mArr[ny][nx] === '#') continue;
+                var k = ny+'_'+nx;
+                if(bk[k] || vis[k]) continue;
+                vis[k] = true; q.push({x:nx,y:ny});
+            }
+        }
+        return res;
+    }
+
+    // Count distinct blocks that can be pushed from start position.
+    // This is the key difficulty metric:
+    //   Tier 3 (levels 14+): 1-2 pushable = 1-2 solution methods
+    //   Tier 2 (levels 7-13): 2-4 pushable = ~3 solution methods
+    function countPushableMArr(mArr, blocks, px, py) {
+        var h = mArr.length, w = mArr[0].length;
+        var D = [[1,0],[-1,0],[0,1],[0,-1]];
+        var reach = bfsReachableMArr(mArr, blocks, px, py);
+        var ids = {};
+        for(var ri = 0; ri < reach.length; ri++) {
+            var cell = reach[ri];
+            for(var d = 0; d < 4; d++) {
+                var bx = cell.x+D[d][0], by = cell.y+D[d][1];
+                if(by < 0 || by >= h || bx < 0 || bx >= w) continue;
+                var blk = null;
+                for(var bi = 0; bi < blocks.length; bi++) {
+                    if(blocks[bi].x === bx && blocks[bi].y === by) { blk = blocks[bi]; break; }
+                }
+                if(!blk) continue;
+                var lx = bx+D[d][0], ly = by+D[d][1];
+                if(ly < 0 || ly >= h || lx < 0 || lx >= w || mArr[ly][lx] === '#') continue;
+                var blocked = false;
+                for(var bi = 0; bi < blocks.length; bi++) {
+                    if(blocks[bi].x === lx && blocks[bi].y === ly) { blocked = true; break; }
+                }
+                if(!blocked) ids[bx+'_'+by] = true;
+            }
+        }
+        return Object.keys(ids).length;
+    }
+
+    // Ensure all blocks & targets are reachable from player (connectivity check)
+    function checkMapConnected(mArr, genBlocks, genTargets, genPlayer) {
+        var h = mArr.length, w = mArr[0].length;
+        var D = [[1,0],[-1,0],[0,1],[0,-1]];
+        var vis = {}, q = [{x:genPlayer.x,y:genPlayer.y}];
+        vis[genPlayer.y+'_'+genPlayer.x] = true;
+        while(q.length) {
+            var c = q.shift();
+            for(var d = 0; d < 4; d++) {
+                var nx = c.x+D[d][0], ny = c.y+D[d][1];
+                if(ny < 0 || ny >= h || nx < 0 || nx >= w || mArr[ny][nx] === '#') continue;
+                var k = ny+'_'+nx; if(vis[k]) continue;
+                vis[k] = true; q.push({x:nx,y:ny});
+            }
+        }
+        for(var i = 0; i < genBlocks.length; i++) {
+            var b = genBlocks[i]; if(!vis[b.y+'_'+b.x]) return false;
+        }
+        for(var i = 0; i < genTargets.length; i++) {
+            var t = genTargets[i]; if(!vis[t.y+'_'+t.x]) return false;
+        }
+        return true;
+    }
+
+    // ALLIBALLIBABA WALL OPTIMIZER:
+    // Cells the player never visited (heat below threshold) become walls.
+    // Block-traversed cells (heat=999) are always protected.
+    // This aggressively narrows corridors, directly controlling solution count.
+    function applyWallOptimizer(mArr, heatMap, genBlocks, genTargets, genPlayer, threshold) {
+        var h = mArr.length, w = mArr[0].length;
+        var D = [[1,0],[-1,0],[0,1],[0,-1]];
+
+        // Build a set of cells that MUST stay open for pushes to work.
+        // For each block's current position, protect all 4 adjacent cells so
+        // the player always has at least one approach angle per block.
+        var pushProtect = {};
+        for(var bi = 0; bi < genBlocks.length; bi++) {
+            var bx = genBlocks[bi].x, by = genBlocks[bi].y;
+            for(var d = 0; d < 4; d++) {
+                var nx = bx + D[d][0], ny = by + D[d][1];
+                if(ny > 0 && ny < h-1 && nx > 0 && nx < w-1) {
+                    pushProtect[ny+'_'+nx] = true;
+                }
+            }
+        }
+        // Also protect adjacent cells of all target positions
+        for(var ti = 0; ti < genTargets.length; ti++) {
+            var tx = genTargets[ti].x, ty = genTargets[ti].y;
+            for(var d = 0; d < 4; d++) {
+                var nx = tx + D[d][0], ny = ty + D[d][1];
+                if(ny > 0 && ny < h-1 && nx > 0 && nx < w-1) {
+                    pushProtect[ny+'_'+nx] = true;
+                }
+            }
+        }
+
+        for(var r = 1; r < h-1; r++) {
+            for(var c = 1; c < w-1; c++) {
+                if(mArr[r][c] === '#') continue;
+                // Never wall off: blocks, targets, player, push-corridor cells
+                var isSpec = pushProtect[r+'_'+c] || (genPlayer.x === c && genPlayer.y === r);
+                if(!isSpec) {
+                    for(var i = 0; i < genBlocks.length; i++) {
+                        if(genBlocks[i].x === c && genBlocks[i].y === r) { isSpec = true; break; }
+                    }
+                }
+                if(!isSpec) {
+                    for(var i = 0; i < genTargets.length; i++) {
+                        if(genTargets[i].x === c && genTargets[i].y === r) { isSpec = true; break; }
+                    }
+                }
+                if(isSpec) continue;
+                var heat = heatMap[r+'_'+c] || 0;
+                if(heat < threshold) mArr[r][c] = '#';
+            }
+        }
+
+        // FLOOR RATIO GUARD: never let walls exceed 45% of interior cells.
+        // If over the cap, unwall the coldest cells first until we're back in range.
+        var interior = (w-2) * (h-2);
+        var wallCount = 0;
+        var coldCells = [];
+        for(var r = 1; r < h-1; r++) {
+            for(var c = 1; c < w-1; c++) {
+                if(mArr[r][c] === '#') wallCount++;
+                else {
+                    var heat = heatMap[r+'_'+c] || 0;
+                    if(heat < threshold) coldCells.push({r:r, c:c, heat:heat});
+                }
+            }
+        }
+        var maxWalls = Math.floor(interior * 0.35);
+        if(wallCount > maxWalls) {
+            // Sort coldest first — unwall the least-used open cells to stay under cap
+            coldCells.sort(function(a,b){ return a.heat - b.heat; });
+            var toUnwall = wallCount - maxWalls;
+            // We walled cells above; now unwall border-area random interior walls
+            var interiorWalls = [];
+            for(var r = 1; r < h-1; r++) {
+                for(var c = 1; c < w-1; c++) {
+                    if(mArr[r][c] === '#') {
+                        var isOrig = !(heatMap[r+'_'+c]);
+                        interiorWalls.push({r:r,c:c});
+                    }
+                }
+            }
+            // Unwall from the non-essential interior walls, farthest from blocks first
+            interiorWalls.sort(function(a,b){
+                var minDistA = 999, minDistB = 999;
+                for(var i = 0; i < genBlocks.length; i++) {
+                    minDistA = Math.min(minDistA, Math.abs(a.c-genBlocks[i].x)+Math.abs(a.r-genBlocks[i].y));
+                    minDistB = Math.min(minDistB, Math.abs(b.c-genBlocks[i].x)+Math.abs(b.r-genBlocks[i].y));
+                }
+                return minDistB - minDistA; // farthest from blocks first
+            });
+            for(var i = 0; i < Math.min(toUnwall, interiorWalls.length); i++) {
+                mArr[interiorWalls[i].r][interiorWalls[i].c] = '.';
+            }
+        }
+    }
+
+    // Post-optimizer deadlock check: ensure every block has at least one direction
+    // it can be pushed (player on one side, empty cell on the other).
+    // A block locked in a corner with no push exits makes the level unsolvable.
+    function hasNoDeadlockedBlocks(mArr, genBlocks) {
+        var h = mArr.length, w = mArr[0].length;
+        var D = [[1,0],[-1,0],[0,1],[0,-1]];
+        for(var bi = 0; bi < genBlocks.length; bi++) {
+            var bx = genBlocks[bi].x, by = genBlocks[bi].y;
+            var canPush = false;
+            for(var d = 0; d < 4; d++) {
+                var dx = D[d][0], dy = D[d][1];
+                // Player stands at (bx-dx, by-dy) and pushes block to (bx+dx, by+dy)
+                var fromX = bx-dx, fromY = by-dy;
+                var toX   = bx+dx, toY   = by+dy;
+                if(fromY < 0||fromY >= h||fromX < 0||fromX >= w) continue;
+                if(toY   < 0||toY   >= h||toX   < 0||toX   >= w) continue;
+                if(mArr[fromY][fromX] !== '#' && mArr[toY][toX] !== '#') {
+                    canPush = true; break;
+                }
+            }
+            if(!canPush) return false;
+        }
+        return true;
+    }
+
+    // DISPLACEMENT SCORE: sum of min Manhattan distances from each block to its
+    // nearest unassigned target. This is the single best proxy for "how many pushes
+    // are needed at minimum" — the foundation of Sokoban difficulty.
+    // Uses greedy assignment (sort blocks by distance to closest free target).
+    function calcDisplacementScore(genBlocks, genTargets) {
+        var assigned = {};
+        var totalDist = 0;
+        // Sort blocks by their minimum distance to any target ascending,
+        // then greedily assign each block to its nearest free target.
+        var blockDists = [];
+        for(var bi = 0; bi < genBlocks.length; bi++) {
+            var minD = 9999, minTi = -1;
+            for(var ti = 0; ti < genTargets.length; ti++) {
+                var d = Math.abs(genBlocks[bi].x - genTargets[ti].x) + Math.abs(genBlocks[bi].y - genTargets[ti].y);
+                if(d < minD) { minD = d; minTi = ti; }
+            }
+            blockDists.push({bi: bi, minD: minD, minTi: minTi});
+        }
+        blockDists.sort(function(a,b){ return a.minD - b.minD; });
+        for(var i = 0; i < blockDists.length; i++) {
+            var b = genBlocks[blockDists[i].bi];
+            var bestD = 9999;
+            for(var ti = 0; ti < genTargets.length; ti++) {
+                if(assigned[ti]) continue;
+                var d = Math.abs(b.x - genTargets[ti].x) + Math.abs(b.y - genTargets[ti].y);
+                if(d < bestD) { bestD = d; }
+            }
+            // Find and assign the closest free target
+            for(var ti = 0; ti < genTargets.length; ti++) {
+                if(assigned[ti]) continue;
+                var d = Math.abs(b.x - genTargets[ti].x) + Math.abs(b.y - genTargets[ti].y);
+                if(d === bestD) { assigned[ti] = true; totalDist += d; break; }
+            }
+        }
+        return totalDist;
+    }
+
+    // ALLIBALLIBABA-INSPIRED WEIGHTED REVERSE PLAY:
+    // Enhanced for tier 3: pull weight 8x (vs 4x for tier 2), exploration cap 20
+    // (vs 10 for tier 2). This forces blocks to travel much farther from targets,
+    // creating the deep entanglement that makes hard levels genuinely challenging.
+    function reversePlayWithHeat(mArr, genBlocks, genPlayer, iterations, rng, tier) {
+        var h = mArr.length, w = mArr[0].length;
+        var pDirs = [[0,-1],[0,1],[-1,0],[1,0]];
+        var heatMap = {};
+        var successfulPulls = 0;
+
+        // Pull weight and exploration spread scale with tier
+        var pullWeight  = (tier === 3) ? 8 : (tier === 2 ? 6 : 3);
+        var exploitCap  = (tier === 3) ? 20 : (tier === 2 ? 14 : 8);
+
+        heatMap[genPlayer.y+'_'+genPlayer.x] = 1;
+        for(var bi = 0; bi < genBlocks.length; bi++) {
+            heatMap[genBlocks[bi].y+'_'+genBlocks[bi].x] = 999;
+        }
+
+        for(var step = 0; step < iterations; step++) {
+            var validMoves = [];
+            var px = genPlayer.x, py = genPlayer.y;
+
+            for(var d = 0; d < 4; d++) {
+                var dx = pDirs[d][0], dy = pDirs[d][1];
+                var nx = px+dx, ny = py+dy;
+
+                if(ny >= 0 && ny < h && nx >= 0 && nx < w && mArr[ny][nx] === '.') {
+                    var hasB = false;
+                    for(var bi = 0; bi < genBlocks.length; bi++) {
+                        if(genBlocks[bi].x === nx && genBlocks[bi].y === ny) { hasB = true; break; }
+                    }
+                    if(!hasB) {
+                        var heat = heatMap[ny+'_'+nx] || 0;
+                        // Cold cells attract player — forces path to spread across entire map
+                        var weight = (tier >= 2) ? Math.max(1, exploitCap - heat) : 1;
+                        for(var wi = 0; wi < weight; wi++) validMoves.push({type:'move',dx:dx,dy:dy});
+                    }
+                }
+
+                var pullPx = px-dx, pullPy = py-dy;
+                var pullBx = px+dx, pullBy = py+dy;
+                if(pullPy >= 0 && pullPy < h && pullPx >= 0 && pullPx < w && mArr[pullPy][pullPx] === '.') {
+                    var hasPB = false;
+                    for(var bi = 0; bi < genBlocks.length; bi++) {
+                        if(genBlocks[bi].x === pullPx && genBlocks[bi].y === pullPy) { hasPB = true; break; }
+                    }
+                    if(!hasPB) {
+                        var bIdx = -1;
+                        for(var bi = 0; bi < genBlocks.length; bi++) {
+                            if(genBlocks[bi].x === pullBx && genBlocks[bi].y === pullBy) { bIdx = bi; break; }
+                        }
+                        if(bIdx !== -1) {
+                            for(var wi = 0; wi < pullWeight; wi++) validMoves.push({type:'pull',dx:dx,dy:dy,bIdx:bIdx});
+                        }
+                    }
+                }
+            }
+
+            if(validMoves.length > 0) {
+                var move = validMoves[Math.floor(rng() * validMoves.length)];
+                if(move.type === 'move') {
+                    genPlayer.x += move.dx; genPlayer.y += move.dy;
+                    var k = genPlayer.y+'_'+genPlayer.x;
+                    heatMap[k] = (heatMap[k] || 0) + 1;
+                } else {
+                    var oldBx = genBlocks[move.bIdx].x;
+                    var oldBy = genBlocks[move.bIdx].y;
+                    genBlocks[move.bIdx].x = genPlayer.x;
+                    genBlocks[move.bIdx].y = genPlayer.y;
+                    genPlayer.x -= move.dx; genPlayer.y -= move.dy;
+                    var k = genPlayer.y+'_'+genPlayer.x;
+                    heatMap[k] = (heatMap[k] || 0) + 1;
+                    heatMap[oldBy+'_'+oldBx] = 999;
+                    heatMap[genBlocks[move.bIdx].y+'_'+genBlocks[move.bIdx].x] = 999;
+                    successfulPulls++;
+                }
+            }
+        }
+        return {successfulPulls: successfulPulls, heatMap: heatMap};
+    }
+
     // --- AUDIO & PARTICLES ---
     var colorMap = { '100': '#38B2AC', '10': '#ED8936', '1': '#ECC94B' };
     var freqMap = { '100': 261.63, '10': 392.00, '1': 523.25 };
-    var mvScale = [146.83, 174.61, 196.00, 207.65, 220.00, 261.63, 293.66];
+    var mvScale = [146.83, 174.61, 196.00, 207.65, 220.00, 261.63, 293.66]; 
 
     var ParticleEngine = {
         flash: function() { var f = document.getElementById('screen-flash'); if(f){ f.style.opacity='0.2'; setTimeout(function(){f.style.opacity='0';}, 100); } },
@@ -254,7 +664,7 @@
             for(var i=0; i<12; i++) {
                 var p = document.createElement('div'); p.className = 'particle'; p.style.backgroundColor = c;
                 p.style.left = x+'px'; p.style.top = y+'px'; p.style.boxShadow = "0 0 10px "+c; document.body.appendChild(p);
-                var a = Math.random()*360*Math.PI/180, d = Math.random()*60+20;
+                var a = Math.random()*360*Math.PI/180, d = Math.random()*40+20;
                 var tx = Math.cos(a)*d, ty = Math.sin(a)*d;
                 (function(part, dx, dy) {
                     void part.offsetWidth;
@@ -304,37 +714,12 @@
         sfxWin: function() { var s=this; [523, 659, 783, 1046].forEach(function(f,i){setTimeout(function(){s.play(f,'triangle',0.8,0.05);},i*120);}); }
     };
 
-    // --- 20 VERIFIED SOKOBAN LEVELS ---
-    var rawLevels = [
-        { M: ["#####","#T B@#","#####"] },
-        { M: ["######","#T .@#","# B  #","######"] },
-        { M: ["#####","#T .#","# B #","# @ #","#####"] },
-        { M: ["#######","#T B  #","#T B @#","#######"] },
-        { M: ["#######","#T   @#","#  B  #","#T B  #","#######"] },
-        { M: ["#######","#T # T#","#  B  #","#  B @#","#######"] },
-        { M: ["########","#T  # T#","# B   B#","#   @  #","########"] },
-        { M: ["########","#T T T #","# B B B#","#   @  #","########"] },
-        { M: ["########","#T # T #","#  B  T#","# B B@ #","########"] },
-        { M: ["#########","#T  T  T#","#   B   #","# B @ B #","#########"] },
-        { M: ["#########","#T  #  T#","# B T B #","#   B   #","#   @   #","#########"] },
-        { M: ["#########","#T  B  T#","#   #   #","#T  B  @#","#   B   #","#########"] },
-        { M: ["##########","#T  B B T#","#   @    #","#T  B B T#","##########"] },
-        { M: ["##########","#T T  T T#","#        #","# B B B B#","#   @    #","##########"] },
-        { M: ["##########","#T  ##  T#","# B    B #","# B @  B #","#T  ##  T#","##########"] },
-        { M: ["##########","#T #  # T#","#  B  B  #","#  B  B  #","#T #@ # T#","##########"] },
-        { M: ["###########","#T  T T  T#","#  B  B   #","#    @    #","#  B  B   #","###########"] },
-        { M: ["###########","#T    T  T#","#   B B   #","# B  @  B #","#T   B   T#","###########"] },
-        { M: ["###########","#T  T    T#","#  B B B  #","#  B @ B  #","#T       T#","###########"] },
-        { M: ["############","#T   ##   T#","# B B  B B #","#   B  B   #","#T T  @ T T#","############"] }
-    ];
-
     // --- GAME STATE ---
     var curLvlIdx = 0;
     var mapGrid = []; 
     var cols = 0, rows = 0;
     var player = {x:0, y:0};
     
-    // Inventory and Blocks store objects: {val, isOld, id, x, y}
     var blocks = []; 
     var targets = []; 
     var inventory = [];
@@ -352,109 +737,265 @@
 
     // --- INIT ---
     window.onload = function() {
+        renderMenu();
+    };
+
+    function renderMenu() {
         var lg = document.getElementById('level-grid');
-        for(var i=0; i<rawLevels.length; i++) {
+        lg.innerHTML = '';
+        for(var i=0; i<20; i++) {
             var b = document.createElement('button');
-            b.className = 'lvl-btn'; b.innerText = i+1;
+            b.className = 'lvl-btn' + (completedLevels.indexOf(i) > -1 ? ' solved' : '');
+            b.innerText = i+1;
             (function(idx){ b.onclick = function(){ window.startGame(idx); }; })(i);
             lg.appendChild(b);
         }
-    };
+    }
 
     window.goToMenu = function() {
         document.getElementById('victory-overlay').style.display = 'none';
         document.getElementById('game-screen').style.display = 'none';
         document.getElementById('lab-screen').style.display = 'none';
+        renderMenu();
         document.getElementById('menu-screen').style.display = 'flex';
     };
 
     window.startGame = function(lvlIdx) {
         GameAudio.init(); GameAudio.startBGM(); 
         document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('victory-overlay').style.display = 'none';
         document.getElementById('game-screen').style.display = 'flex';
         curLvlIdx = lvlIdx; window.restartLevel();
     };
 
+    window.nextSector = function() {
+        if(curLvlIdx >= 0 && curLvlIdx < 19) {
+            window.startGame(curLvlIdx + 1);
+        }
+    };
+
+    // --- TIERED SOKOBAN LEVEL GENERATOR (AlliBalliBaba Method) ---
+    // Tier 1 (lvls 0-6):  Open layout, many solutions, fun for beginners
+    // Tier 2 (lvls 7-13): Heat-map weighted reverse play + wall optimizer,
+    //                      targets 2-4 pushable blocks → ~3 solution methods
+    // Tier 3 (lvls 14+):  High-density walls + aggressive wall optimizer,
+    //                      targets 1-2 pushable blocks → 1-2 solution methods
     window.restartLevel = function() {
-        var lData;
+
+        var baseSeed = (curLvlIdx >= 0) ? curLvlIdx * 45678 : 0;
         if(curLvlIdx === -1) {
-            // --- GUARANTEED SAFE PROCEDURAL GENERATOR ---
-            var validMap = false;
-            var mArr = [];
-            while(!validMap) {
-                mArr = [];
-                var w = Math.floor(Math.random()*3)+7, h = Math.floor(Math.random()*3)+7;
-                for(var r=0; r<h; r++) {
-                    var rowStr = "";
-                    for(var c=0; c<w; c++) { 
-                        if(r===0||r===h-1||c===0||c===w-1) rowStr += "#"; 
-                        else if (r>1 && r<h-2 && c>1 && c<w-2 && Math.random()<0.15) rowStr += "#"; 
-                        else rowStr += "."; 
-                    }
-                    mArr.push(rowStr);
-                }
-                
-                var isSafeForBlock = function(r, c) {
-                    if(mArr[r][c] !== '.') return false;
-                    for(var dy=-1; dy<=1; dy++) {
-                        for(var dx=-1; dx<=1; dx++) {
-                            if(mArr[r+dy][c+dx] === '#' || mArr[r+dy][c+dx] === 'B') return false;
-                        }
-                    }
-                    return true;
-                };
-
-                var placeBlock = function() {
-                    for(var a=0; a<50; a++) {
-                        var px = Math.floor(Math.random()*(w-4))+2, py = Math.floor(Math.random()*(h-4))+2;
-                        if(isSafeForBlock(py, px)) { 
-                            mArr[py] = mArr[py].substring(0,px) + "B" + mArr[py].substring(px+1); 
-                            return true; 
-                        }
-                    }
-                    return false;
-                };
-
-                var placeEntity = function(char) {
-                    for(var a=0; a<50; a++) {
-                        var px = Math.floor(Math.random()*(w-2))+1, py = Math.floor(Math.random()*(h-2))+1;
-                        if(mArr[py][px] === '.') { 
-                            mArr[py] = mArr[py].substring(0,px) + char + mArr[py].substring(px+1); 
-                            return true; 
-                        }
-                    }
-                    return false;
-                };
-                
-                placeEntity('@');
-                var targetCount = Math.floor(Math.random()*2)+3; // 3 to 4 targets
-                var placedCount = 0;
-                
-                // Ensure 1:1 mapping between blocks and targets
-                for(var e=0; e<targetCount; e++) { 
-                    if(placeBlock()) {
-                        if(placeEntity('T')) {
-                            placedCount++;
-                        } else { break; }
-                    }
-                }
-                if(placedCount >= 2) validMap = true;
-            }
-            lData = { M: mArr };
             document.getElementById('lvl-title').innerText = "RANDOM SECTOR";
         } else {
-            lData = rawLevels[curLvlIdx];
             document.getElementById('lvl-title').innerText = "SECTOR " + (curLvlIdx+1);
         }
 
-        parseMap(lData.M);
+        // Determine difficulty tier
+        var tier = (curLvlIdx >= 14) ? 3 : (curLvlIdx >= 7 ? 2 : 1);
+        if(curLvlIdx === -1) tier = 2;
+
+        var validMap = false;
+        var mArr = [], genTargets = [], genBlocks = [], genPlayer = {x:0, y:0};
+        var attempt = 0;
+
+        while(!validMap) {
+            attempt++;
+            // KEY FIX: Re-seed RNG every attempt so each try gets a fresh sequence.
+            // Without this, seeded levels exhaust their fixed RNG stream and can never
+            // satisfy constraints that require different random layouts to try.
+            if(curLvlIdx === -1) {
+                RND = Math.random;
+            } else {
+                RND = seedRNG(baseSeed + attempt * 1337);
+            }
+
+            // PROGRESSIVE RELAXATION — if the tight tier constraints are hard to hit
+            // with the seeded sequence, ease up in phases rather than giving up:
+            //   Phase 1 (1-250):   Full tier constraints
+            //   Phase 2 (251-500): Loosen pushable window ±1, reduce minPulls 20%
+            //   Phase 3 (501-750): Optimizer stays ON, displacement at 55%, pushable up to 4
+            //   Phase 4 (751+):    Fallback — optimizer off, displacement at 35%
+            var relaxPhase = attempt > 750 ? 4 : attempt > 500 ? 3 : attempt > 250 ? 2 : 1;
+
+            mArr = []; genTargets = []; genBlocks = [];
+
+            // ---- TIER-BASED PARAMETERS ----
+            var mapW, mapH, wallDensity, pullIterations, minPulls;
+            var targetCount, optimizerThreshold, minPushable, maxPushable, minDisplacement;
+
+            if(relaxPhase === 4) {
+                // Guaranteed fallback — still reasonably tangled, just no tight constraints
+                var sOff4 = (tier === 3) ? Math.min(Math.floor((Math.max(curLvlIdx,14)-14)/2),2) : 1;
+                mapW = 12 + sOff4*2; mapH = 12 + sOff4*2;
+                wallDensity = 0.10; pullIterations = 800; minPulls = 20;
+                targetCount = (tier === 3 && curLvlIdx >= 17) ? 4 : 3;
+                optimizerThreshold = 0;
+                minPushable = 1; maxPushable = 99; minDisplacement = 8;
+
+            } else if(tier === 3) {
+                // Levels 14-19: 1-2 solution methods, deeply tangled blocks
+                // Low initial density — optimizer + high pull weight sculpts difficulty
+                var sOff = Math.min(Math.floor((Math.max(curLvlIdx,14) - 14) / 2), 3);
+                mapW = 14 + sOff * 2; mapH = 14 + sOff * 2;
+                wallDensity     = 0.12 + sOff * 0.01;
+                pullIterations  = 2200;
+                minPulls        = relaxPhase >= 3 ? 22 : (relaxPhase >= 2 ? 50 : 80);
+                targetCount     = (curLvlIdx >= 17) ? 5 : 4;
+                // Phase 1-3: optimizer ON — only phase 4 disables it
+                optimizerThreshold = relaxPhase >= 4 ? 0 : 1;
+                minPushable = 1;
+                // Phase 1: strict (1-2), Phase 2: up to 3, Phase 3: up to 4, Phase 4: any
+                maxPushable = relaxPhase >= 4 ? 99 : (relaxPhase >= 3 ? 4 : (relaxPhase === 2 ? 3 : 2));
+                // DISPLACEMENT: primary hardness gate — blocks must be far from targets.
+                var baseDisp = 18 + (curLvlIdx - 14) * 4;
+                minDisplacement = relaxPhase >= 4 ? Math.floor(baseDisp * 0.30)
+                                : (relaxPhase >= 3 ? Math.floor(baseDisp * 0.55)
+                                : (relaxPhase >= 2 ? Math.floor(baseDisp * 0.72)
+                                : baseDisp));
+
+            } else if(tier === 2) {
+                // Levels 7-13: ~3 solution methods
+                var sOff2 = Math.min(Math.floor((Math.max(curLvlIdx,7) - 7) / 3), 2);
+                mapW = 12 + sOff2 * 2; mapH = 12 + sOff2 * 2;
+                wallDensity     = 0.13 + sOff2 * 0.02;
+                pullIterations  = 1100;
+                minPulls        = relaxPhase >= 3 ? 14 : (relaxPhase >= 2 ? 26 : 38);
+                targetCount     = (curLvlIdx >= 11) ? 4 : 3;
+                optimizerThreshold = relaxPhase >= 3 ? 0 : 1;
+                minPushable = relaxPhase >= 3 ? 1 : (relaxPhase === 2 ? 1 : 2);
+                maxPushable = relaxPhase >= 3 ? 99 : (relaxPhase === 2 ? 5 : 4);
+                var baseDisp2 = 8 + (curLvlIdx - 7) * 2;
+                minDisplacement = relaxPhase >= 3 ? Math.floor(baseDisp2 * 0.40)
+                                : (relaxPhase >= 2 ? Math.floor(baseDisp2 * 0.65)
+                                : baseDisp2);
+
+            } else {
+                // Levels 0-6: Open, introductory
+                var sOff3 = Math.floor(RND() * 2);
+                mapW = 9 + sOff3 * 2; mapH = 9 + sOff3 * 2;
+                wallDensity     = 0.08 + curLvlIdx * 0.01;
+                pullIterations  = 200 + curLvlIdx * 30;
+                minPulls        = 6;
+                targetCount     = 3;
+                optimizerThreshold = 0;
+                minPushable = 1; maxPushable = 99;
+                minDisplacement = 4 + curLvlIdx;
+            }
+
+            var w = mapW, h = mapH;
+
+            // 1. Carve base room (solid border, open interior)
+            for(var r = 0; r < h; r++) {
+                var rowArr = [];
+                for(var c = 0; c < w; c++) {
+                    rowArr.push((r === 0 || r === h-1 || c === 0 || c === w-1) ? '#' : '.');
+                }
+                mArr.push(rowArr);
+            }
+
+            // 2. Scatter random 1×1 pillar walls — density scales with tier
+            var wallCount = Math.floor((w-2) * (h-2) * wallDensity);
+            for(var i = 0; i < wallCount; i++) {
+                var wr = 1 + Math.floor(RND() * (h-2));
+                var wc = 1 + Math.floor(RND() * (w-2));
+                mArr[wr][wc] = '#';
+            }
+
+            // 3. Collect open spots for target placement
+            var safeSpots = [];
+            for(var r = 1; r < h-1; r++) {
+                for(var c = 1; c < w-1; c++) {
+                    if(mArr[r][c] === '.') safeSpots.push({x:c, y:r});
+                }
+            }
+            if(safeSpots.length < targetCount + 3) continue;
+
+            safeSpots.sort(function() { return RND() - 0.5; });
+
+            // 4. Place targets + blocks co-located (start state = solved state)
+            for(var i = 0; i < targetCount; i++) {
+                var s = safeSpots.pop();
+                genTargets.push({x: s.x, y: s.y});
+                genBlocks.push({x: s.x, y: s.y, id: i});
+            }
+
+            // 5. Place player adjacent to first block
+            var pDirs = [[0,-1],[0,1],[-1,0],[1,0]];
+            var pPlaced = false;
+            for(var d = 0; d < 4; d++) {
+                var ppx = genBlocks[0].x + pDirs[d][0];
+                var ppy = genBlocks[0].y + pDirs[d][1];
+                if(ppy >= 0 && ppy < h && ppx >= 0 && ppx < w && mArr[ppy][ppx] === '.') {
+                    var blockedSpot = false;
+                    for(var bi = 0; bi < genBlocks.length; bi++) {
+                        if(genBlocks[bi].x === ppx && genBlocks[bi].y === ppy) { blockedSpot = true; break; }
+                    }
+                    if(!blockedSpot) { genPlayer.x = ppx; genPlayer.y = ppy; pPlaced = true; break; }
+                }
+            }
+            if(!pPlaced) continue;
+
+            // 6. ALLIBALLIBABA WEIGHTED REVERSE PLAY
+            // Heat-map tracks how often each cell is visited. Cold cells (unvisited)
+            // get higher selection weights → forces path to spread across the whole map.
+            // This mirrors AlliBalliBaba's "negative cost for free player path nodes."
+            var result = reversePlayWithHeat(mArr, genBlocks, genPlayer, pullIterations, RND, tier);
+            if(result.successfulPulls < minPulls) continue;
+
+            // DISPLACEMENT CHECK: blocks must be genuinely far from their targets.
+            // This is the primary hardness gate for tier 2/3 — more displacement
+            // means more pushes are required, meaning a harder, less straightforward puzzle.
+            var dispScore = calcDisplacementScore(genBlocks, genTargets);
+            if(dispScore < minDisplacement) continue;
+
+            // 7. WALL OPTIMIZER (AlliBalliBaba's optimizer step)
+            // Cells below the heat threshold (unused during reverse play) → walls.
+            // Block-traversed cells (heat=999) are always preserved.
+            // This narrows solution corridors, directly controlling solution count.
+            if(optimizerThreshold > 0) {
+                applyWallOptimizer(mArr, result.heatMap, genBlocks, genTargets, genPlayer, optimizerThreshold);
+                // After optimizing, verify all critical cells are still reachable
+                if(!checkMapConnected(mArr, genBlocks, genTargets, genPlayer)) continue;
+                // Verify no block is deadlocked (trapped with no push exit)
+                if(!hasNoDeadlockedBlocks(mArr, genBlocks)) continue;
+            }
+
+            // 8. SOLUTION COUNT VALIDATION
+            // countPushableMArr counts how many distinct blocks can be pushed from
+            // the start state. This is a fast proxy for solution method count:
+            //   1-2 pushable blocks → 1-2 solution methods (Tier 3)
+            //   2-4 pushable blocks → ~3 solution methods    (Tier 2)
+            var pushableCount = countPushableMArr(mArr, genBlocks, genPlayer.x, genPlayer.y);
+            if(pushableCount < minPushable || pushableCount > maxPushable) continue;
+
+            // 9. Build final map string and parse
+            var finalMap = [];
+            for(var r = 0; r < h; r++) {
+                var rStr = "";
+                for(var c = 0; c < w; c++) {
+                    var hasBlock  = genBlocks.find(function(b){ return b.x === c && b.y === r; });
+                    var hasTarget = genTargets.find(function(t){ return t.x === c && t.y === r; });
+                    var hasPlayer = (genPlayer.x === c && genPlayer.y === r);
+                    if(mArr[r][c] === '#')         rStr += '#';
+                    else if(hasBlock && hasTarget)  rStr += '*';
+                    else if(hasPlayer && hasTarget) rStr += '+';
+                    else if(hasBlock)               rStr += 'B';
+                    else if(hasPlayer)              rStr += '@';
+                    else if(hasTarget)              rStr += 'T';
+                    else                            rStr += '.';
+                }
+                finalMap.push(rStr);
+            }
+            parseMap(finalMap);
+            validMap = true;
+        }
+
         generateProceduralMath();
-        
         selectedInvIndices = []; selectedBlockId = -1;
         splitsInitiated = 0; fusesInitiated = 0;
         renderMap(); renderInventory(); updateActionButtons();
     };
 
+    // --- PARSER UPDATE: Handles `*` and `+` Sokoban standard ---
     function parseMap(mapArray) {
         mapGrid = []; blocks = []; targets = [];
         rows = mapArray.length; cols = mapArray[0].length;
@@ -464,10 +1005,13 @@
             var rowArr = [];
             for(var x=0; x<cols; x++) {
                 var ch = mapArray[y][x];
-                if(ch === '#') rowArr.push(1); else rowArr.push(0);
-                if(ch === '@') { player.x = x; player.y = y; }
-                if(ch === 'B') { blocks.push({x: x, y: y, val: 0, id: bCount, isOld: true}); bCount++; }
-                if(ch === 'T') { targets.push({x: x, y: y, targetVal: 0}); }
+                
+                if(ch === '#') rowArr.push(1); 
+                else rowArr.push(0);
+                
+                if(ch === '@' || ch === '+') { player.x = x; player.y = y; }
+                if(ch === 'B' || ch === '*') { blocks.push({x: x, y: y, val: 0, id: bCount, isOld: true}); bCount++; }
+                if(ch === 'T' || ch === '*' || ch === '+') { targets.push({x: x, y: y, targetVal: 0}); }
             }
             mapGrid.push(rowArr);
         }
@@ -477,28 +1021,29 @@
         inventory = [];
         var totalInv = 0;
         for(var i=0; i<5; i++) {
-            var v = (Math.floor(Math.random()*10) + 1) * 5; 
-            if(v < 5) v = 5;
-            inventory.push({val: v, isOld: false}); // New/Injected Energy
+            var v = Math.floor(RND()*45) + 12; 
+            inventory.push({val: v, isOld: false});
             totalInv += v;
         }
         
         var totalBlockEnergy = 0;
         blocks.forEach(function(b) {
-            b.val = (Math.floor(Math.random()*15) + 5) * 10; // Old/Derelict Energy
+            b.val = Math.floor(RND()*150) + 50;
             totalBlockEnergy += b.val;
         });
         
         var energyPool = totalInv + totalBlockEnergy;
         var ePerTarget = Math.floor(energyPool / targets.length); 
         var remainingEnergy = energyPool;
-        var variance = Math.floor((curLvlIdx > 0 ? curLvlIdx : 1) * 2); 
+        
+        var complexityMod = curLvlIdx > 0 ? curLvlIdx : 10;
+        var variance = Math.floor(complexityMod * 3); 
         
         for(var t=0; t<targets.length; t++) {
             if (t === targets.length - 1) {
                 targets[t].targetVal = Math.floor(remainingEnergy);
             } else {
-                var fluctuation = (Math.floor(Math.random() * variance) - Math.floor(variance/2)) * 5;
+                var fluctuation = Math.floor(RND() * variance) - Math.floor(variance/2);
                 var finalTarget = Math.floor(ePerTarget + fluctuation);
                 if(finalTarget < 10) finalTarget = 10;
                 if(finalTarget > remainingEnergy - 10) finalTarget = remainingEnergy - 10;
@@ -527,7 +1072,7 @@
 
         targets.forEach(function(t) {
             var tg = document.createElement('div'); tg.className = 'tile tile-target';
-            tg.innerHTML = '<div class="target-val">' + Math.floor(t.targetVal) + '</div>';
+            tg.innerHTML = '<div class="target-val">' + t.targetVal + '</div>';
             positionTile(tg, t.x, t.y); cont.appendChild(tg);
         });
 
@@ -646,19 +1191,49 @@
         if(win && targets.length > 0) {
             setTimeout(function(){
                 GameAudio.sfxWin();
+                // Always log progress — level marked done regardless of try-again
+                saveProgress(curLvlIdx);
                 
                 document.getElementById('game-screen').style.display = 'none';
                 document.getElementById('victory-overlay').style.display = 'flex';
+
+                // Sub-label: personalise for random vs numbered sector
+                var subLabel = curLvlIdx === -1 ? 'Random Sector Complete' : 'Sector ' + (curLvlIdx + 1) + ' Complete';
+                document.getElementById('victory-sub-label').innerText = subLabel;
                 
-                var finalHtml = '<div class="stat-row"><span>LAB ACTIONS:</span> <span class="stat-val">' + (splitsInitiated+fusesInitiated) + ' ('+splitsInitiated+'S / '+fusesInitiated+'F)</span></div>' +
-                                '<div class="stat-row"><span>DERELICT ENERGY SAVED:</span> <span class="stat-val old">' + Math.floor(oldUsed) + '</span></div>' +
-                                '<div class="stat-row"><span>NEW ENERGY INJECTED:</span> <span class="stat-val new">' + Math.floor(newUsed) + '</span></div>';
+                var totalActions = splitsInitiated + fusesInitiated;
+                var efficiency = (oldUsed + newUsed) > 0
+                    ? Math.round((oldUsed / (oldUsed + newUsed)) * 100)
+                    : 0;
+
+                document.getElementById('final-stats').innerHTML =
+                    '<div class="stat-card">' +
+                        '<div class="stat-card-label">Actions Used</div>' +
+                        '<div class="stat-card-value">' + totalActions + '</div>' +
+                    '</div>' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-card-label">Derelict Saved</div>' +
+                        '<div class="stat-card-value val-old">' + Math.floor(oldUsed) + '</div>' +
+                    '</div>' +
+                    '<div class="stat-card">' +
+                        '<div class="stat-card-label">Recycled %</div>' +
+                        '<div class="stat-card-value val-new">' + efficiency + '%</div>' +
+                    '</div>';
                 
-                document.getElementById('final-stats').innerHTML = finalHtml;
-                
+                // Show Next Sector only for numbered levels that have a next
+                var nextBtn = document.getElementById('btn-next-sector');
+                nextBtn.style.display = (curLvlIdx >= 0 && curLvlIdx < 19) ? 'block' : 'none';
+
             }, 300);
         }
     }
+
+    // Try Again: restart the same level — progress already saved above
+    window.tryAgain = function() {
+        document.getElementById('victory-overlay').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        window.restartLevel();
+    };
 
     // --- REFINERY LAB CONTEXT LOGIC ---
     window.gameToggleMagnet = function() {
@@ -843,7 +1418,7 @@
         var mBlock = selectedBlockId !== -1 ? blocks.find(function(x){return x.id === selectedBlockId;}) : null;
         
         if (labContext === 'map-split') {
-            btn.disabled = (t !== 0) || (l + r !== Math.floor(mBlock.val));
+            btn.disabled = (t !== 0) || (l + r !== Math.floor(mBlock.val)) || (l === 0);
         } else if (labContext === 'inv-split') {
             btn.disabled = (t !== 0) || (l + r !== Math.floor(inventory[selectedInvIndices[0]].val));
         } else if (labContext === 'map-inv-fuse') {
@@ -865,8 +1440,7 @@
         if (labContext === 'map-split') {
             splitsInitiated++;
             var wasOld = mBlock.isOld;
-            if(l > 0) { mBlock.val = l; } 
-            else { blocks = blocks.filter(function(x){return x.id !== selectedBlockId;}); selectedBlockId = -1; }
+            mBlock.val = l; 
             if(r > 0) inventory.push({val: r, isOld: wasOld}); 
         } 
         else if (labContext === 'map-inv-fuse') {
@@ -897,6 +1471,72 @@
     };
 
     document.addEventListener('touchmove', function(e){ if(dragData && dragData.block) e.preventDefault(); }, {passive:false});
+
+    // ─── KEYBOARD CONTROLS ───────────────────────────────────────────────────
+    // Game screen:  Arrow keys / WASD → move player
+    //               Z / U            → undo (restart level — no undo stack)
+    //               E                → open Extract/Split lab  (when available)
+    //               F                → open Inject/Fuse lab    (when available)
+    //               R                → restart level
+    //               Escape           → back to menu
+    // Lab screen:   Enter            → confirm (Execute)
+    //               Escape           → abort lab
+    // Victory:      Enter / Space    → next sector (if available), else menu
+    //               R                → try again
+    // ─────────────────────────────────────────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+        var gameVisible    = document.getElementById('game-screen').style.display    === 'flex';
+        var labVisible     = document.getElementById('lab-screen').style.display     === 'flex';
+        var victoryVisible = document.getElementById('victory-overlay').style.display === 'flex';
+
+        // ── LAB SCREEN ──────────────────────────────────────────────────────
+        if(labVisible) {
+            if(e.key === 'Enter') {
+                var btn = document.getElementById('btn-confirm');
+                if(btn && !btn.disabled) window.confirmLab();
+            } else if(e.key === 'Escape') {
+                window.closeLab();
+            }
+            return;
+        }
+
+        // ── VICTORY SCREEN ──────────────────────────────────────────────────
+        if(victoryVisible) {
+            if(e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                var nextBtn = document.getElementById('btn-next-sector');
+                if(nextBtn && nextBtn.style.display !== 'none') window.nextSector();
+                else window.goToMenu();
+            } else if(e.key === 'r' || e.key === 'R') {
+                window.tryAgain();
+            } else if(e.key === 'Escape') {
+                window.goToMenu();
+            }
+            return;
+        }
+
+        // ── GAME SCREEN ──────────────────────────────────────────────────────
+        if(gameVisible) {
+            switch(e.key) {
+                case 'ArrowUp':    case 'w': case 'W': e.preventDefault(); window.movePlayer(0, -1);  break;
+                case 'ArrowDown':  case 's': case 'S': e.preventDefault(); window.movePlayer(0,  1);  break;
+                case 'ArrowLeft':  case 'a': case 'A': e.preventDefault(); window.movePlayer(-1, 0);  break;
+                case 'ArrowRight': case 'd': case 'D': e.preventDefault(); window.movePlayer(1,  0);  break;
+                case 'e': case 'E': {
+                    var btnS = document.getElementById('btn-split');
+                    if(btnS && !btnS.disabled) window.openLab('split');
+                    break;
+                }
+                case 'f': case 'F': {
+                    var btnF = document.getElementById('btn-fuse');
+                    if(btnF && !btnF.disabled) window.openLab('fuse');
+                    break;
+                }
+                case 'r': case 'R': window.restartLevel(); break;
+                case 'Escape':     window.goToMenu();       break;
+            }
+        }
+    });
 </script>
 </body>
 </html>
