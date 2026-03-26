@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Futzal Zebra: Striking Paths & Pickups</title>
+<style>
+    body, html {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background-color: #3b2923; /* Dark Espresso Background */
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+        color: #faedcd; /* Light Cream Text */
+        touch-action: none; user-select: none;
+    }
+    #gameCanvas { display: block; width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; z-index: 1;}
+
+    /* Welcome & Game Over Screens */
+    .overlay-screen {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, #9c7873, #3b2923); /* Dusty Rose to Dark Brown */
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        z-index: 100;
+    }
+    .overlay-screen h1 { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 2px 4px 10px rgba(0,0,0,0.5); text-align: center; color: #faedcd;}
+    .overlay-screen p { font-size: 1.1rem; margin-bottom: 30px; text-align: center; padding: 0 20px; color: #ebc78f;}
+    
+    .btn-container { display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 300px;}
+    .btn-main {
+        background-color: #ebc78f; color: #3b2923; border: none; padding: 15px;
+        border-radius: 30px; font-size: 1.2rem; font-weight: bold; cursor: pointer;
+        box-shadow: 0 6px 0 #cda56b; transition: transform 0.1s; width: 100%;
+    }
+    .btn-pvp { background-color: #9c7873; color: #faedcd; box-shadow: 0 6px 0 #7c5a56; }
+    .btn-main:active { transform: translateY(6px); box-shadow: none; }
+
+    /* Stats Table */
+    .stats-table {
+        background: rgba(59, 41, 35, 0.95); border-radius: 12px; padding: 20px;
+        margin-bottom: 30px; width: 90%; max-width: 400px; border: 2px solid #ebc78f;
+    }
+    .stats-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1.1rem; color: #faedcd;}
+    .stats-row strong { color: #ebc78f; }
+
+    /* UI Overlay */
+    #ui-overlay {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; display: none; flex-direction: column;
+        justify-content: flex-start; box-sizing: border-box; padding: 10px; z-index: 10;
+    }
+
+    .panel {
+        background: rgba(59, 41, 35, 0.95); border: 2px solid #9c7873;
+        border-radius: 12px; padding: 10px 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        pointer-events: auto; margin-bottom: 8px;
+    }
+
+    #top-bar { display: flex; justify-content: space-between; align-items: center; }
+    #score-board { font-size: 1.3rem; font-weight: bold; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px; color: #faedcd;}
+    #ball-stats { font-size: 1.1rem; font-weight: bold; color: #ebc78f; }
+
+    #info-panel {
+        align-self: center; width: 100%; max-width: 500px;
+        display: flex; flex-direction: column; gap: 5px;
+    }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;}
+    #char-role { color: #faedcd; font-size: 0.9rem; margin-bottom: 5px; font-weight: bold;}
+
+    /* Horizontal Action Bar */
+    .btn-row { display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+    
+    button.btn-action {
+        background-color: #ebc78f; color: #3b2923; border: none; padding: 10px 4px;
+        border-radius: 8px; font-size: 0.95rem; font-weight: bold; cursor: pointer;
+        box-shadow: 0 4px 0 #cda56b; pointer-events: auto; flex: 1;
+    }
+    button.btn-action:active { transform: translateY(4px); box-shadow: none; }
+    .btn-exec { background-color: #ebc78f !important; box-shadow: 0 4px 0 #cda56b !important; color: #3b2923 !important;}
+    .btn-undo { background-color: #9c7873 !important; box-shadow: 0 4px 0 #7c5a56 !important; color: #faedcd !important; display: none;}
+    .btn-mode { background-color: #9a9a95 !important; box-shadow: 0 4px 0 #7a7a76 !important; color: #3b2923 !important; display: none;}
+
+    hr.divider { border: 0; border-top: 1px solid #9c7873; margin: 4px 0; width: 100%; }
+
+    #help-btn {
+        background-color: #ebc78f; color: #3b2923; width: 28px; height: 28px; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center; border: none; font-weight: bold;
+        font-size: 1.1rem; cursor: pointer; pointer-events: auto; margin-left: 8px; box-shadow: 0 3px 0 #cda56b;
+    }
+
+    /* Virtual Gamepad */
+    #virtual-gamepad {
+        position: absolute; bottom: 20px; left: 0; width: 100%;
+        display: flex; justify-content: space-between; align-items: flex-end;
+        padding: 0 15px; box-sizing: border-box; pointer-events: none; z-index: 50;
+    }
+    .dpad-container {
+        display: grid; grid-template-columns: 48px 48px 48px; grid-template-rows: 48px 48px 48px;
+        gap: 5px; pointer-events: auto;
+    }
+    .dpad-btn {
+        background: rgba(235, 199, 143, 0.9); border: 2px solid #ebc78f; border-radius: 8px;
+        color: #3b2923; font-size: 1.5rem; font-weight: bold; display: flex; justify-content: center;
+        align-items: center; cursor: pointer; box-shadow: 0 4px 0 #cda56b;
+    }
+    .dpad-btn:active { transform: translateY(4px); box-shadow: none; }
+    .up-left { grid-column: 1; grid-row: 1; }
+    .up-right { grid-column: 3; grid-row: 1; }
+    .down-left { grid-column: 1; grid-row: 3; }
+    .down-right { grid-column: 3; grid-row: 3; }
+    
+    .action-btn-container { pointer-events: auto; display: flex; align-items: flex-end;}
+    .a-btn {
+        width: 75px; height: 75px; border-radius: 50%; background: #ebc78f;
+        border: 4px solid #faedcd; color: #3b2923; font-size: 2rem; font-weight: bold;
+        box-shadow: 0 6px 0 #cda56b; cursor: pointer; display: flex; justify-content: center; align-items: center;
+    }
+    .a-btn:active { transform: translateY(6px); box-shadow: none; }
+
+    #help-modal {
+        position: absolute; top: 5%; left: 50%; transform: translateX(-50%);
+        width: 90%; max-width: 450px; background: #3b2923; border: 2px solid #ebc78f;
+        border-radius: 12px; padding: 20px; z-index: 200; display: none; pointer-events: auto;
+        color: #faedcd; box-shadow: 0 10px 25px rgba(0,0,0,0.8); max-height: 90%; overflow-y: auto;
+    }
+    #help-modal h2 { margin-top: 0; color: #ebc78f; border-bottom: 1px solid #9c7873; padding-bottom: 10px;}
+    #help-modal ul { padding-left: 20px; margin-bottom: 15px;}
+    #help-modal li { margin-bottom: 8px; font-size: 0.95rem; line-height: 1.4;}
+    .close-btn { background: #9c7873; color: #faedcd; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; box-shadow: 0 4px 0 #7c5a56;}
+
+    #phase-indicator { font-weight: bold; padding: 4px 10px; border-radius: 6px; font-size: 0.95rem; color: #faedcd;}
+    .phase-savanna { background: #9c7873; }
+    .phase-jungle { background: #9a9a95; color: #3b2923 !important;}
+    .phase-exec { background: #ebc78f; color: #3b2923 !important; }
+</style>
+</head>
+<body>
+
+<div id="welcome-screen" class="overlay-screen">
+    <h1>🦓 Futzal Zebra</h1>
+    <p>First to 2 Goals Wins!</p>
+    <div class="btn-container">
+        <button class="btn-main" onclick="startGame('AI')">Play vs AI</button>
+        <button class="btn-main btn-pvp" onclick="startGame('PVP')">Play vs Player</button>
+    </div>
+</div>
+
+<div id="game-over-screen" class="overlay-screen" style="display:none; z-index: 300; background: rgba(59, 41, 35, 0.98);">
+    <h1 id="winner-title">Savanna Wins!</h1>
+    
+    <div class="stats-table">
+        <div class="stats-row"><span>Team:</span> <strong style="color:#9c7873;">Savanna</strong> <strong style="color:#9a9a95;">Jungle</strong></div>
+        <hr class="divider" style="margin-bottom:10px; border-top: 1px solid #9c7873;">
+        <div class="stats-row"><span>Goals:</span> <strong id="stat-sav-goals">0</strong> <strong id="stat-jun-goals">0</strong></div>
+        <div class="stats-row"><span>Passes:</span> <strong id="stat-sav-pass">0</strong> <strong id="stat-jun-pass">0</strong></div>
+        <div class="stats-row"><span>Interceptions:</span> <strong id="stat-sav-int">0</strong> <strong id="stat-jun-int">0</strong></div>
+        <div class="stats-row"><span>Tackles:</span> <strong id="stat-sav-tack">0</strong> <strong id="stat-jun-tack">0</strong></div>
+    </div>
+
+    <div class="btn-container">
+        <button class="btn-main" onclick="startGame('AI')">Rematch AI</button>
+        <button class="btn-main btn-pvp" onclick="startGame('PVP')">Rematch PvP</button>
+    </div>
+</div>
+
+<div id="ui-overlay">
+    <div id="top-bar" class="panel">
+        <div style="display:flex; align-items:center;">
+            <div id="phase-indicator" class="phase-savanna">Savanna</div>
+            <button id="help-btn" onclick="toggleHelp()">?</button>
+        </div>
+        <div id="score-board"><span style="color:#9c7873" id="score-sav">0</span> - <span style="color:#9a9a95" id="score-jun">0</span></div>
+        <div id="ball-stats">Ball: <span id="ball-val">1</span></div>
+    </div>
+
+    <div id="info-panel" class="panel">
+        <div class="btn-row">
+            <button id="mode-btn" class="btn-action btn-mode" onclick="toggleActionMode()">🏃 Dribble</button>
+            <button id="undo-btn" class="btn-action btn-undo" onclick="undoPlan()">↺ Reset</button>
+            <button id="action-btn" class="btn-action" onclick="handlePhaseButton()">Confirm</button>
+        </div>
+        <hr class="divider">
+        <div id="char-role">Tap Grid to Act. Mode must be 'Pass' to throw.</div>
+        <div class="stat-row">
+            <strong id="char-name">Use D-Pad or Touch</strong>
+            <span id="char-formula" style="color:#ebc78f; font-family:monospace; font-size: 1.1rem;"></span>
+        </div>
+    </div>
+</div>
+
+<div id="virtual-gamepad">
+    <div class="dpad-container">
+        <div class="dpad-btn up-left" onclick="moveCursor(-1, 0)">↖️</div>
+        <div class="dpad-btn up-right" onclick="moveCursor(0, -1)">↗️</div>
+        <div class="dpad-btn down-left" onclick="moveCursor(0, 1)">↙️</div>
+        <div class="dpad-btn down-right" onclick="moveCursor(1, 0)">↘️</div>
+    </div>
+    <div class="action-btn-container">
+        <div class="a-btn" onclick="selectCursor()">A</div>
+    </div>
+</div>
+
+<div id="help-modal">
+    <h2>How to Play Futzal Zebra</h2>
+    <ul>
+        <li><strong>Win Condition:</strong> First team to score 2 goals wins the match!</li>
+        <li><strong>The Math:</strong> The ball (x) starts at 1. When passed to a player, it increases by their formula!</li>
+        <li><strong>Scoring (>15):</strong> You can only score if the ball's value is <strong>15 or above</strong>.</li>
+        <li><strong>Passing vs Shooting:</strong> Use the Mode Button. Passes travel 1 space per turn. <strong>Shots travel 2 spaces!</strong> Passes into empty space become Loose Balls (x=1).</li>
+        <li><strong>Action Limits:</strong> Team WITH the ball can only make 1 run. Team WITHOUT the ball can make 2 runs.</li>
+        <li><strong>Turnovers:</strong> Tackles and Interceptions instantly reset the ball to 1!</li>
+    </ul>
+    <button class="close-btn" onclick="toggleHelp()">Close Rules</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // ISOMETRIC CONSTANTS
+    const COLS = 9, ROWS = 16;
+    const TILE_W = 64, TILE_H = 32;
+    
+    let camera = { x: 0, y: 0, zoom: 1 };
+    let isDragging = false, dragStart = { x: 0, y: 0 }, initialPinchDist = null;
+
+    let gameMode = 'AI'; 
+    let score = { player: 0, enemy: 0 };
+    
+    let matchStats = {
+        player: { passes: 0, intercepts: 0, tackles: 0 },
+        enemy: { passes: 0, intercepts: 0, tackles: 0 }
+    };
+
+    let ballValue = 1, teamWithBall = 'player', currentPhase = 'PLAN_OFFENSE'; 
+    let selectedPlayer = null, ballHolder = null, plannedPass = null; 
+    let players = [];
+    
+    let aiIsThinking = false;
+    let gridCursor = { c: 4, r: 12 };
+    let actionMode = 'DRIBBLE'; 
+
+    const rInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+    const isoX = (c, r) => (c - r) * (TILE_W / 2);
+    const isoY = (c, r) => (c + r) * (TILE_H / 2);
+
+    class Player {
+        constructor(team, name, emoji, c, r, isCaptain=false, isGK=false) {
+            this.team = team; this.name = name; this.emoji = emoji;
+            this.c = c; this.r = r;
+            this.isCaptain = isCaptain; this.isGK = isGK;
+            this.plannedPath = [];
+            
+            if (isGK) {
+                this.base_a = 1; this.val_c = 0;
+            } else {
+                this.base_a = rInt(1, 3);
+                this.val_c = rInt(2, 8);
+            }
+            this.temp_c = this.val_c; 
+        }
+        get a() { return this.base_a; } 
+        getFormula() { 
+            if (this.isGK) return "f(x) = x"; 
+            return `${this.a}x ${this.val_c >= 0 ? '+' : '-'} ${Math.abs(this.val_c)}`; 
+        }
+        resetPlan() { this.plannedPath = []; this.temp_c = this.val_c; }
+    }
+
+    function toggleHelp() {
+        const modal = document.getElementById('help-modal');
+        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function toggleActionMode() {
+        if (aiIsThinking || currentPhase === 'EXECUTE' || currentPhase === 'GAME_OVER') return;
+        
+        if (selectedPlayer && selectedPlayer.isGK) {
+            actionMode = actionMode === 'PASS' ? 'SHOOT' : 'PASS';
+        } else {
+            if (actionMode === 'DRIBBLE') actionMode = 'PASS';
+            else if (actionMode === 'PASS') actionMode = 'SHOOT';
+            else actionMode = 'DRIBBLE';
+        }
+        updateUI(); draw();
+    }
+
+    function initTeams() {
+        players = [];
+        players.push(new Player('player', 'Zebra (Capt)', '🦓', 4, 12, true, false)); 
+        players.push(new Player('player', 'Lion', '🦁', 2, 10, false, false));
+        players.push(new Player('player', 'Cheetah', '🐆', 6, 10, false, false));
+        players.push(new Player('player', 'Elephant', '🐘', 4, 8, false, false)); 
+        players.push(new Player('player', 'Meerkat (GK)', '🦦', 4, 15, false, true)); 
+        
+        players.push(new Player('enemy', 'Tiger (Capt)', '🐅', 4, 3, true, false));
+        players.push(new Player('enemy', 'Rhino', '🦏', 2, 5, false, false));
+        players.push(new Player('enemy', 'Hyena', '🐺', 6, 5, false, false));
+        players.push(new Player('enemy', 'Monkey', '🐒', 4, 7, false, false)); 
+        players.push(new Player('enemy', 'Gorilla (GK)', '🦍', 4, 0, false, true)); 
+    }
+
+    function resetPositions() {
+        players.forEach(p => p.resetPlan());
+        let sav = players.filter(p=>p.team==='player');
+        sav[0].c = 4; sav[0].r = 12; sav[1].c = 2; sav[1].r = 10; sav[2].c = 6; sav[2].r = 10; sav[3].c = 4; sav[3].r = 8; sav[4].c = 4; sav[4].r = 15;
+        let jun = players.filter(p=>p.team==='enemy');
+        jun[0].c = 4; jun[0].r = 3;  jun[1].c = 2; jun[1].r = 5; jun[2].c = 6; jun[2].r = 5;  jun[3].c = 4; jun[3].r = 7; jun[4].c = 4; jun[4].r = 0; 
+    }
+
+    function startGame(mode) {
+        gameMode = mode;
+        score = { player: 0, enemy: 0 };
+        matchStats = { player: { passes: 0, intercepts: 0, tackles: 0 }, enemy: { passes: 0, intercepts: 0, tackles: 0 } };
+        
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('game-over-screen').style.display = 'none';
+        document.getElementById('ui-overlay').style.display = 'flex';
+        
+        initTeams();
+        ballHolder = players[0];
+        ballValue = 1; 
+        teamWithBall = 'player';
+        currentPhase = 'PLAN_OFFENSE';
+        plannedPass = null;
+        selectedPlayer = null;
+        gridCursor = { c: ballHolder.c, r: ballHolder.r };
+        
+        setTimeout(() => { resize(); centerCameraOnCursor(); updateUI(); }, 50);
+    }
+
+    function triggerGameOver() {
+        currentPhase = 'GAME_OVER';
+        document.getElementById('ui-overlay').style.display = 'none';
+        
+        const goScreen = document.getElementById('game-over-screen');
+        const title = document.getElementById('winner-title');
+        
+        if (score.player >= 2) {
+            title.innerText = "🏆 Savanna Team Wins! 🏆";
+            title.style.color = "#9c7873";
+        } else {
+            title.innerText = "🏆 Jungle Team Wins! 🏆";
+            title.style.color = "#9a9a95";
+        }
+
+        document.getElementById('stat-sav-goals').innerText = score.player;
+        document.getElementById('stat-jun-goals').innerText = score.enemy;
+        document.getElementById('stat-sav-pass').innerText = matchStats.player.passes;
+        document.getElementById('stat-jun-pass').innerText = matchStats.enemy.passes;
+        document.getElementById('stat-sav-int').innerText = matchStats.player.intercepts;
+        document.getElementById('stat-jun-int').innerText = matchStats.enemy.intercepts;
+        document.getElementById('stat-sav-tack').innerText = matchStats.player.tackles;
+        document.getElementById('stat-jun-tack').innerText = matchStats.enemy.tackles;
+
+        goScreen.style.display = 'flex';
+    }
+
+    function resize() {
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight;
+        if(window.innerWidth < 600) camera.zoom = 1.0; 
+        else camera.zoom = 1.2;
+        draw();
+    }
+    window.addEventListener('resize', resize);
+
+    function centerCameraOnCursor() {
+        const screenCenterX = canvas.width / 2;
+        
+        let topBar = document.getElementById('top-bar');
+        let infoPanel = document.getElementById('info-panel');
+        let dpad = document.getElementById('virtual-gamepad');
+        
+        let topUIHeight = (topBar ? topBar.offsetHeight : 50) + (infoPanel ? infoPanel.offsetHeight : 100) + 20;
+        let bottomUIHeight = dpad ? dpad.offsetHeight : 160;
+        
+        let safeCenterY = canvas.height / 2;
+        if (canvas.height > canvas.width) {
+            safeCenterY = topUIHeight + (canvas.height - topUIHeight - bottomUIHeight) / 2;
+        }
+        
+        const targetX = isoX(gridCursor.c, gridCursor.r) * camera.zoom;
+        const targetY = isoY(gridCursor.c, gridCursor.r) * camera.zoom;
+        
+        camera.x = screenCenterX - targetX;
+        camera.y = safeCenterY - targetY;
+    }
+    
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('mouseup', handlePointerUp);
+    canvas.addEventListener('wheel', (e) => { e.preventDefault(); camera.zoom = Math.min(Math.max(0.5, camera.zoom - e.deltaY*0.001), 2); draw(); });
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); e.touches.length===2 ? initialPinchDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY) : handlePointerDown(e.touches[0]); }, {passive: false});
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(e.touches.length===2 && initialPinchDist){ const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY); camera.zoom = Math.min(Math.max(0.5, camera.zoom * (dist/initialPinchDist)), 2); initialPinchDist = dist; draw(); } else handlePointerMove(e.touches[0]); }, {passive: false});
+    canvas.addEventListener('touchend', handlePointerUp);
+
+    let clickStartPos = {x:0, y:0};
+    function handlePointerDown(e) { if(aiIsThinking || currentPhase === 'GAME_OVER') return; isDragging = true; dragStart = { x: e.clientX - camera.x, y: e.clientY - camera.y }; clickStartPos = { x: e.clientX, y: e.clientY }; }
+    function handlePointerMove(e) { if (!isDragging) return; camera.x = e.clientX - dragStart.x; camera.y = e.clientY - dragStart.y; draw(); }
+    
+    function handlePointerUp(e) {
+        if(aiIsThinking || currentPhase === 'EXECUTE' || currentPhase === 'GAME_OVER') return;
+        isDragging = false; initialPinchDist = null; 
+        const cx = e.changedTouches ? e.changedTouches[0].clientX : e.clientX; 
+        const cy = e.changedTouches ? e.changedTouches[0].clientY : e.clientY; 
+        
+        if (document.getElementById('help-modal').style.display === 'block') return;
+
+        if (Math.hypot(cx - clickStartPos.x, cy - clickStartPos.y) < 10) {
+            const adjX = (cx - camera.x) / camera.zoom;
+            const adjY = (cy - camera.y) / camera.zoom;
+            
+            const gridC = Math.floor((adjX / (TILE_W / 2) + adjY / (TILE_H / 2)) / 2);
+            const gridR = Math.floor((adjY / (TILE_H / 2) - adjX / (TILE_W / 2)) / 2);
+
+            if (gridC >= 0 && gridC < COLS && gridR >= 0 && gridR < ROWS) {
+                gridCursor = { c: gridC, r: gridR };
+                processGridAction(gridC, gridR);
+            }
+        }
+    }
+
+    function moveCursor(dc, dr) {
+        if (aiIsThinking || currentPhase === 'EXECUTE' || currentPhase === 'GAME_OVER') return;
+        if (gridCursor.c + dc >= 0 && gridCursor.c + dc < COLS) gridCursor.c += dc;
+        if (gridCursor.r + dr >= 0 && gridCursor.r + dr < ROWS) gridCursor.r += dr;
+        
+        centerCameraOnCursor(); draw();
+    }
+    function selectCursor() { 
+        if(aiIsThinking || currentPhase === 'GAME_OVER') return;
+        processGridAction(gridCursor.c, gridCursor.r); 
+    }
+
+    function processGridAction(gridC, gridR) {
+        if (aiIsThinking || currentPhase === 'EXECUTE' || currentPhase === 'GAME_OVER') return;
+
+        let activeTeam = currentPhase === 'PLAN_OFFENSE' ? (teamWithBall === 'none' ? 'enemy' : teamWithBall) : (teamWithBall === 'player' ? 'enemy' : 'player');
+        
+        if (currentPhase === 'PLAN_DEFENSE' && gameMode === 'AI' && activeTeam === 'enemy') return;
+
+        const clickedPlayer = players.find(p => p.c === gridC && p.r === gridR);
+
+        // 1. PLOT PASS OR SHOOT
+        if (currentPhase === 'PLAN_OFFENSE' && selectedPlayer === ballHolder && clickedPlayer !== selectedPlayer) {
+            let originC = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].c : selectedPlayer.c;
+            let originR = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].r : selectedPlayer.r;
+            let startTick = selectedPlayer.plannedPath.length; 
+
+            if (actionMode === 'PASS' || actionMode === 'SHOOT') {
+                if (isOrthogonal({c: originC, r: originR}, gridC, gridR)) {
+                    if (!plannedPass) {
+                        plannedPass = { 
+                            path: generatePath(originC, originR, gridC, gridR), 
+                            target: clickedPlayer, targetPos: {c: gridC, r: gridR},
+                            startTick: startTick, origin: {c: originC, r: originR},
+                            isShot: actionMode === 'SHOOT'
+                        };
+                        updateUI(); draw(); return;
+                    }
+                } else {
+                    alert("Passes and Shots must be in a straight orthogonal line!"); return;
+                }
+            } else if (actionMode === 'DRIBBLE') {
+                if (!clickedPlayer && !selectedPlayer.isGK) {
+                    if (plannedPass && plannedPass.startTick > 0) { alert("Already planned ball action. Reset to dribble."); return; }
+                    
+                    const movingCount = players.filter(p => p.team === activeTeam && p.plannedPath.length > 0 && p !== selectedPlayer).length;
+                    if (movingCount >= 1 && selectedPlayer.plannedPath.length === 0) {
+                        alert("Offense can only move 1 player! Reset your other player's path first."); return;
+                    }
+                    
+                    if (isOrthogonal({c: originC, r: originR}, gridC, gridR)) {
+                        const newPath = generatePath(originC, originR, gridC, gridR);
+                        selectedPlayer.plannedPath.push(...newPath);
+                        selectedPlayer.temp_c -= newPath.length; 
+                        updateUI(); draw(); return;
+                    }
+                }
+            }
+        }
+
+        // 2. SELECT UNIT
+        if (clickedPlayer && clickedPlayer.team === activeTeam) {
+            selectedPlayer = clickedPlayer; 
+            if(selectedPlayer === ballHolder) {
+                actionMode = selectedPlayer.isGK ? 'PASS' : 'DRIBBLE';
+            }
+            updateUI(); draw(); return;
+        }
+
+        // 3. PLOT RUN / GK ADJUSTMENT (Off-ball)
+        if (selectedPlayer && !clickedPlayer && selectedPlayer !== ballHolder) {
+            if (selectedPlayer.isGK) {
+                if (currentPhase === 'PLAN_DEFENSE' && selectedPlayer.plannedPath.length === 0) {
+                    let boxRows = selectedPlayer.team === 'player' ? [14, 15] : [0, 1];
+                    let boxCols = [3, 4, 5];
+                    if (boxRows.includes(gridR) && boxCols.includes(gridC)) {
+                        let dist = Math.abs(selectedPlayer.c - gridC) + Math.abs(selectedPlayer.r - gridR);
+                        if (dist === 1) {
+                            selectedPlayer.plannedPath.push({c: gridC, r: gridR});
+                            updateUI(); draw(); return;
+                        } else { alert("Goalkeeper can only step 1 tile at a time."); return; }
+                    } else { alert("Goalkeeper must stay in their penalty box!"); return; }
+                }
+            } else {
+                const maxUnits = currentPhase === 'PLAN_OFFENSE' ? 1 : 2;
+                const movingCount = players.filter(p => p.team === activeTeam && p.plannedPath.length > 0 && p !== selectedPlayer).length;
+
+                if (selectedPlayer.plannedPath.length === 0 && movingCount >= maxUnits) {
+                    alert(currentPhase === 'PLAN_OFFENSE' ? "Offense can only move 1 player!" : "Defense can only run 2 players!"); 
+                    return;
+                }
+
+                let sC = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].c : selectedPlayer.c;
+                let sR = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].r : selectedPlayer.r;
+                
+                if (isOrthogonal({c:sC, r:sR}, gridC, gridR)) {
+                    const newPath = generatePath(sC, sR, gridC, gridR);
+                    selectedPlayer.plannedPath.push(...newPath);
+                    selectedPlayer.temp_c -= newPath.length; 
+                    updateUI(); draw(); return;
+                }
+            }
+        }
+        selectedPlayer = null; updateUI(); draw();
+    }
+
+    function isOrthogonal(start, c, r) { return start.c === c || start.r === r; }
+    function generatePath(c1, r1, c2, r2) {
+        let path = []; let dc = Math.sign(c2 - c1), dr = Math.sign(r2 - r1);
+        let curC = c1 + dc, curR = r1 + dr;
+        while(true) { path.push({c: curC, r: curR}); if (curC === c2 && curR === r2) break; curC += dc; curR += dr; }
+        return path;
+    }
+
+    function undoPlan() {
+        if(aiIsThinking || currentPhase === 'EXECUTE' || currentPhase === 'GAME_OVER') return;
+        
+        let activeTeam = currentPhase === 'PLAN_OFFENSE' ? (teamWithBall === 'none' ? 'enemy' : teamWithBall) : (teamWithBall === 'player' ? 'enemy' : 'player');
+        players.forEach(p => { if(p.team === activeTeam) p.resetPlan(); });
+        if (currentPhase === 'PLAN_OFFENSE') plannedPass = null; 
+        
+        selectedPlayer = null; updateUI(); draw();
+    }
+
+    function executeAI(phase) {
+        aiIsThinking = true;
+        document.getElementById('char-role').innerText = "AI is thinking..."; 
+        updateUI(); draw();
+        
+        setTimeout(() => {
+            let targetC = 4, targetR = phase === 'OFFENSE' ? 15 : ballHolder.r; 
+
+            if (phase === 'DEFENSE') {
+                if (!ballHolder.isBallOnly) {
+                    targetC = ballHolder.c; targetR = ballHolder.r;
+                    if (plannedPass) { targetC = plannedPass.targetPos.c; targetR = plannedPass.targetPos.r; } 
+                    else if (ballHolder.plannedPath.length > 0) {
+                        let last = ballHolder.plannedPath[ballHolder.plannedPath.length-1];
+                        targetC = last.c; targetR = last.r;
+                    }
+                } else { targetC = ballHolder.c; targetR = ballHolder.r; }
+            } else {
+                if (ballValue >= 15 && isOrthogonal(ballHolder, 4, 15)) {
+                    plannedPass = { path: generatePath(ballHolder.c, ballHolder.r, 4, 15), targetPos: {c: 4, r: 15}, target: null, startTick: 0, origin: {c: ballHolder.c, r: ballHolder.r}, isShot: true };
+                } else {
+                    let ally = players.find(p=>p.team==='enemy' && p!==ballHolder && !p.isGK && isOrthogonal(ballHolder, p.c, p.r));
+                    if(ally) {
+                        plannedPass = { path: generatePath(ballHolder.c, ballHolder.r, ally.c, ally.r), target: ally, targetPos: {c:ally.c, r:ally.r}, startTick: 0, origin: {c: ballHolder.c, r: ballHolder.r}, isShot: false };
+                    }
+                }
+            }
+            
+            let availableEnemies = players.filter(p => p.team === 'enemy' && !p.isGK && p !== ballHolder);
+            availableEnemies.sort((a,b) => (Math.abs(a.c-targetC)+Math.abs(a.r-targetR)) - (Math.abs(b.c-targetC)+Math.abs(b.r-targetR)));
+            
+            let moves = phase === 'OFFENSE' ? 1 : 2;
+            for(let i=0; i<moves; i++) {
+                if(!availableEnemies[i]) break;
+                let e = availableEnemies[i];
+                if(e.c !== targetC) { e.plannedPath = generatePath(e.c, e.r, targetC, e.r); e.temp_c -= e.plannedPath.length; }
+                else if(e.r !== targetR) { e.plannedPath = generatePath(e.c, e.r, e.c, targetR); e.temp_c -= e.plannedPath.length;}
+            }
+            
+            aiIsThinking = false;
+            handlePhaseButton(); 
+        }, 1500);
+    }
+
+    function handlePhaseButton() {
+        if(aiIsThinking || currentPhase === 'GAME_OVER') return;
+        
+        if (currentPhase === 'PLAN_OFFENSE') {
+            currentPhase = 'PLAN_DEFENSE'; selectedPlayer = null;
+            if(gameMode === 'AI' && teamWithBall !== 'enemy') executeAI('DEFENSE'); 
+        } else if (currentPhase === 'PLAN_DEFENSE') {
+            currentPhase = 'EXECUTE'; selectedPlayer = null; currentTick = 0;
+            gridCursor = {c: ballHolder.c, r: ballHolder.r};
+            centerCameraOnCursor();
+        } else if (currentPhase === 'EXECUTE') { stepSimulation(); }
+        updateUI(); draw();
+    }
+
+    let currentTick = 0; 
+    function stepSimulation() {
+        let actionsTaken = false, intercept = false;
+
+        // 1. Check Pass/Shot
+        if (plannedPass && currentTick >= plannedPass.startTick && plannedPass.path.length > 0) {
+            let speed = plannedPass.isShot ? 2 : 1;
+            
+            for(let s=0; s<speed; s++) {
+                if(plannedPass.path.length === 0) break;
+                let nextBall = plannedPass.path.shift();
+                
+                if(currentTick === plannedPass.startTick && s===0) ballHolder = {c: plannedPass.origin.c, r: plannedPass.origin.r, isBallOnly: true};
+                ballHolder.c = nextBall.c; ballHolder.r = nextBall.r;
+                actionsTaken = true;
+
+                if (plannedPass.path.length === 0) {
+                    let dynamicReceiver = players.find(p => p.c === ballHolder.c && p.r === ballHolder.r);
+                    if (dynamicReceiver) {
+                        if (dynamicReceiver.team !== teamWithBall) {
+                            ballHolder = dynamicReceiver; teamWithBall = dynamicReceiver.team;
+                            ballValue = dynamicReceiver.isGK ? 1 : (dynamicReceiver.a * 1) + dynamicReceiver.val_c;
+                            matchStats[dynamicReceiver.team].intercepts++;
+                            plannedPass = null; players.forEach(p => p.plannedPath = []);
+                            alert(`INTERCEPTED by ${dynamicReceiver.name}! Ball resets to 1!`);
+                            intercept = true; break;
+                        } else {
+                            ballHolder = dynamicReceiver;
+                            if(!dynamicReceiver.isGK) ballValue = (dynamicReceiver.a * ballValue) + dynamicReceiver.val_c;
+                            matchStats[teamWithBall].passes++;
+                            plannedPass = null; break;
+                        }
+                    } else {
+                        teamWithBall = 'none'; 
+                        plannedPass = null; break;
+                    }
+                }
+
+                let midFlightInterceptor = players.find(p => p.team !== teamWithBall && p.c === nextBall.c && p.r === nextBall.r);
+                if (midFlightInterceptor && plannedPass) {
+                    ballHolder = midFlightInterceptor; teamWithBall = midFlightInterceptor.team;
+                    ballValue = midFlightInterceptor.isGK ? 1 : (midFlightInterceptor.a * 1) + midFlightInterceptor.val_c;
+                    matchStats[midFlightInterceptor.team].intercepts++;
+                    plannedPass = null; players.forEach(p => p.plannedPath = []);
+                    alert(`INTERCEPTED by ${midFlightInterceptor.name}! Ball resets to 1!`);
+                    intercept = true; break;
+                }
+            }
+        }
+
+        // 2. Move Players
+        players.forEach(p => {
+            if (p.plannedPath.length > 0 && !intercept) {
+                let steps = p.isCaptain ? 2 : 1;
+                if (p.isGK) steps = 1; 
+                
+                for(let i=0; i<steps; i++) {
+                    if (p.plannedPath.length === 0) break;
+                    let next = p.plannedPath.shift();
+                    
+                    let occupier = players.find(o => o !== p && o.c === next.c && o.r === next.r);
+                    if (!occupier) {
+                        p.c = next.c; p.r = next.r; p.val_c -= 1; actionsTaken = true;
+                    } else {
+                        if (occupier.team !== p.team) {
+                            if (occupier === ballHolder || p === ballHolder) {
+                                let stealer = occupier === ballHolder ? p : occupier;
+                                ballHolder = stealer; teamWithBall = stealer.team;
+                                ballValue = stealer.isGK ? 1 : (stealer.a * 1) + stealer.val_c;
+                                matchStats[stealer.team].tackles++;
+                                intercept = true; alert(`TACKLED by ${stealer.name}! Ball resets to 1!`);
+                            }
+                        }
+                        p.plannedPath = []; break;
+                    }
+                }
+            }
+        });
+
+        // GLOBAL LOOSE BALL CHECK - Immediate pickup on the tile!
+        if (!intercept && ballHolder.isBallOnly) {
+            let pickup = players.find(p => p.c === ballHolder.c && p.r === ballHolder.r);
+            if (pickup) {
+                ballHolder = pickup;
+                teamWithBall = pickup.team;
+                ballValue = pickup.isGK ? 1 : (pickup.a * 1) + pickup.val_c;
+                matchStats[pickup.team].intercepts++;
+                alert(`${pickup.name} recovered the loose ball!`);
+                intercept = true; 
+            }
+        }
+
+        currentTick++;
+
+        // 3. Goal Checking
+        let goalScored = false;
+        if (ballHolder.c >= 3 && ballHolder.c <= 5 && !ballHolder.isBallOnly) {
+            if (ballHolder.r >= ROWS-1 || ballHolder.r <= 0) { 
+                if (ballValue >= 15) {
+                    if (ballHolder.team === 'enemy') {
+                        alert("⚽ GOAL FOR JUNGLE TEAM!"); goalScored = true; teamWithBall = 'player'; score.enemy++;
+                    } else if (ballHolder.team === 'player') {
+                        alert("⚽ GOAL FOR SAVANNA TEAM!"); goalScored = true; teamWithBall = 'enemy'; score.player++;
+                    }
+                } else {
+                    alert(`❌ Shot too weak! (Value is ${ballValue}, needs 15). Goalie catches it! Turnover.`);
+                    teamWithBall = teamWithBall === 'player' ? 'enemy' : 'player';
+                    let gk = players.find(p => p.team === teamWithBall && p.isGK);
+                    ballHolder = gk; ballValue = 1; intercept = true; 
+                }
+            }
+        } else if (ballHolder.isBallOnly && ballHolder.c >= 3 && ballHolder.c <= 5) {
+             if (ballHolder.r >= ROWS-1 || ballHolder.r <= 0) { 
+                if (ballValue >= 15) {
+                    if (ballHolder.r >= ROWS-1) { alert("⚽ GOAL FOR JUNGLE!"); goalScored=true; teamWithBall='player'; score.enemy++; }
+                    else { alert("⚽ GOAL FOR SAVANNA!"); goalScored=true; teamWithBall='enemy'; score.player++; }
+                } else {
+                    teamWithBall = ballHolder.r >= ROWS-1 ? 'player' : 'enemy';
+                    let gk = players.find(p => p.team === teamWithBall && p.isGK);
+                    ballHolder = gk; ballValue = 1; intercept = true;
+                }
+             }
+        }
+
+        gridCursor = {c: ballHolder.c, r: ballHolder.r};
+        centerCameraOnCursor();
+
+        // 4. Phase Change / Win Condition
+        if (score.player >= 2 || score.enemy >= 2) {
+            triggerGameOver();
+            return;
+        }
+
+        if (!actionsTaken || intercept || goalScored) {
+            players.forEach(p => { if(!p.isGK) p.val_c += (p.team==='player'?1:-1); p.resetPlan(); });
+            plannedPass = null; currentPhase = 'PLAN_OFFENSE';
+            
+            if (goalScored) {
+                ballValue = 1; resetPositions();
+                ballHolder = players.find(p => p.team === teamWithBall && p.isCaptain); 
+                gridCursor = {c: ballHolder.c, r: ballHolder.r};
+                centerCameraOnCursor();
+            } else if (teamWithBall === 'none') {
+                 teamWithBall = 'enemy'; 
+                 ballValue = 1;
+            }
+
+            if(gameMode === 'AI' && teamWithBall === 'enemy') setTimeout(() => executeAI('OFFENSE'), 800);
+        }
+        updateUI(); draw();
+    }
+
+    function updateUI() {
+        if(currentPhase === 'GAME_OVER') return;
+
+        document.getElementById('ball-val').innerText = ballValue;
+        document.getElementById('score-sav').innerText = score.player;
+        document.getElementById('score-jun').innerText = score.enemy;
+        
+        const phaseEl = document.getElementById('phase-indicator'), btn = document.getElementById('action-btn'), undoBtn = document.getElementById('undo-btn'), modeBtn = document.getElementById('mode-btn');
+        const roleText = document.getElementById('char-role');
+
+        if(aiIsThinking) {
+            roleText.innerText = "🤖 AI IS PLOTTING ITS MOVES...";
+            roleText.style.color = "#ebc78f";
+        }
+
+        let activeTeam = currentPhase === 'PLAN_OFFENSE' ? (teamWithBall === 'none' ? 'enemy' : teamWithBall) : (teamWithBall === 'player' ? 'enemy' : 'player');
+        let hasPlans = players.some(p => p.team === activeTeam && p.plannedPath.length > 0) || (currentPhase === 'PLAN_OFFENSE' && plannedPass !== null);
+        
+        let isPlayerTurn = (currentPhase === 'PLAN_OFFENSE' && teamWithBall === 'player') || 
+                           (currentPhase === 'PLAN_DEFENSE' && teamWithBall === 'enemy') || 
+                           (gameMode === 'PVP' && currentPhase !== 'EXECUTE');
+                           
+        undoBtn.style.display = (hasPlans && !aiIsThinking && isPlayerTurn) ? 'block' : 'none';
+
+        if (selectedPlayer === ballHolder && currentPhase === 'PLAN_OFFENSE' && !aiIsThinking) {
+            modeBtn.style.display = 'block';
+            if (selectedPlayer.isGK) {
+                modeBtn.innerText = actionMode === 'PASS' ? '⚽ Mode: Passing' : '🔥 Mode: SHOOTING';
+            } else {
+                if (actionMode === 'DRIBBLE') modeBtn.innerText = '🏃 Mode: Dribble';
+                else if (actionMode === 'PASS') modeBtn.innerText = '⚽ Mode: Passing (1 tile/t)';
+                else modeBtn.innerText = '🔥 Mode: SHOOTING (2 tiles/t)';
+            }
+        } else { modeBtn.style.display = 'none'; }
+
+        if (currentPhase === 'PLAN_OFFENSE') {
+            phaseEl.innerText = `${teamWithBall === 'player' ? 'Savanna' : 'Jungle'}`;
+            phaseEl.className = teamWithBall === 'player' ? "phase-savanna" : "phase-jungle";
+            if (gameMode === 'AI' && teamWithBall === 'enemy') {
+                btn.style.display = 'none';
+            } else {
+                btn.innerText = `Confirm Plan`; btn.className = "btn-action"; btn.style.display = 'block';
+                if(!aiIsThinking) {
+                    if(!selectedPlayer) roleText.innerText = "Your Turn: Plan 1 Run and/or Pass.";
+                    else if (selectedPlayer === ballHolder && !plannedPass) {
+                        if (selectedPlayer.isGK) roleText.innerText = "GK: Must change mode to Pass or Shoot.";
+                        else roleText.innerText = "Tap tile to dribble, or change mode to pass/shoot.";
+                    }
+                    else if (selectedPlayer.isGK) roleText.innerText = "GK cannot move out of box.";
+                    else roleText.innerText = "Tap grid to plot run for this player.";
+                }
+            }
+        } else if (currentPhase === 'PLAN_DEFENSE') {
+            let defTeam = teamWithBall === 'player' ? 'Jungle' : 'Savanna';
+            phaseEl.innerText = `${defTeam}`;
+            phaseEl.className = teamWithBall === 'player' ? "phase-jungle" : "phase-savanna";
+            
+            if (gameMode === 'AI' && teamWithBall === 'player') {
+                btn.style.display = 'none'; 
+            } else {
+                btn.innerText = `Confirm Plan`; btn.className = "btn-action"; btn.style.display = 'block';
+                if(!aiIsThinking && !selectedPlayer) roleText.innerText = "Defense: Plot 2 runs. Select GK to adjust.";
+            }
+        } else {
+            phaseEl.innerText = `EXECUTION`; phaseEl.className = "phase-exec";
+            btn.innerText = "Execute Next ⏭️"; btn.className = "btn-action btn-exec"; btn.style.display = 'block';
+            roleText.innerText = `Click button to advance time 1 square.`;
+            roleText.style.color = "#ebc78f";
+        }
+
+        if (selectedPlayer && !aiIsThinking) {
+            document.getElementById('char-name').innerText = selectedPlayer.name;
+            let formColor = selectedPlayer.team === 'player' ? '#9c7873' : '#9a9a95';
+            document.getElementById('char-formula').innerHTML = `<span style="color:${formColor}">${selectedPlayer.getFormula()}</span>`;
+        } else if (!aiIsThinking) {
+            document.getElementById('char-name').innerText = "Use D-Pad or Touch";
+            document.getElementById('char-formula').innerText = "";
+            roleText.style.color = "#ebc78f";
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save(); ctx.translate(camera.x, camera.y); ctx.scale(camera.zoom, camera.zoom);
+
+        // ISOMETRIC GRID DRAWING (Earth Palette Theme)
+        for (let r = 0; r < ROWS; r++) { for (let c = 0; c < COLS; c++) drawTile(c, r); }
+
+        // CURSOR HIGHLIGHT
+        if (currentPhase !== 'EXECUTE' && currentPhase !== 'GAME_OVER') {
+            ctx.strokeStyle = '#3b2923'; ctx.lineWidth = 4;
+            const cx = isoX(gridCursor.c, gridCursor.r), cy = isoY(gridCursor.c, gridCursor.r);
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + TILE_W/2, cy + TILE_H/2);
+            ctx.lineTo(cx, cy + TILE_H); ctx.lineTo(cx - TILE_W/2, cy + TILE_H/2); ctx.closePath(); ctx.stroke();
+        }
+
+        // PASS/SHOOT LANE HIGHLIGHTS (Subtle Espresso)
+        if (currentPhase === 'PLAN_OFFENSE' && selectedPlayer === ballHolder && !plannedPass && (actionMode === 'PASS' || actionMode === 'SHOOT')) {
+            let oC = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].c : selectedPlayer.c;
+            let oR = selectedPlayer.plannedPath.length > 0 ? selectedPlayer.plannedPath[selectedPlayer.plannedPath.length-1].r : selectedPlayer.r;
+            let color = actionMode === 'SHOOT' ? 'rgba(59, 41, 35, 0.4)' : 'rgba(59, 41, 35, 0.2)';
+            for(let dc=-8; dc<=8; dc++) {
+                if(oC+dc>=0 && oC+dc<COLS && dc!==0) drawTileHighlight(oC+dc, oR, color);
+                if(oR+dc>=0 && oR+dc<ROWS && dc!==0) drawTileHighlight(oC, oR+dc, color);
+            }
+        }
+
+        // 3D Drop Shadow for Paths
+        ctx.shadowColor = 'rgba(59, 41, 35, 0.4)';
+        ctx.shadowBlur = 4; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 4;
+
+        // RUNNING PATHS
+        players.forEach(p => {
+            if (p.plannedPath.length > 0) {
+                ctx.beginPath(); ctx.moveTo(isoX(p.c, p.r), isoY(p.c, p.r) + TILE_H/2);
+                p.plannedPath.forEach(step => ctx.lineTo(isoX(step.c, step.r), isoY(step.c, step.r) + TILE_H/2));
+                
+                ctx.strokeStyle = p.team === 'player' ? '#9c7873' : '#9a9a95';
+                ctx.lineWidth = 6; ctx.setLineDash([8, 8]); ctx.stroke(); ctx.setLineDash([]);
+                
+                // Draw path waypoints
+                ctx.fillStyle = p.team === 'player' ? '#9c7873' : '#9a9a95';
+                p.plannedPath.forEach(step => {
+                    ctx.beginPath();
+                    ctx.arc(isoX(step.c, step.r), isoY(step.c, step.r) + TILE_H/2, 4, 0, Math.PI*2);
+                    ctx.fill();
+                });
+            }
+        });
+
+        // BALL PATH
+        if (plannedPass && plannedPass.path.length > 0) {
+            ctx.beginPath(); 
+            let oC = plannedPass.origin.c, oR = plannedPass.origin.r;
+            if(currentPhase === 'EXECUTE' && ballHolder.isBallOnly) { oC = ballHolder.c; oR = ballHolder.r; }
+            ctx.moveTo(isoX(oC, oR), isoY(oC, oR) + TILE_H/2);
+            plannedPass.path.forEach(step => ctx.lineTo(isoX(step.c, step.r), isoY(step.c, step.r) + TILE_H/2));
+            
+            ctx.strokeStyle = '#3b2923'; // Espresso pops against the light floor
+            ctx.lineWidth = plannedPass.isShot ? 8 : 4; 
+            ctx.setLineDash(plannedPass.isShot ? [15, 10] : [5, 5]); 
+            ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        ctx.shadowColor = 'transparent'; // Reset Shadow
+
+        // ENTITIES
+        const q = [];
+        players.forEach(p => q.push({type:'player', obj: p, depth: p.c + p.r}));
+        if(ballHolder && ballHolder.isBallOnly) q.push({type:'ball', obj: ballHolder, depth: ballHolder.c + ballHolder.r});
+        q.sort((a,b) => a.depth - b.depth).forEach(item => { item.type === 'player' ? drawPlayer(item.obj) : drawFloatingBall(item.obj); });
+        
+        ctx.restore();
+    }
+
+    function drawTile(c, r) {
+        const x = isoX(c, r), y = isoY(c, r);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + TILE_W/2, y + TILE_H/2);
+        ctx.lineTo(x, y + TILE_H); ctx.lineTo(x - TILE_W/2, y + TILE_H/2); ctx.closePath();
+        
+        /* Earthy Checkerboard: Cream & Sand */
+        ctx.fillStyle = (c + r) % 2 === 0 ? '#faedcd' : '#ebc78f'; 
+        
+        /* Goal colors */
+        if (r === 0 && c >= 3 && c <= 5) ctx.fillStyle = 'rgba(154, 154, 149, 0.5)'; /* Grey Goal North */
+        if (r === ROWS-1 && c >= 3 && c <= 5) ctx.fillStyle = 'rgba(156, 120, 115, 0.5)'; /* Mauve Goal South */
+        
+        ctx.fill(); 
+        /* Subtle Mauve grid lines */
+        ctx.strokeStyle = 'rgba(156, 120, 115, 0.3)'; 
+        ctx.stroke();
+    }
+
+    function drawTileHighlight(c, r, color) {
+        const x = isoX(c, r), y = isoY(c, r);
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + TILE_W/2, y + TILE_H/2);
+        ctx.lineTo(x, y + TILE_H); ctx.lineTo(x - TILE_W/2, y + TILE_H/2); ctx.closePath();
+        ctx.fillStyle = color; ctx.fill();
+    }
+
+    function drawPlayer(p) {
+        let dc = p.plannedPath.length > 0 && currentPhase !== 'EXECUTE' ? p.plannedPath[p.plannedPath.length-1].c : p.c;
+        let dr = p.plannedPath.length > 0 && currentPhase !== 'EXECUTE' ? p.plannedPath[p.plannedPath.length-1].r : p.r;
+        const px = isoX(dc, dr), py = isoY(dc, dr) + TILE_H/2;
+
+        if (p === selectedPlayer) {
+            ctx.fillStyle = p.team === 'player' ? 'rgba(156, 120, 115, 0.4)' : 'rgba(154, 154, 149, 0.4)';
+            ctx.beginPath(); ctx.ellipse(px, py, TILE_W/2.5, TILE_H/2.5, 0, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = p.team === 'player' ? '#9c7873' : '#9a9a95';
+        ctx.font = `bold ${TILE_H * 0.45}px monospace`; ctx.textAlign = 'center';
+        let tc = currentPhase !== 'EXECUTE' ? p.temp_c : p.val_c; 
+        if (!p.isGK) ctx.fillText(`${p.a}x ${tc>=0?'+':'-'} ${Math.abs(tc)}`, px, py - TILE_H * 1.6);
+        else ctx.fillText("GK", px, py - TILE_H * 1.6);
+
+        ctx.font = `${TILE_H * 1.3}px Arial`; ctx.textBaseline = 'bottom'; ctx.fillText(p.emoji, px, py + 5);
+
+        if (p === ballHolder && currentPhase !== 'EXECUTE') {
+            let hasPassedEarly = plannedPass && plannedPass.startTick === 0;
+            let bx = hasPassedEarly ? isoX(p.c, p.r) : px;
+            let by = hasPassedEarly ? isoY(p.c, p.r) + TILE_H/2 : py;
+            ctx.fillStyle = '#3b2923'; ctx.beginPath(); ctx.arc(bx + TILE_W/4, by - TILE_H, TILE_H/3, 0, Math.PI*2); ctx.fill();
+        } else if (p === ballHolder && currentPhase === 'EXECUTE' && plannedPass === null) {
+            ctx.fillStyle = '#3b2923'; ctx.beginPath(); ctx.arc(px + TILE_W/4, py - TILE_H, TILE_H/3, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
+    function drawFloatingBall(b) {
+        const px = isoX(b.c, b.r), py = isoY(b.c, b.r) + TILE_H/2;
+        ctx.fillStyle = '#3b2923'; ctx.beginPath(); ctx.arc(px, py - TILE_H/2, TILE_H/2, 0, Math.PI*2); ctx.fill();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Formula Z - Savannah Edition v2.6</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
+        
+        :root { 
+            --bg: #e0d4ce; 
+            --panel: rgba(109, 76, 65, 0.95); 
+            --text: #ffb300; 
+            --text-light: #fff8e1;
+            
+            --grass: #e6c280; 
+            --grass-shadow: #cda661;
+            --dirt: #d35400; 
+            --dirt-shadow: #a04000;
+            --turn: #e67e22; 
+            --turn-shadow: #c0392b;
+            --trap: #5d4037; 
+            --trap-shadow: #3e2723;
+            --start: #34495e; 
+            --start-shadow: #2c3e50;
+            
+            --tree: #689f38; 
+            --tree-shadow: #33691e;
+
+            --c-const: #3498db; --c-const-shadow: #2980b9;
+            --c-coeff: #9b59b6; --c-coeff-shadow: #8e44ad;
+            --c-trim: #e74c3c; --c-trim-shadow: #c0392b;
+            --c-blank: #95a5a6; --c-blank-shadow: #7f8c8d;
+            --c-temp-const: #1abc9c; --c-temp-const-shadow: #16a085;
+            
+            --accent: #00bcd4;
+        }
+        
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text-light); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; overscroll-behavior: none; }
+        
+        #game-container { display: flex; flex: 1; height: 100%; position: relative; flex-direction: row; }
+        
+        #viewport { flex: 1.5; overflow: hidden; position: relative; background: radial-gradient(circle at center, #d7ccc8 0%, #a1887f 100%); cursor: grab; touch-action: none; }
+        #viewport:active { cursor: grabbing; }
+        
+        #track-world { 
+            position: absolute; top: 50%; left: 50%; width: 0; height: 0;
+            transform-origin: center center;
+            transform-style: preserve-3d;
+            transition: transform 0.1s linear; 
+        }
+        
+        #track { 
+            position: absolute;
+            transform-style: preserve-3d; 
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+        }
+        
+        #camera-controls { position: absolute; top: 15px; left: 15px; z-index: 50; display: flex; gap: 8px; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; backdrop-filter: blur(5px); }
+        .cam-btn { background: var(--panel); color: white; border: 1px solid var(--accent); width: 36px; height: 36px; border-radius: 5px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .cam-btn:hover { background: var(--accent); color: #111; }
+
+        #dashboard { flex: 1; max-width: 480px; background: var(--panel); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; box-shadow: -10px 0 30px rgba(0,0,0,0.4); z-index: 100; border-left: 1px solid rgba(255,255,255,0.1); }
+        
+        .cell { position: absolute; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; transform-style: preserve-3d; }
+        .cell::before { content: ''; position: absolute; inset: 0; transform: translateZ(-10px); box-shadow: 0 0 10px rgba(0,0,0,0.3); transition: background 0.3s; }
+        
+        .cell.start { background: var(--start); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 4px 4px 0px var(--start-shadow); }
+        .cell.grass { background: var(--grass); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 4px 4px 0px var(--grass-shadow); }
+        .cell.dirt { background: var(--dirt); box-shadow: 4px 4px 0px var(--dirt-shadow); }
+        .cell.turn { background: var(--turn); box-shadow: 4px 4px 0px var(--turn-shadow); transform: translateZ(-5px); }
+        .cell.trap { background: var(--trap); box-shadow: 4px 4px 0px var(--trap-shadow); transform: translateZ(-10px); }
+        .cell.tree { background: var(--tree); box-shadow: 4px 4px 0px var(--tree-shadow); transform: translateZ(5px); }
+        .cell.tree::before { transform: translateZ(-15px); } 
+        .cell.tree .cell-label { font-size: 28px; transform: translateZ(25px) rotateZ(45deg); text-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+
+        .cell.card-const { background: var(--c-const); box-shadow: 4px 4px 0px var(--c-const-shadow); }
+        .cell.card-coeff { background: var(--c-coeff); box-shadow: 4px 4px 0px var(--c-coeff-shadow); }
+        .cell.card-trim { background: var(--c-trim); box-shadow: 4px 4px 0px var(--c-trim-shadow); }
+        .cell.card-temp-const { background: var(--c-temp-const); box-shadow: 4px 4px 0px var(--c-temp-const-shadow); }
+        
+        .cell.start-line::after { content: ''; position: absolute; top: -4px; left: 0; width: 100%; height: 4px; background: repeating-linear-gradient(90deg, white, white 10px, black 10px, black 20px); transform: translateZ(1px); }
+
+        .cell.valid-move { cursor: pointer; transform: translateZ(10px); background: var(--accent); box-shadow: 4px 4px 0px #008ba3, 0 0 20px rgba(0, 188, 212, 0.8); z-index: 50; }
+        .cell.valid-move:hover { transform: translateZ(15px); background: white; }
+        .cell-label { position: absolute; transform: translateZ(2px) rotateZ(45deg); font-size: 11px; font-weight: 800; color: white; text-shadow: 1px 1px 2px black; text-align: center; pointer-events: none; }
+
+        .pawn { position: absolute; width: 34px; height: 34px; top: 50%; left: 50%; transform: translate(-50%, -50%) translateZ(30px) rotateZ(45deg) rotateX(-60deg); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; border-radius: 6px; box-shadow: -10px 20px 20px rgba(0,0,0,0.6); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; z-index: 60; }
+        .team-z { background: linear-gradient(135deg, #f1f2f6 50%, #2f3640 50%); color: #e94560; border: 2px solid white; }
+        .team-a { background: #8e44ad; color: white; border: 2px solid rgba(255,255,255,0.5); }
+        .team-u { background: #2980b9; color: white; border: 2px solid rgba(255,255,255,0.5); }
+        .team-w { background: #e67e22; color: white; border: 2px solid rgba(255,255,255,0.5); }
+
+        h1, h2, h3, h4 { margin: 0 0 10px 0; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        h1 { font-size: 20px; color: var(--text); }
+        .sys-msg { background: rgba(0, 188, 212, 0.15); color: #84ffff; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: 600; border-left: 4px solid var(--accent); line-height: 1.4; transition: 0.3s; font-size: 13px; }
+        .sys-msg.highlight { background: rgba(231, 76, 60, 0.3); border-color: #e74c3c; color: white; }
+        
+        .setup-input { background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px; margin-bottom: 20px; width: 100%; box-sizing: border-box; border-radius: 5px; font-family: inherit; font-size: 16px; }
+        
+        .animal-selector-grid { display: flex; gap: 8px; margin-bottom: 15px; }
+        .btn { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.3); padding: 10px; border-radius: 6px; cursor: pointer; flex: 1; font-size: 12px; text-transform: uppercase; font-weight: 600; transition: 0.2s; letter-spacing: 1px; text-align: center; }
+        .btn.selected { background: var(--accent); border-color: var(--accent); color: #111; box-shadow: 0 0 15px rgba(0, 188, 212, 0.4); }
+        
+        .card-container { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+        .card-ui { flex: 1; min-width: 30%; background: #4e342e; color: white; padding: 12px 5px; border-radius: 6px; cursor: pointer; text-align: center; border: 2px solid transparent; transition: 0.2s; position: relative; font-size: 11px; box-shadow: 0 5px 10px rgba(0,0,0,0.3); }
+        .card-ui.blank { background: var(--c-blank); color: #111; }
+        .card-ui:hover { transform: translateY(-3px); }
+        .card-ui.play { border-color: var(--accent); background: #263238; color: white; }
+        .card-ui.discard { border-color: #e94560; background: #3e2723; opacity: 0.8; color: white; }
+        .card-ui.readonly { opacity: 0.7; cursor: default; }
+        
+        .card-badge { position: absolute; top: -8px; right: -8px; background: var(--text); padding: 3px 6px; border-radius: 8px; font-size: 9px; font-weight: bold; display: none; color: #111; z-index: 5; }
+        .card-ui.play .card-badge { display: block; content: "PLAY"; background: var(--accent); }
+        .card-ui.discard .card-badge { display: block; background: #e94560; color: white; }
+        .perm-badge { position: absolute; top: -8px; left: -8px; background: #f1c40f; color: #111; font-weight: bold; font-size: 9px; padding: 3px 6px; border-radius: 5px; z-index: 5; box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 1px solid #d4ac0d; }
+        
+        .action-btn { background: var(--text); color: #111; border: none; padding: 15px; font-size: 15px; border-radius: 8px; cursor: pointer; width: 100%; margin-top: auto; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; box-shadow: 0 5px 15px rgba(255, 179, 0, 0.4); flex-shrink: 0; }
+        .action-btn:disabled { background: #5d4037; color: #8d6e63; cursor: not-allowed; box-shadow: none; }
+        
+        .deck-stats { display: flex; justify-content: space-between; font-size: 12px; color: var(--text); margin-bottom: 10px; padding: 8px; background: rgba(0,0,0,0.6); border-radius: 4px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+        .leaderboard-box { background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .lb-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .lb-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .formula-board { background: rgba(0, 0, 0, 0.6); border: 2px solid var(--accent); border-radius: 8px; padding: 15px; font-family: 'Courier New', Courier, monospace; font-size: 14px; color: #fff; margin-bottom: 15px; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .f-title { text-align: center; color: var(--accent); font-weight: bold; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(0,188,212,0.3); padding-bottom: 5px; }
+        .f-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .f-row span.val { color: var(--text); font-weight: bold; }
+        .f-row.temp span.val { color: #84ffff; }
+        .f-result { text-align: center; font-size: 20px; font-weight: 900; margin-top: 10px; color: #fff; background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; }
+        .f-result.match { background: rgba(0, 188, 212, 0.3); color: var(--text); border: 1px solid var(--accent); }
+        .f-result.fail { background: rgba(231, 76, 60, 0.3); color: #e74c3c; border: 1px solid #e74c3c; }
+        .f-trim { text-align: center; font-size: 13px; font-weight: bold; color: #e74c3c; margin-top: 5px; }
+
+        /* Modals & Overlays */
+        #start-overlay { position: absolute; inset: 0; background: rgba(141, 110, 99, 0.95); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        #start-box { display: flex; flex-direction: column; align-items: center; gap: 15px; background: rgba(0,0,0,0.4); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 90%; max-width: 400px; box-sizing: border-box; }
+        #start-box h1 { font-size: 42px; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.8); line-height: 1; text-align: center; }
+        
+        #effect-modal, #help-modal, #math-lock-modal, #algebra-modal { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 2500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        
+        .effect-box, .help-box, .math-box, .algebra-box { background: var(--panel); padding: 30px; border-radius: 15px; width: 95%; max-width: 450px; text-align: center; color: white; border: 2px solid var(--accent); box-shadow: 0 15px 50px rgba(0,0,0,0.9); box-sizing: border-box; max-height: 95vh; overflow-y: auto; }
+        .math-box { border-color: var(--text); }
+        .algebra-box { border-color: #e74c3c; }
+        
+        .effect-box h2, .help-box h2, .math-box h2, .algebra-box h2 { font-size: 24px; margin-top: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .help-box ul { padding-left: 20px; line-height: 1.5; font-size: 13px; text-align: left; }
+        .help-box li { margin-bottom: 10px; }
+
+        @media (max-width: 800px) {
+            #game-container { flex-direction: column; }
+            #viewport { flex: 1; min-height: 40vh; }
+            #dashboard { flex: 1.2; max-width: 100%; border-left: none; border-top: 2px solid var(--accent); padding: 15px; box-sizing: border-box; }
+            #camera-controls { top: 10px; left: 10px; padding: 5px; gap: 5px; }
+            .cam-btn { width: 32px; height: 32px; font-size: 14px; }
+            h1 { font-size: 18px; }
+            .card-ui { min-width: 30%; padding: 8px 4px; font-size: 10px; }
+            .action-btn { padding: 12px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <div id="start-box">
+            <div style="text-align: center;">
+                <h1>FORMULA Z</h1>
+                <p style="letter-spacing: 2px; margin: 0 0 10px 0; color: var(--text); font-weight: bold; text-align: center; font-size: 12px;">PRECISION LANDING</p>
+            </div>
+            
+            <div style="width: 100%;">
+                <label style="font-size: 12px; font-weight: bold; color: #d7ccc8;">HUMAN PLAYERS (1-4):</label>
+                <input type="number" id="human-count" class="setup-input" value="1" min="1" max="4">
+                
+                <label style="font-size: 12px; font-weight: bold; color: #d7ccc8;">NUMBER OF LAPS:</label>
+                <select id="lap-count" class="setup-input">
+                    <option value="1">1 Lap (Short)</option>
+                    <option value="2">2 Laps (Standard)</option>
+                    <option value="3">3 Laps (Endurance)</option>
+                </select>
+            </div>
+
+            <button class="action-btn" style="width: 100%;" onclick="initGame()">ENTER THE CIRCUIT</button>
+        </div>
+    </div>
+
+    <div id="math-lock-modal">
+        <div class="math-box">
+            <h2 style="color: var(--text);">🎯 TARGET DISTANCE: <span id="ml-target" style="font-size: 32px;">0</span></h2>
+            <p style="font-size: 13px; color: #bdc3c7; margin-bottom: 15px;">Build a formula that exactly matches your target distance to land safely.</p>
+            
+            <div id="ml-formula-preview"></div>
+            
+            <h4 style="text-align: left; margin-bottom: 5px; color: var(--accent);">YOUR HAND</h4>
+            <div id="ml-hand-container" class="card-container"></div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="btn" style="background: #e74c3c; color: white;" onclick="closeMathLock()">ABORT</button>
+                <button id="ml-confirm-btn" class="action-btn" style="margin-top: 0;" onclick="confirmMathLock()" disabled>CHARZE!</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="algebra-modal">
+        <div class="algebra-box">
+            <h2 id="alg-title" style="color:var(--accent);">⚠️ HAZARD ENCOUNTERED!</h2>
+            <p id="alg-desc" style="font-size: 14px; margin-bottom: 10px;">Solve the equation to avoid losing your next turn!</p>
+            <div class="formula-board" style="font-size: 24px; font-weight: bold; margin: 15px 0;">
+                <span id="alg-eq"></span>
+            </div>
+            <input type="number" id="alg-input" class="setup-input" placeholder="X = ?" style="text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 5px;">
+            <p id="alg-feedback" style="color: #e74c3c; font-weight: bold; font-size: 14px; height: 15px; margin: 0 0 15px 0;"></p>
+            <button class="action-btn" id="alg-submit-btn" onclick="submitAlgebra()">SUBMIT ANSWER</button>
+        </div>
+    </div>
+
+    <div id="help-modal">
+        <div class="help-box">
+            <h2 style="color:var(--accent);">📜 How to Play</h2>
+            <ul>
+                <li><strong>The Formula:</strong> Your speed is: <br> <code style="color:var(--text); background:rgba(0,0,0,0.3); padding:4px; display:inline-block; margin-top:5px;">Speed = (Coefficient × X_Value) + Constant</code></li>
+                <li><strong>Bumping:</strong> You can land on an occupied space to bump the previous occupant forward!</li>
+                <li><strong>The Junk Deck:</strong> You start with 4 Blank cards. Find TRIM DECK cards to permanently trash them!</li>
+                <li><strong>Catch-Up Rule:</strong> If an opponent is 10% ahead, you passively gain +2 Constant on your turn (unless that opponent is your teammate!).</li>
+                <li><strong>Playing Cards:</strong> Select 1 card to PLAY (grants temp speed). Select up to 2 cards to DISCARD. Discards amplify your PLAY card's stats MASSIVELY for that turn.</li>
+                <li><strong>Math Hazards:</strong> Landing on Potholes triggers an Algebra Challenge. Solve it in 3 tries, or lose your next turn! (Trees block the path entirely).</li>
+                <li><strong>Loot Tiles:</strong> Land on <span style="color:#d35400; font-weight:bold;">Dirt</span>, <span style="color:#3498db; font-weight:bold;">Blue</span>, <span style="color:#9b59b6; font-weight:bold;">Purple</span>, <span style="color:#1abc9c; font-weight:bold;">Teal</span>, or <span style="color:#e74c3c; font-weight:bold;">Red</span> squares to get cards. You have unlimited tries to unlock them!</li>
+            </ul>
+            <button class="btn" style="background: var(--accent); color: #111; margin-top: 10px;" onclick="AudioEngine.click(); toggleHelp();">Resume Race</button>
+        </div>
+    </div>
+
+    <div id="effect-modal">
+        <div class="effect-box">
+            <h2 id="effect-title">EVENT</h2>
+            <div id="effect-text" style="margin-bottom: 20px;">You landed on a special tile.</div>
+            <button class="action-btn" id="effect-btn">Continue</button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="viewport">
+            <div id="camera-controls">
+                <button class="cam-btn" onclick="AudioEngine.click(); Camera.zoom(0.2)">+</button>
+                <button class="cam-btn" onclick="AudioEngine.click(); Camera.zoom(-0.2)">-</button>
+                <button class="cam-btn" onclick="AudioEngine.click(); Camera.centerAnimal(State.selAnimal || State.activeP.animals.find(a=>!a.finished) || State.activeP.animals[0])" style="font-size: 11px; width: auto; padding: 0 8px;">FOCUS</button>
+                <div style="width: 1px; background: rgba(255,255,255,0.2); margin: 0 2px;"></div>
+                <button class="cam-btn" onclick="AudioEngine.click(); toggleHelp()" style="background: #34495e;">❓</button>
+                <button class="cam-btn" onclick="AudioEngine.click(); returnToMenu()" style="background: #c0392b;">🏠</button>
+            </div>
+            <div id="track-world">
+                <div id="track"></div>
+            </div>
+        </div>
+
+        <div id="dashboard">
+            <h1 id="turn-display">Initializing...</h1>
+            <div id="system-message" class="sys-msg">Waiting for game start...</div>
+            
+            <div id="leaderboard-container"></div>
+            
+            <div id="animal-selector" class="animal-selector-grid"></div>
+
+            <div id="deck-stats" class="deck-stats"></div>
+            
+            <h4 style="margin: 0 0 5px 0; font-size: 11px; color: #bdc3c7;">CURRENT HAND (READ-ONLY)</h4>
+            <div id="hand-container" class="card-container"></div>
+
+            <button id="end-turn-btn" class="action-btn" onclick="AudioEngine.click(); endTurn()" disabled>Skip Turn / No Moves</button>
+        </div>
+    </div>
+
+<script>
+    // --- WEB AUDIO API ENGINE ---
+    const AudioEngine = {
+        ctx: null, isInit: false,
+        init() {
+            if(this.isInit) return;
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.isInit = true;
+            this.playBGM();
+        },
+        playTone(freq, type, dur, vol, delay=0) {
+            if(!this.ctx) return;
+            setTimeout(() => {
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.setTargetAtTime(0.0001, this.ctx.currentTime + (dur/2), dur/4); 
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + dur + 0.5); 
+            }, delay);
+        },
+        playBGM() {
+            if(!this.ctx) return;
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 130.81; 
+            gain.gain.value = 0.03;
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+        },
+        click() { this.playTone(392, 'sine', 0.2, 0.05); }, 
+        select() { this.playTone(523.25, 'sine', 0.4, 0.05); }, 
+        move() { 
+            this.playTone(659.25, 'sine', 0.6, 0.05);  
+            this.playTone(783.99, 'triangle', 0.8, 0.03, 100); 
+        },
+        loot() { 
+            this.playTone(523.25, 'sine', 0.4, 0.08); 
+            this.playTone(659.25, 'sine', 0.4, 0.08, 100); 
+            this.playTone(1046.50, 'sine', 0.8, 0.06, 200); 
+        },
+        bad() { this.playTone(164.81, 'sawtooth', 0.5, 0.04); }, 
+        perm() {
+            this.playTone(523.25, 'triangle', 0.8, 0.05); 
+            this.playTone(783.99, 'triangle', 0.8, 0.05, 100); 
+            this.playTone(1046.50, 'sine', 1.5, 0.05, 200); 
+        }
+    };
+
+    // --- MOBILE READY ABSOLUTE CAMERA ---
+    const CELL_SIZE = 74; 
+    
+    const Camera = {
+        scale: 1, screenX: 0, screenY: 0, gridX: 0, gridY: 0,
+        isDragging: false, startX: 0, startY: 0,
+
+        init() {
+            const vp = document.getElementById('viewport');
+            vp.addEventListener('mousedown', e => this.handleStart(e));
+            window.addEventListener('mouseup', () => this.handleEnd());
+            window.addEventListener('mousemove', e => this.handleMove(e));
+            vp.addEventListener('touchstart', e => this.handleStart(e), {passive: false});
+            window.addEventListener('touchend', () => this.handleEnd());
+            window.addEventListener('touchmove', e => this.handleMove(e), {passive: false});
+            vp.addEventListener('wheel', e => {
+                e.preventDefault();
+                this.scale = Math.max(0.3, Math.min(2.5, this.scale + (e.deltaY < 0 ? 0.05 : -0.05)));
+                this.apply();
+            });
+        },
+        handleStart(e) {
+            if(e.target.closest('.cam-btn') || e.target.closest('.cell.valid-move')) return;
+            this.isDragging = true;
+            let cx = e.touches ? e.touches[0].clientX : e.clientX;
+            let cy = e.touches ? e.touches[0].clientY : e.clientY;
+            this.startX = cx - this.screenX; 
+            this.startY = cy - this.screenY;
+        },
+        handleMove(e) {
+            if(!this.isDragging) return;
+            if(e.touches && e.cancelable) e.preventDefault(); 
+            let cx = e.touches ? e.touches[0].clientX : e.clientX;
+            let cy = e.touches ? e.touches[0].clientY : e.clientY;
+            this.screenX = cx - this.startX; 
+            this.screenY = cy - this.startY;
+            this.apply();
+        },
+        handleEnd() { this.isDragging = false; },
+
+        centerAnimal(animal) {
+            if (!animal) return;
+            let r = animal.pos.r;
+            let c = animal.pos.c;
+            let vOffset = State.track[r] ? State.track[r][0].vOffset : 0;
+            let trackHeight = State.trackLen * CELL_SIZE;
+            
+            let cellLeft = c * CELL_SIZE + vOffset;
+            let cellTop = (State.trackLen - 1 - r) * CELL_SIZE;
+            let cellCenterX = cellLeft + (CELL_SIZE / 2);
+            let cellCenterY = cellTop + (CELL_SIZE / 2);
+
+            let dx = cellCenterX - 222; 
+            let dy = cellCenterY - (trackHeight / 2);
+
+            this.gridX = -dx;
+            this.gridY = -dy;
+            this.screenX = 0;
+            this.screenY = 0;
+            this.scale = window.innerWidth < 800 ? 0.9 : 1.2;
+            
+            this.apply();
+        },
+        apply() {
+            document.getElementById('track-world').style.transform = `translate(${this.screenX}px, ${this.screenY}px) scale(${this.scale}) rotateX(60deg) rotateZ(-45deg)`;
+            document.getElementById('track').style.transform = `translate(${this.gridX}px, ${this.gridY}px)`;
+        }
+    };
+
+    function returnToMenu() {
+        if(confirm("Quit race and return to the main menu?")) {
+            document.getElementById('start-overlay').style.display = 'flex';
+            State.track = []; State.animals = []; State.players = []; State.turnIdx = 0;
+            document.getElementById('track').innerHTML = '';
+        }
+    }
+
+    function toggleHelp() {
+        const modal = document.getElementById('help-modal');
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function showEffectModal(title, text, color, callback) {
+        document.getElementById('effect-title').innerText = title;
+        document.getElementById('effect-title').style.color = color;
+        document.getElementById('effect-text').innerHTML = text;
+        document.getElementById('effect-modal').style.display = 'flex';
+        
+        let btn = document.getElementById('effect-btn');
+        let newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.onclick = () => {
+            AudioEngine.click();
+            document.getElementById('effect-modal').style.display = 'none';
+            if(callback) callback();
+        };
+        
+        if (title.includes("VICTORY") || title.includes("RACE OVER")) {
+            newBtn.innerText = "MAIN MENU";
+            newBtn.onclick = () => { AudioEngine.click(); returnToMenu(); };
+        } else {
+            newBtn.innerText = "Continue Race";
+        }
+    }
+
+    function endGame() {
+        State.gameEnded = true;
+        let html = `<div style="text-align:left; max-width: 300px; margin: 0 auto;">`;
+        let sorted = [...State.players].sort((a,b) => b.score - a.score);
+        sorted.forEach((p, i) => {
+            let crown = i === 0 ? '👑 ' : '';
+            html += `<div style="margin-bottom: 10px; font-size: 18px;"><strong>${crown}${i+1}. ${p.name}</strong>: ${p.score.toFixed(1)} pts</div>`;
+        });
+        html += `</div>`;
+        
+        showEffectModal("🏁 RACE OVER 🏁", html, "#f1c40f", null);
+    }
+
+    // --- ALGEBRA HAZARD MINIGAME ---
+    let algCurrentX = 0;
+    let algTries = 3;
+    let algUnlimited = false;
+    let algCallback = null;
+
+    function triggerAlgebra(tileName, isUnlimited, callback) {
+        algTries = 3;
+        algUnlimited = isUnlimited;
+        algCallback = callback;
+        
+        let a = Math.floor(Math.random() * 4) + 2; 
+        let x = Math.floor(Math.random() * 8) + 2; 
+        let b = Math.floor(Math.random() * 10) + 1; 
+        let c = a * x + b;
+        algCurrentX = x;
+        
+        document.getElementById('alg-title').innerText = isUnlimited ? "LOOT DISCOVERED!" : "⚠️ HAZARD ENCOUNTERED!";
+        document.getElementById('alg-title').style.color = isUnlimited ? "#3498db" : "var(--accent)";
+        
+        if(isUnlimited) {
+            document.getElementById('alg-desc').innerHTML = `You found a <strong>${tileName.toUpperCase()}</strong>!<br>Solve the equation to unlock it.`;
+            document.getElementById('alg-feedback').innerText = `Unlimited Tries`;
+        } else {
+            document.getElementById('alg-desc').innerHTML = `You fell into a <strong>${tileName.toUpperCase()}</strong>!<br>Solve this to avoid losing your next turn.`;
+            document.getElementById('alg-feedback').innerText = `3 Tries Remaining`;
+        }
+        
+        document.getElementById('alg-eq').innerText = `${a}X + ${b} = ${c}`;
+        document.getElementById('alg-input').value = '';
+        
+        document.getElementById('algebra-modal').style.display = 'flex';
+    }
+
+    function submitAlgebra() {
+        let guess = parseInt(document.getElementById('alg-input').value);
+        if(guess === algCurrentX) {
+            AudioEngine.loot();
+            document.getElementById('algebra-modal').style.display = 'none';
+            algCallback(true);
+        } else {
+            AudioEngine.bad();
+            if(algUnlimited) {
+                document.getElementById('alg-feedback').innerText = `Incorrect! Try again!`;
+            } else {
+                algTries--;
+                if(algTries <= 0) {
+                    document.getElementById('algebra-modal').style.display = 'none';
+                    algCallback(false);
+                } else {
+                    document.getElementById('alg-feedback').innerText = `Incorrect! ${algTries} Tries Remaining`;
+                }
+            }
+        }
+    }
+
+    // --- MODELS ---
+    class Card {
+        constructor(id, type, tBoost, name, desc, isPerm = false) {
+            this.id = id; this.type = type; 
+            this.tempBoost = tBoost; this.name = name; this.desc = desc;
+            this.isPerm = isPerm;
+        }
+    }
+
+    // --- LEADER EXCLUSION RULE (V2.6 UPDATE) ---
+    function isTrailing(animal) {
+        if(!State.animals || State.animals.length === 0) return false;
+        
+        let allSorted = [...State.animals].sort((a,b) => b.pos.r - a.pos.r);
+        let leader = allSorted[0];
+
+        // Check if 1st place is further than 10% down the track
+        if(leader.pos.r > Math.floor(State.trackLen * 0.10)) {
+            
+            // Find which team owns the leader
+            let leaderTeam = State.players.find(p => p.animals.includes(leader));
+            // Find which team owns the animal we are currently checking
+            let myTeam = State.players.find(p => p.animals.includes(animal));
+
+            // LEADER EXCLUSION: If this animal belongs to the winning team, no welfare boost!
+            if(myTeam === leaderTeam) return false;
+
+            // Otherwise, check if this animal is in the bottom 3
+            let last3 = allSorted.slice(-3);
+            if(last3.includes(animal)) return true;
+        }
+        return false;
+    }
+
+    class Animal {
+        constructor(id, name, variable, cssClass, row, col) {
+            this.id = id; this.name = name; this.variable = variable;
+            this.val = 1; this.cst = 0; this.coef = 1;
+            this.pos = { r: row, c: col }; this.cssClass = cssClass;
+            this.finished = false;
+        }
+        
+        getSpeed(playCard = null, discardCount = 0) {
+            if(playCard && playCard.type === 'trim') {
+                return { 
+                    speed: 1, isTrim: true,
+                    c_base: this.coef, x_base: this.val, k_base: this.cst
+                };
+            }
+
+            let c_temp = 0, x_temp = 0;
+            let catchUpBonus = isTrailing(this) ? 2 : 0;
+            let k_temp = catchUpBonus;
+            
+            if(playCard && playCard.type !== 'blank') {
+                if(playCard.type === 'const') k_temp += playCard.tempBoost + discardCount;
+                else if(playCard.type === 'coeff') c_temp += playCard.tempBoost + discardCount;
+                else if(playCard.type === 'x_val') x_temp += playCard.tempBoost + discardCount;
+            }
+            
+            let c_final = this.coef + c_temp;
+            let x_final = this.val + x_temp;
+            let k_final = this.cst + k_temp;
+            
+            let speed = (c_final * x_final) + k_final;
+            
+            return {
+                speed: Math.max(1, speed), 
+                isTrim: false,
+                c_base: this.coef, x_base: this.val, k_base: this.cst,
+                c_temp, x_temp, k_temp,
+                c_final, x_final, k_final,
+                isCatchup: catchUpBonus > 0
+            };
+        }
+    }
+
+    // --- GAME STATE ---
+    const State = {
+        trackLen: 103, lanes: 6, track: [], animals: [], players: [], 
+        turnOrder: [0, 1, 2, 3, 3, 2, 1, 0], turnIdx: 0, activeP: null,
+        selAnimal: null, validMoves: new Map(),
+        mlTargetDist: 0, mlTargetR: 0, mlTargetC: 0, mlPlayCard: null, mlDiscardCards: [],
+        finishOrder: [], gameEnded: false
+    };
+
+    // --- INIT ---
+    function initGame() {
+        AudioEngine.init();
+        Camera.init();
+        
+        const humanCount = parseInt(document.getElementById('human-count').value);
+        State.trackLen = (101 * parseInt(document.getElementById('lap-count').value)) + 2; 
+        State.lanes = 6; 
+        document.getElementById('start-overlay').style.display = 'none';
+
+        const createDeck = () => [
+            new Card(Math.random(), 'blank', 0, 'Blank', 'Useless. Trim this!'),
+            new Card(Math.random(), 'blank', 0, 'Blank', 'Useless. Trim this!'),
+            new Card(Math.random(), 'blank', 0, 'Blank', 'Useless. Trim this!'),
+            new Card(Math.random(), 'blank', 0, 'Blank', 'Useless. Trim this!'),
+            new Card(Math.random(), 'const', 1, 'Temp Const', '+1 Const (1 Turn)'),
+            new Card(Math.random(), 'coeff', 0, 'Temp Coeff', '+0 Coeff (1 Turn)')
+        ];
+
+        State.players = [
+            { id: 1, name: "Zebras", score: 0, finished: false, isHuman: (humanCount >= 1), skipNextTurn: false, deck: createDeck(), discardPile: [], hand: [], animals: [new Animal('z1','Zebra Y','y','team-z', 1, 2), new Animal('z2','Zebra Z','z','team-z', 0, 3)] },
+            { id: 2, name: "Monkeys", score: 0, finished: false, isHuman: (humanCount >= 2), skipNextTurn: false, deck: createDeck(), discardPile: [], hand: [], animals: [new Animal('m1','Monkey A','a','team-a', 1, 1), new Animal('m2','Monkey B','b','team-a', 0, 4)] },
+            { id: 3, name: "Elephants", score: 0, finished: false, isHuman: (humanCount >= 3), skipNextTurn: false, deck: createDeck(), discardPile: [], hand: [], animals: [new Animal('e1','Ele U','u','team-u', 0, 2), new Animal('e2','Ele V','v','team-u', 1, 3)] },
+            { id: 4, name: "Lions", score: 0, finished: false, isHuman: (humanCount >= 4), skipNextTurn: false, deck: createDeck(), discardPile: [], hand: [], animals: [new Animal('l1','Lion W','w','team-w', 0, 1), new Animal('l2','Lion X','x','team-w', 1, 4)] }
+        ];
+        
+        State.players.forEach(p => { 
+            p.deck = p.deck.sort(() => 0.5 - Math.random());
+            State.animals.push(...p.animals); 
+            drawCards(p); 
+        });
+
+        let currentVisualOffset = 0; let windDirection = 0;
+        for(let r=0; r<State.trackLen; r++) {
+            let row = [];
+            let isTurn = (r > 6 && r < State.trackLen-5 && Math.random() < 0.08); 
+            
+            if(isTurn) windDirection = (Math.random() > 0.5) ? 1 : -1; 
+            if(r > 6) currentVisualOffset += (windDirection * 35); 
+
+            for(let c=0; c<State.lanes; c++) {
+                let type = 'grass', label = '';
+                if(r < 2) {
+                    type = 'start';
+                    if (r === 1) type += ' start-line'; 
+                } else {
+                    if(isTurn) { type = 'turn'; label = 'TURN (-1x)'; }
+                    else if(r > 6 && r < State.trackLen-5) {
+                        let rand = Math.random();
+                        
+                        if(rand < 0.08 && (c === 0 || c === 5 || c === 1 || c === 4)) { 
+                            let lootType = Math.random();
+                            if(lootType < 0.25) { type = 'card-const'; label = '+2 C (PERM)'; }
+                            else if(lootType < 0.50) { type = 'card-coeff'; label = '+1 Cf (PERM)'; }
+                            else if(lootType < 0.75) { type = 'card-temp-const'; label = '+2 C (TEMP)'; }
+                            else { type = 'card-trim'; label = 'TRIM DECK'; }
+                        }
+                        else if(rand < 0.12) { type = 'dirt'; label = '+1 X TEMP'; }
+                        else if(rand < 0.17) { type = 'trap'; label = 'POTHOLE'; }
+                        else if(rand < 0.22) { type = 'tree'; label = '🌲'; }
+                    }
+                }
+                row.push({ type, label, occupant: null, vOffset: currentVisualOffset });
+            }
+            State.track.push(row);
+        }
+
+        State.animals.forEach(a => { State.track[a.pos.r][a.pos.c].occupant = a; });
+        
+        renderTrack();
+        startTurn();
+    }
+
+    function drawCards(player) {
+        while(player.hand.length < 3) {
+            if(player.deck.length === 0) {
+                if(player.discardPile.length === 0) break; 
+                player.deck = [...player.discardPile].sort(() => 0.5 - Math.random());
+                player.discardPile = [];
+            }
+            if(player.deck.length > 0) {
+                player.hand.push(player.deck.pop());
+            }
+        }
+    }
+
+    function renderTrack() {
+        const tDiv = document.getElementById('track');
+        tDiv.innerHTML = '';
+        
+        let tHeight = State.trackLen * CELL_SIZE;
+        let tWidth = State.lanes * CELL_SIZE; 
+        tDiv.style.width = `${tWidth}px`; 
+        tDiv.style.height = `${tHeight}px`;
+        tDiv.style.left = `-${tWidth / 2}px`; 
+        tDiv.style.top = `-${tHeight / 2}px`;
+        
+        for(let r = 0; r < State.trackLen; r++) {
+            for(let c=0; c<State.lanes; c++) {
+                let cellData = State.track[r][c];
+                let cell = document.createElement('div');
+                cell.className = `cell ${cellData.type}`;
+                cell.id = `c-${r}-${c}`;
+                
+                cell.style.left = `${c * CELL_SIZE + cellData.vOffset}px`;
+                cell.style.top = `${(State.trackLen - 1 - r) * CELL_SIZE}px`;
+                
+                if(cellData.label) {
+                    let lbl = document.createElement('span');
+                    lbl.className = 'cell-label';
+                    lbl.innerText = cellData.label;
+                    cell.appendChild(lbl);
+                }
+                tDiv.appendChild(cell);
+            }
+        }
+        
+        State.animals.forEach(a => {
+            const tgt = document.getElementById(`c-${a.pos.r}-${a.pos.c}`);
+            if(tgt) {
+                let pawn = document.createElement('div');
+                pawn.className = `pawn ${a.cssClass}`;
+                pawn.innerText = a.variable.toUpperCase();
+                tgt.appendChild(pawn);
+            }
+        });
+    }
+
+    function renderLeaderboard() {
+        let allAnimals = [];
+        State.players.forEach(p => allAnimals.push(...p.animals));
+        allAnimals.sort((a, b) => b.pos.r - a.pos.r);
+        
+        let html = '<div class="leaderboard-box">';
+        allAnimals.forEach((a, i) => {
+            let percent = Math.min(100, Math.floor((a.pos.r / (State.trackLen - 1)) * 100));
+            let crown = i === 0 ? '👑 ' : '';
+            let finishedStr = a.finished ? ' 🏁' : '';
+            html += `<div class="lb-row"><span>${crown}${i+1}. ${a.name}${finishedStr}</span> <span style="color:var(--accent); font-weight:bold;">${percent}%</span></div>`;
+        });
+        html += '</div>';
+        document.getElementById('leaderboard-container').innerHTML = html;
+    }
+
+    function renderUI() {
+        renderLeaderboard();
+        
+        if(!State.activeP.isHuman) {
+            document.getElementById('animal-selector').innerHTML = '';
+            document.getElementById('hand-container').innerHTML = '';
+            return;
+        }
+
+        const aDiv = document.getElementById('animal-selector');
+        aDiv.innerHTML = '';
+        State.activeP.animals.forEach(a => {
+            if(a.finished) return;
+            let btn = document.createElement('button');
+            btn.className = `btn ${State.selAnimal === a ? 'selected' : ''}`;
+            btn.innerText = `${a.name} (${a.variable.toUpperCase()})`;
+            btn.onclick = () => { AudioEngine.select(); selectAnimal(a); };
+            aDiv.appendChild(btn);
+        });
+
+        let totalCards = State.activeP.deck.length + State.activeP.discardPile.length + State.activeP.hand.length;
+        document.getElementById('deck-stats').innerHTML = `
+            <span>Deck: ${State.activeP.deck.length} | Discard: ${State.activeP.discardPile.length}</span> 
+            <span style="color:var(--accent);">Total: ${totalCards}</span>
+        `;
+
+        const hDiv = document.getElementById('hand-container');
+        hDiv.innerHTML = '';
+        State.activeP.hand.forEach(c => {
+            let cBtn = document.createElement('div');
+            let baseClass = c.type === 'blank' ? 'blank' : '';
+            cBtn.className = `card-ui ${baseClass} readonly`;
+            let permBadge = c.isPerm ? `<div class="perm-badge">PERM</div>` : ``;
+            cBtn.innerHTML = `${permBadge}<strong>${c.name}</strong><br><span>${c.desc}</span>`;
+            hDiv.appendChild(cBtn);
+        });
+    }
+
+    function setSysMsg(msg, isHighlight = false) { 
+        const msgBox = document.getElementById('system-message');
+        msgBox.innerHTML = msg; 
+        if(isHighlight) {
+            msgBox.classList.add('highlight');
+            setTimeout(() => msgBox.classList.remove('highlight'), 2000);
+        }
+    }
+
+    function startTurn() {
+        if(State.gameEnded) return;
+
+        State.activeP = State.players[State.turnOrder[State.turnIdx]];
+        
+        if(State.activeP.finished) {
+            State.turnIdx++;
+            if(State.turnIdx >= State.turnOrder.length) State.turnIdx = 0;
+            startTurn();
+            return;
+        }
+        
+        // HAZARD PENALTY CHECK
+        if(State.activeP.skipNextTurn) {
+            State.activeP.skipNextTurn = false;
+            document.getElementById('turn-display').innerText = `Turn: ${State.activeP.name} (SKIPPED)`;
+            setSysMsg(`❌ ${State.activeP.name} loses their turn due to a previous penalty!`, true);
+            renderLeaderboard();
+            setTimeout(endTurn, 1500);
+            return;
+        }
+
+        document.getElementById('turn-display').innerText = `Turn: ${State.activeP.name}`;
+        
+        State.selAnimal = null; State.validMoves.clear();
+        clearHighlights();
+        
+        let unf = State.activeP.animals.find(a => !a.finished);
+        if(unf) Camera.centerAnimal(unf);
+        renderLeaderboard();
+
+        if(State.activeP.isHuman) {
+            setSysMsg(`It is ${State.activeP.name}'s turn. Select an animal to see movement options.`);
+            document.getElementById('end-turn-btn').disabled = false;
+            renderUI();
+        } else {
+            setSysMsg(`${State.activeP.name} AI is calculating strategy...`);
+            document.getElementById('end-turn-btn').disabled = true;
+            setTimeout(executeAITurn, 1200);
+        }
+    }
+
+    function selectAnimal(a) {
+        State.selAnimal = a;
+        renderUI();
+        calculateValidMoves();
+        Camera.centerAnimal(a); 
+        
+        if(State.validMoves.size === 0) {
+             setSysMsg(`⚠️ ${a.name} is blocked and cannot move!`, true);
+        } else {
+             setSysMsg(`Click a glowing space to select your destination. You will then build a formula to match the exact distance.`);
+        }
+    }
+
+    function getReachableDistances(animal, hand) {
+        let dists = new Set();
+        dists.add(animal.getSpeed().speed); 
+        
+        if(!hand || hand.length === 0) return dists;
+        
+        for(let i=0; i<hand.length; i++) {
+            let pCard = hand[i];
+            let others = hand.filter((_, idx) => idx !== i);
+            others.sort((a,b) => (a.type === 'blank' ? -1 : 1)); 
+            
+            dists.add(animal.getSpeed(pCard, 0).speed);
+            if(others.length >= 1) dists.add(animal.getSpeed(pCard, 1).speed);
+            if(others.length >= 2) dists.add(animal.getSpeed(pCard, 2).speed);
+        }
+        return dists;
+    }
+
+    function calculateValidMoves() {
+        clearHighlights();
+        State.validMoves.clear();
+        if(!State.selAnimal) return;
+
+        let reachableDistances = getReachableDistances(State.selAnimal, State.activeP.hand);
+        let maxSpeed = Math.max(...Array.from(reachableDistances));
+
+        let startR = State.selAnimal.pos.r, startC = State.selAnimal.pos.c;
+        let queue = [{r: startR, c: startC, dist: 0}];
+        let visited = new Set(); visited.add(`${startR},${startC}`);
+
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            
+            if(curr.dist > 0 && curr.dist <= maxSpeed) {
+                if (State.track[curr.r][curr.c].type !== 'tree' && reachableDistances.has(curr.dist)) {
+                    State.validMoves.set(`${curr.r},${curr.c}`, curr.dist);
+                    let cellDiv = document.getElementById(`c-${curr.r}-${curr.c}`);
+                    if(cellDiv) {
+                        cellDiv.classList.add('valid-move');
+                        cellDiv.onclick = () => { AudioEngine.select(); openMathLock(curr.dist, curr.r, curr.c); };
+                    }
+                }
+            }
+
+            if(curr.dist < maxSpeed) {
+                const dirs = [[1,0], [0,-1], [0,1]]; 
+                dirs.forEach(d => {
+                    let nr = curr.r + d[0], nc = curr.c + d[1];
+                    if(nr < State.trackLen && nc >= 0 && nc < State.lanes) {
+                        let key = `${nr},${nc}`;
+                        if(!visited.has(key) && State.track[nr][nc].type !== 'tree') {
+                            visited.add(key); queue.push({r: nr, c: nc, dist: curr.dist + 1});
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.valid-move').forEach(el => { el.classList.remove('valid-move'); el.onclick = null; });
+    }
+
+    function openMathLock(dist, r, c) {
+        State.mlTargetDist = dist;
+        State.mlTargetR = r;
+        State.mlTargetC = c;
+        State.mlPlayCard = null;
+        State.mlDiscardCards = [];
+        
+        document.getElementById('ml-target').innerText = dist;
+        document.getElementById('math-lock-modal').style.display = 'flex';
+        
+        renderMathLockUI();
+    }
+
+    function closeMathLock() {
+        AudioEngine.click();
+        document.getElementById('math-lock-modal').style.display = 'none';
+        State.mlPlayCard = null;
+        State.mlDiscardCards = [];
+    }
+
+    function handleModalCardClick(c) {
+        AudioEngine.select();
+        if(State.mlPlayCard === c) { State.mlPlayCard = null; State.mlDiscardCards = []; } 
+        else if (State.mlDiscardCards.includes(c)) { State.mlDiscardCards = State.mlDiscardCards.filter(dc => dc !== c); } 
+        else { 
+            if(!State.mlPlayCard) State.mlPlayCard = c;
+            else if (State.mlDiscardCards.length < 2) State.mlDiscardCards.push(c);
+        }
+        renderMathLockUI();
+    }
+
+    function renderMathLockUI() {
+        const hDiv = document.getElementById('ml-hand-container');
+        hDiv.innerHTML = '';
+        State.activeP.hand.forEach(c => {
+            let cBtn = document.createElement('div');
+            let isPlay = State.mlPlayCard === c;
+            let isDiscard = State.mlDiscardCards.includes(c);
+            
+            let baseClass = c.type === 'blank' ? 'blank' : '';
+            cBtn.className = `card-ui ${baseClass} ${isPlay ? 'play' : ''} ${isDiscard ? 'discard' : ''}`;
+            
+            let permBadge = c.isPerm ? `<div class="perm-badge">PERM</div>` : ``;
+            cBtn.innerHTML = `${permBadge}<strong>${c.name}</strong><br><span>${c.desc}</span><div class="card-badge">${isPlay ? 'PLAY' : 'DISC'}</div>`;
+            cBtn.onclick = () => handleModalCardClick(c);
+            hDiv.appendChild(cBtn);
+        });
+
+        const preview = document.getElementById('ml-formula-preview');
+        let s = State.selAnimal.getSpeed(State.mlPlayCard, State.mlDiscardCards.length);
+        
+        if(s.isTrim) {
+            preview.innerHTML = `
+                <div class="formula-board" style="border-color:#e74c3c;">
+                    <div class="f-title" style="color:#e74c3c;">⚠️ DECK TRIMMING ⚠️</div>
+                    <div class="f-trim">Speed locked to 1.<br>Discards are TRASHED!</div>
+                </div>`;
+        } else {
+            let hasTemp = (s.c_temp > 0 || s.x_temp > 0 || s.k_temp > 0);
+            let catchupStr = s.isCatchup ? ' <span style="color:#f1c40f">(+2 Catchup)</span>' : '';
+            let tempRow = hasTemp ? `<div class="f-row temp"><span>Temp Modifiers${catchupStr}:</span> <span class="val">(+${s.c_temp} × +${s.x_temp}) + ${s.k_temp}</span></div>` : '';
+            
+            let matchClass = s.speed === State.mlTargetDist ? 'match' : 'fail';
+            
+            preview.innerHTML = `
+                <div class="formula-board">
+                    <div class="f-title">MATH ENGINE</div>
+                    <div class="f-row"><span>Base Stats:</span> <span class="val">(${s.c_base} × ${s.x_base}) + ${s.k_base}</span></div>
+                    ${tempRow}
+                    <div class="f-result ${matchClass}">Speed = (${s.c_final} × ${s.x_final}) + ${s.k_final} = <span>${s.speed}</span></div>
+                </div>`;
+        }
+
+        let btn = document.getElementById('ml-confirm-btn');
+        if (s.speed === State.mlTargetDist) {
+            btn.disabled = false;
+            btn.innerText = "CHARZE!";
+        } else {
+            btn.disabled = true;
+            btn.innerText = "FORMULA MISMATCH";
+        }
+    }
+
+    function confirmMathLock() {
+        document.getElementById('math-lock-modal').style.display = 'none';
+        State.playCard = State.mlPlayCard;
+        State.discardCards = State.mlDiscardCards;
+        AudioEngine.move(); 
+        executeMove(State.selAnimal, State.mlTargetR, State.mlTargetC);
+    }
+
+    function executeMove(animal, newR, newC) {
+        State.track[animal.pos.r][animal.pos.c].occupant = null;
+        clearHighlights();
+        
+        let usedCards = [State.playCard, ...State.discardCards].filter(Boolean);
+        let playedPermCard = false;
+        
+        if (State.playCard && State.playCard.isPerm) {
+            if (State.playCard.type === 'const') animal.cst += State.playCard.tempBoost;
+            if (State.playCard.type === 'coeff') animal.coef += State.playCard.tempBoost;
+            playedPermCard = true;
+            State.activeP.discardPile.push(...State.discardCards);
+        }
+        else if (State.playCard && State.playCard.type === 'trim') {
+            State.activeP.discardPile.push(State.playCard);
+        } else {
+            State.activeP.discardPile.push(...usedCards);
+        }
+
+        State.activeP.hand = State.activeP.hand.filter(c => !usedCards.includes(c));
+
+        if(newR >= State.trackLen - 1) {
+            newR = State.trackLen - 1;
+        }
+
+        let targetOccupant = State.track[newR][newC].occupant;
+        if(targetOccupant && targetOccupant !== animal) {
+            let bumpR = newR + 1;
+            while(bumpR < State.trackLen && State.track[bumpR][newC].occupant) { bumpR++; }
+            if(bumpR < State.trackLen) {
+                targetOccupant.pos.r = bumpR;
+                State.track[bumpR][newC].occupant = targetOccupant;
+                if(State.activeP.isHuman) setSysMsg(`💥 BUMP! ${targetOccupant.name} was pushed forward!`, true);
+            }
+        }
+
+        animal.pos = { r: newR, c: newC };
+        State.track[newR][newC].occupant = animal;
+        const tile = State.track[newR][newC].type;
+
+        let checkFinish = () => {
+            if(animal.pos.r >= State.trackLen - 1 && !animal.finished) {
+                animal.finished = true;
+                State.finishOrder.push(animal);
+                let placement = State.finishOrder.length;
+                let pts = Math.max(1, 9 - placement);
+                
+                let allSorted = [...State.animals].sort((a,b) => b.pos.r - a.pos.r);
+                let myIdx = allSorted.indexOf(animal);
+                let distBonus = 0;
+                if(myIdx < allSorted.length - 1) {
+                    distBonus = (animal.pos.r - allSorted[myIdx+1].pos.r) * 0.1;
+                }
+                State.activeP.score += (pts + distBonus);
+                
+                if(State.activeP.animals.every(a => a.finished)) {
+                    State.activeP.finished = true;
+                }
+                
+                setSysMsg(`🏁 ${animal.name} finished in position ${placement}! Earned ${(pts+distBonus).toFixed(1)} pts.`, true);
+                
+                let humans = State.players.filter(p => p.isHuman);
+                if(humans.every(p => p.finished)) {
+                    setTimeout(endGame, 2000);
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        let proceedWithTileEffect = (algSuccess) => {
+            let turnEndsImmediately = true;
+            let hasEffect = false;
+            let effectTitle = "";
+            let effectText = "";
+            let effectColor = "var(--accent)";
+
+            if(algSuccess === false) {
+                hasEffect = true;
+                effectTitle = "PENALTY APPLIED";
+                effectColor = "#e74c3c";
+                effectText += `Failed the math challenge!<br><strong>${State.activeP.name}</strong> will skip their next turn.<br><br>`;
+                State.activeP.skipNextTurn = true;
+                turnEndsImmediately = false;
+            } else if (tile === 'trap') {
+                if(State.activeP.isHuman) {
+                    hasEffect = true;
+                    effectTitle = "CHALLENGE PASSED";
+                    effectColor = "#2ecc71";
+                    effectText += `Great math! You safely navigated the hazard.<br><br>`;
+                    turnEndsImmediately = false;
+                }
+            }
+
+            if (playedPermCard) {
+                AudioEngine.perm();
+                hasEffect = true; effectTitle = "PERMANENT UPGRADE!"; effectColor = "#f1c40f";
+                effectText += `<strong>${animal.name}</strong> consumed the ${State.playCard.name} card!<br><br>`;
+                turnEndsImmediately = false;
+            }
+
+            if(tile === 'dirt') {
+                AudioEngine.loot();
+                let newCard = new Card(Math.random(), 'x_val', 1, 'Dirt Boost', '+1 X Temp', false);
+                State.activeP.discardPile.push(newCard);
+                hasEffect = true; effectTitle = "DIRT TILE"; effectColor = "#d35400";
+                effectText += `<strong>${animal.name}</strong> kicked up dust!<br>You collected a <strong style="color:#d35400">${newCard.name}</strong> card.`;
+                turnEndsImmediately = false;
+                State.track[newR][newC].type = 'grass';
+                State.track[newR][newC].label = '';
+            }
+            else if(tile === 'turn' && animal.val > 0) {
+                AudioEngine.bad();
+                animal.val -= 1;
+                hasEffect = true; effectTitle = "SHARP TURN"; effectColor = "#e67e22";
+                effectText += `<strong>${animal.name}</strong> slowed down through the curve.<br>Your <strong>X Value</strong> is permanently reduced by -1.`;
+                turnEndsImmediately = false;
+            }
+            else if(tile === 'trap') {
+                if(animal.cst > 1 && algSuccess) {
+                    animal.cst -= 1;
+                    effectText += `<strong>${animal.name}</strong> hit a pothole!<br>Your <strong>Constant</strong> is permanently reduced by -1.`;
+                }
+            }
+            else if(tile.startsWith('card-')) {
+                AudioEngine.loot();
+                let newCard;
+                if(tile === 'card-const') { newCard = new Card(Math.random(), 'const', 2, 'Rare Const', '+2 Const (PERM)', true); effectColor = "#3498db"; }
+                else if(tile === 'card-coeff') { newCard = new Card(Math.random(), 'coeff', 1, 'Rare Coeff', '+1 Coeff (PERM)', true); effectColor = "#9b59b6"; }
+                else if(tile === 'card-temp-const') { newCard = new Card(Math.random(), 'const', 2, 'Big Const', '+2 Const (TEMP)', false); effectColor = "#1abc9c"; }
+                else if(tile === 'card-trim') { newCard = new Card(Math.random(), 'trim', 0, 'Trim Deck', 'Spd=1. Trashes discards.', false); effectColor = "#e74c3c"; }
+                
+                State.activeP.discardPile.push(newCard);
+                hasEffect = true; effectTitle = "LOOT ACQUIRED!";
+                effectText += `You collected a <strong style="color:${effectColor}">${newCard.name}</strong> card!<br>It has been added to your discard pile.`;
+                turnEndsImmediately = false;
+                
+                State.track[newR][newC].type = 'grass';
+                State.track[newR][newC].label = '';
+            }
+
+            if (playedPermCard || tile === 'turn' || (tile === 'trap' && algSuccess && animal.cst > 1)) {
+                let newFormulaStr = `Speed = (${animal.coef} × ${animal.val}) + ${animal.cst}`;
+                effectText += `<br><br><div class="formula-highlight" style="border-color:${effectColor}; color:${effectColor};">New Base Formula:<br>${newFormulaStr}</div>`;
+            }
+
+            renderTrack();
+            renderUI(); 
+            
+            if(checkFinish()) return;
+
+            if(hasEffect && State.activeP.isHuman) {
+                showEffectModal(effectTitle, effectText.replace(/^<br><br>/, ''), effectColor, () => { endTurn(); });
+            } else {
+                if(hasEffect && !State.activeP.isHuman) setSysMsg(`${State.activeP.name} hit an event!`);
+                setTimeout(endTurn, 1000);
+            }
+        };
+
+        if(tile === 'trap') {
+            if(State.activeP.isHuman) triggerAlgebra(tile, false, proceedWithTileEffect);
+            else proceedWithTileEffect(Math.random() < 0.8);
+        } else if(tile === 'dirt' || tile.startsWith('card-')) {
+            if(State.activeP.isHuman) triggerAlgebra(tile, true, proceedWithTileEffect);
+            else proceedWithTileEffect(true);
+        } else {
+            proceedWithTileEffect(true);
+        }
+    }
+
+    function executeAITurn() {
+        let ai = State.activeP;
+        let unf = ai.animals.filter(a => !a.finished);
+        if(unf.length === 0) { endTurn(); return; }
+
+        let animal = unf.reduce((prev, curr) => (prev.pos.r <= curr.pos.r) ? prev : curr);
+        State.selAnimal = animal;
+        
+        let reachable = getReachableDistances(animal, ai.hand);
+        let maxSpeed = Math.max(...Array.from(reachable));
+        
+        let validDests = [];
+        let startR = animal.pos.r, startC = animal.pos.c;
+        let queue = [{r: startR, c: startC, dist: 0}];
+        let visited = new Set(); visited.add(`${startR},${startC}`);
+
+        while(queue.length > 0) {
+            let curr = queue.shift();
+            if(curr.dist > 0 && reachable.has(curr.dist)) {
+                if(State.track[curr.r][curr.c].type !== 'tree') {
+                    validDests.push(curr);
+                }
+            }
+            if(curr.dist < maxSpeed) {
+                const dirs = [[1,0], [0,-1], [0,1]]; 
+                dirs.forEach(d => {
+                    let nr = curr.r + d[0], nc = curr.c + d[1];
+                    if(nr < State.trackLen && nc >= 0 && nc < State.lanes) {
+                        let key = `${nr},${nc}`;
+                        if(!visited.has(key) && State.track[nr][nc].type !== 'tree') {
+                            visited.add(key); queue.push({r: nr, c: nc, dist: curr.dist + 1});
+                        }
+                    }
+                });
+            }
+        }
+
+        let bestDest = null;
+        let bestScore = -1;
+        validDests.forEach(dest => {
+            let score = dest.r * 10;
+            let type = State.track[dest.r][dest.c].type;
+            if(type.includes('const') || type.includes('coeff')) score += 80;
+            if(type === 'card-trim') score += 50;
+            if(type === 'dirt') score += 30;
+            
+            if(score > bestScore) { bestScore = score; bestDest = dest; }
+        });
+
+        if(bestDest) {
+            let targetDist = bestDest.dist;
+            let bestPlay = null; let bestDiscards = [];
+            
+            let trimCard = ai.hand.find(c => c.type === 'trim');
+            let blanks = ai.hand.filter(c => c.type === 'blank');
+            if(targetDist === 1 && trimCard && blanks.length > 0) {
+                bestPlay = trimCard; bestDiscards = blanks.slice(0, 2);
+            } else {
+                for(let i=0; i<ai.hand.length; i++) {
+                    let pCard = ai.hand[i];
+                    let otherCards = ai.hand.filter((_, idx) => idx !== i);
+                    otherCards.sort((a,b) => (a.type === 'blank' ? -1 : 1));
+                    
+                    if(animal.getSpeed(pCard, 0).speed === targetDist) { bestPlay = pCard; bestDiscards = []; break; }
+                    if(otherCards.length >= 1 && animal.getSpeed(pCard, 1).speed === targetDist) { bestPlay = pCard; bestDiscards = otherCards.slice(0,1); break; }
+                    if(otherCards.length >= 2 && animal.getSpeed(pCard, 2).speed === targetDist) { bestPlay = pCard; bestDiscards = otherCards.slice(0,2); break; }
+                }
+            }
+            
+            State.playCard = bestPlay;
+            State.discardCards = bestDiscards;
+            Camera.centerAnimal(animal); 
+            setTimeout(() => { AudioEngine.move(); executeMove(animal, bestDest.r, bestDest.c); }, 800);
+        } else {
+            let toDiscard = [...ai.hand];
+            ai.discardPile.push(...toDiscard);
+            ai.hand = []; 
+            State.playCard = null; State.discardCards = []; 
+            endTurn();
+        }
+    }
+
+    function endTurn() {
+        if(State.gameEnded) return;
+        drawCards(State.activeP);
+        State.turnIdx++;
+        if(State.turnIdx >= State.turnOrder.length) State.turnIdx = 0;
+        startTurn();
+    }
+</script>
+</body>
+</html>

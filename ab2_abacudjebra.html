@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AbacuDJebra: Neon Groove</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        /* --- DARK NEON AESTHETIC --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: #07070b; /* Deep club dark */
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 100%;
+            max-width: 500px;
+            height: 100%;
+            background: #0d0e15; /* Slightly lighter dark for app */
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: inset 0 0 50px rgba(0, 243, 255, 0.05);
+        }
+
+        @media (min-width: 600px) {
+            #app {
+                height: 95dvh;
+                border: 2px solid #1a1a2e; 
+                border-radius: 12px;
+                box-shadow: 0 0 30px rgba(0, 243, 255, 0.1);
+            }
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: opacity 0.3s;
+            background: #0d0e15;
+            z-index: 10;
+        }
+
+        /* Help screen has a dark translucent background */
+        #help-screen {
+            background: rgba(7, 7, 11, 0.95);
+            z-index: 20;
+            text-align: left;
+        }
+
+        .help-content {
+            background: #11121a;
+            border: 2px solid #00f3ff;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 400px;
+        }
+
+        .help-content h2 {
+            margin-top: 0;
+            color: #00f3ff;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+            font-weight: 800;
+        }
+
+        .help-content ul {
+            padding-left: 20px;
+            line-height: 1.6;
+            font-weight: 600;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1 !important;
+        }
+
+        h1 {
+            font-size: 32px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 800;
+            text-shadow: 0 0 15px #ff007f, 0 0 30px #ff007f; /* Neon pink glow */
+        }
+
+        p { text-align: center; line-height: 1.5; color: #aaa; font-size: 14px; font-weight: 600;}
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* Neon Buttons */
+        button {
+            background: transparent;
+            border: 2px solid #ff007f;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            color: #ff007f;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            text-shadow: 0 0 5px rgba(255, 0, 127, 0.5);
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.2), inset 0 0 5px rgba(255, 0, 127, 0.2);
+            touch-action: manipulation;
+        }
+
+        button.selected {
+            background: #ff007f;
+            color: #ffffff;
+            box-shadow: 0 0 20px rgba(255, 0, 127, 0.6);
+            text-shadow: none;
+        }
+
+        button.start-btn {
+            border-color: #00f3ff;
+            color: #00f3ff;
+            font-size: 16px;
+            padding: 15px 30px;
+            margin-top: 10px;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3), inset 0 0 10px rgba(0, 243, 255, 0.2);
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+        }
+
+        button.start-btn:active {
+            background: #00f3ff;
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.8);
+        }
+        
+        button.small-btn {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-width: 2px;
+            font-weight: 800;
+        }
+
+        #game-ui {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #0a0b10; 
+            border-bottom: 2px solid #1a1a2e;
+            font-weight: 800;
+            color: #00f3ff;
+            font-size: 14px;
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        #canvas-container {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            position: relative;
+            background: radial-gradient(circle at center, #11131f 0%, #07070b 100%);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        /* --- DARK GLOWING Soroban (Abacus) --- */
+        .dj-board {
+            flex: 0 0 160px;
+            background: #0a0b10; 
+            border-top: 4px solid #1a1a2e; 
+            display: flex;
+            flex-direction: column;
+            padding: 0 20px;
+            position: relative;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
+        .dj-board::before {
+            content: '';
+            position: absolute;
+            top: 36px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: #b500ff; /* Neon purple divider */
+            box-shadow: 0 0 15px #b500ff;
+            z-index: 2;
+        }
+
+        .abacus-heaven {
+            height: 36px;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: flex-start;
+            padding-top: 4px;
+        }
+
+        .abacus-earth {
+            flex: 1;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: flex-end;
+            padding-bottom: 2px;
+        }
+
+        .abacus-rod {
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            height: 100%;
+        }
+
+        .abacus-rod::before {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1); 
+            transform: translateX(-50%);
+            z-index: 0; 
+        }
+
+        .rod-label {
+            position: absolute;
+            top: -18px;
+            font-size: 10px;
+            color: #b500ff;
+            text-shadow: 0 0 8px #b500ff;
+            font-weight: 800;
+        }
+
+        /* Bead styling - Hollow neon pink -> Solid neon cyan */
+        .bead {
+            width: 48px;
+            height: 18px; 
+            background: transparent; 
+            border: 2px solid #ff007f;
+            border-radius: 20px; 
+            cursor: pointer;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            z-index: 1; 
+            position: relative;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.4), inset 0 0 8px rgba(255, 0, 127, 0.3); 
+        }
+
+        .bead.active {
+            background: #00f3ff; 
+            border-color: #fff;
+            box-shadow: 0 0 15px #00f3ff, inset 0 0 10px #fff; 
+        }
+
+        .heaven-bead { transform: translateY(0px); }
+        .heaven-bead.active { transform: translateY(12px); }
+
+        .earth-bead-group {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            height: 90px;
+            justify-content: flex-end; 
+            width: 100%;
+            align-items: center;
+        }
+
+        .earth-bead { transform: translateY(0px); }
+        .earth-bead.active { transform: translateY(-12px); }
+
+        .beat-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 0 10px;
+        }
+
+        .beat-btn {
+            width: 28%;
+            max-width: 80px;
+            height: 45px;
+            background: transparent;
+            border: 2px solid #00f3ff;
+            color: #00f3ff;
+            font-weight: 800;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2), inset 0 0 5px rgba(0, 243, 255, 0.2);
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+        }
+        .beat-btn:active {
+            background: #00f3ff;
+            color: #000;
+            box-shadow: 0 0 25px #00f3ff;
+            text-shadow: none;
+        }
+
+        #lifeDisplay { letter-spacing: 2px; }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="welcome-screen" class="screen">
+        <h1>AbacuDJebra</h1>
+        <p>Ride the rhythm and slide the beads.</p>
+        
+        <p style="margin-top:15px; font-weight:800; font-size: 12px; color: #ff007f; text-shadow: 0 0 5px #ff007f;">SPEED</p>
+        <div class="btn-group">
+            <button class="spd-btn selected" data-val="0.5">Slow</button>
+            <button class="spd-btn" data-val="0.8">Medium</button>
+            <button class="spd-btn" data-val="1.2">Fast</button>
+        </div>
+
+        <p style="font-weight:800; font-size: 12px; color: #ff007f; text-shadow: 0 0 5px #ff007f;">MODE</p>
+        <div class="btn-group">
+            <button class="mod-btn selected" data-val="number">Numbers</button>
+            <button class="mod-btn" data-val="ops">Operations</button>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button class="start-btn" onclick="startGame()">INITIALIZE SEQUENCE</button>
+            <button class="start-btn" style="border-color:#b500ff; color:#b500ff; box-shadow: 0 0 10px rgba(181,0,255,0.4);" onclick="showHelp()">?</button>
+        </div>
+    </div>
+
+    <div id="help-screen" class="screen hidden">
+        <div class="help-content">
+            <h2>System Override: How to Play</h2>
+            <ul>
+                <li><strong>The Abacus:</strong> The top beads are worth 5 (or 50, 500). Bottom beads are worth 1 (or 10, 100). Tap them to slide them to the glowing purple bar.</li>
+                <li><strong>Numbers Mode:</strong> Slide the beads so they equal the falling glowing number.</li>
+                <li><strong>Operations Mode:</strong> Keep a running total! If a "+15" falls, add 15 to your current board. If "-8" falls, subtract 8.</li>
+                <li><strong>The Beat:</strong> Wait for the falling pulse to hit the bottom rings, then strike the matching <strong>L, M, or R</strong> button!</li>
+            </ul>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="start-btn" onclick="closeHelp()">ENGAGE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over-screen" class="screen hidden">
+        <h1 style="color: #ff007f;">SYSTEM OFFLINE</h1>
+        <p>Final Score: <span id="final-score" style="font-size:32px; font-weight:800; color:#00f3ff; text-shadow: 0 0 15px #00f3ff;">0</span></p>
+        <button class="start-btn" onclick="resetToMenu()">MAIN MENU</button>
+    </div>
+
+    <div id="game-ui" class="hidden">
+        <div class="header">
+            <div>Score: <span id="scoreDisplay" style="color: #fff;">0</span></div>
+            <div><span id="lifeDisplay"></span></div>
+            <div class="header-controls">
+                <button class="small-btn" style="border-color: #b500ff; color: #b500ff; box-shadow: 0 0 5px #b500ff;" onclick="showHelp()">?</button>
+                <button class="small-btn" style="border-color: #ff007f; color: #ff007f; box-shadow: 0 0 5px #ff007f;" onclick="quitGame()">QUIT</button>
+            </div>
+        </div>
+        
+        <div id="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+        
+        <div class="dj-board">
+            <div class="abacus-heaven">
+                <div class="abacus-rod">
+                    <span class="rod-label">100s</span>
+                    <div class="bead heaven-bead" id="bead500" onclick="toggleHeaven(500)"></div>
+                </div>
+                <div class="abacus-rod">
+                    <span class="rod-label">10s</span>
+                    <div class="bead heaven-bead" id="bead50" onclick="toggleHeaven(50)"></div>
+                </div>
+                <div class="abacus-rod">
+                    <span class="rod-label">1s</span>
+                    <div class="bead heaven-bead" id="bead5" onclick="toggleHeaven(5)"></div>
+                </div>
+            </div>
+            
+            <div class="abacus-earth">
+                <div class="abacus-rod">
+                    <div class="earth-bead-group" id="earth100s">
+                        <div class="bead earth-bead" onclick="setEarth(100, 1)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(100, 2)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(100, 3)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(100, 4)"></div>
+                    </div>
+                </div>
+                <div class="abacus-rod">
+                    <div class="earth-bead-group" id="earth10s">
+                        <div class="bead earth-bead" onclick="setEarth(10, 1)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(10, 2)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(10, 3)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(10, 4)"></div>
+                    </div>
+                </div>
+                <div class="abacus-rod">
+                    <div class="earth-bead-group" id="earth1s">
+                        <div class="bead earth-bead" onclick="setEarth(1, 1)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(1, 2)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(1, 3)"></div>
+                        <div class="bead earth-bead" onclick="setEarth(1, 4)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="beat-buttons">
+            <button class="beat-btn" onmousedown="hitLane(0)" ontouchstart="handleTouch(event, 0)">L</button>
+            <button class="beat-btn" onmousedown="hitLane(1)" ontouchstart="handleTouch(event, 1)">M</button>
+            <button class="beat-btn" onmousedown="hitLane(2)" ontouchstart="handleTouch(event, 2)">R</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Audio Engine ---
+    let audioCtx;
+    let bgmOsc;
+    let bgmGain;
+    let nextBeatTime = 0;
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            startBGM();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function startBGM() {
+        bgmOsc = audioCtx.createOscillator();
+        bgmGain = audioCtx.createGain();
+        bgmOsc.type = 'sine';
+        bgmOsc.frequency.setValueAtTime(110, audioCtx.currentTime); 
+        bgmGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        
+        let lfo = audioCtx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.15; 
+        let lfoGain = audioCtx.createGain();
+        lfoGain.gain.value = 5;
+        lfo.connect(lfoGain);
+        lfoGain.connect(bgmOsc.frequency);
+        
+        bgmOsc.connect(bgmGain);
+        bgmGain.connect(audioCtx.destination);
+        bgmOsc.start();
+        lfo.start();
+
+        nextBeatTime = audioCtx.currentTime + 0.1;
+        scheduleBeats();
+    }
+
+    function scheduleBeats() {
+        if (!isRunning || isPaused) return; 
+        const secondsPerBeat = 60.0 / 75.0; 
+        
+        while (nextBeatTime < audioCtx.currentTime + 0.5) {
+            playKickDrum(nextBeatTime);
+            nextBeatTime += secondsPerBeat;
+        }
+        requestAnimationFrame(scheduleBeats);
+    }
+
+    function playKickDrum(time) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.setValueAtTime(120, time);
+        osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.4);
+        
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.4);
+        
+        osc.start(time);
+        osc.stop(time + 0.4);
+    }
+
+    function playChime(success) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        
+        if (success) {
+            osc.type = 'triangle';
+            const frequencies = [440, 493.88, 554.37, 659.25, 739.99]; 
+            osc.frequency.setValueAtTime(frequencies[Math.floor(Math.random() * frequencies.length)], now);
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.15, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+            osc.start(now);
+            osc.stop(now + 1.2);
+        } else {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(30, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        }
+    }
+
+    // --- Menu & UI Logic ---
+    let gameSpeed = 0.5; 
+    let gameMode = 'number';
+    let isPaused = false;
+
+    document.querySelectorAll('.spd-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.spd-btn').forEach(b => b.classList.remove('selected'));
+            e.target.classList.add('selected');
+            gameSpeed = parseFloat(e.target.dataset.val);
+        });
+    });
+
+    document.querySelectorAll('.mod-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.mod-btn').forEach(b => b.classList.remove('selected'));
+            e.target.classList.add('selected');
+            gameMode = e.target.dataset.val;
+        });
+    });
+
+    function showHelp() {
+        document.getElementById('help-screen').classList.remove('hidden');
+        if (isRunning) {
+            isPaused = true;
+        }
+    }
+
+    function closeHelp() {
+        document.getElementById('help-screen').classList.add('hidden');
+        if (isRunning && isPaused) {
+            isPaused = false;
+            lastTime = performance.now(); 
+            nextBeatTime = audioCtx.currentTime + 0.1; 
+            scheduleBeats();
+            requestAnimationFrame(gameLoop);
+        }
+    }
+
+    function quitGame() {
+        isRunning = false;
+        isPaused = false;
+        document.getElementById('game-ui').classList.add('hidden');
+        document.getElementById('welcome-screen').classList.remove('hidden');
+    }
+
+    // --- Abacus Logic ---
+    let abacusState = {
+        heaven: { 500: false, 50: false, 5: false },
+        earth: { 100: 0, 10: 0, 1: 0 } 
+    };
+
+    function toggleHeaven(value) {
+        if (isPaused) return;
+        abacusState.heaven[value] = !abacusState.heaven[value];
+        const bead = document.getElementById(`bead${value}`);
+        bead.classList.toggle('active');
+        updateAbacusValues();
+    }
+
+    function setEarth(rod, count) {
+        if (isPaused) return;
+        if (abacusState.earth[rod] === count) {
+            abacusState.earth[rod] = 0;
+        } else {
+            abacusState.earth[rod] = count;
+        }
+        
+        const group = document.getElementById(`earth${rod}s`);
+        const beads = group.querySelectorAll('.bead');
+        
+        beads.forEach((bead, index) => {
+            if (index < abacusState.earth[rod]) {
+                bead.classList.add('active'); 
+            } else {
+                bead.classList.remove('active');
+            }
+        });
+        
+        updateAbacusValues();
+    }
+
+    function updateAbacusValues() {
+        const h = (abacusState.heaven[500] ? 5 : 0) + abacusState.earth[100];
+        const t = (abacusState.heaven[50] ? 5 : 0) + abacusState.earth[10];
+        const o = (abacusState.heaven[5] ? 5 : 0) + abacusState.earth[1];
+        currentAbacusValue = (h * 100) + (t * 10) + o;
+    }
+
+    function resetAbacusVisuals() {
+        abacusState = { heaven: { 500: false, 50: false, 5: false }, earth: { 100: 0, 10: 0, 1: 0 } };
+        document.querySelectorAll('.heaven-bead').forEach(b => b.classList.remove('active'));
+        const earthRods = ['earth100s', 'earth10s', 'earth1s'];
+        earthRods.forEach(id => {
+            document.getElementById(id).querySelectorAll('.bead').forEach(b => b.classList.remove('active'));
+        });
+        updateAbacusValues();
+    }
+
+    // --- Game Logic ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let isRunning = false;
+    let score = 0;
+    let lives = 7; 
+    let notes = [];
+    let currentAbacusValue = 0;
+    let spawnTimer = 0;
+    let lastTime = 0;
+    let expectedAbacusValue = 0; 
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function startGame() {
+        initAudio();
+        document.getElementById('welcome-screen').classList.add('hidden');
+        document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('game-ui').classList.remove('hidden');
+        
+        resizeCanvas();
+        resetGameStats();
+        resetAbacusVisuals();
+
+        isRunning = true;
+        isPaused = false;
+        nextBeatTime = audioCtx.currentTime + 0.1;
+        scheduleBeats();
+        
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+    }
+
+    function resetGameStats() {
+        score = 0;
+        lives = 7; 
+        notes = [];
+        spawnTimer = 0;
+        expectedAbacusValue = 0; 
+        updateDisplays();
+    }
+
+    function resetToMenu() {
+        document.getElementById('game-over-screen').classList.add('hidden');
+        document.getElementById('welcome-screen').classList.remove('hidden');
+    }
+
+    function spawnNote() {
+        const lane = Math.floor(Math.random() * 3);
+        let text = "";
+        let targetNumber = 0;
+
+        if (gameMode === 'number') {
+            const maxTarget = gameSpeed < 0.6 ? 99 : 999; 
+            targetNumber = Math.floor(Math.random() * maxTarget) + 1;
+            text = targetNumber.toString();
+        } else if (gameMode === 'ops') {
+            let maxDelta = 50; 
+            let minDelta = 1;
+            let delta = Math.floor(Math.random() * maxDelta) + minDelta;
+            
+            let isAdd = Math.random() > 0.5;
+            
+            if (!isAdd && expectedAbacusValue - delta < 0) {
+                isAdd = true;
+            }
+            if (isAdd && expectedAbacusValue + delta > 999) {
+                isAdd = false;
+            }
+
+            if (isAdd) {
+                expectedAbacusValue += delta;
+                text = "+" + delta;
+            } else {
+                expectedAbacusValue -= delta;
+                text = "-" + delta;
+            }
+            targetNumber = expectedAbacusValue; 
+        }
+
+        notes.push({
+            lane: lane,
+            target: targetNumber,
+            text: text,
+            y: -80,
+            active: true
+        });
+    }
+
+    function handleTouch(e, laneIdx) {
+        e.preventDefault(); 
+        hitLane(laneIdx);
+    }
+
+    function hitLane(laneIdx) {
+        if (!isRunning || isPaused) return;
+        
+        const hitZoneY = canvas.height - 50; 
+        const tolerance = 70; 
+        
+        let hitFound = false;
+        
+        for (let i = 0; i < notes.length; i++) {
+            let note = notes[i];
+            if (note.active && note.lane === laneIdx) {
+                if (Math.abs(note.y - hitZoneY) < tolerance) {
+                    if (currentAbacusValue === note.target) {
+                        score += 100;
+                        playChime(true);
+                        hitFound = true;
+                    } else {
+                        loseLife();
+                        playChime(false);
+                        hitFound = true;
+                    }
+                    note.active = false; 
+                    break; 
+                }
+            }
+        }
+        
+        if (!hitFound) {
+            playChime(false);
+        }
+        
+        updateDisplays();
+    }
+
+    function loseLife() {
+        lives--;
+        updateDisplays();
+        if (lives <= 0) {
+            endGame();
+        }
+    }
+
+    function updateDisplays() {
+        document.getElementById('scoreDisplay').innerText = score;
+        let hearts = '❤️'.repeat(lives);
+        if (lives > 5 && window.innerWidth < 400) {
+            hearts = `❤️ x${lives}`; 
+        }
+        document.getElementById('lifeDisplay').innerText = hearts;
+    }
+
+    function endGame() {
+        isRunning = false;
+        document.getElementById('game-ui').classList.add('hidden');
+        document.getElementById('game-over-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+    }
+
+    function drawNeonAesthetics() {
+        const h = canvas.height;
+        const w = canvas.width;
+        const laneWidth = w / 3;
+
+        // Subtle lane dividers
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        ctx.fillRect(laneWidth, 0, laneWidth, h); 
+
+        // Glowing target rings
+        for(let i=0; i<3; i++) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc((i * laneWidth) + (laneWidth/2), h - 50, 30, 0, Math.PI * 2);
+            
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 15;
+            
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+
+    function gameLoop(timestamp) {
+        if (!isRunning || isPaused) return;
+        
+        const dt = timestamp - lastTime;
+        lastTime = timestamp;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawNeonAesthetics();
+
+        spawnTimer -= dt;
+        if (spawnTimer <= 0) {
+            spawnNote();
+            spawnTimer = (3500 / gameSpeed) + Math.random() * 1000;
+        }
+
+        const laneWidth = canvas.width / 3;
+        const pulse = (Math.sin(timestamp * 0.005) + 1) / 2;
+
+        for (let i = notes.length - 1; i >= 0; i--) {
+            let note = notes[i];
+            
+            if (note.active) {
+                note.y += (0.10 * gameSpeed) * dt;
+                
+                const x = (note.lane * laneWidth) + (laneWidth / 2);
+                
+                ctx.save();
+                ctx.translate(x, note.y);
+                
+                // Neon Falling Pulse
+                ctx.beginPath();
+                ctx.arc(0, 0, 26, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff007f'; 
+                
+                ctx.shadowColor = '#ff007f';
+                ctx.shadowBlur = 15 + (15 * pulse); 
+                ctx.fill();
+
+                // White sharp core to make it pop
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Glowing Text
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#000000';
+                ctx.shadowBlur = 4;
+                ctx.font = gameMode === 'ops' ? '800 16px Montserrat' : '800 20px Montserrat';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(note.text, 0, 0);
+                
+                ctx.restore();
+
+                if (note.y > canvas.height + 60) {
+                    note.active = false;
+                    loseLife();
+                    playChime(false);
+                }
+            } else {
+                notes.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+</script>
+
+</body>
+</html>

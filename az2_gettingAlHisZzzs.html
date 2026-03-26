@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Getting Al His ZZZs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&family=Fredoka+One&display=swap');
+
+        :root {
+            --bg-top: #1A1A2E;
+            --bg-mid: #16213E;
+            --bg-bot: #0F3460;
+            --sun: #E94560;
+            --tree: #0F111A;
+            --target: rgba(255, 255, 255, 0.3);
+            --zzz: #F9F871;
+            
+            /* Bug Colors */
+            --bug-cricket: #4ECDC4;
+            --bug-beetle: #FF6B6B;
+            --bug-owl: #C7CEEA;
+            --bug-cicada: #FFD166;
+            --bug-moth: #B565A7;
+            --bug-frog: #A8E6CF;
+            --bug-wasp: #FF8C42;
+            --bug-spider: #8D99AE;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bot) 100%);
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            color: white; touch-action: none;
+        }
+
+        /* --- SCENE & ART --- */
+        #game-scene {
+            position: relative; flex: 1;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden;
+        }
+
+        /* Subtle background atmospheric glow */
+        .bg-glow {
+            position: absolute; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 30%, rgba(249, 248, 113, 0.05) 0%, transparent 60%);
+            z-index: 0; pointer-events: none;
+        }
+
+        .tree {
+            position: absolute; bottom: 0;
+            width: 100%; height: 60%; z-index: 10;
+        }
+
+        .trunk {
+            position: absolute; bottom: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 80px; height: 100%; background: var(--tree);
+            clip-path: polygon(20% 0, 80% 0, 100% 100%, 0% 100%);
+        }
+
+        .branch {
+            position: absolute; background: var(--tree);
+            height: 16px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: space-evenly;
+            will-change: transform;
+        }
+
+        .branch.left {
+            right: 50%; top: 40%; width: 140px;
+            transform-origin: right center;
+        }
+
+        .branch.right {
+            left: 50%; top: 25%; width: 180px;
+            transform-origin: left center;
+        }
+
+        .slot {
+            width: 44px; height: 44px; border-radius: 50%;
+            border: 2px dashed rgba(255,255,255,0.15);
+            transition: 0.3s;
+        }
+        .slot.hover { background: rgba(255,255,255,0.1); border-color: white; transform: scale(1.1); }
+
+        /* --- AL THE ZEBRA & ANIMATIONS --- */
+        .al-zebra {
+            position: absolute; bottom: 60%; left: 50%;
+            transform: translateX(-50%);
+            width: 80px; height: 50px; z-index: 15;
+        }
+        .zebra-body {
+            position: absolute; bottom: 0; width: 60px; height: 35px;
+            background: white; border-radius: 20px 20px 5px 5px;
+            background-image: repeating-linear-gradient(90deg, #1A1A2E 0px, #1A1A2E 8px, white 8px, white 16px);
+            transform-origin: bottom center;
+        }
+        .zebra-head {
+            position: absolute; bottom: 15px; right: -15px; width: 40px; height: 25px;
+            background: white; border-radius: 10px 15px 5px 5px;
+            transform: rotate(15deg); transform-origin: left bottom;
+            background-image: repeating-linear-gradient(90deg, #1A1A2E 0px, #1A1A2E 6px, white 6px, white 12px);
+        }
+        .eye { position: absolute; right: 10px; top: 8px; width: 8px; height: 2px; background: #1A1A2E; transition: 0.3s;}
+
+        @keyframes breathe {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.08); }
+        }
+        @keyframes head-bop {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(10deg); }
+        }
+        @keyframes toss {
+            0%, 100% { transform: rotate(-1deg) translateX(-1px); }
+            50% { transform: rotate(1deg) translateX(1px); }
+        }
+        @keyframes toss-head {
+            0%, 100% { transform: rotate(12deg); }
+            50% { transform: rotate(18deg); }
+        }
+
+        .al-zebra.resting .zebra-body { animation: breathe 3s infinite ease-in-out; }
+        .al-zebra.resting .zebra-head { animation: head-bop 3s infinite ease-in-out; }
+        .al-zebra.restless .zebra-body { animation: toss 1.5s infinite ease-in-out; }
+        .al-zebra.restless .zebra-head { animation: toss-head 1.5s infinite ease-in-out; }
+        .al-zebra.restless .eye { height: 6px; border-radius: 50%; top: 6px; background: #1A1A2E;} 
+
+        .zzz-particle {
+            position: absolute; color: var(--zzz);
+            font-family: 'Fredoka One', cursive; font-size: 20px;
+            pointer-events: none; opacity: 0; z-index: 20;
+            animation: floatZ 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes floatZ {
+            0% { opacity: 0; transform: translateY(0) scale(0.5); }
+            20% { opacity: 1; transform: translateY(-20px) scale(1) translateX(10px); }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateY(-80px) scale(1.5) translateX(-20px); }
+        }
+
+        /* --- THE GLOWING MOON & MASSIVE BAR MODEL --- */
+        #visualization-area {
+            position: absolute; top: 6%; left: 50%;
+            transform: translateX(-50%);
+            display: flex; flex-direction: column; align-items: center; gap: 15px;
+            width: 100%; z-index: 5;
+        }
+
+        #glowing-moon {
+            width: 150px; height: 150px; border-radius: 50%;
+            background: radial-gradient(circle, #FFFDE4 20%, #FFF5A5 70%, #F9F871 100%);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 40px rgba(249, 248, 113, 0.6), 0 0 100px rgba(249, 248, 113, 0.2);
+            z-index: 2; border: 2px solid rgba(255,255,255,0.8);
+        }
+        
+        .zzz-text { 
+            color: #1A1A2E; font-family: 'Fredoka One', cursive; 
+            font-size: 42px; opacity: 0; transition: 0.3s; 
+        }
+        .zzz-text.visible { opacity: 1; }
+        
+        #bar-model-container {
+            position: relative; width: 100%; height: 60px; /* Massive chunky height */
+            margin-top: -10px; /* Pull it slightly up towards the moon */
+            z-index: 1;
+        }
+        
+        .axis-zero {
+            position: absolute; left: 50%; top: -35px; transform: translateX(-50%);
+            color: rgba(255,255,255,0.7); font-size: 20px; font-weight: bold; font-family: 'Fredoka One', cursive;
+        }
+        
+        .axis-zero::after {
+            content: ''; position: absolute; left: 50%; top: 30px; width: 4px; height: 70px;
+            background: rgba(255,255,255,0.7); transform: translateX(-50%); z-index: 10;
+            border-radius: 2px;
+        }
+        
+        #target-bar {
+            position: absolute; top: 0; height: 100%;
+            border: 4px dashed var(--target);
+            box-sizing: border-box; transition: width 0.5s, left 0.5s, right 0.5s; pointer-events: none;
+            border-radius: 6px;
+        }
+        
+        #current-bar {
+            position: absolute; top: 0; height: 100%;
+            background-color: var(--zzz);
+            /* Striping scaled up to match the massive 24px units */
+            background-image: repeating-linear-gradient(90deg, transparent, transparent 22px, rgba(0,0,0,0.15) 22px, rgba(0,0,0,0.15) 24px);
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), right 0.4s, background-color 0.3s;
+            box-shadow: 0 0 20px rgba(249, 248, 113, 0.3);
+            border-radius: 6px;
+        }
+
+        /* --- TIMER UI --- */
+        #timer-container {
+            position: absolute; top: 280px; left: 50%;
+            transform: translateX(-50%); width: 250px; text-align: center;
+            opacity: 0; transition: opacity 0.3s; z-index: 20; pointer-events: none;
+        }
+        #timer-container.visible { opacity: 1; }
+        #timer-text {
+            font-size: 14px; font-weight: 700; color: #FF6B6B;
+            margin-bottom: 5px; letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        #timer-bar-bg { width: 100%; height: 6px; background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden; }
+        #timer-bar { width: 100%; height: 100%; background: #E94560; transition: width 1s linear; }
+
+        /* --- UI PANEL --- */
+        #inventory-panel {
+            height: 110px; background: rgba(15, 17, 26, 0.6);
+            backdrop-filter: blur(10px); border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+            z-index: 50; padding: 0 20px; overflow-x: auto;
+        }
+
+        .bug {
+            width: 50px; height: 50px; border-radius: 12px; cursor: grab;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: transform 0.1s;
+            position: relative; flex-shrink: 0;
+        }
+        .bug:active { cursor: grabbing; transform: scale(0.9); }
+        .bug::after { content: ''; position: absolute; width: 70%; height: 70%; }
+        .bug-label { position: relative; z-index: 2; font-family: 'Fredoka One', cursive; font-size: 20px; color: rgba(0,0,0,0.6); }
+
+        .bug[data-type="cricket"] { background: var(--bug-cricket); }
+        .bug[data-type="cricket"]::after { background: #fff; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+        .bug[data-type="beetle"] { background: var(--bug-beetle); }
+        .bug[data-type="beetle"]::after { background: #fff; border-radius: 50%; }
+        .bug[data-type="moth"] { background: var(--bug-moth); }
+        .bug[data-type="moth"]::after { background: #fff; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+        .bug[data-type="frog"] { background: var(--bug-frog); }
+        .bug[data-type="frog"]::after { background: #fff; clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); }
+        .bug[data-type="owl"] { background: var(--bug-owl); }
+        .bug[data-type="owl"]::after { background: #fff; clip-path: polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%); }
+        .bug[data-type="spider"] { background: var(--bug-spider); border: 2px dashed #1A1A2E;}
+        .bug[data-type="spider"]::after { background: #1A1A2E; clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); }
+        .bug[data-type="cicada"] { background: var(--bug-cicada); border: 2px dashed #e74c3c;}
+        .bug[data-type="cicada"]::after { background: #e74c3c; clip-path: polygon(50% 100%, 0 0, 100% 0); }
+        .bug[data-type="wasp"] { background: var(--bug-wasp); border: 2px dashed #e74c3c;}
+        .bug[data-type="wasp"]::after { background: #e74c3c; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); }
+        
+        .bug[data-type="spider"] .bug-label, .bug[data-type="cicada"] .bug-label, .bug[data-type="wasp"] .bug-label { color: white; }
+        .bug.dragging { position: absolute; z-index: 1000; pointer-events: none; box-shadow: 0 15px 30px rgba(0,0,0,0.5); }
+
+        /* --- LEGEND PANEL --- */
+        #legend-panel {
+            height: 40px; background: rgba(0, 0, 0, 0.4);
+            display: flex; align-items: center; justify-content: center; gap: 20px;
+            font-family: 'Fredoka One', cursive; font-size: 14px; color: rgba(255,255,255,0.7);
+            padding: 0 20px; overflow-x: auto; flex-shrink: 0;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute; inset: 0; background: rgba(26, 26, 46, 0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 2000; transition: opacity 0.5s;
+        }
+        .overlay.hidden { opacity: 0; pointer-events: none; }
+        h1 { font-size: 38px; margin-bottom: 10px; font-weight: 700; letter-spacing: 2px; text-align: center; }
+        p { font-size: 16px; color: #C7CEEA; max-width: 450px; text-align: center; line-height: 1.6; margin-bottom: 30px;}
+        
+        button {
+            background: var(--sun); color: white; border: none; padding: 15px 40px;
+            font-size: 18px; font-family: inherit; font-weight: 700; border-radius: 30px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4); transition: 0.2s;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(233, 69, 96, 0.6); }
+        
+        .btn-random { background: #B565A7; box-shadow: 0 4px 15px rgba(181, 101, 167, 0.4); margin-top: 15px; }
+        .btn-random:hover { box-shadow: 0 8px 25px rgba(181, 101, 167, 0.6); }
+
+        #level-indicator { position: absolute; top: 20px; left: 20px; font-weight: 600; color: rgba(255,255,255,0.5); letter-spacing: 2px; text-transform: uppercase;}
+        
+        #win-formula {
+            font-family: 'Fredoka One', cursive; font-size: 42px;
+            color: var(--zzz); margin-bottom: 30px;
+            text-shadow: 0 4px 15px rgba(249, 248, 113, 0.4);
+            letter-spacing: 2px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" class="overlay">
+        <h1>GETTING AL HIS ZZZs</h1>
+        <p>Al the Zebra needs the perfect volume of jungle sounds to sleep. Each shape has a hidden value. Drag them to the branches to balance the equations and match the Target Bar perfectly!</p>
+        <button onclick="startGame('story')">Play Story Mode</button>
+        <button class="btn-random" onclick="startGame('random')">Endless Random (Hard)</button>
+    </div>
+
+    <div id="win-screen" class="overlay hidden">
+        <h1>PERFECT HARMONY</h1>
+        <p>Al is fast asleep. Here is the equation you built:</p>
+        <div id="win-formula"></div>
+        <button id="next-level-btn" onclick="nextLevel()">Next Level</button>
+    </div>
+
+    <div id="fail-screen" class="overlay hidden">
+        <h1>AL WOKE UP!</h1>
+        <p>The math was too unbalanced for too long, and the noise woke Al up from his nap.</p>
+        <button onclick="retryLevel()">Try Again</button>
+    </div>
+
+    <div id="level-indicator">LEVEL 1</div>
+
+    <div id="timer-container">
+        <div id="timer-text">Al is tossing and turning... 30s</div>
+        <div id="timer-bar-bg">
+            <div id="timer-bar"></div>
+        </div>
+    </div>
+
+    <div id="game-scene">
+        <div class="bg-glow"></div>
+        
+        <div id="visualization-area">
+            <div id="glowing-moon">
+                <span class="zzz-text">Zzz</span>
+            </div>
+            <div id="bar-model-container">
+                <div class="axis-zero">0</div>
+                <div id="target-bar"></div>
+                <div id="current-bar"></div>
+            </div>
+        </div>
+
+        <div class="tree">
+            <div class="branch left" id="branch-1">
+                <div class="slot" data-slot="1"></div>
+                <div class="slot" data-slot="2"></div>
+            </div>
+            <div class="branch right" id="branch-2">
+                <div class="slot" data-slot="3"></div>
+                <div class="slot" data-slot="4"></div>
+                <div class="slot" data-slot="5"></div>
+            </div>
+            <div class="trunk"></div>
+            <div class="al-zebra resting" id="al-character">
+                <div class="zebra-body"></div>
+                <div class="zebra-head"><div class="eye"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="inventory-panel"></div>
+    <div id="legend-panel"></div>
+
+<script>
+    const AudioEngine = {
+        ctx: null, masterGain: null, bgmOsc: null, ambientInterval: null,
+        init() {
+            if (this.ctx) return;
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = 0.3;
+            this.masterGain.connect(this.ctx.destination);
+            this.startBGM();
+            this.startAmbientCrickets();
+        },
+        startBGM() {
+            this.bgmOsc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
+            this.bgmOsc.type = 'sine'; this.bgmOsc.frequency.value = 82.41;
+            filter.type = 'lowpass'; filter.frequency.value = 400;
+            this.bgmOsc.connect(filter); filter.connect(this.masterGain);
+            this.bgmOsc.start();
+        },
+        startAmbientCrickets() {
+            this.ambientInterval = setInterval(() => {
+                if(!this.ctx || Math.random() > 0.6) return; 
+                const playChirp = (delay) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine'; 
+                    osc.frequency.setValueAtTime(4500, this.ctx.currentTime + delay);
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime + delay);
+                    gain.gain.linearRampToValueAtTime(0.015, this.ctx.currentTime + delay + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + 0.1);
+                    osc.connect(gain); gain.connect(this.masterGain);
+                    osc.start(this.ctx.currentTime + delay);
+                    osc.stop(this.ctx.currentTime + delay + 0.15);
+                };
+                playChirp(0); playChirp(0.15); 
+            }, 2000);
+        },
+        playStem(type) {
+            if (!this.ctx) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            switch(type) {
+                case 'cricket': osc.type = 'sine'; osc.frequency.value = 659.25; break;
+                case 'beetle': osc.type = 'triangle'; osc.frequency.value = 392.00; break;
+                case 'moth': osc.type = 'sine'; osc.frequency.value = 440.00; break;
+                case 'frog': osc.type = 'square'; osc.frequency.value = 164.81; break;
+                case 'owl': osc.type = 'sine'; osc.frequency.value = 130.81; break;
+                case 'spider': osc.type = 'sawtooth'; osc.frequency.value = 261.63; break;
+                case 'cicada': osc.type = 'sawtooth'; osc.frequency.value = 293.66; break;
+                case 'wasp': osc.type = 'square'; osc.frequency.value = 349.23; break;
+                case 'success': this.playChord([261.63, 329.63, 392.00, 523.25]); return;
+                case 'fail': osc.type = 'sawtooth'; osc.frequency.value = 110; break;
+                case 'remove': osc.type = 'sine'; osc.frequency.value = 200; break;
+                default: osc.type = 'sine'; osc.frequency.value = 400;
+            }
+
+            gain.gain.setValueAtTime(0, this.ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+
+            osc.connect(gain); gain.connect(this.masterGain);
+            osc.start(); osc.stop(this.ctx.currentTime + 2);
+        },
+        playChord(freqs) {
+            freqs.forEach((f, i) => {
+                setTimeout(() => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine'; osc.frequency.value = f;
+                    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 2);
+                    osc.connect(gain); gain.connect(this.masterGain);
+                    osc.start(); osc.stop(this.ctx.currentTime + 2);
+                }, i * 150);
+            });
+        }
+    };
+
+    const Physics = {
+        branches: {
+            1: { el: document.getElementById('branch-1'), angle: -15, baseAngle: -15, target: -15, v: 0, sign: 1 }, 
+            2: { el: document.getElementById('branch-2'), angle: 10, baseAngle: 10, target: 10, v: 0, sign: 1 }     
+        },
+        k: 0.1, friction: 0.8, 
+        
+        update() {
+            for (let id in this.branches) {
+                let b = this.branches[id];
+                let force = (b.target - b.angle) * this.k;
+                b.v = (b.v + force) * this.friction;
+                b.angle += b.v;
+                b.el.style.transform = `rotate(${b.angle}deg)`;
+            }
+            requestAnimationFrame(() => this.update());
+        },
+        
+        applyImpact(branchId, bugValue) {
+            this.branches[branchId].v += (Math.abs(bugValue) * 1.5 * this.branches[branchId].sign);
+        },
+        
+        setWeight(branchId, totalWeight) {
+            let b = this.branches[branchId];
+            b.target = b.baseAngle + (totalWeight * 1.5 * b.sign); 
+        }
+    };
+    Physics.update(); 
+
+    const BUGS = {
+        cricket: { id: 'cricket', letter: 'c', val: 2 },
+        beetle:  { id: 'beetle',  letter: 'b', val: 3 },
+        moth:    { id: 'moth',    letter: 'm', val: 4 },
+        frog:    { id: 'frog',    letter: 'f', val: 5 },
+        owl:     { id: 'owl',     letter: 'o', val: 6 },
+        spider:  { id: 'spider',  letter: 's', val: -1 },
+        cicada:  { id: 'cicada',  letter: 'x', val: -2 },
+        wasp:    { id: 'wasp',    letter: 'w', val: -3 }
+    };
+
+    const LEVELS = [
+        { target: 4,  inventory: ['cricket', 'cricket', 'beetle'], preplaced: [] }, 
+        { target: 5,  inventory: ['cricket', 'cricket', 'beetle'], preplaced: [] }, 
+        { target: 6,  inventory: ['beetle', 'beetle', 'cricket', 'cricket'], preplaced: [] }, 
+        { target: 7,  inventory: ['moth', 'beetle', 'cricket'], preplaced: [] }, 
+        { target: 8,  inventory: ['moth', 'moth', 'cricket'], preplaced: [] }, 
+        { target: 9,  inventory: ['frog', 'moth', 'cricket'], preplaced: [] }, 
+        { target: 10, inventory: ['owl', 'moth', 'beetle', 'cricket'], preplaced: [] }, 
+        { target: 3,  inventory: ['moth', 'cricket', 'cricket'], preplaced: [{slot:1, type:'spider', locked:true}] }, 
+        { target: 4,  inventory: ['beetle', 'beetle', 'cricket'], preplaced: [{slot:1, type:'cicada', locked:true}] }, 
+        { target: 5,  inventory: ['frog', 'beetle', 'cricket'], preplaced: [{slot:1, type:'wasp', locked:true}] }, 
+        { target: 0,  inventory: ['wasp', 'cricket'], preplaced: [{slot:1, type:'beetle', locked:true}] }, 
+        { target: 2,  inventory: ['cicada', 'cicada', 'spider', 'cricket'], preplaced: [{slot:1, type:'owl', locked:true}] }, 
+        { target: 10, inventory: ['frog', 'frog', 'owl', 'beetle'], preplaced: [] }, 
+        { target: 7,  inventory: ['owl', 'cricket', 'spider', 'cicada'], preplaced: [] }, 
+        { target: 11, inventory: ['owl', 'frog', 'moth', 'beetle'], preplaced: [] }, 
+        { target: 8,  inventory: ['owl', 'owl', 'moth'], preplaced: [{slot:1, type:'wasp', locked:true}, {slot:2, type:'spider', locked:true}] }, 
+        { target: 1,  inventory: ['moth', 'wasp', 'cricket', 'cicada'], preplaced: [] }, 
+        { target: 12, inventory: ['owl', 'moth', 'cricket', 'spider'], preplaced: [] }, 
+        { target: 9,  inventory: ['owl', 'frog', 'cricket', 'moth'], preplaced: [{slot:1, type:'cicada', locked:true}, {slot:2, type:'cicada', locked:true}] }, 
+        { target: 15, inventory: ['owl', 'frog', 'moth', 'beetle', 'cricket'], preplaced: [] } 
+    ];
+
+    let currentLevel = 0;
+    let isRandomMode = false;
+    let currentLevelData = null; 
+    let placedBugs = {};
+    let zzzInterval = null;
+    let restlessTimer = 30;
+    let restlessInterval = null;
+
+    // BIGGER UNIT WIDTH for massive, readable bars
+    const unitPx = 24;
+
+    function startGame(mode) {
+        AudioEngine.init();
+        document.getElementById('start-screen').classList.add('hidden');
+        isRandomMode = (mode === 'random');
+        
+        if (isRandomMode) {
+            document.getElementById('next-level-btn').innerText = "Next Random Puzzle";
+        } else {
+            document.getElementById('next-level-btn').innerText = "Next Level";
+            currentLevel = 0;
+        }
+        
+        loadLevel();
+    }
+
+    function generateDifficultRandomLevel() {
+        const positives = ['cricket', 'beetle', 'moth', 'frog', 'owl'];
+        const negatives = ['spider', 'cicada', 'wasp'];
+        const numSolutionBugs = Math.floor(Math.random() * 3) + 3; 
+        
+        let solution = [];
+        let targetSum = 0;
+        
+        let firstPos = positives[Math.floor(Math.random() * positives.length)];
+        let firstNeg = negatives[Math.floor(Math.random() * negatives.length)];
+        solution.push(firstPos); targetSum += BUGS[firstPos].val;
+        solution.push(firstNeg); targetSum += BUGS[firstNeg].val;
+        
+        const allBugs = [...positives, ...negatives];
+        for(let i=2; i<numSolutionBugs; i++) {
+            let b = allBugs[Math.floor(Math.random() * allBugs.length)];
+            solution.push(b);
+            targetSum += BUGS[b].val;
+        }
+        
+        let preplaced = [];
+        let inventory = [];
+        let availableSlots = [1, 2, 3, 4, 5].sort(() => Math.random() - 0.5);
+        
+        solution.forEach(bug => {
+            if (Math.random() < 0.4 && preplaced.length < 2) {
+                preplaced.push({ slot: availableSlots.pop(), type: bug, locked: true });
+            } else {
+                inventory.push(bug);
+            }
+        });
+        
+        let numDistractors = Math.floor(Math.random() * 3) + 1;
+        for(let i=0; i<numDistractors; i++) {
+             inventory.push(allBugs[Math.floor(Math.random() * allBugs.length)]);
+        }
+        
+        inventory.sort(() => Math.random() - 0.5);
+        return { target: targetSum, inventory: inventory, preplaced: preplaced };
+    }
+
+    function loadLevel() {
+        if (!isRandomMode && currentLevel >= LEVELS.length) {
+            alert("Incredible! You have mastered the algebraic jungle. Returning to Main Menu.");
+            document.getElementById('start-screen').classList.remove('hidden');
+            return;
+        }
+
+        if (isRandomMode) {
+            currentLevelData = generateDifficultRandomLevel();
+            document.getElementById('level-indicator').innerText = `RANDOM PUZZLE`;
+        } else {
+            currentLevelData = LEVELS[currentLevel];
+            document.getElementById('level-indicator').innerText = `LEVEL ${currentLevel + 1}`;
+        }
+        
+        placedBugs = {};
+        document.querySelectorAll('.slot').forEach(s => s.innerHTML = '');
+        document.querySelector('.zzz-text').classList.remove('visible');
+        stopRestlessTimer();
+        
+        const targetBar = document.getElementById('target-bar');
+        if (currentLevelData.target > 0) {
+            targetBar.style.left = '50%';
+            targetBar.style.right = 'auto';
+            targetBar.style.width = `${currentLevelData.target * unitPx}px`;
+            targetBar.style.borderLeft = 'none';
+            targetBar.style.borderRight = '4px dashed var(--target)';
+        } else if (currentLevelData.target < 0) {
+            targetBar.style.right = '50%';
+            targetBar.style.left = 'auto';
+            targetBar.style.width = `${Math.abs(currentLevelData.target) * unitPx}px`;
+            targetBar.style.borderRight = 'none';
+            targetBar.style.borderLeft = '4px dashed var(--target)';
+        } else {
+            targetBar.style.left = 'calc(50% - 2px)';
+            targetBar.style.right = 'auto';
+            targetBar.style.width = '4px';
+            targetBar.style.border = '4px dashed var(--target)';
+        }
+
+        const inv = document.getElementById('inventory-panel');
+        inv.innerHTML = '';
+        currentLevelData.inventory.forEach(bugType => inv.appendChild(createBugElement(bugType, false)));
+
+        currentLevelData.preplaced.forEach(p => {
+            const slot = document.querySelector(`.slot[data-slot="${p.slot}"]`);
+            const bugEl = createBugElement(p.type, p.locked);
+            if(p.locked) bugEl.style.opacity = '0.7'; 
+            slot.appendChild(bugEl);
+            placedBugs[p.slot] = bugEl;
+        });
+
+        renderLegend(currentLevelData);
+        updateEngine();
+    }
+
+    function renderLegend(lvlData) {
+        const legend = document.getElementById('legend-panel');
+        legend.innerHTML = '';
+        let activeBugs = new Set(lvlData.inventory);
+        lvlData.preplaced.forEach(p => activeBugs.add(p.type));
+        let sortedBugs = Array.from(activeBugs).sort((a,b) => BUGS[a].val - BUGS[b].val);
+        
+        sortedBugs.forEach(type => {
+            const b = BUGS[type];
+            const colorVar = `var(--bug-${type})`;
+            legend.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background: ${colorVar};"></div>${b.letter} = ${b.val}</div>`;
+        });
+    }
+
+    function createBugElement(type, isLocked) {
+        const bugEl = document.createElement('div');
+        bugEl.className = 'bug'; bugEl.dataset.type = type;
+        bugEl.innerHTML = `<span class="bug-label">${BUGS[type].letter}</span>`;
+        if(!isLocked) makeDraggable(bugEl);
+        return bugEl;
+    }
+
+    function getFormulaText() {
+        let counts = {};
+        for (let slot in placedBugs) {
+            if (placedBugs[slot]) {
+                const type = placedBugs[slot].dataset.type;
+                const letter = BUGS[type].letter;
+                counts[letter] = (counts[letter] || 0) + 1;
+            }
+        }
+        let terms = [];
+        for (let letter in counts) {
+            let count = counts[letter];
+            terms.push(count === 1 ? letter : `${count}${letter}`);
+        }
+        if(terms.length === 0) return `0 = ${currentLevelData.target}`;
+        return terms.join(' + ') + ` = ${currentLevelData.target}`;
+    }
+
+    function spawnZzz() {
+        const al = document.getElementById('al-character');
+        const z = document.createElement('div');
+        z.className = 'zzz-particle'; z.innerText = 'Z';
+        z.style.left = (Math.random() * 40 + 20) + 'px';
+        z.style.top = '0px';
+        al.appendChild(z);
+        setTimeout(() => z.remove(), 2500);
+    }
+
+    function startRestlessTimer() {
+        if (restlessInterval) return; 
+        document.getElementById('timer-container').classList.add('visible');
+        restlessInterval = setInterval(() => {
+            restlessTimer--;
+            updateTimerUI();
+            if (restlessTimer <= 0) failLevel();
+        }, 1000);
+    }
+
+    function stopRestlessTimer() {
+        if (restlessInterval) { clearInterval(restlessInterval); restlessInterval = null; }
+        restlessTimer = 30;
+        document.getElementById('timer-container').classList.remove('visible');
+        updateTimerUI();
+    }
+
+    function updateTimerUI() {
+        const bar = document.getElementById('timer-bar');
+        const pct = (restlessTimer / 30) * 100;
+        bar.style.width = `${pct}%`;
+        document.getElementById('timer-text').innerText = `Al is tossing and turning... ${restlessTimer}s`;
+    }
+
+    function failLevel() {
+        stopRestlessTimer();
+        AudioEngine.playStem('fail');
+        document.getElementById('fail-screen').classList.remove('hidden');
+    }
+
+    function retryLevel() {
+        document.getElementById('fail-screen').classList.add('hidden');
+        placedBugs = {};
+        document.querySelectorAll('.slot').forEach(s => s.innerHTML = '');
+        document.querySelector('.zzz-text').classList.remove('visible');
+        stopRestlessTimer();
+        
+        const inv = document.getElementById('inventory-panel');
+        inv.innerHTML = '';
+        currentLevelData.inventory.forEach(bugType => inv.appendChild(createBugElement(bugType, false)));
+
+        currentLevelData.preplaced.forEach(p => {
+            const slot = document.querySelector(`.slot[data-slot="${p.slot}"]`);
+            const bugEl = createBugElement(p.type, p.locked);
+            if(p.locked) bugEl.style.opacity = '0.7'; 
+            slot.appendChild(bugEl);
+            placedBugs[p.slot] = bugEl;
+        });
+
+        updateEngine();
+    }
+
+    function updateAlState(deltaFromTarget) {
+        const al = document.getElementById('al-character');
+        if (deltaFromTarget === 0) {
+            al.className = 'al-zebra resting';
+            stopRestlessTimer(); 
+            if(zzzInterval) clearInterval(zzzInterval); zzzInterval = null;
+        } else if (deltaFromTarget <= 2) {
+            al.className = 'al-zebra resting';
+            stopRestlessTimer(); 
+            if(!zzzInterval) zzzInterval = setInterval(spawnZzz, 1000);
+        } else {
+            al.className = 'al-zebra restless';
+            startRestlessTimer(); 
+            if(zzzInterval) { clearInterval(zzzInterval); zzzInterval = null; }
+        }
+    }
+
+    function updateEngine() {
+        let currentSum = 0;
+        let weightB1 = 0, weightB2 = 0;
+
+        for (let slot in placedBugs) {
+            if (placedBugs[slot]) {
+                const type = placedBugs[slot].dataset.type;
+                const val = BUGS[type].val;
+                currentSum += val;
+                
+                const s = parseInt(slot);
+                if (s <= 2) weightB1 += Math.abs(val);
+                else weightB2 += Math.abs(val);
+            }
+        }
+
+        Physics.setWeight(1, weightB1);
+        Physics.setWeight(2, weightB2);
+
+        // Render Current Fill Bar
+        const currentBar = document.getElementById('current-bar');
+        if (currentSum > 0) {
+            currentBar.style.left = '50%';
+            currentBar.style.right = 'auto';
+            currentBar.style.width = `${currentSum * unitPx}px`;
+            currentBar.style.backgroundColor = 'var(--zzz)';
+        } else if (currentSum < 0) {
+            currentBar.style.right = '50%';
+            currentBar.style.left = 'auto';
+            currentBar.style.width = `${Math.abs(currentSum) * unitPx}px`;
+            currentBar.style.backgroundColor = '#E94560'; 
+        } else {
+            currentBar.style.width = '0px';
+        }
+
+        const delta = Math.abs(currentSum - currentLevelData.target);
+        updateAlState(delta);
+
+        if (currentSum === currentLevelData.target) {
+            document.querySelector('.zzz-text').classList.add('visible');
+            document.getElementById('win-formula').innerText = getFormulaText();
+            
+            setTimeout(() => {
+                AudioEngine.playStem('success');
+                document.getElementById('win-screen').classList.remove('hidden');
+            }, 800);
+        } else {
+            document.querySelector('.zzz-text').classList.remove('visible');
+        }
+    }
+
+    function nextLevel() {
+        document.getElementById('win-screen').classList.add('hidden');
+        if (!isRandomMode) currentLevel++;
+        loadLevel();
+    }
+
+    function makeDraggable(el) {
+        let isDragging = false, startX, startY, clone = null, originalParent = null;
+
+        const startDrag = (e) => {
+            if(e.button !== 0 && e.type === 'mousedown') return;
+            isDragging = true; originalParent = el.parentNode;
+            const rect = el.getBoundingClientRect();
+            startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+            
+            clone = el.cloneNode(true); clone.classList.add('dragging');
+            clone.style.left = `${rect.left}px`; clone.style.top = `${rect.top}px`;
+            document.body.appendChild(clone);
+            el.style.opacity = '0';
+            AudioEngine.playStem('remove');
+        };
+
+        const moveDrag = (e) => {
+            if (!isDragging || !clone) return;
+            e.preventDefault(); 
+            const x = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+            const y = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+            clone.style.transform = `translate(${x - startX}px, ${y - startY}px) scale(1.1)`;
+
+            document.querySelectorAll('.slot').forEach(slot => {
+                const sRect = slot.getBoundingClientRect();
+                if (x > sRect.left && x < sRect.right && y > sRect.top && y < sRect.bottom) slot.classList.add('hover');
+                else slot.classList.remove('hover');
+            });
+        };
+
+        const endDrag = (e) => {
+            if (!isDragging || !clone) return;
+            isDragging = false;
+            const x = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
+            const y = e.type.includes('mouse') ? e.clientY : e.changedTouches[0].clientY;
+
+            clone.remove(); clone = null; el.style.opacity = '1';
+            let dropped = false;
+
+            document.querySelectorAll('.slot').forEach(slot => {
+                slot.classList.remove('hover');
+                const sRect = slot.getBoundingClientRect();
+                
+                if (x > sRect.left && x < sRect.right && y > sRect.top && y < sRect.bottom) {
+                    if(slot.children.length > 0) document.getElementById('inventory-panel').appendChild(slot.children[0]);
+                    
+                    slot.appendChild(el);
+                    placedBugs[slot.dataset.slot] = el;
+                    dropped = true;
+                    
+                    if(originalParent.classList.contains('slot')) placedBugs[originalParent.dataset.slot] = null;
+
+                    const branchId = parseInt(slot.dataset.slot) <= 2 ? 1 : 2;
+                    Physics.applyImpact(branchId, BUGS[el.dataset.type].val);
+                    AudioEngine.playStem(el.dataset.type);
+                }
+            });
+
+            if (!dropped) {
+                document.getElementById('inventory-panel').appendChild(el);
+                if(originalParent.classList.contains('slot')) {
+                    placedBugs[originalParent.dataset.slot] = null;
+                    AudioEngine.playStem('remove');
+                }
+            }
+            updateEngine();
+        };
+
+        el.addEventListener('mousedown', startDrag);
+        document.addEventListener('mousemove', moveDrag, {passive: false});
+        document.addEventListener('mouseup', endDrag);
+
+        el.addEventListener('touchstart', startDrag, {passive: false});
+        document.addEventListener('touchmove', moveDrag, {passive: false});
+        document.addEventListener('touchend', endDrag);
+    }
+</script>
+</body>
+</html>

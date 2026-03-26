@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abacuzebra: Dawn of Reckoning</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700;900&display=swap');
+
+        :root {
+            --bg-top: #ff7e5f;
+            --bg-bottom: #feb47b;
+            --monolith-wood: #4a2508;
+            --reckoning-bar: #2b1404;
+            --bead-light: #fffdfa;
+            --bead-glow: rgba(255, 253, 250, 0.6);
+            --bead-strike: #ffffff; 
+            --panel-bg: rgba(61, 30, 6, 0.6);
+            --danger-red: #ff3333;
+            --energy-color: #f1c40f; 
+            --text-main: #fff;
+        }
+
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            font-family: 'Quicksand', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
+            height: 100vh; height: 100dvh;
+            color: var(--text-main);
+            touch-action: manipulation;
+        }
+
+        .particle { position: absolute; background: rgba(255,255,255,0.2); border-radius: 50%; pointer-events: none; animation: floatUp 15s infinite linear; z-index: 0;}
+        @keyframes floatUp { from { transform: translateY(110vh) scale(0.5); opacity: 0; } 10% { opacity: 0.8; } 90% { opacity: 0.8; } to { transform: translateY(-10vh) scale(1.5); opacity: 0; } }
+
+        /* HUD */
+        #hud { 
+            width: 100%; max-width: 500px; display: flex; flex-direction: column;
+            padding: 10px 20px; box-sizing: border-box; z-index: 10;
+        }
+        .hud-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .hud-info { display: flex; gap: 15px; font-weight: 700; font-size: 1.1rem; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        h1 { font-weight: 300; margin: 0; font-size: 1.5rem; text-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .lives { font-size: 1.2rem; font-weight: 700; color: var(--danger-red); text-shadow: 0 0 10px rgba(255,0,0,0.5); letter-spacing: 2px;}
+        
+        /* Energy Bar */
+        #energy-container { width: 100%; height: 8px; background: rgba(0,0,0,0.4); border-radius: 4px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        #energy-bar { width: 100%; height: 100%; background: var(--energy-color); box-shadow: 0 0 10px var(--energy-color); transition: width 0.1s linear, background-color 0.2s; }
+        .energy-error { background-color: var(--danger-red) !important; box-shadow: 0 0 15px var(--danger-red) !important; }
+        @keyframes lowEnergyPulse { 0%, 100% { background: var(--energy-color); box-shadow: 0 0 10px var(--energy-color); } 50% { background: var(--danger-red); box-shadow: 0 0 20px var(--danger-red); } }
+        .energy-low { animation: lowEnergyPulse 1s ease-in-out infinite !important; }
+
+        /* Welcome & Overlays */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #2b1404 0%, #4a2508 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        .welcome-title { font-size: 2.5rem; margin-bottom: 10px; color: var(--bead-light); text-shadow: 0 0 20px var(--bead-glow); }
+        .welcome-instructions { font-size: 1rem; max-width: 500px; line-height: 1.5; margin-bottom: 30px; color: #ddd; }
+        .diff-buttons { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+
+        /* The Board */
+        #board {
+            position: relative; width: 90%; max-width: 400px; height: 35vh; min-height: 250px;
+            display: flex; justify-content: space-between; padding: 0 10%; box-sizing: border-box;
+            background: var(--monolith-wood); border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.6);
+            overflow: hidden; flex-shrink: 0; z-index: 5;
+        }
+
+        .damage-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
+        .damage-flash { background: rgba(255, 0, 0, 0.4) !important; transition: background 0.1s; }
+
+        .reckoning-bar { position: absolute; top: 25%; left: 0; width: 100%; height: 8px; background: var(--reckoning-bar); box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 20; }
+        .rod { position: relative; width: 20%; height: 100%; background: rgba(0,0,0,0.15); display: flex; justify-content: center; }
+        .rod-label { position: absolute; bottom: 5px; font-weight: 700; color: rgba(255,255,255,0.3); font-size: 0.9rem; pointer-events: none; }
+        
+        .bead { position: absolute; width: 85%; height: 12%; border-radius: 20px; background: var(--bead-light); box-shadow: 0 4px 10px rgba(0,0,0,0.4); z-index: 10; transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.1s, box-shadow 0.1s; }
+        
+        /* Resting positions */
+        .bead.heaven { top: 5%; }
+        .rod .earth[data-idx="1"] { top: 50%; }
+        .rod .earth[data-idx="2"] { top: 63%; }
+        .rod .earth[data-idx="3"] { top: 76%; }
+        .rod .earth[data-idx="4"] { top: 89%; }
+
+        /* Active positions */
+        .bead.heaven.active { top: 11%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="1"].active { top: 30%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="2"].active { top: 43%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="3"].active { top: 56%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="4"].active { top: 69%; box-shadow: 0 0 15px var(--bead-glow); }
+
+        .bead.striking { background: var(--bead-strike); box-shadow: 0 0 30px var(--bead-strike) !important; z-index: 18; }
+
+        /* Enemies System */
+        .enemy {
+            position: absolute; transform: rotate(45deg); 
+            z-index: 15; transition: top linear; pointer-events: none;
+            display: flex; align-items: center; justify-content: center; border: 2px solid white;
+        }
+        .enemy-label { transform: rotate(-45deg); font-weight: 900; color: #000; font-size: 12px; }
+        
+        .enemy-1 { width: 18px; height: 18px; background: #00ffff; box-shadow: 0 0 20px #00ffff; }
+        .enemy-2 { width: 22px; height: 22px; background: #ff007f; box-shadow: 0 0 25px #ff007f; }
+        .enemy-3 { width: 26px; height: 26px; background: #f1c40f; box-shadow: 0 0 30px #f1c40f; }
+
+        @keyframes vaporize { 0% { transform: scale(1) rotate(45deg); opacity: 1; } 100% { transform: scale(4) rotate(180deg); opacity: 0; } }
+        .dead { animation: vaporize 0.4s ease-out; }
+
+        /* Console */
+        #console { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; flex-grow: 1; justify-content: center; padding: 10px; box-sizing: border-box; z-index: 10; }
+        #readout { font-size: 1rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;}
+        #readout-val { font-weight: 700; color: #fff; font-size: 1.2rem; }
+
+        #input-display-area { display: flex; gap: 15px; align-items: center; justify-content: center; background: var(--panel-bg); padding: 5px 20px; border-radius: 20px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .op-toggle { width: 45px; height: 45px; border-radius: 15px; border: 2px solid white; background: rgba(255,255,255,0.2); color: white; font-size: 1.8rem; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        #custom-input-box { font-size: 2.5rem; font-weight: 300; color: white; border-bottom: 2px solid white; min-width: 90px; text-align: center; letter-spacing: 3px; min-height: 40px; }
+
+        #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 350px; }
+        .num-key { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; padding: 12px 0; font-size: 1.6rem; color: white; font-family: 'Quicksand'; font-weight: 500; cursor: pointer; backdrop-filter: blur(5px); }
+        .num-key:active { background: rgba(255,255,255,0.4); transform: scale(0.95); }
+        .num-key.action-key { background: rgba(255,255,255,0.3); font-weight: 700; font-size: 1.2rem;}
+        .num-key.go-key { background: var(--bead-light); color: var(--monolith-wood); font-size: 1.5rem; text-transform: uppercase;}
+
+        .btn { padding: 12px 30px; font-size: 1.2rem; font-family: 'Quicksand'; font-weight: 700; background: var(--bead-light); border: none; border-radius: 25px; color: var(--monolith-wood); cursor: pointer; text-transform: uppercase; }
+        .btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div id="particles"></div>
+
+    <div id="welcome-screen" class="overlay">
+        <h1 class="welcome-title">Abacuzebra</h1>
+        <p class="welcome-instructions">
+            Calculate the bugs' value and STRIKE them.<br>
+            <strong>Warning: Moving stones drains <span style="color:#f1c40f">Energy</span>!</strong><br><br>
+            <strong>Round 2 & 3:</strong> Pink (2) and Gold (3) bugs require you to move <strong>Multiple Beads</strong> in a single strike to crush them!<br>
+            Select Difficulty:
+        </p>
+        <div class="diff-buttons">
+            <button class="btn" onclick="setDifficulty('Easy')">Easy</button>
+            <button class="btn" onclick="setDifficulty('Normal')">Normal</button>
+            <button class="btn" onclick="setDifficulty('Hard')" style="background: #ff3333; color: white;">Hard</button>
+        </div>
+    </div>
+
+    <div id="round-transition" class="overlay" style="display:none; background: rgba(43,20,4,0.95); backdrop-filter: blur(10px);">
+        <h1 id="transition-title" class="welcome-title" style="font-size: 4rem;">Round 2</h1>
+        <p id="transition-desc" style="font-size: 1.5rem; color: #ff007f;">Armored Enemies Inbound!</p>
+    </div>
+
+    <div id="game-over" class="overlay" style="display:none; background: rgba(43,20,4,0.95); backdrop-filter: blur(10px);">
+        <h1 id="end-title" style="font-size: 3rem; color: var(--danger-red); margin-bottom: 10px;">Core Shattered</h1>
+        <p id="end-desc" style="font-size: 1.2rem; margin-bottom: 40px;">The bugs overwhelmed the system.</p>
+        <button class="btn" onclick="location.reload()">Restart Cycle</button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-top">
+            <h1>Abacuzebra</h1>
+            <div class="hud-info">
+                <span id="round-display">RD 1</span> | 
+                <span id="timer-display" style="color: #00ffff;">1:00</span>
+            </div>
+            <div class="lives" id="lives-display">❤❤❤❤❤</div>
+        </div>
+        <div id="energy-container"><div id="energy-bar"></div></div>
+    </div>
+
+    <div id="board">
+        <div class="reckoning-bar" id="center-bar"></div>
+        <div class="rod" id="rod-100">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">100s</div>
+        </div>
+        <div class="rod" id="rod-10">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">10s</div>
+        </div>
+        <div class="rod" id="rod-1">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">1s</div>
+        </div>
+    </div>
+
+    <div id="console">
+        <div id="readout">Core State: <span id="readout-val">0</span></div>
+        <div id="input-display-area">
+            <button class="op-toggle" id="op-btn" onclick="toggleOp()">+</button>
+            <div id="custom-input-box"></div>
+        </div>
+        <div id="numpad">
+            <button class="num-key" onclick="appendNum('1')">1</button><button class="num-key" onclick="appendNum('2')">2</button><button class="num-key" onclick="appendNum('3')">3</button>
+            <button class="num-key" onclick="appendNum('4')">4</button><button class="num-key" onclick="appendNum('5')">5</button><button class="num-key" onclick="appendNum('6')">6</button>
+            <button class="num-key" onclick="appendNum('7')">7</button><button class="num-key" onclick="appendNum('8')">8</button><button class="num-key" onclick="appendNum('9')">9</button>
+            <button class="num-key action-key" onclick="deleteNum()">DEL</button><button class="num-key" onclick="appendNum('0')">0</button><button class="num-key go-key" onclick="executeCommand()">GO</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Setup & Audio ---
+        const particleContainer = document.getElementById('particles');
+        for(let i=0; i<15; i++) {
+            let p = document.createElement('div'); p.className = 'particle'; 
+            p.style.width = Math.random() * 20 + 5 + 'px'; p.style.height = p.style.width; p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDelay = Math.random() * 5 + 's'; p.style.animationDuration = Math.random() * 15 + 10 + 's';
+            particleContainer.appendChild(p);
+        }
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+        const scale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25]; 
+
+        function playTone(freq, type='sine', decay=1.5, vol=0.1) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + decay);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + decay);
+        }
+
+        // --- Game Systems ---
+        let lives = 5;
+        let currentTotal = 0;
+        let selectedOp = '+';
+        let isGameActive = false;
+        let typedInput = "";
+        
+        let difficultyBaseSpeed = 12; 
+        let difficultyRangeSpeed = 6;
+        
+        // Rounds
+        let currentRound = 1;
+        let roundTimeLeft = 60;
+        let roundTimerInterval;
+
+        // Energy
+        const MAX_ENERGY = 100;
+        let currentEnergy = 100;
+        const ENERGY_PER_BEAD = 10; 
+        const ENERGY_REGEN_PER_SEC = 3; 
+        let lastFrameTime = performance.now();
+
+        // Combat
+        let activeEnemies = [];
+        let enemyIdCounter = 0;
+        let spawnInterval;
+        let strikeEventCounter = 0;
+        let currentStrikePower = { 'rod-100': 0, 'rod-10': 0, 'rod-1': 0 };
+
+        const boardEl = document.getElementById('board');
+        const customInputBox = document.getElementById('custom-input-box');
+        const readoutEl = document.getElementById('readout-val');
+        const centerBarEl = document.getElementById('center-bar');
+        const livesDisplay = document.getElementById('lives-display');
+        const opBtn = document.getElementById('op-btn');
+        const energyBarEl = document.getElementById('energy-bar');
+
+        function setDifficulty(level) {
+            if (level === 'Easy') { difficultyBaseSpeed = 15; difficultyRangeSpeed = 7; } // 15-22s
+            else if (level === 'Normal') { difficultyBaseSpeed = 10; difficultyRangeSpeed = 5; } // 10-15s
+            else if (level === 'Hard') { difficultyBaseSpeed = 6; difficultyRangeSpeed = 4; } // 6-10s
+            
+            document.getElementById('welcome-screen').style.display = 'none';
+            initAudio();
+            startRoundTransition();
+        }
+
+        // --- Round Management ---
+        function startRoundTransition() {
+            isGameActive = false;
+            clearInterval(spawnInterval);
+            clearInterval(roundTimerInterval);
+            
+            // Clear board
+            activeEnemies.forEach(e => e.element.remove());
+            activeEnemies = [];
+            currentTotal = 0; readoutEl.innerText = 0; updateBeadsVisual();
+            currentEnergy = MAX_ENERGY; updateEnergyUI();
+
+            if (currentRound > 3) {
+                gameWon(); return;
+            }
+
+            const transScreen = document.getElementById('round-transition');
+            document.getElementById('transition-title').innerText = `ROUND ${currentRound}`;
+            
+            let desc = "Defend the Core!";
+            if(currentRound === 2) desc = "Armored Enemies Approaching. Require 2-Bead Combos!";
+            if(currentRound === 3) desc = "Heavy Armor Approaching. Require 3-Bead Combos!";
+            document.getElementById('transition-desc').innerText = desc;
+
+            transScreen.style.display = 'flex';
+            playTone(440, 'sine', 2.0, 0.1);
+
+            setTimeout(() => {
+                transScreen.style.display = 'none';
+                startRound();
+            }, 3000);
+        }
+
+        function startRound() {
+            isGameActive = true;
+            roundTimeLeft = 60;
+            document.getElementById('round-display').innerText = `RD ${currentRound}`;
+            updateTimerDisplay();
+            
+            lastFrameTime = performance.now();
+            requestAnimationFrame(gameLoop);
+            
+            spawnEnemy();
+            // Faster spawns in later rounds
+            let spawnRate = 3500 - (currentRound * 400); 
+            spawnInterval = setInterval(spawnEnemy, spawnRate); 
+
+            roundTimerInterval = setInterval(() => {
+                roundTimeLeft--;
+                updateTimerDisplay();
+                if(roundTimeLeft <= 0) {
+                    currentRound++;
+                    startRoundTransition();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const min = Math.floor(roundTimeLeft / 60);
+            const sec = (roundTimeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${min}:${sec}`;
+        }
+
+        // --- Core Loop & Hit Detection ---
+        function gameLoop(currentTime) {
+            if (!isGameActive) return;
+            
+            const deltaTime = (currentTime - lastFrameTime) / 1000;
+            lastFrameTime = currentTime;
+            
+            if (currentEnergy < MAX_ENERGY) {
+                currentEnergy += ENERGY_REGEN_PER_SEC * deltaTime;
+                if (currentEnergy > MAX_ENERGY) currentEnergy = MAX_ENERGY;
+                updateEnergyUI();
+            }
+
+            const barRect = centerBarEl.getBoundingClientRect();
+            const strikingBeads = Array.from(document.querySelectorAll('.bead.striking'));
+
+            for (let i = activeEnemies.length - 1; i >= 0; i--) {
+                const enemyObj = activeEnemies[i];
+                const enemyRect = enemyObj.element.getBoundingClientRect();
+                
+                let isHit = false;
+                let validKill = false;
+
+                for (let bead of strikingBeads) {
+                    const beadRect = bead.getBoundingClientRect();
+                    // AABB Check
+                    if (enemyRect.left < beadRect.right && enemyRect.right > beadRect.left &&
+                        enemyRect.top < beadRect.bottom && enemyRect.bottom > beadRect.top) {
+                        
+                        isHit = true;
+                        const rodId = bead.parentElement.id;
+                        // Check if the strike has enough power
+                        if (currentStrikePower[rodId] >= enemyObj.requiredBeads) {
+                            validKill = true;
+                        }
+                        break; 
+                    }
+                }
+
+                if (isHit) {
+                    if (validKill) {
+                        eliminateEnemy(enemyObj, i);
+                        continue;
+                    } else {
+                        // Armor Deflection Mechanic
+                        if (enemyObj.immuneToStrike !== strikeEventCounter) {
+                            enemyObj.immuneToStrike = strikeEventCounter; // only tink once per strike command
+                            playTone(600, 'square', 0.1, 0.05); // High pitch Tink
+                            enemyObj.element.style.borderColor = "#ffffff";
+                            enemyObj.element.style.transform = "rotate(45deg) scale(1.2)";
+                            setTimeout(() => { 
+                                if(enemyObj.element) {
+                                    enemyObj.element.style.borderColor = ""; 
+                                    enemyObj.element.style.transform = "rotate(45deg) scale(1)";
+                                }
+                            }, 150);
+                        }
+                    }
+                }
+
+                // Base breach check
+                const enemyCenterY = enemyRect.top + (enemyRect.height / 2);
+                const barCenterY = barRect.top + (barRect.height / 2);
+                
+                if (enemyRect.left < barRect.right && enemyRect.right > barRect.left &&
+                    enemyRect.top < barRect.bottom && enemyRect.bottom > barRect.top) {
+                    takeDamage(enemyObj, i);
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Enemies ---
+        function spawnEnemy() {
+            if (!isGameActive) return;
+            const rods = ['100', '10', '1'];
+            const rodId = 'rod-' + rods[Math.floor(Math.random() * rods.length)];
+            
+            // Determine Required Beads based on Round
+            let requiredBeads = 1;
+            if(currentRound === 2) {
+                if(Math.random() > 0.6) requiredBeads = 2;
+            } else if(currentRound === 3) {
+                const r = Math.random();
+                if(r > 0.7) requiredBeads = 3;
+                else if(r > 0.4) requiredBeads = 2;
+            }
+
+            // Constraints: 2 or 3 hit enemies must spawn from BOTTOM (Earth)
+            const isHeaven = (requiredBeads > 1) ? false : (Math.random() > 0.5); 
+
+            const e = document.createElement('div');
+            e.className = `enemy enemy-${requiredBeads} ${isHeaven ? 'heaven' : 'earth'}`;
+            e.innerHTML = `<div class="enemy-label">${requiredBeads}</div>`;
+            e.id = 'enemy-' + enemyIdCounter++;
+            
+            if(isHeaven) e.style.top = '-10%'; 
+            else e.style.top = '110%'; 
+            
+            document.getElementById(rodId).appendChild(e);
+
+            const speed = Math.random() * difficultyRangeSpeed + difficultyBaseSpeed; 
+            
+            activeEnemies.push({ 
+                id: e.id, 
+                element: e, 
+                requiredBeads: requiredBeads,
+                immuneToStrike: 0
+            });
+
+            setTimeout(() => { e.style.transition = `top ${speed}s linear`; e.style.top = '25%'; }, 50);
+        }
+
+        function eliminateEnemy(enemyObj, index) {
+            enemyObj.element.classList.add('dead');
+            enemyObj.element.innerHTML = ""; // hide text
+            enemyObj.element.style.transition = 'none'; 
+            playTone(scale[5 + (Math.floor(Math.random() * 3))], 'triangle', 0.6, 0.05);
+            activeEnemies.splice(index, 1);
+            setTimeout(() => enemyObj.element.remove(), 400);
+        }
+
+        function takeDamage(enemyObj, index) {
+            enemyObj.element.style.opacity = '0';
+            activeEnemies.splice(index, 1);
+            setTimeout(() => enemyObj.element.remove(), 100);
+
+            playTone(150, 'sawtooth', 0.8, 0.3); 
+            boardEl.classList.add('damage-shake');
+            document.body.classList.add('damage-flash');
+            
+            setTimeout(() => { boardEl.classList.remove('damage-shake'); document.body.classList.remove('damage-flash'); }, 400);
+
+            lives--;
+            updateLivesDisplay();
+            if (lives <= 0) gameOver();
+        }
+
+        // --- Input Logic ---
+        function appendNum(numStr) {
+            if(typedInput.length < 3) {
+                typedInput += numStr; updateInputDisplay();
+                playTone(scale[typedInput.length], 'sine', 0.2, 0.05);
+            }
+        }
+        function deleteNum() {
+            if(typedInput.length > 0) {
+                typedInput = typedInput.slice(0, -1); updateInputDisplay();
+                playTone(scale[0], 'triangle', 0.2, 0.05);
+            }
+        }
+        function toggleOp() {
+            selectedOp = selectedOp === '+' ? '-' : '+';
+            opBtn.innerText = selectedOp;
+            opBtn.style.background = selectedOp === '+' ? 'rgba(255,255,255,0.2)' : 'rgba(255,100,100,0.3)';
+            playTone(scale[4], 'square', 0.2, 0.05);
+        }
+        function updateInputDisplay() { customInputBox.innerText = typedInput; }
+
+        document.addEventListener('keydown', function(e) {
+            if(!isGameActive) return;
+            if(e.key >= '0' && e.key <= '9') appendNum(e.key);
+            if(e.key === 'Backspace') deleteNum();
+            if(e.key === 'Enter') executeCommand();
+            if(e.key === '+' || e.key === '-') { selectedOp = e.key; opBtn.innerText = selectedOp; }
+        });
+
+        function updateLivesDisplay() {
+            let hearts = "";
+            for(let i=0; i<5; i++) hearts += i < lives ? "❤" : "♡"; 
+            livesDisplay.innerText = hearts;
+        }
+        
+        function updateEnergyUI() {
+            energyBarEl.style.width = `${(currentEnergy / MAX_ENERGY) * 100}%`;
+            if (currentEnergy < 20) energyBarEl.classList.add('energy-low');
+            else energyBarEl.classList.remove('energy-low');
+        }
+
+        // --- Execution & Power Tracking ---
+        function getBeadStateArray(value) {
+            let state = [];
+            const strVal = value.toString().padStart(3, '0');
+            for(let i=0; i<3; i++) {
+                const digit = parseInt(strVal[i]);
+                state.push(digit >= 5); 
+                const earthCount = digit % 5;
+                state.push(earthCount > 0, earthCount > 1, earthCount > 2, earthCount > 3); 
+            }
+            return state;
+        }
+
+        function calculateEnergyCost(oldTotal, newTotal) {
+            const oldState = getBeadStateArray(oldTotal);
+            const newState = getBeadStateArray(newTotal);
+            let beadsMoved = 0;
+            for(let i=0; i<15; i++) if(oldState[i] !== newState[i]) beadsMoved++;
+            return beadsMoved * ENERGY_PER_BEAD;
+        }
+
+        function executeCommand() {
+            if (!isGameActive || typedInput === "") return;
+            let val = parseInt(typedInput);
+
+            let newTotal = selectedOp === '+' ? currentTotal + val : currentTotal - val;
+            if (newTotal < 0) newTotal = 0;
+            if (newTotal > 999) newTotal = 999;
+
+            const cost = calculateEnergyCost(currentTotal, newTotal);
+            if (currentEnergy < cost) {
+                playTone(100, 'square', 0.3, 0.2); 
+                energyBarEl.classList.add('energy-error');
+                setTimeout(() => energyBarEl.classList.remove('energy-error'), 300);
+                return; 
+            }
+
+            strikeEventCounter++;
+            currentEnergy -= cost;
+            updateEnergyUI();
+
+            const strOld = currentTotal.toString().padStart(3, '0');
+            const strNew = newTotal.toString().padStart(3, '0');
+            
+            // Calculate strike power per rod for armor piercing
+            currentStrikePower['rod-100'] = getRodPower(parseInt(strOld[0]), parseInt(strNew[0]));
+            currentStrikePower['rod-10'] = getRodPower(parseInt(strOld[1]), parseInt(strNew[1]));
+            currentStrikePower['rod-1'] = getRodPower(parseInt(strOld[2]), parseInt(strNew[2]));
+
+            const isIncrease = newTotal > currentTotal;
+            playTone(scale[isIncrease ? 3 : 1], 'sine', 0.8, 0.05);
+
+            currentTotal = newTotal;
+            readoutEl.innerText = currentTotal;
+            updateBeadsVisual();
+
+            typedInput = ""; updateInputDisplay();
+        }
+
+        function getRodPower(oldVal, newVal) {
+            let power = 0;
+            if ((oldVal >= 5) !== (newVal >= 5)) power++;
+            power += Math.abs((newVal % 5) - (oldVal % 5));
+            return power;
+        }
+
+        function updateBeadsVisual() {
+            const strVal = currentTotal.toString().padStart(3, '0');
+            applyRodVisual('rod-100', parseInt(strVal[0]));
+            applyRodVisual('rod-10', parseInt(strVal[1]));
+            applyRodVisual('rod-1', parseInt(strVal[2]));
+        }
+
+        function applyRodVisual(rodId, value) {
+            const rod = document.getElementById(rodId);
+            const heaven = rod.querySelector('.heaven');
+            const earth = Array.from(rod.querySelectorAll('.earth'));
+
+            const setBeadState = (bead, shouldBeActive) => {
+                const isCurrentlyActive = bead.classList.contains('active');
+                if (isCurrentlyActive !== shouldBeActive) {
+                    bead.classList.add('striking');
+                    setTimeout(() => bead.classList.remove('striking'), 200); 
+                }
+                if (shouldBeActive) bead.classList.add('active');
+                else bead.classList.remove('active');
+            };
+
+            setBeadState(heaven, value >= 5);
+            const earthCount = value % 5;
+            earth.forEach((bead, index) => setBeadState(bead, index < earthCount));
+        }
+
+        function gameOver() {
+            isGameActive = false;
+            clearInterval(spawnInterval); clearInterval(roundTimerInterval);
+            document.getElementById('game-over').style.display = 'flex';
+            playTone(100, 'sawtooth', 3, 0.4); 
+            document.querySelectorAll('.enemy').forEach(e => {
+                const currentTop = window.getComputedStyle(e).top;
+                e.style.transition = 'none'; e.style.top = currentTop;
+            });
+        }
+
+        function gameWon() {
+            isGameActive = false;
+            document.getElementById('end-title').innerText = "System Purged";
+            document.getElementById('end-title').style.color = "#00ffff";
+            document.getElementById('end-desc').innerText = "You successfully defended the Core!";
+            document.getElementById('game-over').style.display = 'flex';
+            playTone(880, 'sine', 3, 0.1); 
+        }
+    </script>
+</body>
+</html>

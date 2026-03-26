@@ -18,14 +18,14 @@
             position: sticky;
             top: 0;
             width: 100%;
-	    height: 50px; /* Force a specific height to match the offset below */
+	        height: 50px; 
             background: var(--nav-bg);
             backdrop-filter: blur(10px);
             z-index: 1000;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 0; /* Remove vertical padding to maintain the 50px height */
+            padding: 0; 
             box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
 
@@ -47,68 +47,51 @@
             transition: color 0.3s ease;
         }
 
-.cat-nav {
-    position: sticky;
-    top: 50px; /* MUST match the height of the nav above */
-    background: var(--bg-color);
-    width: 100%;
-    z-index: 900;
-    padding: 10px 0;
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-    /* Remove any top margin that might cause a gap */
-    margin-top: 0; 
-}
+        .cat-nav {
+            position: sticky;
+            top: 50px; 
+            background: var(--bg-color);
+            width: 100%;
+            z-index: 900;
+            padding: 10px 0;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-top: 0; 
+        }
 
-.cat-link { 
-    color: var(--primary-accent); 
-    text-decoration: none; 
-    font-weight: 600; 
-    text-transform: uppercase; 
-    letter-spacing: 2px; 
-    font-size: 0.85rem; 
-    transition: all 0.3s; 
-}
+        .cat-link { 
+            color: var(--primary-accent); 
+            text-decoration: none; 
+            font-weight: 600; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            font-size: 0.85rem; 
+            transition: all 0.3s; 
+        }
 
-.cat-link:hover {
-    color: var(--secondary-accent);
-    transform: translateY(-2px);
-}
+        .cat-link:hover {
+            color: var(--secondary-accent);
+            transform: translateY(-2px);
+        }
 
         /* --- MOBILE SPECIFIC ADJUSTMENTS --- */
         @media (max-width: 600px) {
             nav { padding: 12px 0; }
             .nav-links { gap: 15px; width: 100%; }
             .nav-links a { font-size: 0.75rem; letter-spacing: 1px; }
+
+            .cat-nav { 
+                gap: 20px; 
+                top: 40px; 
+                padding: 15px 10px;
+            }
+            .cat-link { 
+                font-size: 0.7rem; 
+                letter-spacing: 1px; 
+            }
         }
-
-@media (max-width: 600px) {
-
-
-    nav {
-        padding: 12px 0; /* Even slimmer on mobile */
-    }
-    .nav-links {
-        gap: 15px; /* Tighter spacing for narrow screens */
-        width: 100%;
-    }
-    .nav-links a {
-        font-size: 0.75rem; /* Smaller text to prevent wrapping/uneven lines */
-        letter-spacing: 1px;
-    }
-
-    .cat-nav { 
-        gap: 20px; 
-        top: 40px; 
-        padding: 15px 10px;
-    }
-    .cat-link { 
-        font-size: 0.7rem; 
-        letter-spacing: 1px; 
-    }
-}
         
         main { flex: 1; width: 90%; max-width: 1000px; margin: 60px auto; text-align: center; }
         h1, h2, h3 { font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
@@ -126,6 +109,16 @@
         .play-btn { display: inline-block; padding: 12px 24px; background-color: var(--primary-accent); color: white; text-decoration: none; font-weight: 600; letter-spacing: 2px; border-radius: 4px; text-transform: uppercase; font-size: 0.9rem; transition: background 0.3s; }
         .play-btn:hover { background-color: var(--secondary-accent); }
 
+        /* Section Title CSS - CENTERED, PADDED, TEAL, NO LINE */
+        .section-title { 
+            margin-top: 60px; 
+            margin-bottom: 30px;
+            text-align: center; 
+            color: var(--secondary-accent); /* Using the Teal CSS variable */
+            padding: 20px 0; 
+            font-size: 1.8rem; 
+        }
+
         /* --- CUSTOM TITLE GLOW STYLES --- */
         .title-link {
             text-decoration: none;
@@ -139,7 +132,7 @@
             animation: breatheDovit 3s infinite alternate;
         }
         .glow-dovit:hover {
-            color: #72d4da; /* Brighter teal on hover */
+            color: #72d4da; 
             transform: translateY(-2px);
             text-shadow: 0 0 15px rgba(94, 190, 196, 0.9);
         }
@@ -150,7 +143,7 @@
             animation: breatheMonoliath 3s infinite alternate;
         }
         .glow-monoliath:hover {
-            color: #ffb1a3; /* Brighter peach on hover */
+            color: #ffb1a3; 
             transform: translateY(-2px);
             text-shadow: 0 0 15px rgba(230, 154, 141, 0.9);
         }
@@ -184,87 +177,85 @@
    	</div>
 
     <main>
-        <h1>
-            <a href="story.html" class="title-link glow-dovit">Dovit</a> 
-            <span style="color: var(--text-main);">&</span> 
-            <a href="story_monoliath.html" class="title-link glow-monoliath">MonoliATH</a>
+       <h1>
+            <a href="#allthezebras" class="title-link glow-monoliath">All The Zebras</a><br>
+
+            <span style="font-size: 1.5rem;">
+                <a href="#althezebra" class="title-link glow-dovit">Al The Zebra</a> 
+                <span style="color: var(--text-main);"> + </span> 
+                <a href="#abacuzebra" class="title-link glow-dovit">Abacuzebra</a>
+                <span style="color: var(--text-main);"> + </span>
+                <a href="#abzebra" class="title-link glow-dovit">ABZebra</a> 
+            </span>
         </h1>
-        <p>Follow the journey of Dovit from small-scale survival to a grand, harmonic integration with the MonoliATH. By aligning the narrative beats with primary mathematics concepts, the curriculum evolves alongside Dovit’s growing relationship with the giant.</p>
+        <p>Follow Al The Zebra to guide you on your algebraic issues while Abacuzebra focusses on the magic of the abacus. Don't forget ABZebra who wants to make English fun for you!</p>
 
         <script>
-            // 1. Create a list of objects containing both Title and Description
             const chapters = [
                 {
-                    title: "Dovit",
+                    title: "Al The Zebra: Zero to Alpha",
                     description: "Dovit establishes his identity. He is small but significant. He moves across digit-platforms where his position determines his value."
                 },
                 {
-                    title: "Orb",
+                    title: "Al The Zebra: Getting Al His Zzzs",
                     description: "In the shadow of the MonoliATH, Dovit must collect light while maintaining a specific radius from danger."
                 },
                 {
-                    title: "Vertex",
+                    title: "Al The Zebra: Formula Z",
                     description: "Dovit begins to map MonoliATH’s surface, connecting vertices to claim territory and understand the boundaries of this new world."
                 },
                 {
-                    title: "Totemcraft",
+                    title: "Al The Zebra: Futzal Zebra",
                     description: "Dovit crafts totems and offers to the MonoliATH — by balancing specific masses. He learns that the giant values precision and balance."
                 },
                 {
-                    title: "Ascend",
+                    title: "Abacuzebra",
                     description: "Dovit begins the vertical climb. Each level of the MonoliATH requires him to calculate the space he occupies to fit through the giant's shifting mechanisms."
                 },
                 {
-                    title: "Fragment",
+                    title: "Abacuzebra: AbacaDJebra",
                     description: "On the steep slopes, Dovit learns to divide himself or his power into fractions. He realizes he is a fragment of MonoliATH's world, yet essential to its completion."
                 },
                  {
-                    title: "Cipher",
+                    title: "ABZebra",
                     description: "Dovit encounters the giant's internal logic. By rotating numerical rings, he solves the equations that keep the MonoliATH’s systems running."
-                },
-                {
-                    title: "Lighthouse",
-                    description: "Dovit uses beams of light to guide others through MonoliATH’s influence, learning the precise angles required for peaceful communication."
-                },
-                {
-                    title: "Angle Defender",
-                    description: "MonoliATH tests Dovit's resolve. Dovit doesn't attack; he uses geometric precision to deflect chaos, turning defense into a display of mathematical mastery."
-                },
-                 {
-                    title: "Eurythmy",
-                    description: "Dovit moves in rhythm with MonoliATH’s heartbeat. He follows patterns on a grid, proving he can exist in perfect synchronization with the Monoliath."
-                },
-                {
-                    title: "Architect",
-                    description: "Dovit helps MonoliATH rebuild itself. By placing 3D geometric shapes in time with the music, he repairs the giant’s fragmented form."
-                },
-                 {
-                    title: "Illuminate",
-                    description: "Dovit brings total light to MonoliATH’s psyche. By playing cards that charge the grid, he banishes the remaining shadows of fear and conflict."
-                },
-                {
-                    title: "Monolith",
-                    description: "Dovit navigates the final, beautiful isometric puzzles of MonoliATH’s mind. The world is no longer flat but a complex, multi-dimensional reality."
-                },
-                {
-                    title: "MonoliATH",
-                    description: "The final state of equilibrium. Dovit and MonoliATH exist in a balanced state of area and volume. The MonoliATH has been integrated, and the world is at peace."
                 }
             ];
             
-            // 2. Loop through the list to generate the HTML
+            let currentCategory = "";
+
             chapters.forEach((chapter, index) => {
                 let levelNum = index + 1;
-                let color = levelNum % 2 === 0 ? 'E69A8D' : '5EBEC4'; // Alternates colors
-                
-                // Notice we are now using ${chapter.title} and ${chapter.description}
+
+                // Determine the category to inject headers dynamically
+                let category = "";
+                let sectionId = "";
+                if (chapter.title.includes("Al The Zebra")) {
+                    category = "Al The Zebra";
+                    sectionId = "althezebra";
+                } else if (chapter.title.includes("Abacuzebra")) {
+                    category = "Abacuzebra";
+                    sectionId = "abacuzebra";
+                } else if (chapter.title.includes("ABZebra")) {
+                    category = "ABZebra";
+                    sectionId = "abzebra";
+                }
+
+                // Inject the centered, teal header
+                if (category !== currentCategory) {
+                    document.write(`
+                        <h2 id="${sectionId}" class="section-title">${category}</h2>
+                    `);
+                    currentCategory = category;
+                }
+
                 document.write(`
                 <div class="story-step">
-                    <h2>Chapter ${levelNum}: ${chapter.title}</h2>
+                    <h2>${chapter.title}</h2>
                     <p>${chapter.description}</p>
-                    <img src="images/igscreens/${levelNum}.png" alt="${chapter.title}">
+		            <img src="images/profileLogo.jpg" alt="${chapter.title}">
                     <br>
-                    <a href="simulation-${levelNum}.html" class="play-btn">Play Chapter ${levelNum}</a>
+                    <a href="simulation-az${levelNum}.html" class="play-btn">Play Game</a>
                 </div>
                 `);
             });
