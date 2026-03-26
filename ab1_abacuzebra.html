@@ -62,13 +62,15 @@
         .welcome-instructions { font-size: 1rem; max-width: 500px; line-height: 1.5; margin-bottom: 30px; color: #ddd; }
         .diff-buttons { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
 
-        /* The Board */
+        /* The Board - THE FIX: Locked Aspect Ratio prevents squishing */
         #board {
-            position: relative; width: 90%; max-width: 400px; height: 35vh; min-height: 250px;
-            display: flex; justify-content: space-between; padding: 0 10%; box-sizing: border-box;
+            position: relative; width: 90%; max-width: 400px;
+            aspect-ratio: 4 / 5; /* Forces the geometric shape to stay perfectly proportional */
+            max-height: 45vh; /* Prevents overlap with keyboard */
+            display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box;
             background: var(--monolith-wood); border-radius: 20px;
             box-shadow: 0 15px 30px rgba(0,0,0,0.4), inset 0 0 40px rgba(0,0,0,0.6);
-            overflow: hidden; flex-shrink: 0; z-index: 5;
+            overflow: hidden; flex-shrink: 0; z-index: 5; margin: 10px 0;
         }
 
         .damage-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
@@ -76,24 +78,29 @@
         .damage-flash { background: rgba(255, 0, 0, 0.4) !important; transition: background 0.1s; }
 
         .reckoning-bar { position: absolute; top: 25%; left: 0; width: 100%; height: 8px; background: var(--reckoning-bar); box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 20; }
-        .rod { position: relative; width: 20%; height: 100%; background: rgba(0,0,0,0.15); display: flex; justify-content: center; }
+        .rod { position: relative; width: 22%; height: 100%; background: rgba(0,0,0,0.15); display: flex; justify-content: center; }
         .rod-label { position: absolute; bottom: 5px; font-weight: 700; color: rgba(255,255,255,0.3); font-size: 0.9rem; pointer-events: none; }
         
-        .bead { position: absolute; width: 85%; height: 12%; border-radius: 20px; background: var(--bead-light); box-shadow: 0 4px 10px rgba(0,0,0,0.4); z-index: 10; transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.1s, box-shadow 0.1s; }
+        /* The Beads - Explicit height ratio maintains horizontal stone shape */
+        .bead { 
+            position: absolute; width: 85%; height: 6%; border-radius: 20px; 
+            background: var(--bead-light); box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            z-index: 10; transition: top 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.1s, box-shadow 0.1s; 
+        }
         
         /* Resting positions */
-        .bead.heaven { top: 5%; }
-        .rod .earth[data-idx="1"] { top: 50%; }
-        .rod .earth[data-idx="2"] { top: 63%; }
-        .rod .earth[data-idx="3"] { top: 76%; }
-        .rod .earth[data-idx="4"] { top: 89%; }
+        .bead.heaven { top: 4%; }
+        .rod .earth[data-idx="1"] { top: 55%; }
+        .rod .earth[data-idx="2"] { top: 65%; }
+        .rod .earth[data-idx="3"] { top: 75%; }
+        .rod .earth[data-idx="4"] { top: 85%; }
 
-        /* Active positions */
-        .bead.heaven.active { top: 11%; box-shadow: 0 0 15px var(--bead-glow); }
-        .rod .earth[data-idx="1"].active { top: 30%; box-shadow: 0 0 15px var(--bead-glow); }
-        .rod .earth[data-idx="2"].active { top: 43%; box-shadow: 0 0 15px var(--bead-glow); }
-        .rod .earth[data-idx="3"].active { top: 56%; box-shadow: 0 0 15px var(--bead-glow); }
-        .rod .earth[data-idx="4"].active { top: 69%; box-shadow: 0 0 15px var(--bead-glow); }
+        /* Active positions - mathematically stacked against the bar */
+        .bead.heaven.active { top: 18%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="1"].active { top: 27%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="2"].active { top: 34%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="3"].active { top: 41%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="4"].active { top: 48%; box-shadow: 0 0 15px var(--bead-glow); }
 
         .bead.striking { background: var(--bead-strike); box-shadow: 0 0 30px var(--bead-strike) !important; z-index: 18; }
 
@@ -267,9 +274,9 @@
         const energyBarEl = document.getElementById('energy-bar');
 
         function setDifficulty(level) {
-            if (level === 'Easy') { difficultyBaseSpeed = 15; difficultyRangeSpeed = 7; } // 15-22s
-            else if (level === 'Normal') { difficultyBaseSpeed = 10; difficultyRangeSpeed = 5; } // 10-15s
-            else if (level === 'Hard') { difficultyBaseSpeed = 6; difficultyRangeSpeed = 4; } // 6-10s
+            if (level === 'Easy') { difficultyBaseSpeed = 15; difficultyRangeSpeed = 7; } 
+            else if (level === 'Normal') { difficultyBaseSpeed = 10; difficultyRangeSpeed = 5; } 
+            else if (level === 'Hard') { difficultyBaseSpeed = 6; difficultyRangeSpeed = 4; } 
             
             document.getElementById('welcome-screen').style.display = 'none';
             initAudio();
@@ -319,7 +326,6 @@
             requestAnimationFrame(gameLoop);
             
             spawnEnemy();
-            // Faster spawns in later rounds
             let spawnRate = 3500 - (currentRound * 400); 
             spawnInterval = setInterval(spawnEnemy, spawnRate); 
 
@@ -364,13 +370,11 @@
 
                 for (let bead of strikingBeads) {
                     const beadRect = bead.getBoundingClientRect();
-                    // AABB Check
                     if (enemyRect.left < beadRect.right && enemyRect.right > beadRect.left &&
                         enemyRect.top < beadRect.bottom && enemyRect.bottom > beadRect.top) {
                         
                         isHit = true;
                         const rodId = bead.parentElement.id;
-                        // Check if the strike has enough power
                         if (currentStrikePower[rodId] >= enemyObj.requiredBeads) {
                             validKill = true;
                         }
@@ -383,10 +387,9 @@
                         eliminateEnemy(enemyObj, i);
                         continue;
                     } else {
-                        // Armor Deflection Mechanic
                         if (enemyObj.immuneToStrike !== strikeEventCounter) {
-                            enemyObj.immuneToStrike = strikeEventCounter; // only tink once per strike command
-                            playTone(600, 'square', 0.1, 0.05); // High pitch Tink
+                            enemyObj.immuneToStrike = strikeEventCounter; 
+                            playTone(600, 'square', 0.1, 0.05); 
                             enemyObj.element.style.borderColor = "#ffffff";
                             enemyObj.element.style.transform = "rotate(45deg) scale(1.2)";
                             setTimeout(() => { 
@@ -399,10 +402,6 @@
                     }
                 }
 
-                // Base breach check
-                const enemyCenterY = enemyRect.top + (enemyRect.height / 2);
-                const barCenterY = barRect.top + (barRect.height / 2);
-                
                 if (enemyRect.left < barRect.right && enemyRect.right > barRect.left &&
                     enemyRect.top < barRect.bottom && enemyRect.bottom > barRect.top) {
                     takeDamage(enemyObj, i);
@@ -417,7 +416,6 @@
             const rods = ['100', '10', '1'];
             const rodId = 'rod-' + rods[Math.floor(Math.random() * rods.length)];
             
-            // Determine Required Beads based on Round
             let requiredBeads = 1;
             if(currentRound === 2) {
                 if(Math.random() > 0.6) requiredBeads = 2;
@@ -427,7 +425,6 @@
                 else if(r > 0.4) requiredBeads = 2;
             }
 
-            // Constraints: 2 or 3 hit enemies must spawn from BOTTOM (Earth)
             const isHeaven = (requiredBeads > 1) ? false : (Math.random() > 0.5); 
 
             const e = document.createElement('div');
@@ -454,7 +451,7 @@
 
         function eliminateEnemy(enemyObj, index) {
             enemyObj.element.classList.add('dead');
-            enemyObj.element.innerHTML = ""; // hide text
+            enemyObj.element.innerHTML = ""; 
             enemyObj.element.style.transition = 'none'; 
             playTone(scale[5 + (Math.floor(Math.random() * 3))], 'triangle', 0.6, 0.05);
             activeEnemies.splice(index, 1);
@@ -562,7 +559,6 @@
             const strOld = currentTotal.toString().padStart(3, '0');
             const strNew = newTotal.toString().padStart(3, '0');
             
-            // Calculate strike power per rod for armor piercing
             currentStrikePower['rod-100'] = getRodPower(parseInt(strOld[0]), parseInt(strNew[0]));
             currentStrikePower['rod-10'] = getRodPower(parseInt(strOld[1]), parseInt(strNew[1]));
             currentStrikePower['rod-1'] = getRodPower(parseInt(strOld[2]), parseInt(strNew[2]));
