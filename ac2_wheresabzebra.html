@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Where's Abzebra: Rescue Protocol</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #e5e5e5;
+            --text-main: #000000;
+            --surface: #ffffff;
+            --border: #000000;
+            --urgent-bg: #d9d9d9;
+            --highlight: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#bcbcbc 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background: var(--surface);
+            max-width: 650px;
+            width: 100%;
+            border: 3px solid var(--border);
+            box-shadow: 8px 8px 0px var(--border);
+            padding: 25px;
+            box-sizing: border-box;
+            position: relative;
+            margin: 2vh auto;
+            overflow: hidden;
+        }
+
+        /* --- SCREENS --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease;
+        }
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- TYPOGRAPHY --- */
+        h1 {
+            font-weight: 800;
+            font-size: 2.2rem;
+            margin: 0 0 5px 0;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-weight: 800;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            border-bottom: 3px solid var(--border);
+            padding-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .variance-display {
+            display: block;
+            font-size: 0.75rem;
+            color: #555;
+            margin-top: 5px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .status-display {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 15px;
+            text-align: center;
+            background: var(--highlight);
+            padding: 5px;
+            border: 2px solid var(--border);
+        }
+
+        /* --- BUTTONS & INPUTS --- */
+        button, select, input {
+            font-family: 'Open Sans', sans-serif;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.1s ease;
+        }
+
+        button {
+            padding: 12px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px var(--border);
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--text-main);
+            color: var(--surface);
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--border);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-full { width: 100%; margin-bottom: 15px; padding: 16px; }
+
+        /* --- MAP --- */
+        .map-container {
+            position: relative;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+            margin-bottom: 30px;
+            border-top: 3px solid var(--border);
+            border-bottom: 3px solid var(--border);
+            background: #fafafa;
+        }
+
+        .grid-row { display: flex; align-items: center; padding: 0 15px; position: relative; }
+        .row-label { font-weight: 800; width: 25px; font-size: 1rem; }
+
+        .number-line {
+            flex-grow: 1;
+            height: 3px;
+            background: var(--border);
+            position: relative;
+            margin: 0 15px;
+        }
+
+        .marker {
+            position: absolute;
+            top: -20px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            transform: translateX(-50%);
+        }
+
+        .marker::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            width: 3px;
+            height: 8px;
+            background: var(--border);
+            transform: translateX(-50%);
+        }
+
+        .entity {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            transition: left 0.4s ease, top 0.4s ease;
+        }
+
+        #rescuer-dot {
+            width: 0; height: 0; 
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 16px solid var(--border);
+            z-index: 3;
+        }
+
+        /* Hovering Coordinate Label for Rescuer */
+        #rescuer-dot::after {
+            content: attr(data-pos);
+            position: absolute;
+            top: -35px;
+            left: -18px;
+            background: var(--surface);
+            color: var(--text-main);
+            border: 2px solid var(--border);
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            pointer-events: none;
+            box-shadow: 2px 2px 0px var(--border);
+            transition: content 0.1s ease;
+        }
+
+        #abzebra-dot {
+            width: 14px; height: 14px;
+            background-color: var(--surface);
+            border: 3px solid var(--border);
+            opacity: 0; z-index: 2;
+        }
+
+        #lkp-dot {
+            width: 10px; height: 10px;
+            background-color: var(--border);
+            border-radius: 50%;
+            opacity: 0.3; z-index: 1;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            border: 3px solid var(--border);
+            padding: 20px;
+            margin-bottom: 20px;
+            background: var(--surface);
+            box-shadow: 4px 4px 0px var(--border);
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: var(--border);
+            color: var(--surface);
+            padding: 4px 8px;
+        }
+
+        /* --- WITNESS LOGIC UI --- */
+        .witness-block {
+            border: 2px dashed var(--border);
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #fafafa;
+        }
+
+        .witness-text {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .witness-controls { display: flex; gap: 10px; align-items: center; }
+        .witness-controls select { flex: 1; padding: 8px; }
+        .witness-controls input[type="radio"] { transform: scale(1.5); margin-right: 5px; }
+        .radio-label { display: flex; align-items: center; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
+
+        .action-flex { display: flex; gap: 10px; flex-wrap: wrap; }
+        .action-flex select, .action-flex input { padding: 12px; flex: 1 1 auto; }
+        .action-flex .btn-action { flex: 1 1 100%; }
+
+        #message-log {
+            text-align: center;
+            font-weight: 800;
+            margin-top: 10px;
+            min-height: 48px;
+            line-height: 1.5;
+            border: 2px solid var(--border);
+            padding: 10px;
+            background: var(--highlight);
+        }
+
+        /* --- END SCREEN --- */
+        #screen-end {
+            text-align: center;
+            padding: 40px 20px;
+            justify-content: center;
+            min-height: 50vh;
+        }
+
+        #end-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1;
+        }
+
+        #end-desc {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 40px;
+        }
+
+        @media (max-width: 500px) {
+            .witness-controls { flex-direction: column; align-items: stretch; }
+            .radio-label { justify-content: center; margin-top: 10px; padding: 10px; background: #eee; border: 1px solid #ccc; }
+            #end-title { font-size: 2.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    
+    <div id="screen-welcome" class="screen active">
+        <h1>Where's Abzebra?!</h1>
+        <div class="subtitle">Search & Rescue Protocol</div>
+        
+        <div class="panel" style="font-size: 0.9rem; font-weight: 600; line-height: 1.5; text-transform: none;">
+            Abzebra is lost and wandering towards the dangerous outer edges [0] or [50]. 
+            A faint dot marks their <b>Last Known Position (LKP)</b>.<br><br>
+            <b>Phase 1:</b> Identify the tense of the witness reports to understand the timeline.<br>
+            <b>Phase 2:</b> Use spatial logic to figure out who is telling the truth.<br><br>
+            <b>Mobility Limits:</b> Your rescue unit can only move a maximum of <b>±5 blocks</b> and change <b>1 lane</b> per turn. Plan your route carefully to intercept them.<br><br>
+            <span style="font-weight:800; text-transform:uppercase;">Medium (3 Witnesses):</span> 2 are correct, 1 is confused. Find the confused witness.<br>
+            <span style="font-weight:800; text-transform:uppercase;">Hard (4 Witnesses):</span> 3 are confused, 1 is correct. Find the truth.
+        </div>
+
+        <button class="btn-full" onclick="startGame('medium')">Start Medium Rescue</button>
+        <button class="btn-full" onclick="startGame('hard')">Start Hard Rescue</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <h1>Where's Abzebra?!</h1>
+        <div class="subtitle" id="mode-display">RESCUE ACTIVE</div>
+        
+        <div class="status-display" id="unit-status">UNIT AT: B-25 | MAX RANGE: ±5</div>
+
+        <div class="map-container" id="map-container">
+            <div class="grid-row" id="row-A">
+                <span class="row-label">A</span>
+                <div class="number-line">
+                    <div class="marker" style="left: 0%;">0</div>
+                    <div class="marker" style="left: 20%;">10</div>
+                    <div class="marker" style="left: 50%;">25</div>
+                    <div class="marker" style="left: 80%;">40</div>
+                    <div class="marker" style="left: 100%;">50</div>
+                </div>
+            </div>
+            <div class="grid-row" id="row-B">
+                <span class="row-label">B</span>
+                <div class="number-line">
+                    <div class="marker" style="left: 0%;">0</div>
+                    <div class="marker" style="left: 20%;">10</div>
+                    <div class="marker" style="left: 50%;">25</div>
+                    <div class="marker" style="left: 80%;">40</div>
+                    <div class="marker" style="left: 100%;">50</div>
+                </div>
+            </div>
+            <div class="grid-row" id="row-C">
+                <span class="row-label">C</span>
+                <div class="number-line">
+                    <div class="marker" style="left: 0%;">0</div>
+                    <div class="marker" style="left: 20%;">10</div>
+                    <div class="marker" style="left: 50%;">25</div>
+                    <div class="marker" style="left: 80%;">40</div>
+                    <div class="marker" style="left: 100%;">50</div>
+                </div>
+            </div>
+            
+            <div id="lkp-dot" class="entity"></div>
+            <div id="rescuer-dot" class="entity" data-pos="25"></div>
+            <div id="abzebra-dot" class="entity"></div>
+        </div>
+
+        <div class="panel" id="interrogation-panel">
+            <span class="panel-title" id="interrogation-title">1. Analyze Reports</span>
+            <span class="variance-display" id="variance-display"></span>
+            <div id="witness-container" style="margin-top: 15px;"></div>
+            <button id="btn-verify-tense" class="btn-full" style="margin-top: 15px;" onclick="verifyTenses()">Verify Syntax</button>
+            <button id="btn-verify-logic" class="btn-full" style="margin-top: 15px; display: none;" onclick="verifyLogic()">Submit Deduction</button>
+        </div>
+
+        <div class="panel" id="action-panel" style="opacity: 0.4; pointer-events: none;">
+            <span class="panel-title">2. Move Rescue Unit</span>
+            <div class="action-flex">
+                <select id="move-row">
+                    <option value="A">Lane A</option>
+                    <option value="B">Lane B</option>
+                    <option value="C">Lane C</option>
+                </select>
+                <input type="number" id="move-col" min="0" max="50" placeholder="± 5 Blocks">
+                <button class="btn-action" onclick="makeMove()">Travel</button>
+            </div>
+        </div>
+
+        <div id="message-log">System Standby.</div>
+    </div>
+
+    <div id="screen-end" class="screen">
+        <div id="end-title">OUTCOME</div>
+        <div id="end-desc">Description of outcome.</div>
+        <button class="btn-full" onclick="location.reload()" style="max-width: 300px; margin: 0 auto;">Start New Search</button>
+    </div>
+</div>
+
+<script>
+    // --- AUDIO SYSTEM (Monument Valley Vibe) ---
+    let audioCtx;
+    let bgmOscillators = [];
+    let masterGain;
+
+    function initAudio() {
+        if (audioCtx) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return; 
+        }
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        startAmbientDrone();
+    }
+
+    function playTone(freq, type, duration, volLevel = 0.1) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(volLevel, audioCtx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function startAmbientDrone() {
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.05; 
+        masterGain.connect(audioCtx.destination);
+
+        // Soft pulsing drone
+        [110, 111.5].forEach(freq => {
+            let osc = audioCtx.createOscillator();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            osc.connect(masterGain);
+            osc.start();
+            bgmOscillators.push(osc);
+        });
+    }
+
+    const sfx = {
+        correct: () => { playTone(523.25, 'sine', 1.5, 0.15); playTone(659.25, 'sine', 1.5, 0.1); }, 
+        incorrect: () => playTone(150, 'triangle', 0.5, 0.2), 
+        move: () => playTone(440, 'sine', 0.3, 0.05), 
+        win: () => { playTone(523.25, 'sine', 3); playTone(659.25, 'sine', 3); playTone(783.99, 'sine', 3); }, 
+        lose: () => { playTone(200, 'sawtooth', 2, 0.1); playTone(190, 'sawtooth', 2, 0.1); } 
+    };
+
+    // --- GAME STATE ---
+    const rows = ['A', 'B', 'C'];
+    let mode = 'medium'; 
+    let turnCount = 0; 
+    let rescuerPos = { row: 'B', col: 25 };
+    let abzebraPos = { row: 'A', col: 0 };
+    let lastKnownPos = { row: 'A', col: 0 };
+    let abzebraSpeed = 0;
+    let abzebraDirection = 0; 
+    let witnesses = []; 
+    let isGameOver = false;
+
+    const uiMap = document.getElementById('map-container');
+    const dotRescuer = document.getElementById('rescuer-dot');
+    const dotAbzebra = document.getElementById('abzebra-dot');
+    const dotLkp = document.getElementById('lkp-dot');
+    const witnessContainer = document.getElementById('witness-container');
+    const msgLog = document.getElementById('message-log');
+    const actionPanel = document.getElementById('action-panel');
+    const varianceDisplay = document.getElementById('variance-display');
+    const unitStatus = document.getElementById('unit-status');
+
+    function startGame(selectedMode) {
+        initAudio(); 
+        mode = selectedMode;
+        turnCount = 0;
+        
+        document.getElementById('screen-welcome').classList.remove('active');
+        document.getElementById('screen-game').classList.add('active');
+        document.getElementById('mode-display').innerText = mode === 'medium' ? "MEDIUM RESCUE (FIND THE CONFUSED WITNESS)" : "HARD RESCUE (FIND THE TRUTH)";
+
+        rescuerPos = { row: 'B', col: 25 };
+        abzebraPos = { row: rows[Math.floor(Math.random() * 3)], col: Math.floor(Math.random() * 10) + 20 };
+        lastKnownPos = { ...abzebraPos }; 
+        isGameOver = false;
+        
+        dotAbzebra.style.opacity = 0; 
+        dotLkp.style.opacity = 1;
+        
+        updateMapVisuals();
+        startTurn();
+    }
+
+    function calculateAbzebraIntent() {
+        abzebraDirection = abzebraPos.col < 25 ? -1 : 1;
+        abzebraSpeed = Math.floor(Math.random() * 3) + 2; 
+    }
+
+    function startTurn() {
+        if (isGameOver) return;
+        
+        turnCount++;
+        calculateAbzebraIntent();
+        
+        actionPanel.style.opacity = 0.4;
+        actionPanel.style.pointerEvents = "none";
+        document.getElementById('move-col').value = "";
+        document.getElementById('move-row').value = rescuerPos.row;
+        
+        document.getElementById('btn-verify-tense').style.display = 'block';
+        document.getElementById('btn-verify-logic').style.display = 'none';
+        
+        unitStatus.innerText = `UNIT AT: ${rescuerPos.row}-${rescuerPos.col} | MAX RANGE: ±5`;
+        msgLog.innerText = "Tag the tenses for all witness reports.";
+        
+        generateWitnesses();
+        renderWitnessesPhase1();
+    }
+
+    function getClueText(tense, row, col) {
+        if (tense === 'past') return `"I saw Abzebra <u>walk</u> through <b>${row}-${col}</b>."`;
+        if (tense === 'present') return `"Abzebra <u>is resting</u> at <b>${row}-${col}</b> right now."`;
+        if (tense === 'future') return `"Abzebra <u>will reach</u> <b>${row}-${col}</b> very soon."`;
+    }
+
+    function generateWitnesses() {
+        witnesses = [];
+        let prevCol = abzebraPos.col - (abzebraDirection * abzebraSpeed);
+        let nextCol = abzebraPos.col + (abzebraDirection * abzebraSpeed);
+        
+        prevCol = Math.max(0, Math.min(50, prevCol));
+        nextCol = Math.max(0, Math.min(50, nextCol));
+
+        const trueClues = [
+            { text: getClueText('past', abzebraPos.row, prevCol), tense: 'past', isReliable: true },
+            { text: getClueText('present', abzebraPos.row, abzebraPos.col), tense: 'present', isReliable: true },
+            { text: getClueText('future', abzebraPos.row, nextCol), tense: 'future', isReliable: true }
+        ];
+
+        trueClues.sort(() => Math.random() - 0.5);
+
+        let totalWitnesses = mode === 'medium' ? 3 : 4;
+        let numTrue = mode === 'medium' ? 2 : 1;
+        let numFalse = totalWitnesses - numTrue;
+
+        let variance = Math.max(12, 22 - (turnCount * 2));
+        varianceDisplay.innerText = `[TELEMETRY VARIANCE: ±${variance} BLOCKS]`;
+
+        for (let i = 0; i < numTrue; i++) {
+            witnesses.push(trueClues[i]);
+        }
+
+        for (let i = 0; i < numFalse; i++) {
+            let fakeTense = ['past', 'present', 'future'][Math.floor(Math.random() * 3)];
+            let fakeRow = rows[Math.floor(Math.random() * 3)];
+            let fakeCol;
+            
+            do {
+                let minCol = Math.max(0, abzebraPos.col - variance);
+                let maxCol = Math.min(50, abzebraPos.col + variance);
+                fakeCol = Math.floor(Math.random() * (maxCol - minCol + 1)) + minCol;
+            } while (Math.abs(fakeCol - abzebraPos.col) <= 2);
+
+            witnesses.push({
+                text: getClueText(fakeTense, fakeRow, fakeCol),
+                tense: fakeTense,
+                isReliable: false
+            });
+        }
+
+        witnesses.sort(() => Math.random() - 0.5);
+        witnesses.forEach((w, index) => w.id = index);
+    }
+
+    function renderWitnessesPhase1() {
+        document.getElementById('interrogation-title').innerText = "1. Tag Syntax";
+        witnessContainer.innerHTML = '';
+        
+        witnesses.forEach((w) => {
+            const div = document.createElement('div');
+            div.className = 'witness-block';
+            div.innerHTML = `
+                <div class="witness-text">Report ${w.id + 1}: ${w.text}</div>
+                <div class="witness-controls">
+                    <select id="tense-select-${w.id}">
+                        <option value="">-- Select Tense --</option>
+                        <option value="past">Past</option>
+                        <option value="present">Present</option>
+                        <option value="future">Future</option>
+                    </select>
+                </div>
+            `;
+            witnessContainer.appendChild(div);
+        });
+    }
+
+    function verifyTenses() {
+        if (isGameOver) return;
+        let allCorrect = true;
+        let anyEmpty = false;
+
+        witnesses.forEach(w => {
+            const val = document.getElementById(`tense-select-${w.id}`).value;
+            if (val === "") anyEmpty = true;
+            if (val !== w.tense) allCorrect = false;
+        });
+
+        if (anyEmpty) {
+            msgLog.innerHTML = "[ERROR] Must tag all reports.";
+            sfx.incorrect();
+            return;
+        }
+
+        if (allCorrect) {
+            sfx.correct();
+            msgLog.innerHTML = "[SUCCESS] Syntax verified. Find the anomaly based on LKP.";
+            renderWitnessesPhase2();
+        } else {
+            sfx.incorrect();
+            msgLog.innerHTML = "[ERROR] Grammar mismatch. Time lost. Abzebra wandered further.";
+            penalizeAndMove();
+        }
+    }
+
+    function renderWitnessesPhase2() {
+        document.getElementById('btn-verify-tense').style.display = 'none';
+        document.getElementById('btn-verify-logic').style.display = 'block';
+        
+        let taskText = mode === 'medium' ? "Select the CONFUSED Witness" : "Select the ACCURATE Witness";
+        document.getElementById('interrogation-title').innerText = `2. ${taskText}`;
+
+        witnesses.forEach((w) => {
+            const select = document.getElementById(`tense-select-${w.id}`);
+            select.disabled = true;
+            
+            const controlsDiv = select.parentElement;
+            const radioHTML = `
+                <label class="radio-label">
+                    <input type="radio" name="logic-radio" value="${w.id}">
+                    Select
+                </label>
+            `;
+            controlsDiv.insertAdjacentHTML('beforeend', radioHTML);
+        });
+    }
+
+    function verifyLogic() {
+        if (isGameOver) return;
+        const selectedRadio = document.querySelector('input[name="logic-radio"]:checked');
+        
+        if (!selectedRadio) {
+            msgLog.innerHTML = "[ERROR] Must select a report.";
+            sfx.incorrect();
+            return;
+        }
+
+        const selectedId = parseInt(selectedRadio.value);
+        const selectedWitness = witnesses.find(w => w.id === selectedId);
+
+        let isCorrect = false;
+        if (mode === 'medium' && !selectedWitness.isReliable) isCorrect = true; 
+        if (mode === 'hard' && selectedWitness.isReliable) isCorrect = true;   
+
+        document.querySelectorAll('input[name="logic-radio"]').forEach(r => r.disabled = true);
+        document.getElementById('btn-verify-logic').style.display = 'none';
+
+        if (isCorrect) {
+            sfx.correct();
+            msgLog.innerHTML = `[VERIFIED] Path confirmed. Move unit within ±5 range.`;
+            actionPanel.style.opacity = 1;
+            actionPanel.style.pointerEvents = "auto";
+        } else {
+            sfx.incorrect();
+            msgLog.innerHTML = `[FATAL] Logic flawed. Wrong deduction. Abzebra wandered further.`;
+            penalizeAndMove();
+        }
+    }
+
+    function penalizeAndMove() {
+        document.getElementById('btn-verify-tense').style.display = 'none';
+        document.getElementById('btn-verify-logic').style.display = 'none';
+        
+        executeAbzebraTurn(); 
+        
+        if (!isGameOver) {
+            setTimeout(() => {
+                startTurn();
+            }, 2500);
+        }
+    }
+
+    function makeMove() {
+        if (isGameOver) return;
+
+        const inputRow = document.getElementById('move-row').value;
+        const inputCol = parseInt(document.getElementById('move-col').value);
+        
+        if (isNaN(inputCol) || inputCol < 0 || inputCol > 50) {
+            msgLog.innerHTML = `[ERROR] Invalid coordinates. Enter 0-50.`;
+            sfx.incorrect();
+            return;
+        }
+
+        const currentRowIdx = rows.indexOf(rescuerPos.row);
+        const targetRowIdx = rows.indexOf(inputRow);
+        
+        if (Math.abs(targetRowIdx - currentRowIdx) > 1) {
+            msgLog.innerHTML = `[RESTRICTION] Can only jump 1 lane per turn.`;
+            sfx.incorrect();
+            return; 
+        }
+
+        if (Math.abs(inputCol - rescuerPos.col) > 5) {
+            msgLog.innerHTML = `[RESTRICTION] Max mobility ±5 blocks per turn.`;
+            sfx.incorrect();
+            return; 
+        }
+
+        sfx.move();
+        rescuerPos = { row: inputRow, col: inputCol };
+        updateMapVisuals();
+
+        if (rescuerPos.row === abzebraPos.row && rescuerPos.col === abzebraPos.col) {
+            endGame(true);
+            return;
+        }
+
+        msgLog.innerHTML = `Searching ${rescuerPos.row}-${rescuerPos.col}... Abzebra is not here.`;
+        executeAbzebraTurn();
+
+        if (!isGameOver) {
+            setTimeout(startTurn, 2000);
+        }
+    }
+
+    function executeAbzebraTurn() {
+        lastKnownPos = { ...abzebraPos };
+
+        let inSight = false;
+        let distToRescuer = (rescuerPos.col - abzebraPos.col) * abzebraDirection;
+
+        // If rescuer gets too close from the front, Abzebra gets spooked and changes lanes
+        if (rescuerPos.row === abzebraPos.row && distToRescuer > 0 && distToRescuer <= 6) {
+            inSight = true; 
+        }
+
+        if (inSight) {
+            let availableRows = rows.filter(r => r !== abzebraPos.row);
+            abzebraPos.row = availableRows[Math.floor(Math.random() * availableRows.length)];
+            abzebraPos.col += (abzebraDirection * Math.max(1, abzebraSpeed - 1));
+            msgLog.innerHTML += `<br>Abzebra got spooked and switched lanes!`;
+        } else {
+            abzebraPos.col += (abzebraDirection * abzebraSpeed);
+        }
+
+        updateMapVisuals();
+
+        if (rescuerPos.row === abzebraPos.row && rescuerPos.col === abzebraPos.col) {
+            endGame(true); 
+        } else if (abzebraPos.col <= 0 || abzebraPos.col >= 50) {
+            endGame(false); 
+        }
+    }
+
+    function updateMapVisuals() {
+        const calcW = () => uiMap.offsetWidth - 70;
+
+        let detRowIndex = rows.indexOf(rescuerPos.row);
+        dotRescuer.style.top = `${15 + (detRowIndex * 35)}%`; 
+        dotRescuer.style.left = `calc(35px + ${(rescuerPos.col / 50) * calcW()})`;
+        
+        dotRescuer.setAttribute('data-pos', rescuerPos.col);
+
+        let lkpRowIndex = rows.indexOf(lastKnownPos.row);
+        let clampedLkp = Math.max(0, Math.min(50, lastKnownPos.col));
+        dotLkp.style.top = `${15 + (lkpRowIndex * 35)}%`;
+        dotLkp.style.left = `calc(35px + ${(clampedLkp / 50) * calcW()})`;
+
+        let abzRowIndex = rows.indexOf(abzebraPos.row);
+        let clampedAbz = Math.max(0, Math.min(50, abzebraPos.col));
+        dotAbzebra.style.top = `${15 + (abzRowIndex * 35)}%`;
+        dotAbzebra.style.left = `calc(35px + ${(clampedAbz / 50) * calcW()})`;
+    }
+
+    function endGame(playerWon) {
+        isGameOver = true;
+        dotAbzebra.style.opacity = 1; 
+        
+        if (playerWon) {
+            msgLog.innerHTML = `[SUCCESS] Abzebra has been rescued!`;
+        } else {
+            msgLog.innerHTML = `[FAILURE] Abzebra wandered into the unknown.`;
+        }
+
+        document.getElementById('btn-verify-tense').style.display = 'none';
+        document.getElementById('btn-verify-logic').style.display = 'none';
+        actionPanel.style.opacity = 0.4;
+        actionPanel.style.pointerEvents = "none";
+
+        setTimeout(() => {
+            document.getElementById('screen-game').classList.remove('active');
+            const endScreen = document.getElementById('screen-end');
+            endScreen.classList.add('active');
+
+            const title = document.getElementById('end-title');
+            const desc = document.getElementById('end-desc');
+
+            if (playerWon) {
+                sfx.win();
+                title.innerText = "ABZEBRA RESCUED";
+                title.style.color = "#000000";
+                desc.innerHTML = `You safely secured Abzebra at coordinates <b>${abzebraPos.row}-${abzebraPos.col}</b>. Excellent work.`;
+            } else {
+                sfx.lose();
+                let escapeRoute = abzebraPos.col <= 0 ? 0 : 50;
+                title.innerText = "ABZEBRA LOST";
+                title.style.color = "#ff0000"; 
+                desc.innerHTML = `Abzebra wandered past the edge at <b>${abzebraPos.row}-${escapeRoute}</b> and into the unknown...`;
+            }
+
+            if (masterGain) {
+                masterGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
+                setTimeout(() => {
+                    bgmOscillators.forEach(osc => osc.stop());
+                    audioCtx.close();
+                }, 3100);
+            }
+        }, 1500);
+    }
+
+    window.addEventListener('resize', updateMapVisuals);
+</script>
+
+</body>
+</html>

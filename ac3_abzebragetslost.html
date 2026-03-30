@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ABZebra Gets Lost! (Smart AI Update)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+        :root {
+            --connector: #6a4c93;
+            --text-dark: #264653;
+            --highlight: #fee440;
+        }
+
+        body {
+            background-color: var(--text-dark); color: white; font-family: 'Nunito', sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden; touch-action: manipulation;
+        }
+
+        /* OVERLAYS */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; transition: opacity 0.5s;
+        }
+        .welcome-screen { background: rgba(38, 70, 83, 0.98); }
+        .victory-screen { background: rgba(42, 157, 143, 0.98); display: none; } 
+        .defeat-screen { background: rgba(230, 57, 70, 0.98); display: none; } 
+
+        /* HELP OVERLAY */
+        .help-screen { background: rgba(38, 70, 83, 0.98); display: none; z-index: 2000; overflow-y: auto;}
+        .help-content { max-width: 600px; text-align: left; padding: 20px; color: white; background: rgba(0,0,0,0.4); border-radius: 15px; border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); margin: 20px;}
+        .help-content h2 { color: var(--highlight); font-family: 'Fredoka One'; text-align: center; margin-top: 0;}
+        .help-content ul { line-height: 1.6; font-size: 1.1rem; }
+        .help-content li { margin-bottom: 10px; }
+        .close-btn { background: #e63946; color: white; border: 2px solid white; padding: 10px 20px; border-radius: 20px; font-family: 'Fredoka One'; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 0 #9e2a2b; margin-top: 15px; display: block; margin-left: auto; margin-right: auto;}
+        .close-btn:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+
+        /* BUTTONS */
+        .btn-top-corner { position: absolute; top: 20px; background: var(--highlight); border: 2px solid var(--text-dark); border-radius: 50%; width: 45px; height: 45px; font-family: 'Fredoka One'; font-size: 1.5rem; color: var(--text-dark); cursor: pointer; z-index: 1001; box-shadow: 0 4px 0 #c7b120; display: flex; justify-content: center; align-items: center; padding: 0;}
+        .btn-top-corner:active { transform: translateY(4px); box-shadow: 0 0 0 transparent;}
+        .btn-help-welcome { right: 20px; }
+        .btn-audio-welcome { right: 80px; }
+
+        .btn-hud-small { background: var(--highlight); border: 2px solid var(--text-dark); border-radius: 50%; width: 35px; height: 35px; font-family: 'Fredoka One'; font-size: 1.2rem; color: var(--text-dark); cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; padding: 0; box-shadow: 0 3px 0 #c7b120;}
+        .btn-hud-small:active { transform: translateY(3px); box-shadow: 0 0 0 transparent;}
+
+        .overlay-screen h1 { font-family: 'Fredoka One'; font-size: 3.5rem; color: #fff; margin-bottom: 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.4);}
+        .welcome-screen h1 { color: var(--highlight); }
+        .overlay-screen p { font-size: 1.3rem; margin-bottom: 30px; font-weight: 700; color: #e0f7fa;}
+        .options-col { display: flex; flex-direction: column; gap: 15px; width: 80%; max-width: 400px; }
+
+        .btn-large {
+            background: #2a9d8f; color: white; border: 3px solid #fff; padding: 15px; border-radius: 30px;
+            font-family: 'Fredoka One'; font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #1e7066; transition: transform 0.1s;
+        }
+        .btn-large:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+        .btn-large.btn-play-again { background: var(--highlight); color: var(--text-dark); border-color: var(--text-dark); box-shadow: 0 6px 0 #c7b120;}
+
+        /* STORY LOG */
+        .story-log-container {
+            background: rgba(0, 0, 0, 0.4); border-radius: 15px; padding: 20px; width: 90%; max-width: 600px;
+            margin-bottom: 25px; box-shadow: inset 0 0 20px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.2);
+            max-height: 40vh; overflow-y: auto; text-align: left;
+        }
+        .story-log-container h3 { margin: 0 0 15px 0; color: var(--highlight); font-family: 'Fredoka One'; text-align: center; letter-spacing: 1px;}
+        .story-log-list { list-style-type: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px;}
+        .story-log-list li { background: rgba(255, 255, 255, 0.1); padding: 12px 15px; border-radius: 8px; font-size: 1.15rem; font-weight: 700; line-height: 1.4; border-left: 4px solid var(--highlight); }
+
+        /* GAME UI */
+        .game-table {
+            background: radial-gradient(circle, #264653, #1d3557); width: 100%; max-width: 1000px; height: 100%;
+            position: relative; box-shadow: inset 0 0 50px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;
+        }
+
+        .hud {
+            width: 100%; display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.6);
+            padding: 10px 0; border-radius: 0 0 15px 15px; font-family: 'Fredoka One', cursive; font-size: 1.2rem; z-index: 10;
+        }
+        .hud-controls { display: flex; gap: 10px; }
+        .water-drops { color: #00f5d4; }
+        .distance { color: var(--highlight); }
+
+        .board {
+            background: rgba(255,255,255,0.95); color: var(--text-dark); width: 90%; max-width: 800px;
+            padding: 15px 10px; border-radius: 15px; margin-top: 4vh; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 5;
+        }
+
+        .board h2 { margin: 0; font-family: 'Fredoka One'; color: #e76f51; font-size: 1.5rem;}
+        
+        .theme-display { 
+            background: #eee; padding: 10px 15px; border-radius: 15px; border: 2px solid #ddd;
+            font-size: 0.9rem; font-weight: 800; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 5px;
+        }
+        .theme-pill { padding: 4px 10px; border-radius: 12px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); border: 2px solid rgba(255,255,255,0.5); display: flex; align-items: center; gap: 5px;}
+
+        .sentence-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+
+        .slot {
+            width: 200px; height: 85px; border: 3px dashed #ccc; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center; background: #f8f9fa; font-size: 1.1rem;
+            font-weight: 800; color: #aaa; padding: 5px; text-align: center; box-sizing: border-box; transition: all 0.2s; cursor: pointer;
+            position: relative; overflow: hidden;
+        }
+        
+        .slot.drag-over { background: #e0f7fa; border-color: #00bbf9; transform: scale(1.05); }
+        .slot.selected { border: 4px solid var(--highlight); box-shadow: 0 0 15px var(--highlight); transform: scale(1.05); z-index: 10;}
+
+        .board-actions { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; justify-content: center; }
+
+        .btn-action {
+            background-color: #e63946; color: white; border: 2px solid white; padding: 10px 15px; border-radius: 20px;
+            font-family: 'Fredoka One'; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 0 #9e2a2b; transition: transform 0.1s;
+        }
+        .btn-action.end-btn { background-color: #4a4e69; box-shadow: 0 4px 0 #22223b; }
+        .btn-action.submit-btn { background-color: #28a745; box-shadow: 0 4px 0 #1e7e34; }
+        .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+
+        /* PLAYERS & CARDS */
+        .player-area { position: absolute; display: flex; flex-direction: column; align-items: center; }
+        .player-name { font-family: 'Fredoka One'; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 20px; margin-bottom: 5px; font-size: 1rem; white-space: nowrap; transition: all 0.3s;}
+        .player-name.active { border: 3px solid var(--highlight); color: var(--highlight); box-shadow: 0 0 15px var(--highlight); transform: scale(1.1);}
+        
+        .hand { display: flex; gap: -20px; }
+        .p1-user { bottom: 15px; z-index: 20; }
+        .p2-bot { left: -40px; top: 40%; transform: rotate(90deg) scale(0.7); z-index: 1;}
+        .p3-bot { top: 60px; transform: scale(0.7); z-index: 1;}
+        .p4-bot { right: -40px; top: 40%; transform: rotate(-90deg) scale(0.7); z-index: 1;}
+
+        .card {
+            width: 110px; height: 150px; border-radius: 12px; background: white; box-shadow: -4px 4px 10px rgba(0,0,0,0.4);
+            display: flex; justify-content: center; align-items: center; text-align: center; padding: 10px; font-weight: 800;
+            font-size: 1rem; color: white; cursor: pointer; transition: transform 0.2s; user-select: none; box-sizing: border-box;
+            border: 3px solid rgba(255,255,255,0.5); margin-left: -30px; text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+            position: relative; overflow: hidden;
+        }
+        .hand .card:first-child { margin-left: 0; }
+        .card.selected { transform: translateY(-20px) scale(1.1); border-color: var(--highlight); box-shadow: 0 0 20px var(--highlight); z-index: 15;}
+        @media (hover: hover) { .hand .card:hover:not(.card-back):not(.selected) { transform: translateY(-15px); z-index: 10;} }
+
+        .card-bg-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; opacity: 0.25; pointer-events: none; z-index: 0; }
+        .polarity-badge {
+            position: absolute; top: -2px; right: -2px; width: 26px; height: 26px; border-radius: 50%;
+            background: white; font-size: 1rem; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 2px solid var(--text-dark); z-index: 2; text-shadow: none; font-family: 'Arial', sans-serif;
+        }
+        .badge-pos { color: #28a745; background-color: #e8f5e9; }
+        .badge-neg { color: #e63946; background-color: #ffebee; }
+        .badge-conn { color: var(--connector); background-color: #f3e8ff; font-size: 1.1rem; }
+
+        .card-text { z-index: 1; position: relative; }
+        .type-connector { background-color: var(--connector); border-color: #d8b4e2; }
+        .card-back { background: repeating-linear-gradient(45deg, #e76f51, #e76f51 10px, #d65a31 10px, #d65a31 20px); color: transparent; pointer-events: none; cursor: default; border: 3px solid white;}
+        .card-back .card-bg-icon { display: none; }
+
+        .log {
+            position: absolute; bottom: 220px; width: 90%; max-width: 600px; background: rgba(0,0,0,0.85); padding: 10px;
+            border-radius: 12px; text-align: center; font-weight: 700; font-size: 1.1rem; border: 2px solid #555; z-index: 5;
+        }
+
+        @media (max-width: 768px) {
+            .board { width: 95%; margin-top: 2vh; padding: 15px 5px;}
+            .theme-display { padding: 5px; gap: 5px; font-size: 0.8rem;}
+            .theme-pill { padding: 2px 6px; font-size: 0.8rem; }
+            .sentence-area { flex-direction: column; gap: 5px; } 
+            .slot { width: 90%; height: 50px; font-size: 1rem; }
+            .card-bg-icon { font-size: 3.5rem; }
+            .p1-user { bottom: 5px; }
+            .card { width: 90px; height: 120px; font-size: 0.85rem; padding: 5px; margin-left: -25px;}
+            .hand .card:first-child { margin-left: 0; }
+            .polarity-badge { width: 22px; height: 22px; font-size: 0.8rem; }
+            .log { bottom: 160px; font-size: 1rem; }
+            .p2-bot { left: -50px; top: 15%; transform: rotate(90deg) scale(0.5); }
+            .p4-bot { right: -50px; top: 15%; transform: rotate(-90deg) scale(0.5); }
+            .p3-bot { top: 30px; transform: scale(0.5); }
+        }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-10px); } 40%, 80% { transform: translateX(10px); } }
+        .error-shake { animation: shake 0.5s ease-in-out; border-color: #e63946 !important; color: #e63946 !important;}
+        .success-flash { border-color: #28a745 !important; box-shadow: 0 0 15px #28a745 !important; transform: scale(1.05);}
+    </style>
+</head>
+<body>
+
+    <div id="helpModal" class="overlay-screen help-screen">
+        <div class="help-content">
+            <h2>How to Play</h2>
+            <p>Your goal is to guide ABZebra to the Oasis by building grammatically and logically correct sentences!</p>
+            <ul>
+                <li><b>Build a Sentence:</b> The board needs 3 cards: 1 Connector (Purple) and 2 Clauses (Colored).</li>
+                <li><b>Match the Context:</b> Clause cards must match shapes and colors (e.g., Water 💧 pairs with Water 💧).</li>
+                <li><b>Watch the Polarity:</b> 
+                    <br>➡️ <b>Cause (Because, Since):</b> Connects matching polarities (➕ to ➕, or ➖ to ➖). <i>Exception: A ➖ problem can be fixed by a ➕ solution!</i>
+                    <br>🔀 <b>Contrast (Although, While):</b> Connects twisting polarities (➕ to ➖, or ➖ to ➕).
+                </li>
+                <li><b>No Tautologies:</b> You cannot use the exact same clause twice in one sentence!</li>
+                <li><b>Sandbox Turns:</b> It's your turn until you hit <b>End Turn ⏭️</b>! Tap a card, then tap a slot to play it. You can overwrite cards or tap board cards to swap them. When the board is full, click <b>Check Logic ✨</b>.</li>
+            </ul>
+            <button class="close-btn" onclick="hideHelp()">Got it!</button>
+        </div>
+    </div>
+
+    <div id="welcomeScreen" class="overlay-screen welcome-screen">
+        <button class="btn-top-corner btn-help-welcome" onclick="showHelp()">?</button>
+        <button class="btn-top-corner btn-audio-welcome" id="audioBtnWelcome" onclick="toggleAudio()">🔊</button>
+        
+        <h1>ABZebra Gets Lost!</h1>
+        <p>Match the Colors. Follow the Shapes.</p>
+        <div class="options-col">
+            <button class="btn-large" onclick="initGame(1)">1 Player (3 Smart Bots)</button>
+            <button class="btn-large" onclick="initGame(2)">2 Players (2 Smart Bots)</button>
+            <button class="btn-large" onclick="initGame(3)">3 Players (1 Smart Bot)</button>
+            <button class="btn-large" onclick="initGame(4)">4 Players (Full Human Team!)</button>
+        </div>
+    </div>
+
+    <div id="victoryScreen" class="overlay-screen victory-screen">
+        <h1>🌴 OASIS REACHED! 🌴</h1>
+        <p>You successfully guided ABZebra to safety.</p>
+        <div class="story-log-container">
+            <h3>The Journey Log</h3>
+            <ul class="story-log-list" id="victoryStoryList"></ul>
+        </div>
+        <button class="btn-large btn-play-again" onclick="resetToMenu()">Start New Journey</button>
+    </div>
+
+    <div id="defeatScreen" class="overlay-screen defeat-screen">
+        <h1>🏜️ LOST IN THE SANDS 🏜️</h1>
+        <p>The team's logic broke down. ABZebra ran out of water.</p>
+        <button class="btn-large btn-play-again" onclick="resetToMenu()">Try Again</button>
+    </div>
+
+    <div class="game-table">
+        <div class="hud">
+            <div class="water-drops">Water: <span id="waterCount">💧💧💧</span></div>
+            <div class="hud-controls">
+                <button class="btn-hud-small" onclick="showHelp()">?</button>
+                <button class="btn-hud-small" id="audioBtnHUD" onclick="toggleAudio()">🔊</button>
+            </div>
+            <div class="distance">Distance: <span id="distCount">5</span></div>
+        </div>
+
+        <div class="board" id="mainBoard">
+            <h2>Team Board</h2>
+            <div class="theme-display" id="themeList">Loading Themes...</div>
+            <div class="sentence-area">
+                <div class="slot" id="slot-0" onclick="slotTapped(0)" ondrop="dropOnSlot(event, 0)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">[Empty]</div>
+                <div class="slot" id="slot-1" onclick="slotTapped(1)" ondrop="dropOnSlot(event, 1)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">[Empty]</div>
+                <div class="slot" id="slot-2" onclick="slotTapped(2)" ondrop="dropOnSlot(event, 2)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">[Empty]</div>
+            </div>
+            
+            <div class="board-actions">
+                <button class="btn-action" id="passBtn" onclick="userPass()" style="display: none;">Redraw</button>
+                <button class="btn-action end-btn" id="endTurnBtn" onclick="endTurn()" style="display: none;">End Turn ⏭️</button>
+                <button class="btn-action submit-btn" id="submitBtn" onclick="evaluateSentence()" style="display: none;">Check Logic ✨</button>
+            </div>
+        </div>
+
+        <div class="player-area p3-bot" id="area-2"><div class="player-name" id="name-2">Player 3</div><div class="hand" id="hand-2"></div></div>
+        <div class="player-area p2-bot" id="area-1"><div class="player-name" id="name-1">Player 2</div><div class="hand" id="hand-1"></div></div>
+        <div class="player-area p4-bot" id="area-3"><div class="player-name" id="name-3">Player 4</div><div class="hand" id="hand-3"></div></div>
+
+        <div class="log" id="gameLog">Finding ABZebra...</div>
+
+        <div class="player-area p1-user" id="area-0">
+            <div class="player-name active" id="name-0">Player 1</div>
+            <div class="hand" id="hand-0"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // WEB AUDIO API ENGINE
+        // ==========================================
+        let audioCtx; let isMuted = false; let bgmInterval = null;
+
+        function initAudioEngine() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            document.getElementById('audioBtnWelcome').innerText = isMuted ? "🔇" : "🔊";
+            document.getElementById('audioBtnHUD').innerText = isMuted ? "🔇" : "🔊";
+            if (isMuted) stopBGM(); else { initAudioEngine(); startBGM(); }
+        }
+
+        function playTone(freq, type = 'sine', duration = 1.0, vol = 0.1) {
+            if (isMuted || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gainNode); gainNode.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const SFX = {
+            tap: () => playTone(880, 'sine', 0.5, 0.05),
+            place: () => { playTone(523.25, 'sine', 1.2, 0.08); playTone(659.25, 'triangle', 1.2, 0.05); },
+            swap: () => { playTone(587.33, 'sine', 0.8, 0.05); setTimeout(() => playTone(659.25, 'sine', 0.8, 0.05), 100); },
+            check: () => { playTone(392.00, 'triangle', 2.0, 0.1); playTone(493.88, 'sine', 2.0, 0.08); },
+            success: () => { [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 1.5, 0.1), i * 150)); },
+            error: () => { playTone(261.63, 'square', 0.8, 0.05); playTone(277.18, 'square', 0.8, 0.05); },
+            waterLoss: () => { playTone(392.00, 'sine', 1.0, 0.1); setTimeout(() => playTone(261.63, 'sine', 1.5, 0.1), 200); }
+        };
+
+        function startBGM() {
+            if (bgmInterval || isMuted || !audioCtx) return;
+            const pentatonic = [261.63, 293.66, 329.63, 392.00, 440.00]; 
+            bgmInterval = setInterval(() => {
+                if (isMuted) return;
+                if (Math.random() < 0.6) playTone(pentatonic[Math.floor(Math.random() * pentatonic.length)] / 2, 'sine', 4.0, 0.03); 
+            }, 2000);
+        }
+        function stopBGM() { if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; } }
+
+        // ==========================================
+        // GAME DATA & LOGIC
+        // ==========================================
+        const themeData = {
+            water: { color: "#0077b6", icon: "💧" }, nav: { color: "#e76f51", icon: "🧭" },
+            heat: { color: "#d62828", icon: "☀️" }, danger: { color: "#370617", icon: "⚠️" },
+            food: { color: "#2a9d8f", icon: "🍎" }, shelter: { color: "#8b5e34", icon: "⛺" },
+            gear: { color: "#4a4e69", icon: "🎒" }, terrain: { color: "#606c38", icon: "⛰️" },
+            weather: { color: "#48cae4", icon: "🌪️" }, health: { color: "#e36414", icon: "🩹" },
+            animals: { color: "#e9c46a", icon: "🐪" }, time: { color: "#03045e", icon: "⏳" },
+            treasure: { color: "#ffb703", icon: "💎" }, morale: { color: "#f15bb5", icon: "✨" },
+            comm: { color: "#06d6a0", icon: "📻" }
+        };
+
+        const cardLibrary = {
+            connectors: [
+                { text: "because", type: "type-connector", logic: "cause" }, { text: "since", type: "type-connector", logic: "cause" },
+                { text: "as", type: "type-connector", logic: "cause" }, { text: "given that", type: "type-connector", logic: "cause" },
+                { text: "even though", type: "type-connector", logic: "contrast" }, { text: "although", type: "type-connector", logic: "contrast" },
+                { text: "despite the fact that", type: "type-connector", logic: "contrast" }, { text: "while", type: "type-connector", logic: "contrast" }
+            ],
+            clauses: [
+                { text: "they found the oasis", type: "type-clause", theme: "water", polarity: "pos", isSolution: false },
+                { text: "they drank fresh water", type: "type-clause", theme: "water", polarity: "pos", isSolution: true },
+                { text: "there was no water", type: "type-clause", theme: "water", polarity: "neg", isSolution: false },
+                { text: "their canteens were empty", type: "type-clause", theme: "water", polarity: "neg", isSolution: false },
+                { text: "they discovered a path", type: "type-clause", theme: "nav", polarity: "pos", isSolution: false },
+                { text: "they checked their map", type: "type-clause", theme: "nav", polarity: "pos", isSolution: true },
+                { text: "they got completely lost", type: "type-clause", theme: "nav", polarity: "neg", isSolution: false },
+                { text: "their compass broke", type: "type-clause", theme: "nav", polarity: "neg", isSolution: false },
+                { text: "a cool breeze hit", type: "type-clause", theme: "heat", polarity: "pos", isSolution: false },
+                { text: "they rested in the shade", type: "type-clause", theme: "heat", polarity: "pos", isSolution: true },
+                { text: "the sun was scorching", type: "type-clause", theme: "heat", polarity: "neg", isSolution: false },
+                { text: "they felt exhausted", type: "type-clause", theme: "heat", polarity: "neg", isSolution: false },
+                { text: "the bandits left", type: "type-clause", theme: "danger", polarity: "pos", isSolution: false },
+                { text: "they stayed perfectly quiet", type: "type-clause", theme: "danger", polarity: "pos", isSolution: true },
+                { text: "they heard a roar", type: "type-clause", theme: "danger", polarity: "neg", isSolution: false },
+                { text: "they triggered a trap", type: "type-clause", theme: "danger", polarity: "neg", isSolution: false },
+                { text: "they found sweet dates", type: "type-clause", theme: "food", polarity: "pos", isSolution: false },
+                { text: "they shared a hearty meal", type: "type-clause", theme: "food", polarity: "pos", isSolution: true },
+                { text: "they had no food", type: "type-clause", theme: "food", polarity: "neg", isSolution: false },
+                { text: "their stomachs growled", type: "type-clause", theme: "food", polarity: "neg", isSolution: false },
+                { text: "they found a cozy cave", type: "type-clause", theme: "shelter", polarity: "pos", isSolution: false },
+                { text: "they built a campfire", type: "type-clause", theme: "shelter", polarity: "pos", isSolution: true },
+                { text: "the night was freezing", type: "type-clause", theme: "shelter", polarity: "neg", isSolution: false },
+                { text: "they had nowhere to sleep", type: "type-clause", theme: "shelter", polarity: "neg", isSolution: false },
+                { text: "they had supplies", type: "type-clause", theme: "gear", polarity: "pos", isSolution: false },
+                { text: "they repaired their gear", type: "type-clause", theme: "gear", polarity: "pos", isSolution: true },
+                { text: "their bags were heavy", type: "type-clause", theme: "gear", polarity: "neg", isSolution: false },
+                { text: "their rope snapped", type: "type-clause", theme: "gear", polarity: "neg", isSolution: false },
+                { text: "the ground was flat", type: "type-clause", theme: "terrain", polarity: "pos", isSolution: false },
+                { text: "they climbed safely", type: "type-clause", theme: "terrain", polarity: "pos", isSolution: true },
+                { text: "a canyon blocked them", type: "type-clause", theme: "terrain", polarity: "neg", isSolution: false },
+                { text: "the path had thorns", type: "type-clause", theme: "terrain", polarity: "neg", isSolution: false },
+                { text: "the sky was clear", type: "type-clause", theme: "weather", polarity: "pos", isSolution: false },
+                { text: "they wrapped scarves", type: "type-clause", theme: "weather", polarity: "pos", isSolution: true },
+                { text: "a sandstorm hit", type: "type-clause", theme: "weather", polarity: "neg", isSolution: false },
+                { text: "storm clouds gathered", type: "type-clause", theme: "weather", polarity: "neg", isSolution: false },
+                { text: "they felt completely healed", type: "type-clause", theme: "health", polarity: "pos", isSolution: false },
+                { text: "they bandaged the wound", type: "type-clause", theme: "health", polarity: "pos", isSolution: true },
+                { text: "someone twisted an ankle", type: "type-clause", theme: "health", polarity: "neg", isSolution: false },
+                { text: "they felt dizzy", type: "type-clause", theme: "health", polarity: "neg", isSolution: false },
+                { text: "a camel approached", type: "type-clause", theme: "animals", polarity: "pos", isSolution: false },
+                { text: "they tamed the beast", type: "type-clause", theme: "animals", polarity: "pos", isSolution: true },
+                { text: "their horses ran away", type: "type-clause", theme: "animals", polarity: "neg", isSolution: false },
+                { text: "a scorpion appeared", type: "type-clause", theme: "animals", polarity: "neg", isSolution: false },
+                { text: "they had plenty of time", type: "type-clause", theme: "time", polarity: "pos", isSolution: false },
+                { text: "they lit a bright torch", type: "type-clause", theme: "time", polarity: "pos", isSolution: true },
+                { text: "darkness fell very fast", type: "type-clause", theme: "time", polarity: "neg", isSolution: false },
+                { text: "they lost track of time", type: "type-clause", theme: "time", polarity: "neg", isSolution: false },
+                { text: "they unearthed a chest", type: "type-clause", theme: "treasure", polarity: "pos", isSolution: false },
+                { text: "they deciphered runes", type: "type-clause", theme: "treasure", polarity: "pos", isSolution: true },
+                { text: "the chest was empty", type: "type-clause", theme: "treasure", polarity: "neg", isSolution: false },
+                { text: "the gold turned to dust", type: "type-clause", theme: "treasure", polarity: "neg", isSolution: false },
+                { text: "they sang cheerful songs", type: "type-clause", theme: "morale", polarity: "pos", isSolution: false },
+                { text: "they encouraged each other", type: "type-clause", theme: "morale", polarity: "pos", isSolution: true },
+                { text: "they felt hopeless", type: "type-clause", theme: "morale", polarity: "neg", isSolution: false },
+                { text: "the team argued", type: "type-clause", theme: "morale", polarity: "neg", isSolution: false },
+                { text: "they heard a friendly shout", type: "type-clause", theme: "comm", polarity: "pos", isSolution: false },
+                { text: "they fired a flare", type: "type-clause", theme: "comm", polarity: "pos", isSolution: true },
+                { text: "their radio died", type: "type-clause", theme: "comm", polarity: "neg", isSolution: false },
+                { text: "no one could hear them", type: "type-clause", theme: "comm", polarity: "neg", isSolution: false }
+            ]
+        };
+
+        let deck = []; let players = [ { hand: [] }, { hand: [] }, { hand: [] }, { hand: [] } ];
+        let roundStarter = 0; let turnIndex = 0; let water = 3; let distance = 5; let consecutivePasses = 0; 
+        let isEvaluating = false; let cardsPlayedThisTurn = false;
+        let playerTypes = ['human', 'bot', 'bot', 'bot']; let activeThemes = []; let boardState = [null, null, null]; 
+        let successfulSentences = [];
+        let selectedHandPlayerIndex = -1; let selectedHandCardIndex = -1; let selectedBoardSlotIndex = -1;
+
+        function logMsg(msg) { const logEl = document.getElementById('gameLog'); if(logEl) logEl.innerText = msg; }
+        function capitalize(str) { return str.charAt(0).toUpperCase() + str.slice(1); }
+        function showHelp() { document.getElementById('helpModal').style.display = 'flex'; setTimeout(() => document.getElementById('helpModal').style.opacity = '1', 10); }
+        function hideHelp() { document.getElementById('helpModal').style.opacity = '0'; setTimeout(() => document.getElementById('helpModal').style.display = 'none', 500); }
+
+        function resetToMenu() {
+            document.getElementById('victoryScreen').style.display = 'none';
+            document.getElementById('defeatScreen').style.display = 'none';
+            document.getElementById('welcomeScreen').style.display = 'flex';
+            setTimeout(() => { document.getElementById('welcomeScreen').style.opacity = '1'; }, 10);
+            water = 3; distance = 5; roundStarter = 0; turnIndex = 0; successfulSentences = [];
+            document.getElementById('waterCount').innerText = "💧💧💧"; document.getElementById('distCount').innerText = "5";
+        }
+
+        function initGame(numHumans) {
+            initAudioEngine(); startBGM(); SFX.success(); 
+            playerTypes = ['bot', 'bot', 'bot', 'bot'];
+            for(let i=0; i<numHumans; i++) playerTypes[i] = 'human';
+            document.getElementById('name-0').innerText = playerTypes[0] === 'human' ? "Player 1" : "Bot Alpha";
+            document.getElementById('name-1').innerText = playerTypes[1] === 'human' ? "Player 2" : "Bot Bravo";
+            document.getElementById('name-2').innerText = playerTypes[2] === 'human' ? "Player 3" : "Bot Charlie";
+            document.getElementById('name-3').innerText = playerTypes[3] === 'human' ? "Player 4" : "Bot Delta";
+            document.getElementById('welcomeScreen').style.opacity = '0';
+            setTimeout(() => { document.getElementById('welcomeScreen').style.display = 'none'; startGame(); }, 500);
+        }
+
+        function buildDeck() {
+            deck = [];
+            const allThemes = Object.keys(themeData);
+            allThemes.sort(() => Math.random() - 0.5);
+            activeThemes = allThemes.slice(0, 4);
+            const legendHTML = activeThemes.map(t => `<span class="theme-pill" style="background-color:${themeData[t].color};">${themeData[t].icon} ${capitalize(t)}</span>`).join('');
+            document.getElementById('themeList').innerHTML = legendHTML;
+            const activeClauses = cardLibrary.clauses.filter(c => activeThemes.includes(c.theme));
+            for(let i=0; i<4; i++) deck.push(...cardLibrary.connectors); 
+            for(let i=0; i<4; i++) deck.push(...activeClauses); 
+            deck.sort(() => Math.random() - 0.5); 
+        }
+
+        function drawCard() { if (deck.length === 0) buildDeck(); return deck.pop(); }
+
+        function startGame() {
+            buildDeck();
+            players.forEach(p => { p.hand = [drawCard(), drawCard(), drawCard(), drawCard()]; });
+            startRound();
+        }
+
+        function startRound() {
+            boardState = [null, null, null]; consecutivePasses = 0; isEvaluating = false; 
+            selectedHandPlayerIndex = -1; selectedHandCardIndex = -1; selectedBoardSlotIndex = -1;
+            turnIndex = roundStarter; cardsPlayedThisTurn = false;
+            updateUI(); processTurn();
+        }
+
+        function cardTapped(playerIdx, cardIndex) {
+            if (playerTypes[playerIdx] !== 'human' || turnIndex !== playerIdx || isEvaluating) return; 
+            SFX.tap(); selectedBoardSlotIndex = -1;
+            if (selectedHandPlayerIndex === playerIdx && selectedHandCardIndex === cardIndex) {
+                selectedHandPlayerIndex = -1; selectedHandCardIndex = -1;
+            } else {
+                selectedHandPlayerIndex = playerIdx; selectedHandCardIndex = cardIndex;
+            }
+            updateUI();
+        }
+
+        function slotTapped(slotIndex) {
+            if (isEvaluating) return;
+            if (selectedHandPlayerIndex !== -1 && selectedHandCardIndex !== -1) {
+                playCard(selectedHandPlayerIndex, selectedHandCardIndex, slotIndex);
+                selectedHandPlayerIndex = -1; selectedHandCardIndex = -1;
+                return;
+            }
+            if (boardState[slotIndex] !== null) {
+                SFX.tap();
+                if (selectedBoardSlotIndex === -1) {
+                    selectedBoardSlotIndex = slotIndex; updateUI();
+                } else {
+                    if (selectedBoardSlotIndex !== slotIndex) {
+                        SFX.swap();
+                        const temp = boardState[selectedBoardSlotIndex];
+                        boardState[selectedBoardSlotIndex] = boardState[slotIndex];
+                        boardState[slotIndex] = temp;
+                        cardsPlayedThisTurn = true; consecutivePasses = 0;
+                        logMsg("Cards swapped! Check the logic.");
+                    }
+                    selectedBoardSlotIndex = -1; updateUI();
+                }
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
+        function dragFromHand(ev, playerIdx, cardIndex) {
+            if (turnIndex !== playerIdx || isEvaluating) { ev.preventDefault(); return; }
+            ev.dataTransfer.setData("source", "hand"); ev.dataTransfer.setData("playerIdx", playerIdx); ev.dataTransfer.setData("cardIndex", cardIndex);
+            SFX.tap();
+        }
+        function dragFromBoard(ev, index) {
+            if (boardState[index] === null || isEvaluating) { ev.preventDefault(); return; }
+            ev.dataTransfer.setData("source", "board"); ev.dataTransfer.setData("slotIndex", index);
+            SFX.tap();
+        }
+        function dropOnSlot(ev, targetIndex) {
+            ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
+            const source = ev.dataTransfer.getData("source");
+            if (source === "hand") {
+                const playerIdx = parseInt(ev.dataTransfer.getData("playerIdx"));
+                if (turnIndex !== playerIdx || isEvaluating) return;
+                const cardIndex = parseInt(ev.dataTransfer.getData("cardIndex"));
+                playCard(playerIdx, cardIndex, targetIndex);
+            } else if (source === "board") {
+                const sourceIndex = ev.dataTransfer.getData("slotIndex");
+                if (sourceIndex === "" || parseInt(sourceIndex) === targetIndex) return;
+                const sIdx = parseInt(sourceIndex);
+                const temp = boardState[sIdx];
+                boardState[sIdx] = boardState[targetIndex];
+                boardState[targetIndex] = temp;
+                SFX.swap(); cardsPlayedThisTurn = true; consecutivePasses = 0;
+                logMsg("Cards swapped! Check the logic."); updateUI();
+            }
+        }
+
+        function processTurn() {
+            cardsPlayedThisTurn = false; updateUI();
+            if (water <= 0) { document.getElementById('defeatScreen').style.display = 'flex'; SFX.error(); return; }
+            if (distance <= 0) { 
+                const logList = document.getElementById('victoryStoryList');
+                logList.innerHTML = successfulSentences.map(s => `<li>✨ ${s}</li>`).join('');
+                document.getElementById('victoryScreen').style.display = 'flex'; SFX.success(); return; 
+            }
+
+            const isFull = !boardState.includes(null);
+            const pName = document.getElementById(`name-${turnIndex}`).innerText;
+
+            if (playerTypes[turnIndex] === 'human') {
+                if (isFull) logMsg(`${pName}'s Turn! Mend a card, rearrange, or Check Logic ✨.`);
+                else logMsg(`${pName}'s Turn! Play cards, rearrange, and End Turn.`);
+            } else {
+                logMsg(`${pName} is thinking...`);
+                isEvaluating = true; 
+                setTimeout(() => { isEvaluating = false; botPlayCard(isFull); }, 1500);
+            }
+        }
+
+        function userPass() {
+            if (playerTypes[turnIndex] !== 'human' || isEvaluating) return; 
+            SFX.swap(); logMsg(`Player passed and redrew hand.`);
+            players[turnIndex].hand = [drawCard(), drawCard(), drawCard(), drawCard()];
+            selectedHandPlayerIndex = -1; selectedHandCardIndex = -1;
+            endTurn(true);
+        }
+
+        function endTurn(isForcedPass = false) {
+            if (isEvaluating) return;
+            SFX.tap();
+            
+            if (isForcedPass || !cardsPlayedThisTurn) consecutivePasses++;
+            else consecutivePasses = 0;
+
+            if (consecutivePasses >= 4) {
+                isEvaluating = true; 
+                setTimeout(() => { handleFail("The whole team passed! -1 Water."); }, 1500);
+                return;
+            }
+            turnIndex = (turnIndex + 1) % 4; processTurn();
+        }
+
+        function botPass() { players[turnIndex].hand = [drawCard(), drawCard(), drawCard(), drawCard()]; setTimeout(() => endTurn(true), 800); }
+
+        function checkLogicSilently(testBoard) {
+            if (testBoard.includes(null)) return false;
+            const s0 = testBoard[0]; const s1 = testBoard[1]; const s2 = testBoard[2];
+            let isFormatA = s0.type === "type-connector" && s1.type === "type-clause" && s2.type === "type-clause";
+            let isFormatB = s0.type === "type-clause" && s1.type === "type-connector" && s2.type === "type-clause";
+            if (!isFormatA && !isFormatB) return false;
+
+            let con, cause, effect;
+            if (isFormatA) { con = s0; cause = s1; effect = s2; } else { con = s1; effect = s0; cause = s2; }
+
+            if (cause.theme !== effect.theme) return false;
+            if (cause.text === effect.text) return false; // Prevent Bot Tautology
+
+            if (con.logic === "cause") {
+                if (cause.polarity === effect.polarity) return true;
+                if (cause.polarity === "neg" && effect.isSolution === true) return true;
+                return false;
+            } else if (con.logic === "contrast") {
+                return cause.polarity !== effect.polarity;
+            }
+            return false;
+        }
+
+        function getSmartBotPlay(hand) {
+            if (Math.random() < 0.3) return Math.floor(Math.random() * hand.length);
+            const con = boardState.find(c => c !== null && c.type === "type-connector");
+            const clauses = boardState.filter(c => c !== null && c.type === "type-clause");
+
+            if (con && clauses.length === 1) {
+                const targetLogic = (con.logic === "cause") ? clauses[0].logic : (clauses[0].logic === "pos" ? "neg" : "pos");
+                const idx = hand.findIndex(c => c.type === "type-clause" && c.theme === clauses[0].theme && c.polarity === targetLogic && c.text !== clauses[0].text);
+                if (idx !== -1) return idx;
+            }
+
+            if (!con && clauses.length === 2) {
+                if (clauses[0].theme !== clauses[1].theme || clauses[0].text === clauses[1].text) return Math.floor(Math.random() * hand.length); 
+                const targetLogic = (clauses[0].polarity === clauses[1].polarity || clauses[1].isSolution) ? "cause" : "contrast";
+                const idx = hand.findIndex(c => c.type === "type-connector" && c.logic === targetLogic);
+                if (idx !== -1) return idx;
+            }
+            return Math.floor(Math.random() * hand.length);
+        }
+
+        function botPlayCard(isFull) {
+            if (isEvaluating) return; 
+            const hand = players[turnIndex].hand;
+            
+            if (!isFull) {
+                const playableIdx = getSmartBotPlay(hand);
+                const emptySlotIdx = boardState.findIndex(s => s === null);
+                playCard(turnIndex, playableIdx, emptySlotIdx);
+            } else {
+                if (checkLogicSilently(boardState)) {
+                    logMsg(`Bot ${turnIndex} thinks the logic is perfect and submits!`);
+                    evaluateSentence();
+                } else {
+                    // Bot Mending Logic
+                    if (Math.random() > 0.3) {
+                        for (let i = 0; i < 3; i++) {
+                            for (let j = 0; j < hand.length; j++) {
+                                let testBoard = [...boardState];
+                                testBoard[i] = hand[j];
+                                if (checkLogicSilently(testBoard)) {
+                                    logMsg(`Bot ${turnIndex} spotted an error and mends the board!`);
+                                    playCard(turnIndex, j, i);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    logMsg(`Bot ${turnIndex} thinks there's an error. They pass to let the team fix it.`);
+                    botPass();
+                }
+            }
+        }
+
+        function playCard(playerIdx, cardIndex, targetSlotIdx) {
+            cardsPlayedThisTurn = true; consecutivePasses = 0;
+            const card = players[playerIdx].hand.splice(cardIndex, 1)[0];
+            players[playerIdx].hand.push(drawCard()); 
+            SFX.place(); boardState[targetSlotIdx] = card; updateUI(); 
+            
+            if (playerTypes[playerIdx] !== 'human') {
+                setTimeout(() => endTurn(false), 800);
+            } else {
+                if (!boardState.includes(null)) logMsg("Board is full! Check Logic ✨ or End Turn ⏭️.");
+                else logMsg("Card placed. Play another, rearrange, or End Turn ⏭️.");
+            }
+        }
+
+        function evaluateSentence() {
+            if (isEvaluating) return; 
+            isEvaluating = true; selectedBoardSlotIndex = -1; updateUI(); 
+            logMsg("The Editor is checking the team's logic...");
+            SFX.check();
+            
+            setTimeout(() => {
+                const s0 = boardState[0]; const s1 = boardState[1]; const s2 = boardState[2];
+                let isFormatA = s0.type === "type-connector" && s1.type === "type-clause" && s2.type === "type-clause";
+                let isFormatB = s0.type === "type-clause" && s1.type === "type-connector" && s2.type === "type-clause";
+
+                if (!isFormatA && !isFormatB) { handleFail("Structure Error! Must be [Connector, Clause, Clause] OR [Clause, Connector, Clause]."); return; }
+
+                let con, cause, effect;
+                if (isFormatA) { con = s0; cause = s1; effect = s2; } else { con = s1; effect = s0; cause = s2; }
+
+                if (cause.theme !== effect.theme) { handleFail(`Theme Error! You cannot mix a ${themeData[cause.theme].icon} card with a ${themeData[effect.theme].icon} card!`); return; }
+                if (cause.text === effect.text) { handleFail(`Repetition Error! ABZebra cannot use the exact same card twice.`); return; }
+
+                let isValidLogic = false; let failReason = "";
+
+                if (con.logic === "cause") {
+                    if (cause.polarity === effect.polarity) isValidLogic = true;
+                    else if (cause.polarity === "neg" && effect.isSolution === true) isValidLogic = true;
+                    else failReason = `Logic Error! A ${cause.polarity==="pos"?"➕":"➖"} card leads to a ${effect.polarity==="pos"?"➕":"➖"} outcome!`;
+                } else if (con.logic === "contrast") {
+                    if (cause.polarity !== effect.polarity) isValidLogic = true;
+                    else failReason = `Logic Error! "Although" expects a twist (➕ to ➖), but these match.`;
+                }
+
+                if (isValidLogic) {
+                    let p0 = capitalize(boardState[0].text); let p1 = boardState[1].text; let p2 = boardState[2].text;
+                    if (boardState[0].type === "type-connector") p1 += ","; else if (boardState[1].type === "type-connector") p1 = p1.toLowerCase();
+                    p2 += "."; successfulSentences.push(`${p0} ${p1} ${p2}`);
+
+                    document.getElementById('slot-0').classList.add('success-flash'); document.getElementById('slot-1').classList.add('success-flash'); document.getElementById('slot-2').classList.add('success-flash');
+                    logMsg("Perfect Structure and Logic! You move forward.");
+                    SFX.success(); distance--; document.getElementById('distCount').innerText = distance; roundStarter = (roundStarter + 1) % 4; 
+                    
+                    if (distance <= 0) setTimeout(processTurn, 1000); else setTimeout(startRound, 2500);
+                } else { handleFail(failReason); }
+            }, 2000);
+        }
+
+        function handleFail(reason) {
+            document.getElementById('slot-0').classList.add('error-shake'); document.getElementById('slot-1').classList.add('error-shake'); document.getElementById('slot-2').classList.add('error-shake');
+            logMsg(reason); water--; consecutivePasses = 0; 
+            let drops = ""; for(let i=0; i<water; i++) drops += "💧";
+            document.getElementById('waterCount').innerText = drops || "EMPTY";
+            SFX.error();
+
+            if (water > 0) {
+                setTimeout(() => SFX.waterLoss(), 800);
+                setTimeout(() => {
+                    document.getElementById('slot-0').classList.remove('error-shake'); document.getElementById('slot-1').classList.remove('error-shake'); document.getElementById('slot-2').classList.remove('error-shake');
+                    logMsg("Team: Match Shapes, check Badges, and remove duplicates to fix it!");
+                    isEvaluating = false; processTurn(); 
+                }, 3500);
+            } else { setTimeout(processTurn, 1500); }
+        }
+
+        function buildCardInnerHtml(cardData) {
+            if (cardData.type === "type-clause") {
+                const icon = themeData[cardData.theme].icon;
+                const badgeClass = cardData.polarity === 'pos' ? 'badge-pos' : 'badge-neg';
+                const badgeSign = cardData.polarity === 'pos' ? '➕' : '➖';
+                return `
+                    <div class="card-bg-icon">${icon}</div>
+                    <div class="polarity-badge ${badgeClass}">${badgeSign}</div>
+                    <span class="card-text">${capitalize(cardData.text)}</span>
+                `;
+            } else {
+                const badgeSign = cardData.logic === 'cause' ? '➡️' : '🔀';
+                return `
+                    <div class="polarity-badge badge-conn">${badgeSign}</div>
+                    <span class="card-text">${capitalize(cardData.text)}</span>
+                `;
+            }
+        }
+
+        function updateUI() {
+            const isHuman = playerTypes[turnIndex] === 'human';
+            const isFull = !boardState.includes(null);
+
+            if (isEvaluating) {
+                document.getElementById('passBtn').style.display = "none"; document.getElementById('endTurnBtn').style.display = "none"; document.getElementById('submitBtn').style.display = "none";
+            } else if (isHuman) {
+                document.getElementById('passBtn').style.display = "inline-block"; document.getElementById('endTurnBtn').style.display = "inline-block"; document.getElementById('submitBtn').style.display = isFull ? "inline-block" : "none";
+            } else {
+                document.getElementById('passBtn').style.display = "none"; document.getElementById('endTurnBtn').style.display = "none"; document.getElementById('submitBtn').style.display = "none";
+            }
+
+            if (boardState.includes(null) || isHuman || isEvaluating) {
+                for(let i=0; i<4; i++) document.getElementById(`name-${i}`).className = i === turnIndex ? "player-name active" : "player-name";
+            }
+
+            for(let i=0; i<4; i++) {
+                const handDiv = document.getElementById(`hand-${i}`);
+                handDiv.innerHTML = "";
+                
+                if (playerTypes[i] === 'human') {
+                    players[i].hand.forEach((card, index) => {
+                        const cardEl = document.createElement('div');
+                        cardEl.className = `card ${card.type}`;
+                        if (card.type === "type-clause") cardEl.style.backgroundColor = themeData[card.theme].color;
+                        if (selectedHandPlayerIndex === i && selectedHandCardIndex === index) cardEl.classList.add('selected');
+                        cardEl.innerHTML = buildCardInnerHtml(card);
+                        cardEl.onclick = () => cardTapped(i, index);
+                        cardEl.setAttribute("draggable", "true"); cardEl.ondragstart = (ev) => dragFromHand(ev, i, index);
+                        handDiv.appendChild(cardEl);
+                    });
+                } else {
+                    players[i].hand.forEach(() => {
+                        const cardEl = document.createElement('div'); cardEl.className = 'card card-back'; handDiv.appendChild(cardEl);
+                    });
+                }
+            }
+
+            for(let i=0; i<3; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                const cardData = boardState[i];
+
+                if (cardData === null) {
+                    slot.innerHTML = "[Empty]"; slot.className = "slot"; slot.setAttribute("draggable", "false");
+                    slot.style.backgroundColor = ""; slot.style.color = ""; slot.style.borderColor = "";
+                } else {
+                    slot.innerHTML = ""; slot.className = "slot";
+                    if (i === selectedBoardSlotIndex) slot.classList.add('selected');
+                    slot.setAttribute("draggable", "true");
+                    
+                    if (cardData.type === "type-clause") {
+                        slot.style.backgroundColor = themeData[cardData.theme].color;
+                        slot.style.color = "white"; slot.style.borderColor = "white";
+                    } else {
+                        slot.style.backgroundColor = "var(--connector)";
+                        slot.style.color = "white"; slot.style.borderColor = "#d8b4e2";
+                    }
+
+                    let innerContent = buildCardInnerHtml(cardData);
+                    let plainText = cardData.text;
+                    if (i === 0) plainText = capitalize(plainText);
+                    if (i === 1 && cardData.type === "type-connector") plainText = plainText.toLowerCase();
+                    if (i === 1 && boardState[0] && boardState[0].type === "type-connector") plainText += ",";
+                    if (i === 2) plainText += ".";
+                    
+                    innerContent = innerContent.replace(capitalize(cardData.text), plainText);
+                    slot.innerHTML = innerContent;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

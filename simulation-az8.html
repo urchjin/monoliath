@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1868782246580723"
+     crossorigin="anonymous"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonoliATH Games | Playing Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #F4EFEA; 
+            --primary-accent: #E69A8D; 
+            --text-main: #2C3E50; 
+            --nav-bg: rgba(244, 239, 234, 1); /* Solid background for cleaner look */
+            --ad-bg: #EAE3DC; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* CRITICAL CHANGES FOR FULLSCREEN:
+           height: 100vh makes the body exactly the height of the screen.
+           overflow: hidden prevents the page from scrolling. 
+        */
+        body { 
+            font-family: 'Josefin Sans', sans-serif; 
+            background-color: var(--bg-color); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* --- TOP BAR --- */
+        /* --- UPDATED NAVIGATION --- */
+nav {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: var(--nav-bg);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 15px 0; /* Reduced padding for a slimmer bar */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.nav-links {
+    display: flex;
+    gap: 30px; /* Reduced gap for desktop */
+    padding: 0 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-main);
+    font-size: 0.95rem; /* Slightly smaller base font */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    transition: color 0.3s ease;
+}
+
+/* --- MOBILE SPECIFIC ADJUSTMENTS --- */
+@media (max-width: 600px) {
+    nav {
+        padding: 12px 0; /* Even slimmer on mobile */
+    }
+    .nav-links {
+        gap: 15px; /* Tighter spacing for narrow screens */
+        width: 100%;
+    }
+    .nav-links a {
+        font-size: 0.75rem; /* Smaller text to prevent wrapping/uneven lines */
+        letter-spacing: 1px;
+    }
+}
+        .back-btn { font-weight: 300 !important; opacity: 0.7; }
+
+        /* --- THE GAME AREA --- */
+        /* flex: 1 forces this container to stretch and fill all remaining vertical space */
+        main.game-wrapper { 
+            flex: 1; 
+            width: 100%; 
+            display: flex; 
+            background-color: #000; /* Black background behind the game */
+        }
+        
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+
+/* --- INSTRUCTIONAL MODAL --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85); /* Darken background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* Above nav and game */
+    backdrop-filter: blur(5px);
+}
+
+.modal-box {
+    background: var(--bg-color);
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    animation: modalPop 0.3s ease-out;
+}
+
+@keyframes modalPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-box h2 {
+    color: var(--primary-accent);
+    letter-spacing: 4px;
+    margin-bottom: 20px;
+}
+
+.modal-body {
+    text-align: left;
+    margin-bottom: 25px;
+    line-height: 1.6;
+    font-weight: 300;
+}
+
+.modal-body p {
+    margin-bottom: 15px;
+}
+
+.close-modal-btn {
+    background-color: var(--text-main);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-family: 'Josefin Sans', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+.close-modal-btn:hover {
+    background-color: var(--primary-accent);
+}
+
+        /* --- AD BAR --- */
+.ad-frame { 
+    width: 100%; 
+    background-color: var(--ad-bg); 
+    padding: 5px; /* Reduced from 10px */
+    text-align: center; 
+    border-top: 1px solid rgba(0,0,0,0.05);
+    z-index: 10;
+}
+
+.ad-content { 
+    width: 100%; 
+    max-width: 728px; 
+    height: 50px; /* Reduced from 90px */
+    margin: 0 auto; 
+    background-color: #d1c9c1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #888; 
+    font-size: 0.75rem; /* Smaller text for smaller box */
+    letter-spacing: 1px; 
+    border: 1px dashed #bbaaa0; 
+}
+	
+	
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-links">
+            <a href="story.html" class="back-btn">&larr; Exit Simulation</a>
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="story.html" style="color: var(--primary-accent);">Story</a>
+            <a href="topics.html">Topics</a>
+        </div>
+    </nav>
+
+    <main class="game-wrapper">
+        <iframe src="ac2_wheresabzebra.html" title="Simulation 1"></iframe>
+    </main>
+
+    <div class="ad-frame">
+        <div class="ad-content">
+            [ ADVERTISEMENT SLOT : 728 x 90 ]
+        </div>
+    </div>
+
+<div id="instructionModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2>HOW TO PLAY</h2>
+        <div class="modal-body">
+            <p><strong>Goal:</strong> Navigate across shifting digit-platforms to reach target whole-number scores. Use arithmetic gems to grow your value and reach the finish line before time runs out.</p>
+            <p><strong>Controls:</strong> Use WASD or Arrow keys to move and perform triple jumps. Mobile users can navigate via the on-screen directional buttons.</p>
+            <p><strong>How it helps:</strong> This platformer sharpens mental math and arithmetic fluency by requiring real-time calculation of how addition, subtraction, multiplication, and division will affect your score and the environment.</p>
+        </div>
+        <button onclick="closeModal()" class="close-modal-btn">BEGIN SIMULATION</button>
+    </div>
+</div>
+
+<script>
+    function closeModal() {
+        const modal = document.getElementById('instructionModal');
+        modal.style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
