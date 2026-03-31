@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ABZebra Gets Lost! (Smart AI Update)</title>
+    <title>ABZebra Gets Lost! (Stable Edition)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
 
@@ -188,16 +188,17 @@
     <div id="helpModal" class="overlay-screen help-screen">
         <div class="help-content">
             <h2>How to Play</h2>
-            <p>Your goal is to guide ABZebra to the Oasis by building grammatically and logically correct sentences!</p>
+            <p>Your goal is to guide ABZebra and your team to the Oasis by building grammatically and logically correct sentences!</p>
             <ul>
                 <li><b>Build a Sentence:</b> The board needs 3 cards: 1 Connector (Purple) and 2 Clauses (Colored).</li>
                 <li><b>Match the Context:</b> Clause cards must match shapes and colors (e.g., Water 💧 pairs with Water 💧).</li>
+                <li><b>Cause vs. Effect:</b> The game now strictly reads your sentence. If you put the Cause and Effect in the wrong order, the logic will fail!</li>
                 <li><b>Watch the Polarity:</b> 
-                    <br>➡️ <b>Cause (Because, Since):</b> Connects matching polarities (➕ to ➕, or ➖ to ➖). <i>Exception: A ➖ problem can be fixed by a ➕ solution!</i>
+                    <br>➡️ <b>Cause (Because, Since):</b> Connects matching polarities (➕ to ➕, or ➖ to ➖).
                     <br>🔀 <b>Contrast (Although, While):</b> Connects twisting polarities (➕ to ➖, or ➖ to ➕).
                 </li>
                 <li><b>No Tautologies:</b> You cannot use the exact same clause twice in one sentence!</li>
-                <li><b>Sandbox Turns:</b> It's your turn until you hit <b>End Turn ⏭️</b>! Tap a card, then tap a slot to play it. You can overwrite cards or tap board cards to swap them. When the board is full, click <b>Check Logic ✨</b>.</li>
+                <li><b>Sandbox Turns:</b> It's your turn until you hit <b>End Turn ⏭️</b>! Tap a card, then tap a slot to play it. When the board is full, click <b>Check Logic ✨</b>.</li>
             </ul>
             <button class="close-btn" onclick="hideHelp()">Got it!</button>
         </div>
@@ -208,7 +209,7 @@
         <button class="btn-top-corner btn-audio-welcome" id="audioBtnWelcome" onclick="toggleAudio()">🔊</button>
         
         <h1>ABZebra Gets Lost!</h1>
-        <p>Match the Colors. Follow the Shapes.</p>
+        <p>Match the Colors. Read the Causality.</p>
         <div class="options-col">
             <button class="btn-large" onclick="initGame(1)">1 Player (3 Smart Bots)</button>
             <button class="btn-large" onclick="initGame(2)">2 Players (2 Smart Bots)</button>
@@ -343,66 +344,80 @@
                 { text: "despite the fact that", type: "type-connector", logic: "contrast" }, { text: "while", type: "type-connector", logic: "contrast" }
             ],
             clauses: [
-                { text: "they found the oasis", type: "type-clause", theme: "water", polarity: "pos", isSolution: false },
-                { text: "they drank fresh water", type: "type-clause", theme: "water", polarity: "pos", isSolution: true },
-                { text: "there was no water", type: "type-clause", theme: "water", polarity: "neg", isSolution: false },
-                { text: "their canteens were empty", type: "type-clause", theme: "water", polarity: "neg", isSolution: false },
-                { text: "they discovered a path", type: "type-clause", theme: "nav", polarity: "pos", isSolution: false },
-                { text: "they checked their map", type: "type-clause", theme: "nav", polarity: "pos", isSolution: true },
-                { text: "they got completely lost", type: "type-clause", theme: "nav", polarity: "neg", isSolution: false },
-                { text: "their compass broke", type: "type-clause", theme: "nav", polarity: "neg", isSolution: false },
-                { text: "a cool breeze hit", type: "type-clause", theme: "heat", polarity: "pos", isSolution: false },
-                { text: "they rested in the shade", type: "type-clause", theme: "heat", polarity: "pos", isSolution: true },
-                { text: "the sun was scorching", type: "type-clause", theme: "heat", polarity: "neg", isSolution: false },
-                { text: "they felt exhausted", type: "type-clause", theme: "heat", polarity: "neg", isSolution: false },
-                { text: "the bandits left", type: "type-clause", theme: "danger", polarity: "pos", isSolution: false },
-                { text: "they stayed perfectly quiet", type: "type-clause", theme: "danger", polarity: "pos", isSolution: true },
-                { text: "they heard a roar", type: "type-clause", theme: "danger", polarity: "neg", isSolution: false },
-                { text: "they triggered a trap", type: "type-clause", theme: "danger", polarity: "neg", isSolution: false },
-                { text: "they found sweet dates", type: "type-clause", theme: "food", polarity: "pos", isSolution: false },
-                { text: "they shared a hearty meal", type: "type-clause", theme: "food", polarity: "pos", isSolution: true },
-                { text: "they had no food", type: "type-clause", theme: "food", polarity: "neg", isSolution: false },
-                { text: "their stomachs growled", type: "type-clause", theme: "food", polarity: "neg", isSolution: false },
-                { text: "they found a cozy cave", type: "type-clause", theme: "shelter", polarity: "pos", isSolution: false },
-                { text: "they built a campfire", type: "type-clause", theme: "shelter", polarity: "pos", isSolution: true },
-                { text: "the night was freezing", type: "type-clause", theme: "shelter", polarity: "neg", isSolution: false },
-                { text: "they had nowhere to sleep", type: "type-clause", theme: "shelter", polarity: "neg", isSolution: false },
-                { text: "they had supplies", type: "type-clause", theme: "gear", polarity: "pos", isSolution: false },
-                { text: "they repaired their gear", type: "type-clause", theme: "gear", polarity: "pos", isSolution: true },
-                { text: "their bags were heavy", type: "type-clause", theme: "gear", polarity: "neg", isSolution: false },
-                { text: "their rope snapped", type: "type-clause", theme: "gear", polarity: "neg", isSolution: false },
-                { text: "the ground was flat", type: "type-clause", theme: "terrain", polarity: "pos", isSolution: false },
-                { text: "they climbed safely", type: "type-clause", theme: "terrain", polarity: "pos", isSolution: true },
-                { text: "a canyon blocked them", type: "type-clause", theme: "terrain", polarity: "neg", isSolution: false },
-                { text: "the path had thorns", type: "type-clause", theme: "terrain", polarity: "neg", isSolution: false },
-                { text: "the sky was clear", type: "type-clause", theme: "weather", polarity: "pos", isSolution: false },
-                { text: "they wrapped scarves", type: "type-clause", theme: "weather", polarity: "pos", isSolution: true },
-                { text: "a sandstorm hit", type: "type-clause", theme: "weather", polarity: "neg", isSolution: false },
-                { text: "storm clouds gathered", type: "type-clause", theme: "weather", polarity: "neg", isSolution: false },
-                { text: "they felt completely healed", type: "type-clause", theme: "health", polarity: "pos", isSolution: false },
-                { text: "they bandaged the wound", type: "type-clause", theme: "health", polarity: "pos", isSolution: true },
-                { text: "someone twisted an ankle", type: "type-clause", theme: "health", polarity: "neg", isSolution: false },
-                { text: "they felt dizzy", type: "type-clause", theme: "health", polarity: "neg", isSolution: false },
-                { text: "a camel approached", type: "type-clause", theme: "animals", polarity: "pos", isSolution: false },
-                { text: "they tamed the beast", type: "type-clause", theme: "animals", polarity: "pos", isSolution: true },
-                { text: "their horses ran away", type: "type-clause", theme: "animals", polarity: "neg", isSolution: false },
-                { text: "a scorpion appeared", type: "type-clause", theme: "animals", polarity: "neg", isSolution: false },
-                { text: "they had plenty of time", type: "type-clause", theme: "time", polarity: "pos", isSolution: false },
-                { text: "they lit a bright torch", type: "type-clause", theme: "time", polarity: "pos", isSolution: true },
-                { text: "darkness fell very fast", type: "type-clause", theme: "time", polarity: "neg", isSolution: false },
-                { text: "they lost track of time", type: "type-clause", theme: "time", polarity: "neg", isSolution: false },
-                { text: "they unearthed a chest", type: "type-clause", theme: "treasure", polarity: "pos", isSolution: false },
-                { text: "they deciphered runes", type: "type-clause", theme: "treasure", polarity: "pos", isSolution: true },
-                { text: "the chest was empty", type: "type-clause", theme: "treasure", polarity: "neg", isSolution: false },
-                { text: "the gold turned to dust", type: "type-clause", theme: "treasure", polarity: "neg", isSolution: false },
-                { text: "they sang cheerful songs", type: "type-clause", theme: "morale", polarity: "pos", isSolution: false },
-                { text: "they encouraged each other", type: "type-clause", theme: "morale", polarity: "pos", isSolution: true },
-                { text: "they felt hopeless", type: "type-clause", theme: "morale", polarity: "neg", isSolution: false },
-                { text: "the team argued", type: "type-clause", theme: "morale", polarity: "neg", isSolution: false },
-                { text: "they heard a friendly shout", type: "type-clause", theme: "comm", polarity: "pos", isSolution: false },
-                { text: "they fired a flare", type: "type-clause", theme: "comm", polarity: "pos", isSolution: true },
-                { text: "their radio died", type: "type-clause", theme: "comm", polarity: "neg", isSolution: false },
-                { text: "no one could hear them", type: "type-clause", theme: "comm", polarity: "neg", isSolution: false }
+                { text: "they found a clear oasis", type: "type-clause", theme: "water", polarity: "pos", clauseType: "cond" },
+                { text: "they filled their canteens", type: "type-clause", theme: "water", polarity: "pos", clauseType: "out" },
+                { text: "the well was completely dry", type: "type-clause", theme: "water", polarity: "neg", clauseType: "cond" },
+                { text: "they stayed horribly thirsty", type: "type-clause", theme: "water", polarity: "neg", clauseType: "out" },
+                
+                { text: "they had a trusty map", type: "type-clause", theme: "nav", polarity: "pos", clauseType: "cond" },
+                { text: "they found the right path", type: "type-clause", theme: "nav", polarity: "pos", clauseType: "out" },
+                { text: "their compass suddenly broke", type: "type-clause", theme: "nav", polarity: "neg", clauseType: "cond" },
+                { text: "they got completely lost", type: "type-clause", theme: "nav", polarity: "neg", clauseType: "out" },
+                
+                { text: "a cool breeze blew past", type: "type-clause", theme: "heat", polarity: "pos", clauseType: "cond" },
+                { text: "they felt completely refreshed", type: "type-clause", theme: "heat", polarity: "pos", clauseType: "out" },
+                { text: "the desert sun was scorching", type: "type-clause", theme: "heat", polarity: "neg", clauseType: "cond" },
+                { text: "they suffered from heatstroke", type: "type-clause", theme: "heat", polarity: "neg", clauseType: "out" },
+                
+                { text: "the bandits walked away", type: "type-clause", theme: "danger", polarity: "pos", clauseType: "cond" },
+                { text: "they breathed a sigh of relief", type: "type-clause", theme: "danger", polarity: "pos", clauseType: "out" },
+                { text: "a fierce lion blocked the path", type: "type-clause", theme: "danger", polarity: "neg", clauseType: "cond" },
+                { text: "they hid in absolute terror", type: "type-clause", theme: "danger", polarity: "neg", clauseType: "out" },
+                
+                { text: "they found a sweet berry bush", type: "type-clause", theme: "food", polarity: "pos", clauseType: "cond" },
+                { text: "they enjoyed a hearty meal", type: "type-clause", theme: "food", polarity: "pos", clauseType: "out" },
+                { text: "all their travel rations spoiled", type: "type-clause", theme: "food", polarity: "neg", clauseType: "cond" },
+                { text: "their stomachs growled loudly", type: "type-clause", theme: "food", polarity: "neg", clauseType: "out" },
+                
+                { text: "they discovered a safe cave", type: "type-clause", theme: "shelter", polarity: "pos", clauseType: "cond" },
+                { text: "they slept very peacefully", type: "type-clause", theme: "shelter", polarity: "pos", clauseType: "out" },
+                { text: "a sudden freezing wind hit", type: "type-clause", theme: "shelter", polarity: "neg", clauseType: "cond" },
+                { text: "they shivered through the night", type: "type-clause", theme: "shelter", polarity: "neg", clauseType: "out" },
+                
+                { text: "their climbing rope was strong", type: "type-clause", theme: "gear", polarity: "pos", clauseType: "cond" },
+                { text: "they scaled the cliff safely", type: "type-clause", theme: "gear", polarity: "pos", clauseType: "out" },
+                { text: "their old backpacks tore open", type: "type-clause", theme: "gear", polarity: "neg", clauseType: "cond" },
+                { text: "they dropped all their supplies", type: "type-clause", theme: "gear", polarity: "neg", clauseType: "out" },
+                
+                { text: "the ground was completely flat", type: "type-clause", theme: "terrain", polarity: "pos", clauseType: "cond" },
+                { text: "they walked at a fast pace", type: "type-clause", theme: "terrain", polarity: "pos", clauseType: "out" },
+                { text: "a deep canyon blocked them", type: "type-clause", theme: "terrain", polarity: "neg", clauseType: "cond" },
+                { text: "they had to turn around", type: "type-clause", theme: "terrain", polarity: "neg", clauseType: "out" },
+                
+                { text: "the sky was perfectly clear", type: "type-clause", theme: "weather", polarity: "pos", clauseType: "cond" },
+                { text: "they saw the stars brightly", type: "type-clause", theme: "weather", polarity: "pos", clauseType: "out" },
+                { text: "dark storm clouds gathered", type: "type-clause", theme: "weather", polarity: "neg", clauseType: "cond" },
+                { text: "they got soaked in the rain", type: "type-clause", theme: "weather", polarity: "neg", clauseType: "out" },
+                
+                { text: "they rested for three full days", type: "type-clause", theme: "health", polarity: "pos", clauseType: "cond" },
+                { text: "they recovered their strength", type: "type-clause", theme: "health", polarity: "pos", clauseType: "out" },
+                { text: "someone twisted an ankle", type: "type-clause", theme: "health", polarity: "neg", clauseType: "cond" },
+                { text: "the whole team slowed down", type: "type-clause", theme: "health", polarity: "neg", clauseType: "out" },
+                
+                { text: "a friendly camel approached", type: "type-clause", theme: "animals", polarity: "pos", clauseType: "cond" },
+                { text: "they rode across the dunes", type: "type-clause", theme: "animals", polarity: "pos", clauseType: "out" },
+                { text: "a giant scorpion attacked", type: "type-clause", theme: "animals", polarity: "neg", clauseType: "cond" },
+                { text: "they ran away very quickly", type: "type-clause", theme: "animals", polarity: "neg", clauseType: "out" },
+                
+                { text: "they woke up very early", type: "type-clause", theme: "time", polarity: "pos", clauseType: "cond" },
+                { text: "they had plenty of daylight", type: "type-clause", theme: "time", polarity: "pos", clauseType: "out" },
+                { text: "the sun went down fast", type: "type-clause", theme: "time", polarity: "neg", clauseType: "cond" },
+                { text: "they stumbled in the dark", type: "type-clause", theme: "time", polarity: "neg", clauseType: "out" },
+                
+                { text: "they deciphered the hidden map", type: "type-clause", theme: "treasure", polarity: "pos", clauseType: "cond" },
+                { text: "they unearthed a gold chest", type: "type-clause", theme: "treasure", polarity: "pos", clauseType: "out" },
+                { text: "sneaky thieves raided the camp", type: "type-clause", theme: "treasure", polarity: "neg", clauseType: "cond" },
+                { text: "they lost all their precious coins", type: "type-clause", theme: "treasure", polarity: "neg", clauseType: "out" },
+                
+                { text: "they sang a cheerful song", type: "type-clause", theme: "morale", polarity: "pos", clauseType: "cond" },
+                { text: "they felt incredibly brave", type: "type-clause", theme: "morale", polarity: "pos", clauseType: "out" },
+                { text: "the journey was much too long", type: "type-clause", theme: "morale", polarity: "neg", clauseType: "cond" },
+                { text: "the team started to argue", type: "type-clause", theme: "morale", polarity: "neg", clauseType: "out" },
+                
+                { text: "they fired a bright rescue flare", type: "type-clause", theme: "comm", polarity: "pos", clauseType: "cond" },
+                { text: "a rescue helicopter arrived", type: "type-clause", theme: "comm", polarity: "pos", clauseType: "out" },
+                { text: "their radio battery completely died", type: "type-clause", theme: "comm", polarity: "neg", clauseType: "cond" },
+                { text: "no one could hear their calls", type: "type-clause", theme: "comm", polarity: "neg", clauseType: "out" }
             ]
         };
 
@@ -589,38 +604,37 @@
             let isFormatB = s0.type === "type-clause" && s1.type === "type-connector" && s2.type === "type-clause";
             if (!isFormatA && !isFormatB) return false;
 
-            let con, cause, effect;
-            if (isFormatA) { con = s0; cause = s1; effect = s2; } else { con = s1; effect = s0; cause = s2; }
+            let con, clause1, clause2;
+            if (isFormatA) { con = s0; clause1 = s1; clause2 = s2; } 
+            else { clause1 = s0; con = s1; clause2 = s2; }
 
-            if (cause.theme !== effect.theme) return false;
-            if (cause.text === effect.text) return false; // Prevent Bot Tautology
+            if (clause1.theme !== clause2.theme) return false;
+            if (clause1.text === clause2.text) return false; // Prevent Bot Tautology
 
-            if (con.logic === "cause") {
-                if (cause.polarity === effect.polarity) return true;
-                if (cause.polarity === "neg" && effect.isSolution === true) return true;
-                return false;
-            } else if (con.logic === "contrast") {
-                return cause.polarity !== effect.polarity;
-            }
+            if (isFormatA && (clause1.clauseType !== "cond" || clause2.clauseType !== "out")) return false;
+            if (isFormatB && (clause1.clauseType !== "out" || clause2.clauseType !== "cond")) return false;
+
+            if (con.logic === "cause") return clause1.polarity === clause2.polarity;
+            if (con.logic === "contrast") return clause1.polarity !== clause2.polarity;
+            
             return false;
         }
 
         function getSmartBotPlay(hand) {
             if (Math.random() < 0.3) return Math.floor(Math.random() * hand.length);
-            const con = boardState.find(c => c !== null && c.type === "type-connector");
-            const clauses = boardState.filter(c => c !== null && c.type === "type-clause");
-
-            if (con && clauses.length === 1) {
-                const targetLogic = (con.logic === "cause") ? clauses[0].logic : (clauses[0].logic === "pos" ? "neg" : "pos");
-                const idx = hand.findIndex(c => c.type === "type-clause" && c.theme === clauses[0].theme && c.polarity === targetLogic && c.text !== clauses[0].text);
-                if (idx !== -1) return idx;
-            }
-
-            if (!con && clauses.length === 2) {
-                if (clauses[0].theme !== clauses[1].theme || clauses[0].text === clauses[1].text) return Math.floor(Math.random() * hand.length); 
-                const targetLogic = (clauses[0].polarity === clauses[1].polarity || clauses[1].isSolution) ? "cause" : "contrast";
-                const idx = hand.findIndex(c => c.type === "type-connector" && c.logic === targetLogic);
-                if (idx !== -1) return idx;
+            
+            for (let c = 0; c < hand.length; c++) {
+                for (let s = 0; s < 3; s++) {
+                    if (boardState[s] === null) {
+                        let testBoard = [...boardState];
+                        testBoard[s] = hand[c];
+                        if (testBoard.filter(t=>t!==null).length === 2) {
+                            let partialTheme = testBoard.find(t => t !== null && t.type === "type-clause")?.theme;
+                            if (hand[c].type === "type-clause" && hand[c].theme === partialTheme) return c;
+                            if (hand[c].type === "type-connector") return c;
+                        }
+                    }
+                }
             }
             return Math.floor(Math.random() * hand.length);
         }
@@ -638,7 +652,6 @@
                     logMsg(`Bot ${turnIndex} thinks the logic is perfect and submits!`);
                     evaluateSentence();
                 } else {
-                    // Bot Mending Logic
                     if (Math.random() > 0.3) {
                         for (let i = 0; i < 3; i++) {
                             for (let j = 0; j < hand.length; j++) {
@@ -662,6 +675,7 @@
             cardsPlayedThisTurn = true; consecutivePasses = 0;
             const card = players[playerIdx].hand.splice(cardIndex, 1)[0];
             players[playerIdx].hand.push(drawCard()); 
+            
             SFX.place(); boardState[targetSlotIdx] = card; updateUI(); 
             
             if (playerTypes[playerIdx] !== 'human') {
@@ -683,22 +697,24 @@
                 let isFormatA = s0.type === "type-connector" && s1.type === "type-clause" && s2.type === "type-clause";
                 let isFormatB = s0.type === "type-clause" && s1.type === "type-connector" && s2.type === "type-clause";
 
-                if (!isFormatA && !isFormatB) { handleFail("Structure Error! Must be [Connector, Clause, Clause] OR [Clause, Connector, Clause]."); return; }
+                if (!isFormatA && !isFormatB) { handleFail("Structure Error! Must be [Connector] [Clause] [Clause] OR [Clause] [Connector] [Clause]."); return; }
 
-                let con, cause, effect;
-                if (isFormatA) { con = s0; cause = s1; effect = s2; } else { con = s1; effect = s0; cause = s2; }
+                let con, clause1, clause2;
+                if (isFormatA) { con = s0; clause1 = s1; clause2 = s2; }
+                else { clause1 = s0; con = s1; clause2 = s2; }
 
-                if (cause.theme !== effect.theme) { handleFail(`Theme Error! You cannot mix a ${themeData[cause.theme].icon} card with a ${themeData[effect.theme].icon} card!`); return; }
-                if (cause.text === effect.text) { handleFail(`Repetition Error! ABZebra cannot use the exact same card twice.`); return; }
+                if (clause1.theme !== clause2.theme) { handleFail(`Theme Error! You cannot mix a ${themeData[clause1.theme].icon} card with a ${themeData[clause2.theme].icon} card!`); return; }
+                if (clause1.text === clause2.text) { handleFail(`Repetition Error! ABZebra cannot use the exact same card twice.`); return; }
+                if (isFormatA && (clause1.clauseType !== "cond" || clause2.clauseType !== "out")) { handleFail(`Syntax Error! You put the Cause and Effect backwards!`); return; }
+                if (isFormatB && (clause1.clauseType !== "out" || clause2.clauseType !== "cond")) { handleFail(`Syntax Error! You put the Cause and Effect backwards!`); return; }
 
                 let isValidLogic = false; let failReason = "";
 
                 if (con.logic === "cause") {
-                    if (cause.polarity === effect.polarity) isValidLogic = true;
-                    else if (cause.polarity === "neg" && effect.isSolution === true) isValidLogic = true;
-                    else failReason = `Logic Error! A ${cause.polarity==="pos"?"➕":"➖"} card leads to a ${effect.polarity==="pos"?"➕":"➖"} outcome!`;
+                    if (clause1.polarity === clause2.polarity) isValidLogic = true;
+                    else failReason = `Logic Error! A ${clause1.polarity==="pos"?"➕":"➖"} condition leads to a ${clause2.polarity==="pos"?"➕":"➖"} outcome!`;
                 } else if (con.logic === "contrast") {
-                    if (cause.polarity !== effect.polarity) isValidLogic = true;
+                    if (clause1.polarity !== clause2.polarity) isValidLogic = true;
                     else failReason = `Logic Error! "Although" expects a twist (➕ to ➖), but these match.`;
                 }
 
@@ -727,7 +743,7 @@
                 setTimeout(() => SFX.waterLoss(), 800);
                 setTimeout(() => {
                     document.getElementById('slot-0').classList.remove('error-shake'); document.getElementById('slot-1').classList.remove('error-shake'); document.getElementById('slot-2').classList.remove('error-shake');
-                    logMsg("Team: Match Shapes, check Badges, and remove duplicates to fix it!");
+                    logMsg("Team: Check the Syntax and Polarity Badges to fix it!");
                     isEvaluating = false; processTurn(); 
                 }, 3500);
             } else { setTimeout(processTurn, 1500); }
@@ -738,17 +754,10 @@
                 const icon = themeData[cardData.theme].icon;
                 const badgeClass = cardData.polarity === 'pos' ? 'badge-pos' : 'badge-neg';
                 const badgeSign = cardData.polarity === 'pos' ? '➕' : '➖';
-                return `
-                    <div class="card-bg-icon">${icon}</div>
-                    <div class="polarity-badge ${badgeClass}">${badgeSign}</div>
-                    <span class="card-text">${capitalize(cardData.text)}</span>
-                `;
+                return `<div class="card-bg-icon">${icon}</div><div class="polarity-badge ${badgeClass}">${badgeSign}</div><span class="card-text">${capitalize(cardData.text)}</span>`;
             } else {
                 const badgeSign = cardData.logic === 'cause' ? '➡️' : '🔀';
-                return `
-                    <div class="polarity-badge badge-conn">${badgeSign}</div>
-                    <span class="card-text">${capitalize(cardData.text)}</span>
-                `;
+                return `<div class="polarity-badge badge-conn">${badgeSign}</div><span class="card-text">${capitalize(cardData.text)}</span>`;
             }
         }
 
@@ -769,17 +778,13 @@
             }
 
             for(let i=0; i<4; i++) {
-                const handDiv = document.getElementById(`hand-${i}`);
-                handDiv.innerHTML = "";
-                
+                const handDiv = document.getElementById(`hand-${i}`); handDiv.innerHTML = "";
                 if (playerTypes[i] === 'human') {
                     players[i].hand.forEach((card, index) => {
-                        const cardEl = document.createElement('div');
-                        cardEl.className = `card ${card.type}`;
+                        const cardEl = document.createElement('div'); cardEl.className = `card ${card.type}`;
                         if (card.type === "type-clause") cardEl.style.backgroundColor = themeData[card.theme].color;
                         if (selectedHandPlayerIndex === i && selectedHandCardIndex === index) cardEl.classList.add('selected');
-                        cardEl.innerHTML = buildCardInnerHtml(card);
-                        cardEl.onclick = () => cardTapped(i, index);
+                        cardEl.innerHTML = buildCardInnerHtml(card); cardEl.onclick = () => cardTapped(i, index);
                         cardEl.setAttribute("draggable", "true"); cardEl.ondragstart = (ev) => dragFromHand(ev, i, index);
                         handDiv.appendChild(cardEl);
                     });
@@ -791,9 +796,7 @@
             }
 
             for(let i=0; i<3; i++) {
-                const slot = document.getElementById(`slot-${i}`);
-                const cardData = boardState[i];
-
+                const slot = document.getElementById(`slot-${i}`); const cardData = boardState[i];
                 if (cardData === null) {
                     slot.innerHTML = "[Empty]"; slot.className = "slot"; slot.setAttribute("draggable", "false");
                     slot.style.backgroundColor = ""; slot.style.color = ""; slot.style.borderColor = "";
