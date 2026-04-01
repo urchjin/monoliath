@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abacuzebra: Tactical Grid</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Datatype&family=Courier+Prime:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #0a0a0a; --panel-bg: #111;
+            --neon-green: #39ff14; --neon-red: #ff3939;
+            --neon-blue: #00f3ff; --neon-yellow: #ffeb3b;
+            --neon-orange: #ff9900; --neon-gold: #ffd700;
+            --text-color: #f0f0f0; --bead-inactive: #333;
+            --zebra-stripe: repeating-linear-gradient(45deg, #0f0f0f, #0f0f0f 10px, #141414 10px, #141414 20px);
+        }
+
+        body { font-family: 'Datatype', 'Courier Prime', Courier, monospace; background-color: var(--bg-color); background-image: var(--zebra-stripe); color: var(--text-color); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; user-select: none; }
+        h1, h2, h3, h4 { text-transform: uppercase; letter-spacing: 2px; margin: 10px 0; text-align: center; font-weight: normal;}
+        .hidden { display: none !important; }
+
+        .panel { width: 100%; max-width: 1200px; background: var(--panel-bg); padding: 20px; border-radius: 10px; border: 2px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box;}
+
+        /* --- SETUP SCREEN --- */
+        .setup-group { margin: 15px 0; display: flex; flex-direction: column; gap: 10px; align-items: center;}
+        select { background: #000; color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 10px; font-size: 1.1rem; font-family: inherit; border-radius: 5px; width: 100%; max-width: 300px; text-align: center; }
+
+        /* --- HEADER & STATUS --- */
+        .header { display: flex; justify-content: space-between; align-items: center; background: #050505; padding: 10px 20px; border-radius: 8px; border: 1px solid #333; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;}
+        #turn-counter { font-size: 1.2rem; font-weight: bold; color: #888; }
+        #turn-indicator { font-size: 1.3rem; color: #fff; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .draft-order { display: flex; gap: 5px; font-size: 0.8rem; color: #555; }
+        .draft-token { padding: 3px 6px; border-radius: 3px; border: 1px solid #333;}
+        .draft-token.active { border-color: #fff; color: #fff; background: #333;}
+        
+        .btn-audio { background: #222; color: #fff; border: 1px solid #555; padding: 5px 15px; font-family: inherit; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: 0.2s; }
+        .btn-audio:hover { background: var(--neon-blue); color: #000; }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;}
+        .score-box { background: #050505; border: 1px solid #333; padding: 15px; border-radius: 8px; flex: 1; min-width: 150px; text-align: center; transition: all 0.3s;}
+        .score-box.active { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); border-color: #666;}
+        .score-title { font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;}
+        .score-val { font-size: 1.8rem; font-weight: bold; word-break: break-all;}
+        
+        .p0-theme { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+        .p1-theme { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); }
+        .p2-theme { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+        .p3-theme { color: var(--neon-yellow); text-shadow: 0 0 10px var(--neon-yellow); }
+
+        /* --- LAYOUT: BOARD & ABACUS --- */
+        .game-layout { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; align-items: flex-start;}
+        
+        .board-container { background: #000; padding: 15px; border-radius: 8px; border: 2px solid #444; width: fit-content;}
+        .grid { display: grid; grid-template-columns: repeat(6, 60px); grid-template-rows: repeat(6, 60px); gap: 4px; }
+        .cell { background: #1a1a1a; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; color: #888; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;}
+        .cell.gold { color: var(--neon-gold); text-shadow: 0 0 8px rgba(255, 215, 0, 0.5); background: #2a2510;}
+        .cell.valid-move { background: #2a332a; border: 1px solid var(--neon-green); color: #fff;}
+        .cell.valid-move:hover { background: var(--neon-green); color: #000; transform: scale(1.1); z-index: 10;}
+        
+        .pawn { position: absolute; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.8); z-index: 5;}
+        .pawn-0 { background: var(--neon-green); border: 2px solid #fff;}
+        .pawn-1 { background: var(--neon-red); border: 2px solid #fff;}
+        .pawn-2 { background: var(--neon-blue); border: 2px solid #fff;}
+        .pawn-3 { background: var(--neon-yellow); border: 2px solid #fff;}
+
+        /* RIGHT PANEL: ACTIONS & ABACUS */
+        .action-panel { flex: 1; min-width: 320px; max-width: 600px; display: flex; flex-direction: column; gap: 15px;}
+        
+        .action-menu { background: #050505; padding: 15px; border-radius: 8px; border: 1px solid #333; text-align: center;}
+        .math-summary { font-size: 1.2rem; margin-bottom: 15px; color: #fff;}
+        
+        .btn { background: #222; color: #aaa; border: 1px solid #555; padding: 12px; font-size: 0.9rem; font-family: inherit; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; width: 100%; margin-bottom: 8px;}
+        .btn:hover:not(:disabled) { background: #333; color: #fff; border-color: #888;}
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .btn-mul { color: var(--neon-green); border-color: var(--neon-green); }
+        .btn-mul:hover:not(:disabled) { background: #1a331a; box-shadow: 0 0 10px var(--neon-green);}
+        .btn-div { color: var(--neon-red); border-color: var(--neon-red); }
+        .btn-div:hover:not(:disabled) { background: #331a1a; box-shadow: 0 0 10px var(--neon-red);}
+        .btn-reset { background: var(--neon-orange); color: #000; border-color: var(--neon-orange); font-size: 1.1rem; margin-top: 10px; padding: 15px;}
+        .btn-reset:hover:not(:disabled) { background: #ffaa33; box-shadow: 0 0 15px var(--neon-orange);}
+
+        /* FORMULA BOX */
+        #calc-step-box { background: #111; border: 2px dashed var(--neon-orange); padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 0 15px rgba(255, 153, 0, 0.2);}
+        #calc-step-title { font-size: 1.2rem; color: var(--neon-orange); margin-bottom: 5px; text-transform: uppercase;}
+        #calc-step-target { font-size: 1.5rem; color: #fff; }
+
+        /* TWO ABACUS SYSTEM */
+        .abacus-wrapper { background: #000; padding: 15px; border-radius: 8px; border: 1px solid #444; text-align: center; }
+        .abacus-boards-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 10px;}
+        .abacus-box { background: #111; padding: 10px; border-radius: 5px; border: 1px dashed #555; flex: 1; min-width: 200px; transition: all 0.3s;}
+        .abacus-box.locked { opacity: 0.4; pointer-events: none; border-color: #333;}
+        .abacus-box.active { box-shadow: 0 0 20px var(--neon-blue); border-color: var(--neon-blue); transform: scale(1.02);}
+        
+        .abacus-viewport { width: 100%; overflow-x: auto; padding-bottom: 10px; display: flex; justify-content: center;}
+        .abacus { display: flex; gap: 6px; background: #000; padding: 10px; border-radius: 5px; border: 1px solid #333; position: relative; min-width: max-content;}
+        .abacus::before { content: ''; position: absolute; top: 50px; left: 0; right: 0; height: 3px; background: #888; z-index: 1; }
+        
+        .column { display: flex; flex-direction: column; align-items: center; width: 24px; position: relative; }
+        .column::after { content: ''; position: absolute; top: 0; bottom: 0; width: 3px; background: #444; z-index: 0; }
+
+        .bead { width: 22px; height: 14px; background: var(--bead-inactive); border-radius: 7px; margin: 2px 0; cursor: pointer; z-index: 2; transition: transform 0.1s, background 0.1s; }
+        .bead.active { background: var(--neon-blue); box-shadow: 0 0 5px var(--neon-blue); }
+        .bead-top { margin-bottom: 20px; }
+        .bead-top.active { transform: translateY(16px); }
+        .bead-bottom.active { transform: translateY(-16px); }
+        
+        #global-message { margin-bottom: 15px; font-weight: bold; font-size: 1.1rem; text-align: center; text-transform: uppercase; min-height: 25px;}
+        .error { color: var(--neon-red); text-shadow: 0 0 8px rgba(255,0,0,0.6);} 
+        .success { color: var(--neon-green); text-shadow: 0 0 8px rgba(0,255,0,0.6);} 
+        .warning { color: var(--neon-orange); } .info { color: var(--neon-blue); }
+
+        /* End Screen */
+        .end-screen { text-align: center; padding: 40px; }
+        .podium { display: flex; flex-direction: column; gap: 10px; max-width: 400px; margin: 0 auto 30px auto;}
+        .podium-row { display: flex; justify-content: space-between; background: #111; padding: 15px; border: 1px solid #333; border-radius: 5px; font-size: 1.2rem; font-weight: bold;}
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: repeat(6, 45px); grid-template-rows: repeat(6, 45px); }
+            .cell { font-size: 1.1rem; }
+            .pawn { width: 25px; height: 25px; }
+            .abacus-box { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="global-message">AWAITING SYSTEM INITIALIZATION...</div>
+
+    <div class="panel" id="welcome-phase">
+        <h1 style="font-size: 3rem; color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue);">ABACUZEBRA<br><span style="font-size: 1.5rem; color: #fff;">TACTICAL GRID</span></h1>
+        
+        <div class="setup-group" style="margin-top: 30px;">
+            <label style="color: #aaa;">GAME MODE:</label>
+            <select id="game-mode" style="border-color: var(--neon-orange); color: var(--neon-orange);">
+                <option value="mul">Multiplication Race (Start at 12)</option>
+                <option value="div">Division Race (Start at 1200)</option>
+                <option value="wars">Decrypting Wars (Start at 12, Mixed Combat)</option>
+            </select>
+        </div>
+
+        <div class="setup-group" style="margin-top: 10px;">
+            <label style="color: #aaa;">TOTAL PLAYERS (INCL. YOU):</label>
+            <select id="total-players" onchange="updateAISelect()">
+                <option value="2">2 Players</option>
+                <option value="3">3 Players</option>
+                <option value="4" selected>4 Players</option>
+            </select>
+        </div>
+        <div class="setup-group">
+            <label style="color: #aaa;">NUMBER OF AI BOTS:</label>
+            <select id="ai-count">
+                <option value="3" selected>3 Bots</option>
+                <option value="2">2 Bots</option>
+                <option value="1">1 Bot</option>
+                <option value="0">0 Bots (Pass & Play)</option>
+            </select>
+        </div>
+
+        <div style="background: #050505; padding: 20px; border-radius: 8px; border: 1px dashed #555; text-align: left; max-width: 800px; margin: 30px auto; line-height: 1.6;">
+            <h3 style="margin-top: 0; color: #fff;">SOROBAN RULES</h3>
+            <ul style="color: #ccc; padding-left: 20px;">
+                <li><strong>The Grid:</strong> Move up to 3 spaces to target a specific number.</li>
+                <li><strong>Multiply:</strong> Calculate <code>[Start × Landed]</code> on the abacus. The Product is automatically added to your score.</li>
+                <li><strong>Divide:</strong> Calculate <code>[Your Score ÷ Landed]</code>. Your score becomes the Quotient! Remainders cause penalties!</li>
+                <li><strong>Hack:</strong> Target an opponent's score and divide it by your Landed Number. Their score drops to the Quotient, AND you get the Landed Number as a Bounty!</li>
+                <li><strong>1-Bead Rule:</strong> Move <span style="color: var(--neon-orange);">ONE BEAD</span> at a time. The game auto-verifies when you reach the sub-target.</li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center;">
+            <button class="btn" style="background: var(--neon-blue); color: #000; border-color: var(--neon-blue); font-size: 1.5rem; padding: 20px 40px; max-width: 300px;" onclick="initGame()">INITIALIZE BOARD</button>
+        </div>
+    </div>
+
+    <div class="panel hidden" id="game-phase">
+        <div class="header">
+            <div>
+                <span id="turn-counter">ROUND: 1 / 5</span><br>
+                <div class="draft-order" id="draft-queue"></div>
+            </div>
+            <div id="turn-indicator">SYSTEM BOOTING...</div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="font-size: 0.9rem; color: #888; text-transform: uppercase;" id="mode-display"></div>
+                <button class="btn-audio" onclick="AudioEngine.toggleMute()" id="btn-mute">🔊 BGM ON</button>
+            </div>
+        </div>
+
+        <div class="scoreboard" id="scoreboard"></div>
+
+        <div class="game-layout">
+            <div class="board-container">
+                <div class="grid" id="grid"></div>
+            </div>
+
+            <div class="action-panel">
+                
+                <div class="action-menu hidden" id="action-menu">
+                    <h3 style="margin-top: 0; color: #888;">ACTION REQUIRED</h3>
+                    <div class="math-summary" id="math-summary">
+                        Start: <span id="val-start" style="color:var(--neon-green);">0</span> 
+                        | Landed: <span id="val-end" style="color:var(--neon-red);">0</span>
+                    </div>
+                    <div id="target-buttons"></div>
+                </div>
+
+                <div id="calc-step-box" class="hidden">
+                    <div id="calc-step-title">STEP 1: ...</div>
+                    <div id="calc-step-target">TARGET ABACUS VALUE: 0</div>
+                    <div style="font-size: 0.85rem; color: #888; margin-top: 5px;">Toggle ONE bead at a time. System will auto-verify when target is hit!</div>
+                </div>
+
+                <div class="abacus-wrapper hidden" id="abacus-section">
+                    <h3 style="margin-top: 0; color: #888;">ABACUS WORKSPACE</h3>
+                    
+                    <div class="abacus-boards-container">
+                        <div class="abacus-box locked" id="key-box">
+                            <h4 id="key-title" style="margin: 0 0 5px 0; color: var(--neon-orange);">THE KEY (Quotient)</h4>
+                            <div class="abacus-viewport">
+                                <div class="abacus" id="key-abacus"></div>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-top: 5px; color: #888;">Reads: <span id="key-val" style="color: var(--neon-blue);">0</span></div>
+                        </div>
+
+                        <div class="abacus-box locked" id="cipher-box">
+                            <h4 id="cipher-title" style="margin: 0 0 5px 0; color: var(--neon-orange);">THE CIPHER (Dividend)</h4>
+                            <div class="abacus-viewport">
+                                <div class="abacus" id="cipher-abacus"></div>
+                            </div>
+                            <div style="font-size: 0.9rem; margin-top: 5px; color: #888;">Reads: <span id="cipher-val" style="color: var(--neon-blue);">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-row" style="margin-top: 15px;" id="calc-buttons">
+                        <button class="btn btn-reset" id="btn-reset" onclick="resetBoard()">RESET BEADS (Rewind Step)</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="panel hidden end-screen" id="end-phase">
+        <h1 class="end-title" id="end-title">DECRYPTION COMPLETE</h1>
+        <h3 style="color: #888; margin-bottom: 30px;">FINAL STANDINGS</h3>
+        
+        <div class="podium" id="podium"></div>
+        <button class="btn" style="background: var(--neon-blue); color: #000; border-color: var(--neon-blue); font-size: 1.1rem; margin-top: 30px; width: 300px; padding: 15px;" onclick="location.reload()">REBOOT MAINFRAME</button>
+    </div>
+
+    <script>
+        // --- AUDIO ENGINE (Procedural AAA Synthesizer) ---
+        const AudioEngine = (function() {
+            let ctx = null;
+            let bgmInterval = null;
+            let isMuted = false;
+
+            function init() {
+                if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+                if (ctx.state === 'suspended') ctx.resume();
+            }
+
+            function playTone(freq, type, duration, vol = 0.1) {
+                if(isMuted || !ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            }
+
+            return {
+                init,
+                toggleMute: () => { 
+                    isMuted = !isMuted; 
+                    document.getElementById('btn-mute').innerText = isMuted ? "🔇 BGM OFF" : "🔊 BGM ON";
+                    return isMuted; 
+                },
+                playClick: () => playTone(600, 'sine', 0.1, 0.05),
+                playBead: () => playTone(1200, 'square', 0.05, 0.01),
+                playMove: () => { playTone(300, 'triangle', 0.1, 0.05); setTimeout(()=>playTone(450, 'triangle', 0.1, 0.05), 100); },
+                playSuccess: () => {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => setTimeout(() => playTone(f, 'sine', 0.2, 0.05), i * 100));
+                },
+                playError: () => { playTone(150, 'sawtooth', 0.3, 0.08); setTimeout(()=>playTone(100, 'sawtooth', 0.4, 0.08), 150); },
+                playHack: () => { playTone(900, 'square', 0.1, 0.05); setTimeout(()=>playTone(200, 'sawtooth', 0.5, 0.1), 100); },
+                startBGM: () => {
+                    if (bgmInterval) return;
+                    const notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 261.63, 196.00];
+                    let idx = 0;
+                    bgmInterval = setInterval(() => {
+                        if(!isMuted && ctx && ctx.state === 'running') {
+                            playTone(notes[idx], 'sine', 0.3, 0.015);
+                        }
+                        idx = (idx + 1) % notes.length;
+                    }, 250);
+                }
+            };
+        })();
+
+        // --- GAME STATE ---
+        const ROUNDS = 5;
+        const GRID_SIZE = 6;
+        
+        let gameMode = 'mul'; 
+        let totalPlayers = 4;
+        let aiCount = 3;
+        let players = []; 
+        let board = []; 
+        let turnQueue = []; 
+        let currentTurnIndex = 0;
+        
+        let gameState = 'idle'; // idle, moving, action_select, calculating
+        let playerState = 'idle'; // idle, calculating
+        
+        let moveData = { startVal: 0n, endVal: 0n, r: -1, c: -1 };
+        let calcData = { op: null, targetPlayerIdx: -1, expectedAns: 0n, finalFactor: 0n }; 
+        
+        let calcOp = null; 
+        let calcQueue = []; 
+        let activeSubTarget = null;
+        let activeAbacusId = '';
+        let subTargetStartVal = 0n; 
+        let savedAbacusVal = 0n;    
+
+        // --- UTILITY FUNCTIONS ---
+        function showMessage(text, className) {
+            const msg = document.getElementById('global-message');
+            if (msg) {
+                msg.innerText = text;
+                msg.className = className;
+            }
+        }
+
+        function updateTurnIndicator(text) {
+            const ind = document.getElementById('turn-indicator');
+            if (ind) {
+                ind.innerText = text;
+                let activeP = players[turnQueue[currentTurnIndex]];
+                if (activeP) {
+                    ind.style.color = activeP.isAI ? '#888' : 'var(--neon-green)';
+                }
+            }
+        }
+
+        // --- SETUP ---
+        function updateAISelect() {
+            AudioEngine.playClick();
+            const total = parseInt(document.getElementById('total-players').value);
+            const aiSel = document.getElementById('ai-count');
+            aiSel.innerHTML = '';
+            for(let i = total - 1; i >= 0; i--) {
+                aiSel.innerHTML += `<option value="${i}">${i} Bot${i!==1?'s':''}</option>`;
+            }
+        }
+
+        function initGame() {
+            try {
+                AudioEngine.init();
+                AudioEngine.playSuccess();
+                AudioEngine.startBGM();
+
+                totalPlayers = parseInt(document.getElementById('total-players').value);
+                aiCount = parseInt(document.getElementById('ai-count').value);
+                gameMode = document.getElementById('game-mode').value;
+                
+                document.getElementById('welcome-phase').classList.add('hidden');
+                document.getElementById('game-phase').classList.remove('hidden');
+
+                let modeText = gameMode === 'mul' ? "Multiplication Race" : gameMode === 'div' ? "Division Race" : "Decrypting Wars";
+                document.getElementById('mode-display').innerText = `MODE: ${modeText}`;
+
+                setupBoard();
+                setupPlayers();
+                setupTurnQueue();
+                
+                renderScoreboard();
+                renderBoard();
+                renderDraftQueue();
+                
+                startTurn();
+                showMessage("System boot successful. Proceed.", "success");
+            } catch(e) {
+                console.error("Initialization Error:", e);
+                showMessage(`CRITICAL ERROR DURING BOOT: ${e.message}`, "error");
+            }
+        }
+
+        function setupBoard() {
+            board = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+            
+            const smalls = [2, 3, 4, 5, 6, 8, 10, 12, 15];
+            const bigs = [60, 72, 80, 90, 100, 120, 144, 150, 200, 240, 300, 360, 400];
+            
+            for(let r=0; r<GRID_SIZE/2; r++) {
+                for(let c=0; c<GRID_SIZE; c++) {
+                    let isGold = Math.random() < 0.15; 
+                    let val;
+                    if (gameMode === 'div' || gameMode === 'wars') {
+                        val = Math.random() > 0.5 ? bigs[Math.floor(Math.random() * bigs.length)] : smalls[Math.floor(Math.random() * smalls.length)];
+                    } else {
+                        val = isGold ? Math.floor(Math.random() * 5) + 16 : Math.floor(Math.random() * 14) + 2; 
+                    }
+                    board[r][c] = { val: BigInt(val), isGold };
+                    board[GRID_SIZE - 1 - r][GRID_SIZE - 1 - c] = { val: BigInt(val), isGold };
+                }
+            }
+
+            const starts = [{r: 0, c: 0}, {r: 5, c: 5}, {r: 0, c: 5}, {r: 5, c: 0}];
+            let startScore = gameMode === 'div' ? 1200n : 12n;
+            starts.forEach(pos => {
+                board[pos.r][pos.c] = { val: startScore, isGold: false };
+            });
+        }
+
+        function setupPlayers() {
+            players = [];
+            const themes = ['p0-theme', 'p1-theme', 'p2-theme', 'p3-theme'];
+            const names = ['PLAYER 1', 'PLAYER 2', 'PLAYER 3', 'PLAYER 4'];
+            
+            let humanCount = totalPlayers - aiCount;
+            const starts = [{r: 0, c: 0}, {r: 5, c: 5}, {r: 0, c: 5}, {r: 5, c: 0}];
+            let startScore = gameMode === 'div' ? 1200n : 12n;
+            
+            for(let i=0; i<totalPlayers; i++) {
+                players.push({
+                    id: i,
+                    name: i < humanCount ? names[i] : `AI BOT ${i}`,
+                    isAI: i >= humanCount,
+                    score: startScore,
+                    r: starts[i].r,
+                    c: starts[i].c,
+                    theme: themes[i]
+                });
+            }
+        }
+
+        function setupTurnQueue() {
+            turnQueue = [];
+            for(let round=1; round<=ROUNDS; round++) {
+                let roundOrder = [];
+                for(let p=0; p<totalPlayers; p++) roundOrder.push(p);
+                if (round % 2 === 0) roundOrder.reverse(); 
+                turnQueue = turnQueue.concat(roundOrder);
+            }
+        }
+
+        // --- RENDERERS ---
+        function renderScoreboard() {
+            const container = document.getElementById('scoreboard');
+            container.innerHTML = '';
+            players.forEach((p, idx) => {
+                const isActive = (turnQueue[currentTurnIndex] === idx);
+                container.innerHTML += `
+                    <div class="score-box ${isActive ? 'active' : ''}" id="scorebox-${idx}">
+                        <div class="score-title ${p.theme}">${p.name}</div>
+                        <div class="score-val" id="scoreval-${idx}">${p.score}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDraftQueue() {
+            const container = document.getElementById('draft-queue');
+            container.innerHTML = 'UPCOMING: ';
+            for(let i=currentTurnIndex; i<Math.min(currentTurnIndex + 5, turnQueue.length); i++) {
+                let pIdx = turnQueue[i];
+                let isCurrent = (i === currentTurnIndex);
+                container.innerHTML += `<span class="draft-token ${isCurrent ? 'active' : ''}">${players[pIdx].name}</span>`;
+            }
+        }
+
+        function getOccupant(r, c) {
+            for(let i=0; i<players.length; i++) {
+                if(players[i].r === r && players[i].c === c) return players[i];
+            }
+            return null;
+        }
+
+        function getValidMoves(pIdx) {
+            let p = players[pIdx];
+            let moves = [];
+            const dirs = [[-1,0], [1,0], [0,-1], [0,1]]; 
+            
+            dirs.forEach(d => {
+                for(let step=1; step<=3; step++) {
+                    let nr = p.r + (d[0] * step);
+                    let nc = p.c + (d[1] * step);
+                    
+                    if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) break; 
+                    if (getOccupant(nr, nc)) break; 
+                    moves.push({r: nr, c: nc});
+                }
+            });
+            return moves;
+        }
+
+        function renderBoard(validMoves = []) {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            
+            for(let r=0; r<GRID_SIZE; r++) {
+                for(let c=0; c<GRID_SIZE; c++) {
+                    let cellData = board[r][c];
+                    let occupant = getOccupant(r, c);
+                    let isValid = validMoves.some(m => m.r === r && m.c === c);
+                    
+                    let cellHTML = `<div class="cell ${cellData.isGold ? 'gold' : ''} ${isValid ? 'valid-move' : ''}" 
+                                        onclick="handleCellClick(${r}, ${c})">
+                                        ${cellData.val}
+                                    `;
+                    if (occupant) cellHTML += `<div class="pawn pawn-${occupant.id}"></div>`;
+                    cellHTML += `</div>`;
+                    grid.innerHTML += cellHTML;
+                }
+            }
+        }
+
+        // --- GAME FLOW ---
+        function startTurn() {
+            if (currentTurnIndex >= turnQueue.length) { endMatch(); return; }
+            
+            const pIdx = turnQueue[currentTurnIndex];
+            const p = players[pIdx];
+            
+            let roundNum = Math.floor(currentTurnIndex / totalPlayers) + 1;
+            document.getElementById('turn-counter').innerText = `ROUND: ${roundNum} / ${ROUNDS}`;
+            
+            renderScoreboard();
+            renderDraftQueue();
+            
+            if (playerState === 'idle') {
+                document.getElementById('action-menu').classList.add('hidden');
+                document.getElementById('abacus-section').classList.add('hidden');
+                document.getElementById('calc-step-box').classList.add('hidden');
+                
+                document.getElementById('key-box').classList.remove('active');
+                document.getElementById('key-box').classList.add('locked');
+                document.getElementById('cipher-box').classList.remove('active');
+                document.getElementById('cipher-box').classList.add('locked');
+                
+                showMessage("", "");
+
+                if (p.isAI) {
+                    gameState = 'ai_thinking';
+                    updateTurnIndicator(`[${p.name}] IS CALCULATING...`);
+                    renderBoard([]); 
+                    setTimeout(executeAITurn, 1000);
+                } else {
+                    gameState = 'moving';
+                    updateTurnIndicator(`[${p.name}] - SELECT MOVEMENT`);
+                    let moves = getValidMoves(pIdx);
+                    if (moves.length === 0) {
+                        showMessage("No valid moves! Turn skipped.", "error");
+                        setTimeout(endTurn, 2000);
+                    } else {
+                        renderBoard(moves);
+                    }
+                }
+            } else if (playerState === 'calculating') {
+                updateTurnIndicator("YOUR TURN: Move EXACTLY 1 bead");
+                
+                document.getElementById('action-menu').classList.add('hidden');
+                document.getElementById('abacus-section').classList.remove('hidden');
+                document.getElementById('calc-step-box').classList.remove('hidden');
+                
+                const keyBox = document.getElementById('key-box');
+                const cipherBox = document.getElementById('cipher-box');
+                
+                keyBox.classList.remove('active');
+                keyBox.classList.add('locked');
+                cipherBox.classList.remove('active');
+                cipherBox.classList.add('locked');
+                
+                if (activeAbacusId === 'key-abacus') {
+                    keyBox.classList.add('active');
+                    keyBox.classList.remove('locked');
+                } else {
+                    cipherBox.classList.add('active');
+                    cipherBox.classList.remove('locked');
+                }
+                
+                document.getElementById('btn-reset').disabled = false;
+                showMessage(`Move exactly 1 bead to progress toward ${activeSubTarget.target}!`, "info");
+            }
+        }
+
+        // --- HUMAN INPUT ---
+        function handleCellClick(r, c) {
+            if (gameState !== 'moving') return;
+            
+            const pIdx = turnQueue[currentTurnIndex];
+            const p = players[pIdx];
+            const moves = getValidMoves(pIdx);
+            
+            if (!moves.some(m => m.r === r && m.c === c)) return; 
+            
+            AudioEngine.playMove();
+
+            moveData.startVal = board[p.r][p.c].val;
+            moveData.endVal = board[r][c].val;
+            moveData.r = r;
+            moveData.c = c;
+            
+            p.r = r; p.c = c;
+            renderBoard([]); 
+            
+            gameState = 'action_select';
+            showActionMenu(pIdx);
+        }
+
+        function showActionMenu(actingPIdx) {
+            document.getElementById('action-menu').classList.remove('hidden');
+            document.getElementById('val-start').innerText = moveData.startVal;
+            document.getElementById('val-end').innerText = moveData.endVal;
+            
+            const btnContainer = document.getElementById('target-buttons');
+            btnContainer.innerHTML = '';
+            
+            if (gameMode === 'mul' || gameMode === 'wars') {
+                btnContainer.innerHTML += `<button class="btn btn-mul" onclick="setupCalculation(${actingPIdx}, 'mul_self')">+ MULTIPLY: Start × Landed</button>`;
+            }
+            if (gameMode === 'div' || gameMode === 'wars') {
+                btnContainer.innerHTML += `<button class="btn btn-div" style="border-color:var(--neon-orange); color:var(--neon-orange);" onclick="setupCalculation(${actingPIdx}, 'div_self')">÷ DIVIDE: Target My Score ÷ Landed</button>`;
+            }
+            if (gameMode === 'wars') {
+                players.forEach(opp => {
+                    if (opp.id !== actingPIdx) {
+                        btnContainer.innerHTML += `<button class="btn btn-div" onclick="setupCalculation(${opp.id}, 'div_opp')">HACK: Divide ${opp.name} by ${moveData.endVal}</button>`;
+                    }
+                });
+            }
+        }
+
+        // --- THE ENGINE BUILDER ---
+        function setupCalculation(targetPIdx, op) {
+            AudioEngine.playClick();
+            try {
+                gameState = 'calculating';
+                playerState = 'calculating';
+                calcOp = op;
+                calcData.targetPlayerIdx = targetPIdx;
+                calcQueue = [];
+                
+                document.getElementById('action-menu').classList.add('hidden');
+                document.getElementById('abacus-section').classList.remove('hidden');
+                document.getElementById('calc-step-box').classList.remove('hidden');
+                showMessage("", "");
+                
+                const targetP = players[targetPIdx];
+                
+                if (op === 'mul_self') {
+                    // ISOLATED MULTIPLICATION
+                    document.getElementById('key-box').classList.add('hidden'); 
+                    document.getElementById('cipher-title').innerText = "PRODUCT WORKSPACE";
+                    
+                    let A = moveData.startVal.toString();
+                    let B = moveData.endVal.toString();
+                    let currentProduct = 0n; 
+                    
+                    for (let i=0; i < A.length; i++) {
+                        let aDigit = BigInt(A[i]);
+                        if (aDigit === 0n) continue;
+                        
+                        for (let j=0; j < B.length; j++) {
+                            let bDigit = BigInt(B[j]);
+                            let product = aDigit * bDigit;
+                            if (product === 0n) continue;
+                            
+                            let aPower = BigInt(A.length - 1 - i);
+                            let bPower = BigInt(B.length - 1 - j);
+                            let addAmount = product * (10n ** (aPower + bPower));
+                            
+                            let nextTarget = currentProduct + addAmount;
+                            
+                            calcQueue.push({
+                                stepIndex: calcQueue.length + 1,
+                                text: `MULTIPLY: ${aDigit * (10n**aPower)} × ${bDigit * (10n**bPower)} (Add ${addAmount})`,
+                                target: nextTarget,
+                                targetAbacus: 'cipher-abacus'
+                            });
+                            currentProduct = nextTarget;
+                        }
+                    }
+                    calcData.finalFactor = currentProduct; 
+                    renderAbacus('cipher-abacus', 0n); 
+                } 
+                else if (op === 'div_self' || op === 'div_opp') {
+                    // TARGETED DIVISION (Target Score ÷ Landed Square)
+                    let dividend = targetP.score;
+                    let divisor = moveData.endVal;
+                    let rem = dividend % divisor;
+                    
+                    if (rem !== 0n) {
+                        let penalty = rem * 2n;
+                        AudioEngine.playError();
+                        if (!confirm(`WARNING: ${dividend} ÷ ${divisor} leaves a remainder! Division will fail and YOU will lose ${penalty} points. Proceed?`)) {
+                            gameState = 'action_select';
+                            playerState = 'idle';
+                            document.getElementById('abacus-section').classList.add('hidden');
+                            document.getElementById('calc-step-box').classList.add('hidden');
+                            document.getElementById('action-menu').classList.remove('hidden');
+                            return; 
+                        }
+                        executeFailedDivision(turnQueue[currentTurnIndex], penalty);
+                        return;
+                    } 
+                    
+                    document.getElementById('key-box').classList.remove('hidden');
+                    document.getElementById('key-title').innerText = "THE KEY (Quotient)";
+                    document.getElementById('cipher-title').innerText = "THE CIPHER (Dividend)";
+                    
+                    calcData.expectedAns = dividend / divisor;
+                    let qStr = calcData.expectedAns.toString();
+                    
+                    let currentQ = 0n;
+                    let currentCipher = dividend;
+                    
+                    for (let i=0; i<qStr.length; i++) {
+                        let digit = BigInt(qStr[i]);
+                        if (digit === 0n) continue;
+                        
+                        let placeVal = digit * (10n ** BigInt(qStr.length - 1 - i));
+                        let subAmount = placeVal * divisor;
+                        
+                        let nextQ = currentQ + placeVal;
+                        let nextCipher = currentCipher - subAmount;
+                        
+                        calcQueue.push({
+                            stepIndex: calcQueue.length + 1,
+                            text: `QUOTIENT: Add ${placeVal} to The Key`,
+                            target: nextQ,
+                            targetAbacus: 'key-abacus'
+                        });
+                        
+                        calcQueue.push({
+                            stepIndex: calcQueue.length + 1,
+                            text: `REMAINDER: Subtract ${subAmount} from The Cipher`,
+                            target: nextCipher,
+                            targetAbacus: 'cipher-abacus'
+                        });
+                        
+                        currentQ = nextQ;
+                        currentCipher = nextCipher;
+                    }
+                    
+                    renderAbacus('key-abacus', 0n);
+                    renderAbacus('cipher-abacus', dividend);
+                }
+                
+                loadNextSubTarget();
+                showMessage("Workspace Ready. Toggle beads to begin.", "info");
+
+            } catch (e) {
+                console.error("Setup Error:", e);
+                showMessage(`MATH ENGINE ERROR: ${e.message}`, "error");
+            }
+        }
+
+        function loadNextSubTarget() {
+            if (calcQueue.length === 0) {
+                completeFormula();
+                return;
+            }
+            
+            activeSubTarget = calcQueue.shift();
+            activeAbacusId = activeSubTarget.targetAbacus;
+            subTargetStartVal = calculateAbacusValue(activeAbacusId); 
+            savedAbacusVal = subTargetStartVal;    
+            
+            document.getElementById('calc-step-title').innerText = `STEP ${activeSubTarget.stepIndex}: ${activeSubTarget.text}`;
+            document.getElementById('calc-step-target').innerText = `TARGET VALUE: ${activeSubTarget.target}`;
+
+            const keyBox = document.getElementById('key-box');
+            const cipherBox = document.getElementById('cipher-box');
+            
+            keyBox.classList.remove('active');
+            keyBox.classList.add('locked');
+            cipherBox.classList.remove('active');
+            cipherBox.classList.add('locked');
+            
+            if (activeAbacusId === 'key-abacus') {
+                keyBox.classList.add('active');
+                keyBox.classList.remove('locked');
+            } else {
+                cipherBox.classList.add('active');
+                cipherBox.classList.remove('locked');
+            }
+        }
+
+        function executeFailedDivision(actingPIdx, penalty) {
+            AudioEngine.playError();
+            players[actingPIdx].score -= penalty;
+            document.getElementById(`scoreval-${actingPIdx}`).innerText = players[actingPIdx].score;
+            showMessage(`DIVISION FAILED! Remainder penalized you ${penalty} points.`, "error");
+            document.getElementById('abacus-section').classList.add('hidden');
+            document.getElementById('calc-step-box').classList.add('hidden');
+            playerState = 'idle';
+            setTimeout(endTurn, 2500);
+        }
+
+        function resetBoard() {
+            AudioEngine.playClick();
+            savedAbacusVal = subTargetStartVal;
+            renderAbacus(activeAbacusId, subTargetStartVal);
+            showMessage("Abacus reset to the start of this formula step.", "warning");
+        }
+
+        function completeFormula() {
+            let targetP = players[calcData.targetPlayerIdx];
+            let activeP = players[turnQueue[currentTurnIndex]];
+            
+            if (calcOp === 'mul_self') {
+                targetP.score += calcData.finalFactor;
+                AudioEngine.playSuccess();
+                showMessage(`PRODUCT CALCULATED! System auto-added ${calcData.finalFactor} to score.`, "success");
+            } else if (calcOp === 'div_self') {
+                targetP.score = calcData.expectedAns;
+                AudioEngine.playSuccess();
+                showMessage(`QUOTIENT CALCULATED! Your score is now ${calcData.expectedAns}.`, "success");
+            } else {
+                targetP.score = calcData.expectedAns;
+                activeP.score += moveData.endVal; // BOUNTY
+                document.getElementById(`scoreval-${activeP.id}`).innerText = activeP.score;
+                AudioEngine.playHack();
+                showMessage(`TARGET CRIPPLED! You gained a bounty of ${moveData.endVal} points!`, "success");
+            }
+            
+            document.getElementById(`scoreval-${targetP.id}`).innerText = targetP.score;
+            
+            document.getElementById('calc-step-box').classList.add('hidden');
+            document.getElementById('key-box').classList.add('locked');
+            document.getElementById('cipher-box').classList.add('locked');
+            playerState = 'idle';
+            
+            setTimeout(endTurn, 3000);
+        }
+
+        // --- 1-BEAD STRICT VERIFICATION (AUTO-VERIFY) ---
+        function isSingleBeadValue(valBigInt) {
+            if (valBigInt < 0n) valBigInt = -valBigInt;
+            if (valBigInt === 0n) return false;
+            let str = valBigInt.toString();
+            if (str[0] !== '1' && str[0] !== '5') return false;
+            for (let i = 1; i < str.length; i++) {
+                if (str[i] !== '0') return false;
+            }
+            return true;
+        }
+
+        function toggleBead(bead, abacusId) {
+            if (gameState !== 'calculating' || abacusId !== activeAbacusId) return;
+            
+            let oldVal = calculateAbacusValue(abacusId);
+            bead.classList.toggle('active');
+            let newVal = calculateAbacusValue(abacusId);
+            
+            let diff = newVal - oldVal;
+            let absDiff = diff < 0n ? -diff : diff;
+            
+            if (!isSingleBeadValue(absDiff)) {
+                bead.classList.toggle('active'); // Revert
+                AudioEngine.playError();
+                showMessage("INVALID MOVE! You must move exactly 1 bead.", "error");
+                return;
+            }
+
+            AudioEngine.playBead();
+            
+            savedAbacusVal = newVal;
+            document.getElementById(abacusId.replace('-abacus', '-val')).innerText = newVal.toString();
+            
+            if (newVal === activeSubTarget.target) {
+                AudioEngine.playSuccess();
+                showMessage("CORRECT! Auto-verifying step...", "success");
+                document.getElementById(activeAbacusId.replace('-abacus', '-box')).classList.remove('active');
+                
+                setTimeout(() => {
+                    loadNextSubTarget();
+                }, 800);
+            } else {
+                showMessage(`Bead toggled. Current value: ${newVal}`, "info");
+            }
+        }
+
+        // --- AI LOGIC ---
+        function executeAITurn() {
+            const pIdx = turnQueue[currentTurnIndex];
+            const p = players[pIdx];
+            const moves = getValidMoves(pIdx);
+            
+            if (moves.length === 0) {
+                showMessage("Bot has no valid moves. Turn skipped.", "info");
+                setTimeout(endTurn, 1500);
+                return;
+            }
+
+            let bestMove = null;
+            let chosenTarget = -1;
+            let chosenOp = '';
+            
+            let startVal = board[p.r][p.c].val; // Cache start value correctly
+            let bestScore = (gameMode === 'div') ? 999999999999n : -99999999999n;
+
+            moves.forEach(m => {
+                let endVal = board[m.r][m.c].val;
+                
+                if (gameMode === 'mul' || gameMode === 'wars') {
+                    let product = startVal * endVal;
+                    if (product > bestScore && (gameMode === 'mul' || chosenOp !== 'div_opp')) {
+                        bestScore = product; bestMove = m; chosenTarget = p.id; chosenOp = 'mul_self';
+                    }
+                }
+                
+                if (gameMode === 'div' || gameMode === 'wars') {
+                    if (p.score % endVal === 0n && endVal > 1n) {
+                        let quotient = p.score / endVal;
+                        if (gameMode === 'div') {
+                            if (quotient < bestScore) {
+                                bestScore = quotient; bestMove = m; chosenTarget = p.id; chosenOp = 'div_self';
+                            }
+                        } else if (gameMode === 'wars') {
+                            // in Wars, we don't usually divide ourselves unless it somehow gives a bounty? No bounty for self divide.
+                        }
+                    }
+                }
+                
+                if (gameMode === 'wars') {
+                    players.forEach(opp => {
+                        if (opp.id !== p.id && opp.score % endVal === 0n && endVal > 1n) {
+                            let damage = opp.score - (opp.score / endVal);
+                            let totalValue = damage + endVal; 
+                            if (totalValue > bestScore) {
+                                bestScore = totalValue; bestMove = m; chosenTarget = opp.id; chosenOp = 'div_opp';
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (!bestMove) {
+                if (gameMode === 'div') {
+                    let bestDist = 9999;
+                    moves.forEach(m => {
+                        for(let r=0; r<GRID_SIZE; r++){
+                            for(let c=0; c<GRID_SIZE; c++){
+                                let val = board[r][c].val;
+                                if (p.score % val === 0n && val > 1n) {
+                                    let dist = Math.abs(m.r - r) + Math.abs(m.c - c);
+                                    if (dist < bestDist) { bestDist = dist; bestMove = m; }
+                                }
+                            }
+                        }
+                    });
+                }
+                if (!bestMove) bestMove = moves[Math.floor(Math.random() * moves.length)];
+                
+                p.r = bestMove.r; p.c = bestMove.c;
+                AudioEngine.playMove();
+                renderBoard([]);
+                showMessage(`${p.name} moved to reposition. No math applied.`, "info");
+                setTimeout(endTurn, 2000);
+                return;
+            }
+
+            let landedVal = board[bestMove.r][bestMove.c].val;
+            AudioEngine.playMove();
+            p.r = bestMove.r;
+            p.c = bestMove.c;
+            renderBoard([]);
+            
+            let targetP = players[chosenTarget];
+            
+            if (chosenOp === 'mul_self') {
+                showMessage(`${p.name} DECLARED UPGRADE: Calculating ${startVal} × Landed!`, "warning");
+            } else {
+                let tText = targetP.id === p.id ? "their own score" : targetP.name;
+                showMessage(`${p.name} DECLARED HACK: Dividing ${tText} by ${landedVal}!`, "error");
+            }
+            
+            setTimeout(() => {
+                document.getElementById('abacus-section').classList.remove('hidden');
+                if (chosenOp === 'mul_self') {
+                    document.getElementById('key-box').classList.add('hidden');
+                    document.getElementById('cipher-box').className = 'abacus-box active';
+                    renderAbacus('cipher-abacus', startVal * landedVal);
+                } else {
+                    document.getElementById('key-box').classList.remove('hidden');
+                    document.getElementById('key-box').className = 'abacus-box active';
+                    document.getElementById('cipher-box').className = 'abacus-box active';
+                    renderAbacus('key-abacus', targetP.score / landedVal);
+                    renderAbacus('cipher-abacus', 0n);
+                }
+            }, 1000);
+
+            setTimeout(() => {
+                if (chosenOp === 'mul_self') {
+                    let factor = startVal * landedVal;
+                    targetP.score += factor;
+                    AudioEngine.playSuccess();
+                    showMessage(`OPPONENT COMPLETE: Added ${factor} to score.`, "error");
+                } else if (chosenOp === 'div_self') {
+                    let quotient = targetP.score / landedVal;
+                    targetP.score = quotient;
+                    AudioEngine.playSuccess();
+                    showMessage(`OPPONENT DIVIDED their score down to ${quotient}!`, "error");
+                } else {
+                    targetP.score = targetP.score / landedVal;
+                    p.score += landedVal; 
+                    document.getElementById(`scoreval-${p.id}`).innerText = p.score;
+                    AudioEngine.playHack();
+                    showMessage(`CRITICAL ALERT: Target divided! Bot claimed bounty of ${landedVal}.`, "error");
+                }
+                
+                document.getElementById(`scoreval-${targetP.id}`).innerText = targetP.score;
+                document.getElementById('abacus-section').classList.add('hidden');
+                endTurn();
+            }, 4000);
+        }
+
+        function endTurn() {
+            currentTurnIndex++;
+            startTurn();
+        }
+
+        function endMatch() {
+            document.getElementById('game-phase').classList.add('hidden');
+            document.getElementById('end-phase').classList.remove('hidden');
+            
+            let finalStandings = [...players].sort((a, b) => {
+                if (gameMode === 'div') {
+                    if (a.score < b.score) return -1;
+                    if (a.score > b.score) return 1;
+                    return 0;
+                } else {
+                    if (a.score > b.score) return -1;
+                    if (a.score < b.score) return 1;
+                    return 0;
+                }
+            });
+
+            const podium = document.getElementById('podium');
+            podium.innerHTML = '';
+            
+            finalStandings.forEach((p, idx) => {
+                let color = idx === 0 ? 'var(--neon-gold)' : '#fff';
+                podium.innerHTML += `
+                    <div class="podium-row" style="border-color: ${color};">
+                        <span style="color: ${color};">${idx + 1}. ${p.name}</span>
+                        <span style="color: var(--neon-green);">${p.score}</span>
+                    </div>
+                `;
+            });
+        }
+
+        // --- ABACUS RENDERING (BigInt) ---
+        function renderAbacus(id, valueBigInt) {
+            const container = document.getElementById(id); 
+            if (!container) return; 
+            container.innerHTML = ''; 
+            
+            let strVal = valueBigInt.toString();
+            if (strVal.length < 5) strVal = strVal.padStart(5, '0');
+            const numCols = strVal.length + 2; 
+
+            for (let i = 0; i < numCols; i++) {
+                let colValue = 0;
+                if (i >= numCols - strVal.length) {
+                    colValue = parseInt(strVal[i - (numCols - strVal.length)]);
+                }
+                
+                const colDiv = document.createElement('div'); 
+                colDiv.className = 'column'; 
+                colDiv.dataset.power = numCols - 1 - i; 
+
+                const topBead = document.createElement('div'); 
+                topBead.className = `bead bead-top ${colValue >= 5 ? 'active' : ''}`;
+                topBead.onclick = () => toggleBead(topBead, id); 
+                colDiv.appendChild(topBead);
+
+                const remainder = colValue % 5;
+                for (let b = 1; b <= 4; b++) {
+                    const botBead = document.createElement('div'); 
+                    botBead.className = `bead bead-bottom ${b <= remainder ? 'active' : ''}`;
+                    botBead.onclick = () => toggleBead(botBead, id); 
+                    colDiv.appendChild(botBead);
+                }
+                container.appendChild(colDiv);
+            }
+            document.getElementById(id.replace('-abacus', '-val')).innerText = valueBigInt.toString();
+        }
+
+        function calculateAbacusValue(id) {
+            const columns = document.querySelectorAll(`#${id} .column`); 
+            let total = 0n;
+            columns.forEach(col => {
+                const power = BigInt(col.dataset.power); 
+                let colSum = 0n;
+                if (col.querySelector('.bead-top').classList.contains('active')) colSum += 5n;
+                col.querySelectorAll('.bead-bottom').forEach(b => { if (b.classList.contains('active')) colSum += 1n; });
+                total += colSum * (10n ** power);
+            });
+            return total;
+        }
+
+    </script>
+</body>
+</html>
