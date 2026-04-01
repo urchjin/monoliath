@@ -76,6 +76,12 @@
             transform: translateY(-2px);
         }
 
+		.title-image {
+    height: 1.5em; /* Scales perfectly with your 1.5rem span */
+    vertical-align: middle;
+    transition: transform 0.3s ease, filter 0.3s ease;
+}
+
         /* --- MOBILE SPECIFIC ADJUSTMENTS --- */
         @media (max-width: 600px) {
             nav { padding: 12px 0; }
@@ -181,7 +187,9 @@
             <a href="#allthezebras" class="title-link glow-monoliath">All The Zebras</a><br>
 
             <span style="font-size: 1.5rem;">
-                <a href="#althezebra" class="title-link glow-dovit">Al The Zebra</a> 
+                <a href="#althezebra" class="title-link glow-dovit">
+					<img src="images/logo_alTheZebra.png" alt="Al The Zebra" class="title-image">
+				</a> 
                 <span style="color: var(--text-main);"> + </span> 
                 <a href="#abacuzebra" class="title-link glow-dovit">Abacuzebra</a>
                 <span style="color: var(--text-main);"> + </span>
