@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ABZebra Tutorial</title>
+    <style>
+        :root {
+            /* Savannah Sunset Palette */
+            --bg-top: #FDC830;     
+            --bg-bot: #F37335;     
+            --panel: rgba(44, 30, 22, 0.4); 
+            --text: #FFF9ED;       
+            --card-bg: #FDF9F1;    
+            --card-text: #2C1E16;  
+            --accent: #A04000;     
+            --success: #557A46;    
+            --shadow: rgba(0, 0, 0, 0.3);
+            --tut-accent: #2C1E16;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+        
+        body { 
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bot)); 
+            color: var(--text); font-family: 'Helvetica Neue', sans-serif; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100dvh; overflow-x: hidden; overflow-y: auto; user-select: none;
+        }
+
+        /* --- STICKY TUTORIAL HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(253, 249, 241, 0.95); border-bottom: 3px solid var(--accent);
+            padding: 10px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2); flex-shrink: 0; backdrop-filter: blur(8px);
+        }
+        #instruction-text {
+            font-size: 16px; font-weight: 800; color: var(--accent); 
+            text-align: center; text-transform: uppercase;
+        }
+        #learning-objective {
+            background: rgba(160, 64, 0, 0.05); border: 1px dashed var(--accent);
+            padding: 8px; font-size: 13px; font-weight: 600;
+            color: var(--card-text); text-align: center; line-height: 1.3; border-radius: 4px;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; 
+            background: linear-gradient(to bottom, rgba(253, 200, 48, 0.98), rgba(243, 115, 53, 0.98)); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-size: 2.2rem; margin: 0 0 10px 0; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--card-text); text-shadow: 0px 2px 4px rgba(255,255,255,0.5);
+        }
+        .start-btn {
+            font-size: 1rem; font-weight: bold; text-transform: uppercase; padding: 15px 30px; 
+            background: var(--card-bg); color: var(--card-text); border: none; border-radius: 30px; 
+            cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.2); transition: 0.1s; margin-top: 20px;
+        }
+        .start-btn:active { transform: translateY(4px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(255, 249, 237, 0.8); }
+            70% { box-shadow: 0 0 0 12px rgba(255, 249, 237, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 249, 237, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid #FFF !important; transform: scale(1.05); z-index: 10;
+        }
+
+        /* --- GAME BOARD --- */
+        #game-board { 
+            width: 100%; max-width: 500px; padding: 15px; 
+            display: flex; flex-direction: column; gap: 15px; flex: 1;
+        }
+        
+        .opponents { display: flex; justify-content: space-between; gap: 10px; }
+        .player-box { 
+            background: var(--panel); padding: 10px; border-radius: 8px; 
+            text-align: center; flex: 1; border: 1px solid rgba(255,255,255,0.1);
+            font-size: 12px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold;
+        }
+        .player-box.active { 
+            background: rgba(253, 249, 241, 0.95); color: var(--card-text);
+            box-shadow: 0 8px 15px var(--shadow); border-bottom: 4px solid var(--accent);
+        }
+
+        /* Center Play Area */
+        .center-area { 
+            display: flex; flex-direction: column; align-items: center; 
+            background: var(--panel); border-radius: 12px; padding: 15px; 
+            border: 1px solid rgba(255,255,255,0.1); flex: 1;
+        }
+        .zone-label { font-size: 10px; letter-spacing: 2px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; color: #FFE0B2; font-weight: bold;}
+        .drop-zone { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; min-height: 70px; width: 100%; padding: 5px; margin-bottom: 10px;}
+        
+        #assembly-zone { border-bottom: 1px dashed rgba(255,255,255,0.4); display: none; }
+        #assembly-zone.visible { display: flex; }
+
+        /* Cards */
+        .card { 
+            width: 45px; height: 60px; background: var(--card-bg); color: var(--card-text); 
+            border-radius: 6px; display: flex; justify-content: center; align-items: center; 
+            font-size: 22px; font-weight: bold; position: relative; 
+            box-shadow: 2px 4px 0px rgba(44, 30, 22, 0.6); cursor: pointer; transition: 0.15s; border: 1px solid #E0D6C8;
+        }
+        .card .score { position: absolute; bottom: 3px; right: 5px; font-size: 10px; opacity: 0.7; font-weight: bold;}
+        .card.disabled { opacity: 0.5; pointer-events: none; }
+
+        /* Bottom Action Area */
+        .bottom-area { text-align: center; margin-bottom: 20px;}
+        .action-bar { display: none; gap: 10px; justify-content: center; margin-bottom: 15px; }
+        .action-bar.visible { display: flex; }
+        
+        .btn { 
+            padding: 12px 24px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold;
+            border-radius: 30px; border: none; cursor: pointer; transition: 0.2s; 
+            background: rgba(0,0,0,0.5); color: var(--text); box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn.btn-score { background: var(--success); border-color: #8ce26b; }
+        .btn.btn-undo { background: var(--accent); border-color: #ff9d50; }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        #player-hand { display: flex; justify-content: center; gap: 10px; height: 70px; margin-top: 15px;}
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Step 1: Contribute to the Pool</div>
+    <div id="learning-objective">
+        <strong>🎯 Learning Objective - Contribution:</strong> In ABZebra, everyone contributes to a shared pool. Tap the <b>'T'</b> card in your hand to play it into the Watering Hole.
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h2 class="start-title">ABZebra</h2>
+    <div style="font-weight: bold; font-size: 14px; letter-spacing: 1px; opacity: 0.9; margin-bottom: 20px;">THE SPELLING BATTLE</div>
+    <p style="font-size:14px; max-width:280px; margin-bottom:20px; line-height: 1.5;">Learn the core loop: Play a letter, assemble a word from the shared pool, and score points!</p>
+    <button class="start-btn" onclick="startTutorial()">Begin Training</button>
+</div>
+
+<div id="game-board">
+    
+    <div class="opponents">
+        <div class="player-box">AI 1<br><span style="font-size:16px;">12 PTS</span></div>
+        <div class="player-box">AI 2<br><span style="font-size:16px;">8 PTS</span></div>
+    </div>
+
+    <div class="center-area">
+        <div class="zone-label" id="assembly-label" style="display:none;">Assembly Zone</div>
+        <div id="assembly-zone" class="drop-zone"></div>
+
+        <div class="zone-label">The Watering Hole</div>
+        <div id="center-pile" class="drop-zone"></div>
+    </div>
+
+    <div class="bottom-area">
+        <div class="action-bar" id="action-bar">
+            <button class="btn btn-undo" id="btn-undo" onclick="undoPlay()">Undo Assembly</button>
+            <button class="btn btn-score" id="btn-score" disabled onclick="scoreWord()">Score Word</button>
+        </div>
+        
+        <div class="player-box active" style="margin: 0 auto; width: 140px;">
+            YOU<br><span style="font-size:16px;" id="player-score">0 PTS</span>
+        </div>
+        
+        <div id="player-hand"></div>
+    </div>
+</div>
+
+<script>
+    let step = 1;
+    let hand = [{ id: 'h1', char: 'T', val: 1 }];
+    let pool = [
+        { id: 'p1', char: 'C', val: 3 }, 
+        { id: 'p2', char: 'A', val: 1 }
+    ];
+    let assembly = [];
+    let playedFromHand = false; // Tracks if the user has played a card this turn
+
+    function startTutorial() {
+        document.getElementById('start-overlay').style.display = 'none';
+        render();
+    }
+
+    function playCardFromHand(cardId) {
+        if (step !== 1 || playedFromHand) return;
+        
+        const cardIndex = hand.findIndex(c => c.id === cardId);
+        if (cardIndex > -1) {
+            const card = hand.splice(cardIndex, 1)[0];
+            pool.push(card);
+            playedFromHand = true;
+            
+            // Advance to Step 2
+            step = 2;
+            document.getElementById('instruction-text').innerText = "Step 2: Assemble a Word";
+            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Learning Objective - Assembly:</strong> Tap letters from the Watering Hole to move them into your Assembly Zone. Spell the word <b>CAT</b>.";
+            
+            document.getElementById('assembly-zone').classList.add('visible');
+            document.getElementById('assembly-label').style.display = 'block';
+            document.getElementById('action-bar').classList.add('visible');
+            
+            render();
+        }
+    }
+
+    function tapPoolCard(cardId) {
+        if (step < 2) return;
+        
+        const cardIndex = pool.findIndex(c => c.id === cardId);
+        if (cardIndex > -1) {
+            assembly.push(pool.splice(cardIndex, 1)[0]);
+            checkWord();
+            render();
+        }
+    }
+
+    function tapAssemblyCard(cardId) {
+        if (step < 2) return;
+        
+        const cardIndex = assembly.findIndex(c => c.id === cardId);
+        if (cardIndex > -1) {
+            pool.push(assembly.splice(cardIndex, 1)[0]);
+            checkWord();
+            render();
+        }
+    }
+
+    function undoPlay() {
+        if (step < 2) return;
+        // Return all assembly cards to pool
+        while (assembly.length > 0) {
+            pool.push(assembly.pop());
+        }
+        checkWord();
+        render();
+    }
+
+    function checkWord() {
+        const word = assembly.map(c => c.char).join('');
+        const scoreBtn = document.getElementById('btn-score');
+        
+        if (word === 'CAT') {
+            scoreBtn.disabled = false;
+            if (step === 2) {
+                step = 3;
+                document.getElementById('instruction-text').innerText = "Step 3: Score the Word";
+                document.getElementById('learning-objective').innerHTML = "<strong>🎯 Learning Objective - Scoring:</strong> You formed a valid word! Tap the highlighted <b>SCORE WORD</b> button to earn your points.";
+                scoreBtn.classList.add('highlight-target');
+            }
+        } else {
+            scoreBtn.disabled = true;
+            scoreBtn.classList.remove('highlight-target');
+            if (step === 3) {
+                // They messed it up, revert to step 2
+                step = 2;
+                document.getElementById('instruction-text').innerText = "Step 2: Assemble a Word";
+                document.getElementById('learning-objective').innerHTML = "<strong>🎯 Learning Objective - Assembly:</strong> Spell the word <b>CAT</b>.";
+            }
+        }
+    }
+
+    function scoreWord() {
+        if (step !== 3) return;
+        
+        const scoreBtn = document.getElementById('btn-score');
+        scoreBtn.classList.remove('highlight-target');
+        
+        // Calculate points
+        const pts = assembly.reduce((sum, c) => sum + c.val, 0);
+        document.getElementById('player-score').innerText = pts + " PTS";
+        
+        assembly = []; // Clear assembly
+        
+        // Advance to End
+        step = 4;
+        document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+        document.getElementById('instruction-text').style.color = "#FFF";
+        document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success:</strong> You mastered the core loop! In the full game, long words give massive multipliers, and Anomalies force minimum letter counts. Close this to play.";
+        document.getElementById('learning-objective').style.background = "rgba(85, 122, 70, 0.9)"; // Green success background
+        document.getElementById('learning-objective').style.color = "#FFF";
+        document.getElementById('learning-objective').style.borderColor = "#FFF";
+        
+        document.getElementById('action-bar').classList.remove('visible');
+        document.getElementById('assembly-zone').classList.remove('visible');
+        document.getElementById('assembly-label').style.display = 'none';
+        
+        render();
+    }
+
+    function createCardHTML(card, onClickFn, isHighlight) {
+        return `
+            <div class="card ${isHighlight ? 'highlight-target' : ''}" id="${card.id}" onclick="${onClickFn}('${card.id}')">
+                ${card.char}
+                <span class="score">${card.val}</span>
+            </div>
+        `;
+    }
+
+    function render() {
+        // Hand
+        const handEl = document.getElementById('player-hand');
+        handEl.innerHTML = '';
+        if (!playedFromHand && hand.length > 0) {
+            handEl.innerHTML = createCardHTML(hand[0], 'playCardFromHand', step === 1);
+        }
+
+        // Pool
+        const poolEl = document.getElementById('center-pile');
+        poolEl.innerHTML = '';
+        pool.forEach(c => {
+            // Highlight C, A, T if in step 2
+            let shouldHighlight = false;
+            if (step === 2 && ['C', 'A', 'T'].includes(c.char)) {
+                // Only highlight if that specific letter isn't already in assembly
+                const alreadyHas = assembly.some(a => a.char === c.char);
+                if (!alreadyHas) shouldHighlight = true;
+            }
+            poolEl.innerHTML += createCardHTML(c, 'tapPoolCard', shouldHighlight);
+        });
+
+        // Assembly
+        const assemblyEl = document.getElementById('assembly-zone');
+        assemblyEl.innerHTML = '';
+        assembly.forEach(c => {
+            assemblyEl.innerHTML += createCardHTML(c, 'tapAssemblyCard', false);
+        });
+    }
+</script>
+</body>
+</html>

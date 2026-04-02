@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zero to Al-pha: Detailed Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@700;800;900&display=swap');
+
+        :root {
+            --gold: #E8920A; --sky: #4B9FD5; --sand: #F5E6C8;
+            --white: #FFFDF5; --card-bg: #FFFAEF;
+            --target-bg: #2A72A8; --target-border: #87CEEB;
+            --success: #4CAF50; --danger: #E74C3C;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--sky); color: #333; 
+            font-family: 'Nunito', sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            min-height: 100dvh; overflow-x: hidden; overflow-y: auto;
+        }
+
+        /* --- STICKY HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(255, 253, 245, 0.95); border-bottom: 4px solid var(--gold);
+            padding: 10px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        #instruction-text { font-family: 'Baloo 2', cursive; font-size: 18px; color: var(--gold); text-align: center; line-height: 1.1;}
+        #learning-objective {
+            background: rgba(75, 159, 213, 0.08); border: 2px dashed var(--sky);
+            padding: 8px; font-size: 13px; font-weight: 800; color: #333; text-align: center; border-radius: 8px;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; background: var(--sky); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-btn {
+            background: var(--gold); color: white; border: 3px solid #fff; padding: 15px 30px; border-radius: 30px;
+            font-family: 'Baloo 2'; font-size: 1.4rem; cursor: pointer; box-shadow: 0 6px 0 #B86C05; margin-top: 20px; transition: 0.1s;
+        }
+        .start-btn:active { transform: translateY(6px); box-shadow: none; }
+
+        /* --- GAME AREA --- */
+        .game-wrapper { width: 100%; max-width: 600px; padding: 15px; display: flex; flex-direction: column; align-items: center; flex: 1; }
+
+        .target-label { font-weight: 900; color: white; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;}
+        
+        .target-zone {
+            width: 100%; background: var(--target-bg); border: 4px solid var(--target-border); border-radius: 16px;
+            padding: 15px; display: flex; justify-content: center; align-items: center; margin-bottom: 10px;
+            color: white; font-family: 'Baloo 2'; font-size: 2.2rem; text-shadow: 2px 2px 0px #000; box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+            cursor: pointer; transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
+        }
+        .target-zone:active { transform: scale(0.95); }
+        .target-zone.ready { border-color: var(--success); box-shadow: 0 0 20px rgba(76, 175, 80, 0.6), inset 0 0 15px rgba(76, 175, 80, 0.4); }
+
+        /* Equation Builder */
+        .equation-builder {
+            width: 100%; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 12px 15px;
+            margin-bottom: 20px; display: flex; justify-content: center; align-items: center; flex-wrap: wrap;
+            font-family: 'Baloo 2', cursive; font-size: 1.5rem; color: white; border: 2px solid rgba(255,255,255,0.1);
+            min-height: 60px; text-align: center;
+        }
+        .eq-operator { color: var(--gold); margin: 0 10px; font-weight: 900; }
+        .eq-total { color: var(--success); font-weight: 900; text-shadow: 1px 1px 2px #000; margin-left: 10px;}
+
+        /* Play Area */
+        .play-area {
+            background: var(--sand); border-radius: 16px; padding: 20px; width: 100%;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.1); border: 4px solid #D9C49A;
+        }
+
+        /* Cards */
+        .card {
+            width: 80px; height: 100px; background: var(--card-bg); border: 3px solid #E8C33A; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center; font-size: 1.8rem; font-family: 'Baloo 2'; font-weight: 800;
+            color: #8A5C00; box-shadow: 0 6px 0px #D9C49A; cursor: pointer; transition: 0.1s; user-select: none; position: relative;
+        }
+        .card.selected {
+            border-color: var(--sky); background: #E6F3FF; color: var(--sky-dk);
+            transform: translateY(6px); box-shadow: 0 0 0 transparent, 0 0 15px var(--sky);
+        }
+
+        .highlight-target { animation: pulse 1.2s infinite !important; border-color: var(--gold) !important; z-index: 10; position: relative;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(232, 146, 10, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(232, 146, 10, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Phase 1: Combining Constants</div>
+    <div id="learning-objective">
+        The target equation is <b>5</b>. Tap the cards <b>2</b> and <b>3</b>. Notice how <b>a + b = n</b> constructs the final value!
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h1 style="font-family: 'Baloo 2'; color: var(--white); font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 0 var(--gold);">Zero to Al-pha</h1>
+    <p style="font-weight: 800; font-size: 1.1rem; max-width: 320px; color: var(--white); line-height: 1.5;">Learn how to pick individual components to build algebraic expressions. Match the target equation to clear the board!</p>
+    <button class="start-btn" onclick="startPhase(1)">Let's Do Math!</button>
+</div>
+
+<div class="game-wrapper">
+    <div class="target-label">Target Expression:</div>
+    <div class="target-zone" id="target" onclick="submitTarget()">5</div>
+    
+    <div class="equation-builder" id="tracker">
+        <span style="opacity:0.5; font-size: 1.2rem;">Select cards to build equation</span>
+    </div>
+
+    <div class="play-area" id="board">
+        </div>
+</div>
+
+<script>
+    let phase = 1;
+    
+    // Algebra State
+    let selectedM = 0; // The 'n' coefficient multiplier
+    let selectedC = 0; // The constant integer
+    let currentTargetM = 0;
+    let currentTargetC = 5;
+    
+    let selectedCards = []; // Stores objects: { m, c, text, el }
+
+    // DOM Elements
+    const uiBoard = document.getElementById('board');
+    const uiTarget = document.getElementById('target');
+    const uiTracker = document.getElementById('tracker');
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    function startPhase(p) {
+        document.getElementById('start-overlay').style.display = 'none';
+        phase = p;
+        
+        // Reset State
+        selectedM = 0; selectedC = 0;
+        selectedCards = [];
+        uiTracker.innerHTML = '<span style="opacity:0.5; font-size: 1.2rem;">Select cards to build equation</span>';
+        uiBoard.innerHTML = '';
+        uiTarget.classList.remove('highlight-target', 'ready');
+
+        if (p === 1) {
+            currentTargetM = 0; currentTargetC = 5;
+            uiTarget.innerText = "5";
+            instText.innerText = "Phase 1: Combining Constants";
+            objText.innerHTML = "The target is <b>5</b>. Tap the cards <b>2</b> and <b>3</b>. Notice how <b>a + b = n</b> constructs the final value!";
+            
+            createCard(0, 2);
+            createCard(0, 3);
+            
+            // Highlight hints
+            uiBoard.children[0].classList.add('highlight-target');
+            uiBoard.children[1].classList.add('highlight-target');
+        } 
+        else if (p === 2) {
+            currentTargetM = 3; currentTargetC = 0;
+            uiTarget.innerText = "3n";
+            instText.innerText = "Phase 2: Combining Variables";
+            objText.innerHTML = "Variables group together! An <b>'n'</b> is just <b>1n</b>. Tap <b>n</b> and <b>2n</b> to build exactly 3n.";
+            
+            createCard(1, 0); // n
+            createCard(2, 0); // 2n
+            createCard(0, 4); // Dummy card
+            
+            uiBoard.children[0].classList.add('highlight-target');
+            uiBoard.children[1].classList.add('highlight-target');
+        }
+        else if (p === 3) {
+            currentTargetM = 2; currentTargetC = 4;
+            uiTarget.innerText = "2n + 4";
+            instText.innerText = "Phase 3: Binomial Expressions";
+            objText.innerHTML = "You cannot mix variables and numbers! Pick <b>2n</b> and <b>4</b>. See how they stay separate to form <b>2n + 4</b>.";
+            
+            createCard(2, 0); // 2n
+            createCard(0, 4); // 4
+            
+            uiBoard.children[0].classList.add('highlight-target');
+            uiBoard.children[1].classList.add('highlight-target');
+        }
+        else if (p === 4) {
+            currentTargetM = 3; currentTargetC = -1;
+            uiTarget.innerText = "3n - 1";
+            instText.innerText = "Phase 4: Subtraction";
+            objText.innerHTML = "Negative cards subtract from your total. Combine <b>3n</b> and <b>-1</b> to match the target.";
+            
+            createCard(3, 0); // 3n
+            createCard(0, -1); // -1
+            createCard(0, 2); // Dummy
+            
+            uiBoard.children[0].classList.add('highlight-target');
+            uiBoard.children[1].classList.add('highlight-target');
+        }
+        else if (p === 5) {
+            // Victory
+            instText.innerText = "Tutorial Complete!";
+            instText.style.color = "var(--success)";
+            objText.innerHTML = "<strong>🎯 Success!</strong> You know how to group like-terms and build algebraic expressions. Close this to start the real game!";
+            uiTarget.style.display = 'none';
+            document.querySelector('.target-label').style.display = 'none';
+            uiTracker.style.display = 'none';
+            uiBoard.innerHTML = '<div style="font-family: \'Baloo 2\'; font-size: 2.5rem; color: var(--success); text-align: center; width:100%;">You are ready!</div>';
+        }
+    }
+
+    function formatText(m, c) {
+        if (m === 0 && c === 0) return '0';
+        if (m === 0) return `${c}`;
+        const mp = m === 1 ? 'n' : (m === -1 ? '-n' : `${m}n`);
+        if (c === 0) return mp;
+        return c > 0 ? `${mp} + ${c}` : `${mp} - ${Math.abs(c)}`;
+    }
+
+    function createCard(m, c) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerText = formatText(m, c);
+        
+        div.onclick = () => {
+            div.classList.toggle('selected');
+            div.classList.remove('highlight-target');
+            
+            if (div.classList.contains('selected')) {
+                selectedM += m; selectedC += c;
+                selectedCards.push({ m, c, text: div.innerText, el: div });
+            } else {
+                selectedM -= m; selectedC -= c;
+                selectedCards = selectedCards.filter(sc => sc.el !== div);
+            }
+            updateTracker();
+        };
+        uiBoard.appendChild(div);
+    }
+
+    function updateTracker() {
+        if (selectedCards.length === 0) {
+            uiTracker.innerHTML = '<span style="opacity:0.5; font-size: 1.2rem;">Select cards to build equation</span>';
+            uiTarget.classList.remove('highlight-target', 'ready');
+            return;
+        }
+
+        // Build the left side of the equation (e.g., "2 + 3" or "2n + 4")
+        let leftSideHTML = selectedCards.map(sc => `<span>${sc.text}</span>`).join(' <span class="eq-operator">+</span> ');
+        
+        // Clean up visual math syntax (e.g., "+ -1" becomes "- 1")
+        leftSideHTML = leftSideHTML.replace(/<span class="eq-operator">\+<\/span> <span>-/g, '<span class="eq-operator">-</span> <span>');
+
+        // Right side is the combined formatted total
+        let rightSideText = formatText(selectedM, selectedC);
+        
+        uiTracker.innerHTML = `${leftSideHTML} <span class="eq-operator">=</span> <span class="eq-total">${rightSideText}</span>`;
+        
+        // Check if matches target
+        if (selectedM === currentTargetM && selectedC === currentTargetC) {
+            uiTarget.classList.add('highlight-target', 'ready');
+            objText.innerHTML = "<strong>🎯 Match Found!</strong> Tap the blue Target box to submit and clear the cards.";
+        } else {
+            uiTarget.classList.remove('highlight-target', 'ready');
+            
+            // Restore instructions if they unselect
+            if(phase === 1) objText.innerHTML = "The target is <b>5</b>. Tap the cards <b>2</b> and <b>3</b>. Notice how <b>a + b = n</b> constructs the final value!";
+            if(phase === 2) objText.innerHTML = "Variables group together! An <b>'n'</b> is just <b>1n</b>. Tap <b>n</b> and <b>2n</b> to build exactly 3n.";
+            if(phase === 3) objText.innerHTML = "You cannot mix variables and numbers! Pick <b>2n</b> and <b>4</b>. See how they stay separate to form <b>2n + 4</b>.";
+            if(phase === 4) objText.innerHTML = "Negative cards subtract from your total. Combine <b>3n</b> and <b>-1</b> to match the target.";
+        }
+    }
+
+    function submitTarget() {
+        if (selectedM === currentTargetM && selectedC === currentTargetC) {
+            // Success! Move to next phase
+            startPhase(phase + 1);
+        }
+    }
+</script>
+</body>
+</html>

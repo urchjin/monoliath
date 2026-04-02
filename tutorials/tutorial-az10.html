@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ABZebra Gets Lost! Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+
+        :root {
+            --connector: #6a4c93;
+            --text-dark: #264653;
+            --highlight: #fee440;
+            --nav-color: #e76f51;
+            --weather-color: #0288d1;
+            --pos-bg: #e8f5e9; --pos-text: #28a745;
+            --neg-bg: #ffebee; --neg-text: #d32f2f;
+            --conn-bg: #f3e8ff;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; }
+
+        body {
+            background-color: var(--text-dark); color: white; 
+            font-family: 'Nunito', sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            min-height: 100dvh; overflow-x: hidden; overflow-y: auto;
+        }
+
+        /* --- STICKY TUTORIAL HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(38, 70, 83, 0.98); border-bottom: 3px solid var(--highlight);
+            padding: 10px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-shrink: 0; backdrop-filter: blur(8px);
+        }
+        #instruction-text {
+            font-size: 16px; font-weight: 900; color: var(--highlight); 
+            text-align: center; text-transform: uppercase; font-family: 'Fredoka One', cursive;
+            letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(254, 228, 64, 0.1); border: 1px dashed var(--highlight);
+            padding: 8px; font-size: 13px; font-weight: 700;
+            color: #e0f7fa; text-align: center; line-height: 1.3; border-radius: 6px;
+        }
+        #learning-objective b { color: var(--highlight); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; 
+            background: rgba(38, 70, 83, 0.98); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-family: 'Fredoka One'; font-size: 2.5rem; color: var(--highlight); 
+            margin-bottom: 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        .start-desc { font-size: 1.1rem; font-weight: 700; color: #e0f7fa; max-width: 300px; margin-bottom: 25px; line-height: 1.5; }
+        .start-btn {
+            background: #2a9d8f; color: white; border: 3px solid #fff; padding: 15px 30px; border-radius: 30px;
+            font-family: 'Fredoka One'; font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #1e7066; transition: 0.1s;
+        }
+        .start-btn:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(254, 228, 64, 0.8); }
+            70% { box-shadow: 0 0 0 15px rgba(254, 228, 64, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(254, 228, 64, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border-color: var(--highlight) !important; transform: scale(1.05); z-index: 10;
+        }
+
+        /* --- GAME BOARD --- */
+        .game-wrapper {
+            width: 100%; max-width: 800px; padding: 20px; display: flex; flex-direction: column; gap: 20px;
+            align-items: center; flex: 1; justify-content: flex-start;
+        }
+
+        .board {
+            background: rgba(255,255,255,0.95); color: var(--text-dark); width: 100%;
+            padding: 15px 10px; border-radius: 15px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .board h2 { margin: 0; font-family: 'Fredoka One'; color: #e76f51; font-size: 1.5rem; transition: color 0.3s;}
+        
+        .sentence-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+
+        .slot {
+            width: 90%; max-width: 200px; height: 60px; border: 3px dashed #ccc; border-radius: 12px;
+            display: flex; justify-content: center; align-items: center; background: #f8f9fa; font-size: 1rem;
+            font-weight: 800; color: #aaa; padding: 5px; text-align: center; box-sizing: border-box; transition: 0.2s; cursor: pointer;
+            position: relative; overflow: hidden;
+        }
+
+        /* --- CARDS --- */
+        .hand-area { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin-top: 10px;}
+        .player-name { font-family: 'Fredoka One'; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 20px; font-size: 1rem; border: 3px solid var(--highlight); color: var(--highlight);}
+        .hand { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+        .card {
+            width: 100px; height: 130px; border-radius: 12px; background: white; box-shadow: -2px 4px 10px rgba(0,0,0,0.4);
+            display: flex; justify-content: center; align-items: center; text-align: center; padding: 8px; font-weight: 800;
+            font-size: 0.85rem; color: white; cursor: pointer; transition: transform 0.2s; user-select: none; box-sizing: border-box;
+            border: 3px solid rgba(255,255,255,0.5); text-shadow: 1px 1px 2px rgba(0,0,0,0.6); position: relative; overflow: hidden;
+        }
+
+        .card-bg-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5rem; opacity: 0.25; pointer-events: none; z-index: 0; }
+        .polarity-badge {
+            position: absolute; top: -2px; right: -2px; width: 22px; height: 22px; border-radius: 50%;
+            background: white; font-size: 0.9rem; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); border: 2px solid var(--text-dark); z-index: 2; text-shadow: none; font-family: 'Arial', sans-serif;
+        }
+        
+        .badge-pos { color: var(--pos-text); background-color: var(--pos-bg); }
+        .badge-neg { color: var(--neg-text); background-color: var(--neg-bg); }
+        .badge-conn { color: var(--connector); background-color: var(--conn-bg); font-size: 1rem; }
+        .card-text { z-index: 1; position: relative; }
+        
+        .type-connector { background-color: var(--connector); border-color: #d8b4e2; }
+        .type-nav { background-color: var(--nav-color); }
+        .type-weather { background-color: var(--weather-color); }
+
+        .btn-action {
+            background-color: #28a745; color: white; border: 2px solid white; padding: 12px 20px; border-radius: 20px;
+            font-family: 'Fredoka One'; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 0 #1e7e34; transition: 0.1s;
+            display: none; margin-top: 10px;
+        }
+        .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
+
+        /* Animation for placed cards in slots */
+        .slot-filled { border: 3px solid white !important; color: white !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.6) !important;}
+
+        @keyframes successFlash { 0%, 100% { transform: scale(1); border-color: #28a745; box-shadow: 0 0 15px #28a745; } 50% { transform: scale(1.05); border-color: #fff; box-shadow: 0 0 25px #28a745; } }
+        .success-state { animation: successFlash 1s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Phase 1: Cause & Effect</div>
+    <div id="learning-objective">
+        Sentences require 1 Connector and 2 Clauses. Tap the <b>"Because"</b> card, then tap the first slot to place it.
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h1 class="start-title">Syntax & Logic</h1>
+    <p class="start-desc">Learn how to arrange cards, match Context Colors, and verify logical Polarity to build perfect survival sentences.</p>
+    <button class="start-btn" onclick="startTutorial()">Begin Training</button>
+</div>
+
+<div class="game-wrapper">
+    <div class="board">
+        <h2 id="board-title">Team Board (Phase 1)</h2>
+        <div class="sentence-area">
+            <div class="slot" id="slot-0" onclick="tapSlot(0)">[Slot 1]</div>
+            <div class="slot" id="slot-1" onclick="tapSlot(1)">[Slot 2]</div>
+            <div class="slot" id="slot-2" onclick="tapSlot(2)">[Slot 3]</div>
+        </div>
+        <button class="btn-action" id="submitBtn" onclick="checkLogic()">Check Logic ✨</button>
+    </div>
+
+    <div class="hand-area">
+        <div class="player-name">Your Hand</div>
+        
+        <div class="hand" id="hand-phase-1">
+            <div class="card type-connector highlight-target" id="card-0" onclick="tapCard(0)">
+                <div class="polarity-badge badge-conn">➡️</div>
+                <span class="card-text">Because</span>
+            </div>
+            <div class="card type-nav" id="card-1" onclick="tapCard(1)">
+                <div class="card-bg-icon">🧭</div>
+                <div class="polarity-badge badge-pos">➕</div>
+                <span class="card-text">They had a trusty map</span>
+            </div>
+            <div class="card type-nav" id="card-2" onclick="tapCard(2)">
+                <div class="card-bg-icon">🧭</div>
+                <div class="polarity-badge badge-pos">➕</div>
+                <span class="card-text">They found the right path</span>
+            </div>
+        </div>
+
+        <div class="hand" id="hand-phase-2" style="display:none;">
+            <div class="card type-connector" id="card-3" onclick="tapCard(3)">
+                <div class="polarity-badge badge-conn">↔️</div>
+                <span class="card-text">Although</span>
+            </div>
+            <div class="card type-weather" id="card-4" onclick="tapCard(4)">
+                <div class="card-bg-icon">⛈️</div>
+                <div class="polarity-badge badge-neg">➖</div>
+                <span class="card-text">It rained heavily</span>
+            </div>
+            <div class="card type-weather" id="card-5" onclick="tapCard(5)">
+                <div class="card-bg-icon">⛈️</div>
+                <div class="polarity-badge badge-pos">➕</div>
+                <span class="card-text">They stayed warm</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let step = 1;
+    let selectedCard = -1;
+    let boardState = [null, null, null]; 
+
+    // Hardcoded card HTML data for the slots
+    const cardHTML = {
+        0: `<div class="polarity-badge badge-conn">➡️</div><span class="card-text">Because,</span>`,
+        1: `<div class="card-bg-icon">🧭</div><div class="polarity-badge badge-pos">➕</div><span class="card-text">they had a trusty map,</span>`,
+        2: `<div class="card-bg-icon">🧭</div><div class="polarity-badge badge-pos">➕</div><span class="card-text">they found the right path.</span>`,
+        3: `<div class="polarity-badge badge-conn">↔️</div><span class="card-text">Although,</span>`,
+        4: `<div class="card-bg-icon">⛈️</div><div class="polarity-badge badge-neg">➖</div><span class="card-text">it rained heavily,</span>`,
+        5: `<div class="card-bg-icon">⛈️</div><div class="polarity-badge badge-pos">➕</div><span class="card-text">they stayed warm.</span>`
+    };
+
+    function startTutorial() {
+        document.getElementById('start-overlay').style.display = 'none';
+    }
+
+    function tapCard(cardIndex) {
+        // Enforce step constraints
+        if (step === 1 && cardIndex !== 0) return;
+        if (step === 2 && cardIndex !== 1) return;
+        if (step === 3 && cardIndex !== 2) return;
+        if (step === 5 && cardIndex !== 3) return;
+        if (step === 6 && cardIndex !== 4) return;
+        if (step === 7 && cardIndex !== 5) return;
+
+        // Deselect if already selected
+        if (selectedCard === cardIndex) {
+            document.getElementById(`card-${cardIndex}`).style.transform = 'translateY(0)';
+            document.getElementById(`card-${cardIndex}`).style.borderColor = 'rgba(255,255,255,0.5)';
+            selectedCard = -1;
+            return;
+        }
+
+        // Reset previous selections
+        [0,1,2,3,4,5].forEach(i => {
+            let el = document.getElementById(`card-${i}`);
+            if (el) {
+                el.style.transform = 'translateY(0)';
+                el.style.borderColor = 'rgba(255,255,255,0.5)';
+            }
+        });
+
+        // Select new card
+        selectedCard = cardIndex;
+        document.getElementById(`card-${cardIndex}`).style.transform = 'translateY(-15px) scale(1.05)';
+        document.getElementById(`card-${cardIndex}`).style.borderColor = 'var(--highlight)';
+        
+        // Highlight the correct slot (0, 1, or 2 based on the card logic)
+        let targetSlot = -1;
+        if (cardIndex === 0 || cardIndex === 3) targetSlot = 0;
+        if (cardIndex === 1 || cardIndex === 4) targetSlot = 1;
+        if (cardIndex === 2 || cardIndex === 5) targetSlot = 2;
+        
+        document.getElementById(`slot-${targetSlot}`).classList.add('highlight-target');
+    }
+
+    function tapSlot(slotIndex) {
+        if (selectedCard === -1) return;
+        
+        // Enforce step constraints for slots
+        if ((step === 1 || step === 5) && slotIndex !== 0) return;
+        if ((step === 2 || step === 6) && slotIndex !== 1) return;
+        if ((step === 3 || step === 7) && slotIndex !== 2) return;
+
+        boardState[slotIndex] = selectedCard;
+        const slotEl = document.getElementById(`slot-${slotIndex}`);
+        
+        slotEl.classList.add('slot-filled');
+        slotEl.classList.remove('highlight-target');
+        
+        // Color background
+        if (selectedCard === 0 || selectedCard === 3) slotEl.style.background = 'var(--connector)';
+        else if (selectedCard === 1 || selectedCard === 2) slotEl.style.background = 'var(--nav-color)';
+        else if (selectedCard === 4 || selectedCard === 5) slotEl.style.background = 'var(--weather-color)';
+        
+        slotEl.innerHTML = cardHTML[selectedCard];
+
+        // Hide card from hand
+        document.getElementById(`card-${selectedCard}`).style.display = 'none';
+        document.getElementById(`card-${selectedCard}`).classList.remove('highlight-target');
+        selectedCard = -1;
+
+        progressTutorial();
+    }
+
+    function progressTutorial() {
+        // --- PHASE 1 (BECAUSE) ---
+        if (step === 1) {
+            step = 2;
+            document.getElementById('instruction-text').innerText = "Step 2: Place the Cause";
+            document.getElementById('learning-objective').innerHTML = "The structure must be <b>[Connector] [Cause] [Effect]</b>. Select the orange Navigation card and place it in Slot 2.";
+            document.getElementById('card-1').classList.add('highlight-target');
+        } 
+        else if (step === 2) {
+            step = 3;
+            document.getElementById('instruction-text').innerText = "Step 3: Match Context & Polarity";
+            document.getElementById('learning-objective').innerHTML = "Notice the <b>Card Colors</b>. Matching colors mean the clauses share the same <b>Context</b>! <b>Because (➡️)</b> connects matching <b>(➕)</b> polarities. Place the final card!";
+            document.getElementById('card-2').classList.add('highlight-target');
+        }
+        else if (step === 3) {
+            step = 4;
+            document.getElementById('instruction-text').innerText = "Step 4: Check Logic";
+            document.getElementById('learning-objective').innerHTML = "Both clauses match the <b>Context Color</b> and have matching <b>(➕) Polarity</b>. Submit your answer!";
+            
+            const btn = document.getElementById('submitBtn');
+            btn.style.display = 'inline-block';
+            btn.innerText = "Check Logic ✨";
+            btn.classList.add('highlight-target');
+            
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+        // --- PHASE 2 (ALTHOUGH) ---
+        else if (step === 5) {
+            step = 6;
+            document.getElementById('instruction-text').innerText = "Step 6: Place Negative Condition";
+            document.getElementById('learning-objective').innerHTML = "Select the <b>Negative (➖) Weather</b> card and place it in Slot 2.";
+            document.getElementById('card-4').classList.add('highlight-target');
+        }
+        else if (step === 6) {
+            step = 7;
+            document.getElementById('instruction-text').innerText = "Step 7: Place Positive Outcome";
+            document.getElementById('learning-objective').innerHTML = "Because <b>Although (↔️)</b> requires a contrast, the final card must have a <b>Positive (➕)</b> polarity to match the same Weather Context. Place the final card!";
+            document.getElementById('card-5').classList.add('highlight-target');
+        }
+        else if (step === 7) {
+            step = 8;
+            document.getElementById('instruction-text').innerText = "Step 8: Check Contrast Logic";
+            document.getElementById('learning-objective').innerHTML = "Both clauses match the <b>Context Color</b> but have <b>OPPOSITE Polarities</b> (➖ and ➕). This perfectly matches the <b>Although</b> connector. Submit!";
+            
+            const btn = document.getElementById('submitBtn');
+            btn.style.display = 'inline-block';
+            btn.innerText = "Check Logic ✨";
+            btn.classList.add('highlight-target');
+            
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    }
+
+    function checkLogic() {
+        const btn = document.getElementById('submitBtn');
+        btn.classList.remove('highlight-target');
+
+        if (step === 4) {
+            // Success Phase 1 -> Transition to Phase 2
+            [0,1,2].forEach(i => { document.getElementById(`slot-${i}`).classList.add('success-state'); });
+            btn.innerText = "Next: Contrast Connectors ▶";
+            
+            document.getElementById('instruction-text').innerText = "Logic Verified!";
+            document.getElementById('learning-objective').innerHTML = "Great! Now let's learn how to use <b>Contrast Connectors</b> like 'Although' or 'But'. Click the button to continue.";
+            
+            step = 4.5; // Intermediate state waiting for button click
+        } 
+        else if (step === 4.5) {
+            // Setup Phase 2
+            step = 5;
+            btn.style.display = 'none';
+            document.getElementById('board-title').innerText = "Team Board (Phase 2)";
+            document.getElementById('board-title').style.color = "var(--weather-color)";
+
+            // Reset Slots
+            [0,1,2].forEach(i => {
+                let slot = document.getElementById(`slot-${i}`);
+                slot.classList.remove('success-state', 'slot-filled');
+                slot.style.background = '#f8f9fa';
+                slot.innerHTML = `[Slot ${i+1}]`;
+            });
+            boardState = [null, null, null];
+
+            // Swap Hands
+            document.getElementById('hand-phase-1').style.display = 'none';
+            document.getElementById('hand-phase-2').style.display = 'flex';
+
+            // Update Instructions
+            document.getElementById('instruction-text').innerText = "Phase 2: Contrast Logic";
+            document.getElementById('learning-objective').innerHTML = "Connectors like <b>Although</b> indicate a contrast. Tap the <b>Although</b> card, then place it in the first slot.";
+            document.getElementById('card-3').classList.add('highlight-target');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        else if (step === 8) {
+            // Final Success
+            [0,1,2].forEach(i => { document.getElementById(`slot-${i}`).classList.add('success-state'); });
+            btn.innerText = "Logic Verified!";
+            
+            document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+            document.getElementById('instruction-text').style.color = "#28a745";
+            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success!</strong> You correctly used formatting, context matching (colors), and polarity logic for both causes and contrasts. Close this window to play!";
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+</script>
+</body>
+</html>

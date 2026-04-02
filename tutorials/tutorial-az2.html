@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Getting Al His ZZZs: Tutorial</title>
+    <style>
+        /* Properly importing BOTH fonts used in the main game */
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;600;700;900&display=swap');
+
+        :root {
+            --bg-top: #1A1A2E; 
+            --bg-mid: #16213E; 
+            --accent: #E94560; 
+            --highlight: #F9F871;
+            --slot-bg: rgba(255, 255, 255, 0.1); 
+            --slot-border: rgba(255, 255, 255, 0.3);
+            --tree: #0F111A;
+            --bug1: #4ECDC4; /* Cricket */
+            --bug2: #FF6B6B; /* Beetle */
+        }
+
+        * { box-sizing: border-box; touch-action: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-mid)); color: white; 
+            font-family: 'Quicksand', sans-serif;
+            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            min-height: 100dvh; overflow-x: hidden; overflow-y: auto;
+        }
+
+        /* --- STICKY HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(26, 26, 46, 0.95); border-bottom: 4px solid var(--highlight);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        #instruction-text { 
+            font-family: 'Fredoka One', cursive; font-size: 18px; color: var(--highlight); 
+            text-align: center; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        #learning-objective {
+            background: rgba(249, 248, 113, 0.1); border: 2px dashed var(--highlight);
+            padding: 10px; font-size: 14px; font-weight: 700; color: #fff; 
+            text-align: center; border-radius: 8px; line-height: 1.4;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; background: rgba(26, 26, 46, 0.95); backdrop-filter: blur(8px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-family: 'Fredoka One', cursive; color: var(--highlight); font-size: 2.8rem; 
+            margin: 0 0 15px 0; text-shadow: 0 6px 15px rgba(0,0,0,0.6); line-height: 1.1;
+        }
+        .start-btn {
+            background: var(--accent); color: white; border: 3px solid #fff; padding: 15px 35px; border-radius: 30px;
+            font-family: 'Fredoka One', cursive; font-size: 1.3rem; letter-spacing: 1px;
+            cursor: pointer; box-shadow: 0 6px 0 #90293b; margin-top: 30px; transition: 0.1s;
+        }
+        .start-btn:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+
+        /* --- GAME AREA --- */
+        .game-wrapper { 
+            width: 100%; max-width: 500px; padding: 20px; 
+            display: flex; flex-direction: column; align-items: center; flex: 1; gap: 25px;
+        }
+
+        .target-box { 
+            background: rgba(233, 69, 96, 0.15); border: 3px solid var(--accent); 
+            padding: 12px 25px; border-radius: 16px; font-size: 1.2rem; font-weight: 700; 
+            text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.3); backdrop-filter: blur(5px);
+        }
+        .target-box span { font-family: 'Fredoka One', cursive; font-size: 1.8rem; color: var(--highlight); margin-left: 8px; vertical-align: middle;}
+
+        /* Tree & Slots */
+        .tree-area { 
+            position: relative; width: 100%; height: 200px; 
+            display: flex; justify-content: space-around; align-items: center; 
+        }
+        .branch { position: absolute; bottom: 50px; width: 90%; height: 12px; background: var(--tree); border-radius: 6px; z-index: 1; box-shadow: 0 10px 20px rgba(0,0,0,0.6);}
+        .trunk { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 100%; background: var(--tree); z-index: 1; border-radius: 12px 12px 0 0; box-shadow: 0 10px 20px rgba(0,0,0,0.6);}
+        
+        .slot {
+            width: 80px; height: 80px; background: var(--slot-bg); border: 3px dashed var(--slot-border); border-radius: 50%;
+            display: flex; justify-content: center; align-items: center; z-index: 2; position: relative;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
+        }
+        
+        /* Inventory */
+        .inventory-wrapper { width: 100%; text-align: center; }
+        .inventory-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem; color: rgba(255,255,255,0.6); margin-bottom: 10px; letter-spacing: 1px;}
+        .inventory {
+            width: 100%; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 20px; border: 2px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: center; gap: 20px; min-height: 110px; box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        /* Bugs */
+        .static-container { position: relative; width: 70px; height: 70px; }
+        .bug {
+            width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            font-family: 'Fredoka One', cursive; font-size: 2rem; color: white; cursor: grab; position: absolute; z-index: 10;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4), inset 0 -4px 0 rgba(0,0,0,0.2); 
+            border: 3px solid rgba(255,255,255,0.5); transition: transform 0.1s;
+        }
+        .bug:active { cursor: grabbing; transform: scale(1.15) translateY(-5px); box-shadow: 0 15px 25px rgba(0,0,0,0.5), inset 0 -4px 0 rgba(0,0,0,0.2); }
+        .bug[data-val="1"] { background: var(--bug1); }
+        .bug[data-val="2"] { background: var(--bug2); }
+
+        /* Highlights */
+        .highlight-target { animation: pulse 1.2s infinite !important; border-color: var(--highlight) !important; z-index: 20;}
+        @keyframes pulse { 
+            0% { box-shadow: 0 0 0 0 rgba(249, 248, 113, 0.6), inset 0 4px 10px rgba(0,0,0,0.2); } 
+            70% { box-shadow: 0 0 0 15px rgba(249, 248, 113, 0), inset 0 4px 10px rgba(0,0,0,0.2); } 
+            100% { box-shadow: 0 0 0 0 transparent, inset 0 4px 10px rgba(0,0,0,0.2); } 
+        }
+        
+        .bug.highlight-target {
+            animation: pulseBug 1.2s infinite !important;
+        }
+        @keyframes pulseBug {
+            0% { box-shadow: 0 6px 15px rgba(0,0,0,0.4), 0 0 0 0 rgba(249, 248, 113, 0.8), inset 0 -4px 0 rgba(0,0,0,0.2); } 
+            70% { box-shadow: 0 6px 15px rgba(0,0,0,0.4), 0 0 0 15px rgba(249, 248, 113, 0), inset 0 -4px 0 rgba(0,0,0,0.2); } 
+            100% { box-shadow: 0 6px 15px rgba(0,0,0,0.4), 0 0 0 0 transparent, inset 0 -4px 0 rgba(0,0,0,0.2); } 
+        }
+
+        /* Success Animation */
+        @keyframes successPop { 0% { transform: scale(1); } 50% { transform: scale(1.1); background: var(--highlight); color: #000; border-color: #fff;} 100% { transform: scale(1); background: var(--slot-bg); } }
+        .success { animation: successPop 0.5s ease-out; border-color: var(--highlight) !important; border-style: solid !important; }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Step 1: Place a Heavy Bug</div>
+    <div id="learning-objective">
+        The target weight is <b>3</b>. Drag the Red Beetle (Weight: 2) from your inventory into the left branch slot!
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h1 class="start-title">Getting Al<br>His ZZZs</h1>
+    <p style="font-weight: 700; font-size: 1.1rem; max-width: 320px; line-height: 1.5; color: #ccc;">Learn how to balance the tree scale by dragging bugs to match the exact target weight.</p>
+    <button class="start-btn" onclick="startTutorial()">Wake Up</button>
+</div>
+
+<div class="game-wrapper">
+    <div class="target-box">Target Weight: <span id="target-val">3</span></div>
+
+    <div class="tree-area">
+        <div class="trunk"></div>
+        <div class="branch"></div>
+        <div class="slot highlight-target" id="slot-1"></div>
+        <div class="slot" id="slot-2"></div>
+    </div>
+
+    <div class="inventory-wrapper">
+        <div class="inventory-title">BUG INVENTORY</div>
+        <div class="inventory" id="inventory">
+            <div class="static-container"><div class="bug" id="bug-1" data-val="1">1</div></div>
+            <div class="static-container"><div class="bug" id="bug-2" data-val="2">2</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let step = 1;
+    let activeBug = null;
+    let startX = 0, startY = 0;
+
+    function startTutorial() {
+        document.getElementById('start-overlay').style.display = 'none';
+        initDrag(document.getElementById('bug-1'));
+        initDrag(document.getElementById('bug-2'));
+        
+        // Highlight bug 2 for step 1
+        document.getElementById('bug-2').classList.add('highlight-target');
+    }
+
+    function initDrag(el) {
+        let isDragging = false;
+
+        const onStart = (e) => {
+            if(step === 1 && el.id !== 'bug-2') return;
+            if(step === 2 && el.id !== 'bug-1') return;
+
+            isDragging = true;
+            activeBug = el;
+            el.style.zIndex = 100;
+            el.style.transition = 'none'; // remove transition for smooth dragging
+            el.classList.remove('highlight-target');
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = el.getBoundingClientRect();
+            startX = clientX - rect.left;
+            startY = clientY - rect.top;
+        };
+
+        const onMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            el.style.position = 'fixed';
+            el.style.left = (clientX - startX) + 'px';
+            el.style.top = (clientY - startY) + 'px';
+        };
+
+        const onEnd = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            el.style.zIndex = 10;
+            el.style.transition = 'transform 0.1s, left 0.3s ease, top 0.3s ease'; // restore transition for snapping
+            checkDrop(el);
+        };
+
+        el.addEventListener('mousedown', onStart);
+        document.addEventListener('mousemove', onMove, {passive: false});
+        document.addEventListener('mouseup', onEnd);
+
+        el.addEventListener('touchstart', onStart, {passive: false});
+        document.addEventListener('touchmove', onMove, {passive: false});
+        document.addEventListener('touchend', onEnd);
+    }
+
+    function checkDrop(bug) {
+        const slot1 = document.getElementById('slot-1').getBoundingClientRect();
+        const slot2 = document.getElementById('slot-2').getBoundingClientRect();
+        const bugRect = bug.getBoundingClientRect();
+        
+        const bugCenterX = bugRect.left + bugRect.width/2;
+        const bugCenterY = bugRect.top + bugRect.height/2;
+
+        const inSlot1 = (bugCenterX > slot1.left && bugCenterX < slot1.right && bugCenterY > slot1.top && bugCenterY < slot1.bottom);
+        const inSlot2 = (bugCenterX > slot2.left && bugCenterX < slot2.right && bugCenterY > slot2.top && bugCenterY < slot2.bottom);
+
+        if (step === 1 && bug.id === 'bug-2' && inSlot1) {
+            snapTo(bug, document.getElementById('slot-1'));
+            step = 2;
+            
+            const s1 = document.getElementById('slot-1');
+            s1.classList.remove('highlight-target');
+            s1.classList.add('success');
+            
+            document.getElementById('slot-2').classList.add('highlight-target');
+            document.getElementById('bug-1').classList.add('highlight-target');
+            
+            document.getElementById('instruction-text').innerText = "Step 2: Add Remaining Weight";
+            document.getElementById('learning-objective').innerHTML = "The branch has a weight of <b>2</b>. The target is <b>3</b>. Drag the Cyan Cricket (Weight: 1) to the other slot!";
+        } 
+        else if (step === 2 && bug.id === 'bug-1' && inSlot2) {
+            snapTo(bug, document.getElementById('slot-2'));
+            step = 3;
+            
+            const s2 = document.getElementById('slot-2');
+            s2.classList.remove('highlight-target');
+            s2.classList.add('success');
+            
+            document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+            document.getElementById('instruction-text').style.color = "#4ECDC4";
+            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success!</strong> 2 + 1 = 3! The scale is perfectly balanced. In the full game, you'll manage large swarms of bugs. Close this window to play.";
+        }
+        else {
+            // Return to static container smoothly
+            bug.style.position = 'absolute';
+            bug.style.left = '0';
+            bug.style.top = '0';
+            if (step === 1 && bug.id === 'bug-2') setTimeout(()=> bug.classList.add('highlight-target'), 300);
+            if (step === 2 && bug.id === 'bug-1') setTimeout(()=> bug.classList.add('highlight-target'), 300);
+        }
+    }
+
+    function snapTo(bug, slot) {
+        // Reset absolute positioning to let it flow inside the flex slot perfectly
+        bug.style.position = 'relative';
+        bug.style.left = '0';
+        bug.style.top = '0';
+        slot.appendChild(bug);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Futzal Zebra: Boot Camp</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;800;900&display=swap');
+        
+        :root { 
+            --bg-dark: #2c1e16; 
+            --panel-bg: #3b2923; 
+            --text-light: #faedcd; 
+            --grass-1: #2e7d32; --grass-2: #388e3c;
+            --accent: #f4a261; 
+            --highlight: #00e5ff; 
+            --zebra: #e0e0e0; --hippo: #95a5a6; --rhino: #7f8c8d;
+            --goal: #f1c40f;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Nunito', sans-serif; background: var(--bg-dark); color: var(--text-light); 
+            margin: 0; padding: 15px 10px; display: flex; flex-direction: column; align-items: center; 
+            min-height: 100dvh; overflow-x: hidden;
+        }
+        
+        h1 { text-transform: uppercase; letter-spacing: 1px; text-align: center; color: var(--accent); margin: 0 0 15px 0; font-family: 'Fredoka One', cursive; font-size: 1.4rem;}
+
+        .panel { 
+            width: 100%; max-width: 450px; background: var(--panel-bg); 
+            padding: 15px; border-radius: 12px; border: 2px solid #5c433b; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6); position: relative;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        /* --- STICKY HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; max-width: 450px;
+            background: rgba(44, 30, 22, 0.95); border-bottom: 3px solid var(--highlight);
+            padding: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            border-radius: 8px 8px 0 0; margin-bottom: 5px; backdrop-filter: blur(5px);
+        }
+        #instruction-text { font-family: 'Fredoka One', cursive; font-size: 14px; color: var(--highlight); text-align: center; text-transform: uppercase; }
+        #learning-objective {
+            background: rgba(0, 229, 255, 0.1); border: 1px dashed var(--highlight);
+            padding: 8px; font-size: 12px; font-weight: 700; color: var(--text-light); text-align: center; border-radius: 6px; line-height: 1.3;
+        }
+
+        /* --- MATH ENGINE BOARD --- */
+        .math-board {
+            background: rgba(0,0,0,0.6); border: 2px solid var(--accent); border-radius: 8px; 
+            padding: 12px; text-align: center; display: flex; flex-direction: column; gap: 5px;
+        }
+        .math-title { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; font-weight: 900; letter-spacing: 1px; margin-bottom: 5px;}
+        .math-equation { font-family: 'Fredoka One', monospace; font-size: 1.3rem; color: #fff; }
+        .math-equation span { color: var(--highlight); }
+        .math-log { font-size: 0.85rem; color: #aaa; font-weight: 700; min-height: 40px; margin-top: 5px;}
+
+        /* --- FUTZAL PITCH --- */
+        .pitch {
+            width: 100%; height: 320px; background: repeating-linear-gradient(0deg, var(--grass-1), var(--grass-1) 40px, var(--grass-2) 40px, var(--grass-2) 80px);
+            border: 3px solid #fff; border-radius: 8px; position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5); overflow: hidden;
+        }
+        
+        /* Pitch Markings */
+        .pitch::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 60px; border: 3px solid #fff; border-top: none; }
+        .pitch::after { content: ''; position: absolute; top: 160px; left: 0; width: 100%; height: 3px; background: #fff; }
+        .center-circle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 80px; border: 3px solid #fff; border-radius: 50%; }
+
+        /* Players & Ball */
+        .player {
+            position: absolute; width: 45px; height: 45px; border-radius: 50%; 
+            display: flex; justify-content: center; align-items: center; font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 10; border: 3px solid #111;
+            transform: translate(-50%, -50%); transition: 0.2s; cursor: pointer;
+        }
+        .player:active { transform: translate(-50%, -50%) scale(0.9); }
+        .formula-tag {
+            position: absolute; top: -25px; background: rgba(0,0,0,0.8); color: white;
+            padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 900;
+            border: 1px solid #fff; white-space: nowrap; pointer-events: none;
+        }
+        
+        .p-zebra { background: var(--zebra); top: 85%; left: 50%; }
+        .p-hippo { background: var(--hippo); top: 50%; left: 20%; }
+        .p-rhino { background: var(--rhino); top: 50%; left: 80%; }
+        
+        .goal-zone {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 40px; background: rgba(241, 196, 15, 0.3); border: 2px dashed var(--goal);
+            display: flex; justify-content: center; align-items: center; font-weight: 900; color: var(--goal);
+            z-index: 5; cursor: pointer;
+        }
+
+        .ball {
+            position: absolute; width: 30px; height: 30px; background: radial-gradient(circle at 30% 30%, #fff, #ddd);
+            border-radius: 50%; border: 2px solid #333; display: flex; justify-content: center; align-items: center;
+            font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: #111; z-index: 20;
+            transition: top 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), left 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 2px 4px 6px rgba(0,0,0,0.5);
+        }
+
+        /* Highlights */
+        .highlight-target { animation: pulse 1.2s infinite !important; border-color: var(--highlight) !important; z-index: 15;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(0, 229, 255, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+        .btn { background: var(--highlight); color: #111; border: none; padding: 12px; border-radius: 8px; font-family: 'Fredoka One', cursive; font-size: 1.1rem; cursor: pointer; text-transform: uppercase; width: 100%; transition: 0.2s;}
+        .btn:active { transform: translateY(3px); }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Phase 1: Functions as Players</div>
+    <div id="learning-objective">
+        In Futzal Zebra, the <b>Ball is 'x'</b>. Every player is a function <b>f(x)</b>. Tap the Zebra to receive the ball and apply their formula!
+    </div>
+</div>
+
+<div class="panel">
+    <h1>Futzal Playmaker</h1>
+
+    <div class="math-board">
+        <div class="math-title">Math Engine</div>
+        <div class="math-equation" id="equation">f(x) = ?</div>
+        <div class="math-log" id="log">The ball starts with a value of x = 4. Waiting for Zebra to receive it...</div>
+    </div>
+
+    <div class="pitch">
+        <div class="center-circle"></div>
+        
+        <div class="goal-zone" id="goal" onclick="scoreGoal()">GOAL<br>Needs exactly 10!</div>
+        
+        <div class="player p-zebra highlight-target" id="p-zebra" onclick="passToZebra()">🦓<div class="formula-tag">f(x) = 2x</div></div>
+        <div class="player p-hippo" id="p-hippo" onclick="passToHippo()">🦛<div class="formula-tag">f(x) = x + 2</div></div>
+        <div class="player p-rhino" id="p-rhino" onclick="passToRhino()">🦏<div class="formula-tag">f(x) = x - 2</div></div>
+
+        <div class="ball" id="ball" style="top: 95%; left: 10%;">4</div>
+    </div>
+
+    <button class="btn" id="reset-btn" style="display:none;" onclick="location.reload()">Reboot Tutorial</button>
+</div>
+
+<script>
+    let step = 1;
+    let ballValue = 4;
+    let currentHolder = 'start';
+    
+    const ball = document.getElementById('ball');
+    const eqText = document.getElementById('equation');
+    const logText = document.getElementById('log');
+    
+    function moveBallTo(elementId) {
+        const el = document.getElementById(elementId);
+        // Get percentage positions from the element's inline style/CSS
+        ball.style.top = el.style.top || getComputedStyle(el).top;
+        ball.style.left = el.style.left || getComputedStyle(el).left;
+    }
+
+    function updateBallValue(newVal) {
+        ballValue = newVal;
+        ball.innerText = ballValue;
+    }
+
+    function passToZebra() {
+        if (step !== 1) return;
+        
+        document.getElementById('p-zebra').classList.remove('highlight-target');
+        
+        // Move ball to Zebra
+        moveBallTo('p-zebra');
+        
+        // Math execution
+        let x = ballValue;
+        let result = 2 * x;
+        
+        eqText.innerHTML = `f(<span>${x}</span>) = 2(<span>${x}</span>) = ${result}`;
+        logText.innerHTML = `Zebra receives the ball. Their formula is <b>2x</b>.<br>The ball transforms: 2 × ${x} = <b>${result}</b>!`;
+        
+        updateBallValue(result);
+        currentHolder = 'zebra';
+
+        // Advance to Step 2
+        setTimeout(() => {
+            step = 2;
+            document.getElementById('instruction-text').innerText = "Phase 2: Function Chaining";
+            document.getElementById('learning-objective').innerHTML = "The Goal requires a ball value of <b>exactly 10</b>. You have an <b>8</b>. Pass to the player whose formula will result in 10!";
+            
+            document.getElementById('p-hippo').classList.add('highlight-target');
+            document.getElementById('p-rhino').classList.add('highlight-target');
+        }, 1500);
+    }
+
+    function passToHippo() {
+        if (step !== 2 || currentHolder !== 'zebra') return;
+        
+        document.getElementById('p-hippo').classList.remove('highlight-target');
+        document.getElementById('p-rhino').classList.remove('highlight-target');
+        
+        moveBallTo('p-hippo');
+        
+        let x = ballValue;
+        let result = x + 2;
+        
+        eqText.innerHTML = `f(<span>${x}</span>) = <span>${x}</span> + 2 = ${result}`;
+        logText.innerHTML = `Hippo receives the ball. Their formula is <b>x + 2</b>.<br>The ball transforms: ${x} + 2 = <b>${result}</b>!`;
+        
+        updateBallValue(result);
+        currentHolder = 'hippo';
+
+        setTimeout(() => {
+            step = 3;
+            document.getElementById('instruction-text').innerText = "Phase 3: Score the Goal";
+            document.getElementById('learning-objective').innerHTML = "Perfect chain! You created the exact value needed. Tap the Goal Zone to shoot!";
+            document.getElementById('goal').classList.add('highlight-target');
+        }, 1500);
+    }
+
+    function passToRhino() {
+        if (step !== 2 || currentHolder !== 'zebra') return;
+        
+        document.getElementById('p-hippo').classList.remove('highlight-target');
+        document.getElementById('p-rhino').classList.remove('highlight-target');
+        
+        moveBallTo('p-rhino');
+        
+        let x = ballValue;
+        let result = x - 2;
+        
+        eqText.innerHTML = `f(<span>${x}</span>) = <span>${x}</span> - 2 = ${result}`;
+        logText.innerHTML = `Rhino's formula is <b>x - 2</b>. Ball becomes <b>${result}</b>.<br><span style="color:#e74c3c;">Oh no! You need a 10 to score. Passing back to Zebra.</span>`;
+        
+        updateBallValue(result);
+        
+        // Reset to Zebra after mistake
+        setTimeout(() => {
+            ballValue = 8;
+            ball.innerText = ballValue;
+            moveBallTo('p-zebra');
+            currentHolder = 'zebra';
+            
+            eqText.innerHTML = `f(x) = ?`;
+            logText.innerHTML = "Ball reset to Zebra (x=8). Choose the correct pass to reach 10!";
+            
+            document.getElementById('p-hippo').classList.add('highlight-target');
+            document.getElementById('p-rhino').classList.add('highlight-target');
+        }, 2500);
+    }
+
+    function scoreGoal() {
+        if (step !== 3) return;
+        
+        document.getElementById('goal').classList.remove('highlight-target');
+        
+        ball.style.top = '10%';
+        ball.style.left = '50%';
+        ball.style.transform = 'translate(-50%, -50%) scale(1.5)';
+        ball.style.background = '#f1c40f'; // Turn gold
+        
+        eqText.innerHTML = `GOAL SCORED!`;
+        eqText.style.color = '#f1c40f';
+        logText.innerHTML = `You successfully chained functions to reach the target variable.`;
+
+        document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+        document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success!</strong> Passing the ball applies formulas sequentially like <b>g(f(x))</b>. Close this to hit the pitch!";
+        
+        document.getElementById('reset-btn').style.display = 'block';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Architect's Ascent: Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Helvetica+Neue:wght@400;700&display=swap');
+        
+        :root { 
+            --main-bg: #090a10; 
+            --panel-bg: rgba(12, 14, 36, 0.96);
+            --accent: #6eb5b3; 
+            --accent-hover: #9adcd9; 
+            --danger: #d85c6b; 
+            --text-light: #CDD8F8;
+            --text-dim: #7A85B0;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Helvetica Neue', Arial, sans-serif; background: var(--main-bg); color: var(--text-light); 
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; 
+            min-height: 100dvh; overflow-x: hidden;
+        }
+        
+        h1 { text-transform: uppercase; letter-spacing: 2px; text-align: center; color: var(--accent); margin: 0 0 15px 0; font-size: 1.2rem;}
+
+        .panel { 
+            width: 100%; max-width: 450px; background: var(--panel-bg); 
+            padding: 15px; border-radius: 12px; border: 1px solid rgba(61,157,155,0.3); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6); position: relative;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        
+        /* --- STICKY HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; max-width: 450px;
+            background: rgba(9, 10, 16, 0.95); border-bottom: 2px solid var(--accent);
+            padding: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            border-radius: 8px 8px 0 0; margin-bottom: 10px;
+        }
+        #instruction-text { font-size: 14px; color: var(--accent); text-align: center; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;}
+        #learning-objective {
+            background: rgba(61, 157, 155, 0.1); border: 1px dashed var(--accent);
+            padding: 8px; font-size: 12px; font-weight: 400; color: var(--text-light); text-align: center; border-radius: 6px; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--accent-hover); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; background: rgba(9, 10, 16, 0.98); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-btn {
+            background: var(--danger); color: #FFF; border: none; padding: 12px 30px; border-radius: 30px;
+            font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.1s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .start-btn:active { transform: translateY(3px); }
+
+        /* --- GAME ENGINE SIMULATION --- */
+        .game-viewport {
+            width: 100%; height: 200px; background: #111424; border: 2px solid #232648; border-radius: 8px;
+            position: relative; overflow: hidden; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Physics Objects */
+        .ground { position: absolute; background: #225452; border-top: 3px solid #368C88; bottom: 0; height: 60px; }
+        .ground-left { left: 0; width: 80px; }
+        .ground-right { right: 0; width: 80px; }
+        .goal { position: absolute; right: 20px; bottom: 60px; width: 30px; height: 40px; background: rgba(232,93,117,0.4); border: 1px solid #E85D75;}
+        .goal::after { content: ''; position: absolute; top: -500px; left: 10px; width: 10px; height: 500px; background: linear-gradient(to top, rgba(232,93,117,0.8), transparent);}
+        
+        .player {
+            position: absolute; width: 20px; height: 20px; background: #FFF; 
+            box-shadow: 0 0 10px rgba(255,255,255,0.5); z-index: 10;
+        }
+        .built-block {
+            position: absolute; background: #2A9E98; border: 2px solid #4ABEB8; opacity: 0.8;
+            display: none; z-index: 5;
+        }
+
+        /* --- FUSION UI --- */
+        .fusion-ui { display: flex; flex-direction: column; gap: 10px; }
+        .pv-zone { background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.05); border-radius: 8px; padding: 10px; }
+        .pv-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); margin-bottom: 8px; }
+        .pv-title span { color: #FFF; font-weight: bold; font-size: 14px; }
+        .pv-cols { display: flex; gap: 8px; min-height: 50px; }
+        .pv-col {
+            flex: 1; background: rgba(255,255,255,.03); border: 2px dashed rgba(255,255,255,.1); border-radius: 6px;
+            display: flex; flex-wrap: wrap; gap: 5px; padding: 5px; align-content: flex-start; position: relative;
+        }
+        .pv-col::after {
+            content: attr(data-label); position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            color: rgba(255,255,255,.1); font-weight: bold; font-size: 14px; pointer-events: none;
+        }
+
+        /* Tokens */
+        .token {
+            display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; color: #FFF; 
+            cursor: pointer; z-index: 10; transition: transform 0.1s; user-select: none;
+        }
+        .token:active { transform: scale(1.1); }
+        .t-10 { width: 28px; height: 36px; background: linear-gradient(135deg,#C08820,#8B5510); border-radius: 4px; border: 1px solid rgba(255,200,80,.5); }
+        .t-1 { width: 24px; height: 24px; background: linear-gradient(135deg,#2A9E98,#186660); border-radius: 50%; border: 1px solid rgba(80,200,195,.5); }
+
+        /* Rotator */
+        .rot-toggle { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; margin-top: 5px;}
+        .rot-toggle input { width: 18px; height: 18px; accent-color: var(--danger); }
+
+        /* Controls */
+        .btn-action {
+            background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 8px;
+            font-weight: bold; font-size: 1rem; cursor: pointer; text-transform: uppercase; margin-top: 5px; transition: 0.2s; width: 100%;
+        }
+        .btn-action:disabled { background: #333; color: #555; cursor: not-allowed; }
+        
+        .tc-row { display: none; justify-content: space-between; margin-top: 10px; }
+        .tc-cluster { display: flex; gap: 10px; }
+        .tc-btn {
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #FFF;
+            border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; touch-action: none; cursor: pointer; user-select: none;
+        }
+        .tc-btn:active { background: rgba(61,157,155,.4); border-color: var(--accent-hover); }
+
+        /* Highlight */
+        .highlight-target { animation: pulse 1s infinite !important; border-color: var(--accent-hover) !important; z-index: 15;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(110, 181, 179, 0.6); } 70% { box-shadow: 0 0 0 10px rgba(110, 181, 179, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Phase 1: Value Fusion</div>
+    <div id="learning-objective">
+        In <b>BUILD</b> mode, your inventory tokens act as raw mass. We need a block with a value of exactly <b>12</b> to cross the gap. Tap tokens from your Inventory to move them to the Blueprint!
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h1 style="font-size: 1.8rem; color: var(--text-light); margin-bottom: 5px;">Architect's Ascent</h1>
+    <h2 style="color: var(--accent); margin-bottom: 15px; font-size: 1rem;">Boot Camp</h2>
+    <p style="font-size: 1rem; color: var(--text-dim); max-width: 300px; line-height: 1.5;">Master the Fusion UI! Learn to combine tokens to forge platforms, rotate them, and test your creations in real-time.</p>
+    <button class="start-btn" onclick="startTutorial()">Begin Drafting</button>
+</div>
+
+<div class="panel">
+
+    <div class="game-viewport" id="viewport">
+        <div class="ground ground-left"></div>
+        <div class="ground ground-right"></div>
+        <div class="goal" id="goal"></div>
+        <div class="built-block" id="block"></div>
+        <div class="player" id="player" style="left: 30px; top: 120px;"></div>
+    </div>
+
+    <div class="fusion-ui" id="fusion-container">
+        <div class="pv-zone highlight-target" id="bp-zone">
+            <div class="pv-title">Blueprint Value: <span id="bp-total">0</span></div>
+            <div class="pv-cols">
+                <div class="pv-col" data-label="10s" id="bp-10"></div>
+                <div class="pv-col" data-label="1s" id="bp-1"></div>
+            </div>
+        </div>
+
+        <div class="pv-zone">
+            <div class="pv-title">Inventory: <span id="inv-total">14</span></div>
+            <div class="pv-cols">
+                <div class="pv-col" data-label="10s" id="inv-10">
+                    <div class="token t-10" onclick="moveToken(this, 'bp-10', 10)">10</div>
+                </div>
+                <div class="pv-col" data-label="1s" id="inv-1">
+                    <div class="token t-1" onclick="moveToken(this, 'bp-1', 1)">1</div>
+                    <div class="token t-1" onclick="moveToken(this, 'bp-1', 1)">1</div>
+                    <div class="token t-1" onclick="moveToken(this, 'bp-1', 1)">1</div>
+                    <div class="token t-1" onclick="moveToken(this, 'bp-1', 1)">1</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rot-toggle">
+            <input type="checkbox" id="rotCheck" disabled onchange="checkPhase2()">
+            <label for="rotCheck" id="rotLabel" style="color: #555;">Rotate 90° (Lay block horizontally)</label>
+        </div>
+
+        <button class="btn-action" id="btn-build" disabled onclick="executeBuild()">Fuse & Build</button>
+    </div>
+
+    <div class="tc-row" id="controls">
+        <div class="tc-cluster">
+            <div class="tc-btn" onpointerdown="input.L=true" onpointerup="input.L=false" onpointerleave="input.L=false">◀</div>
+            <div class="tc-btn" onpointerdown="input.R=true" onpointerup="input.R=false" onpointerleave="input.R=false">▶</div>
+        </div>
+        <div class="tc-cluster">
+            <div class="tc-btn" onpointerdown="doJump()">▲</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let step = 1;
+    let bpValue = 0;
+    let invValue = 14;
+
+    // Mini Physics Engine State
+    let gameActive = false;
+    let p = { x: 30, y: 120, vx: 0, vy: 0, w: 20, h: 20, onGnd: false };
+    let input = { L: false, R: false };
+    const GRAV = 0.6, JUMP = -8, SPD = 3;
+
+    function startTutorial() {
+        document.getElementById('start-overlay').style.display = 'none';
+    }
+
+    // Token Logic
+    function moveToken(tokenEl, targetColId, val) {
+        if (step > 2) return; // Locked out after building
+
+        const targetCol = document.getElementById(targetColId);
+        targetCol.appendChild(tokenEl);
+        
+        // Update onclick to move back
+        let isMovingToBp = targetColId.startsWith('bp');
+        let backTarget = isMovingToBp ? `inv-${val}` : `bp-${val}`;
+        tokenEl.setAttribute('onclick', `moveToken(this, '${backTarget}', ${val})`);
+
+        // Update totals
+        if (isMovingToBp) {
+            bpValue += val;
+            invValue -= val;
+        } else {
+            bpValue -= val;
+            invValue += val;
+        }
+
+        document.getElementById('bp-total').innerText = bpValue;
+        document.getElementById('inv-total').innerText = invValue;
+
+        checkPhase1();
+    }
+
+    function checkPhase1() {
+        if (step !== 1) return;
+
+        if (bpValue === 12) {
+            step = 2;
+            document.getElementById('bp-zone').classList.remove('highlight-target');
+            document.getElementById('instruction-text').innerText = "Phase 2: Orientation";
+            document.getElementById('learning-objective').innerHTML = "Right now, your block will spawn as a vertical pillar. Check the <b>Rotate 90°</b> box to turn it into a bridge, then tap <b>Fuse & Build</b>!";
+            
+            let rotBox = document.getElementById('rotCheck');
+            rotBox.disabled = false;
+            rotBox.classList.add('highlight-target');
+            document.getElementById('rotLabel').style.color = "#FFF";
+        }
+    }
+
+    function checkPhase2() {
+        if (step !== 2) return;
+        
+        let isChecked = document.getElementById('rotCheck').checked;
+        let btn = document.getElementById('btn-build');
+        
+        if (isChecked) {
+            document.getElementById('rotCheck').classList.remove('highlight-target');
+            btn.disabled = false;
+            btn.classList.add('highlight-target');
+        } else {
+            btn.disabled = true;
+            btn.classList.remove('highlight-target');
+        }
+    }
+
+    function executeBuild() {
+        if (step !== 2) return;
+        step = 3;
+
+        document.getElementById('btn-build').classList.remove('highlight-target');
+        document.getElementById('btn-build').disabled = true;
+        document.getElementById('fusion-container').style.display = 'none';
+        
+        // Show block based on math from source code: l = 15 + newPv * 10
+        // newPv = 12. l = 15 + 120 = 135.
+        // If rotated: w = 135, h = 25.
+        const block = document.getElementById('block');
+        block.style.display = 'block';
+        block.style.width = '135px';
+        block.style.height = '25px';
+        block.style.left = '75px'; // Bridge the gap between 80 and 220
+        block.style.top = '115px';
+
+        document.getElementById('controls').style.display = 'flex';
+        
+        document.getElementById('instruction-text').innerText = "Phase 3: Test Climb";
+        document.getElementById('instruction-text').style.color = "#d85c6b";
+        document.getElementById('learning-objective').innerHTML = "<b>PHASE SHIFT INITIATED.</b> The UI is locked and physical laws now apply. Use the controls to cross your new bridge and touch the Beacon!";
+        document.getElementById('learning-objective').style.borderColor = "#d85c6b";
+
+        gameActive = true;
+        requestAnimationFrame(gameLoop);
+    }
+
+    // --- PHYSICS LOOP ---
+    function doJump() {
+        if (p.onGnd) p.vy = JUMP;
+    }
+
+    // AABB Collision helper
+    function boxOv(a, b) {
+        return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function gameLoop() {
+        if (!gameActive) return;
+
+        // Horizontal
+        if (input.L) p.vx = -SPD;
+        else if (input.R) p.vx = SPD;
+        else p.vx = 0;
+
+        p.x += p.vx;
+
+        // X constraints against viewport edges
+        if (p.x < 0) p.x = 0;
+        if (p.x > 300 - p.w) p.x = 300 - p.w; // Assumed viewport width ~300 in CSS
+
+        // Define colliders
+        const colliders = [
+            { x: 0, y: 140, w: 80, h: 60 }, // ground-left
+            { x: 220, y: 140, w: 80, h: 60 }, // ground-right
+            { x: 75, y: 115, w: 135, h: 25 }  // built bridge
+        ];
+
+        const goalZone = { x: 250, y: 100, w: 30, h: 40 };
+
+        // Vertical
+        p.vy += GRAV;
+        p.y += p.vy;
+        p.onGnd = false;
+
+        for (let c of colliders) {
+            if (boxOv(p, c)) {
+                // If falling down onto it
+                if (p.vy > 0 && (p.y - p.vy + p.h) <= c.y + 15) {
+                    p.y = c.y - p.h;
+                    p.vy = 0;
+                    p.onGnd = true;
+                }
+            }
+        }
+
+        // Death by falling
+        if (p.y > 250) {
+            p.x = 30; p.y = 120; p.vy = 0; // Respawn
+        }
+
+        // Apply visual updates
+        const pEl = document.getElementById('player');
+        pEl.style.left = p.x + 'px';
+        pEl.style.top = p.y + 'px';
+
+        // Check Win
+        if (boxOv(p, goalZone)) {
+            gameActive = false;
+            document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+            document.getElementById('instruction-text').style.color = "#4CAF50";
+            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Summit Reached!</strong> You successfully drafted, fused, and traversed your own geometry. Close this window to begin your ascent!";
+            document.getElementById('learning-objective').style.borderColor = "#4CAF50";
+            
+            // Hide controls
+            document.getElementById('controls').style.opacity = '0.3';
+            document.getElementById('controls').style.pointerEvents = 'none';
+        } else {
+            requestAnimationFrame(gameLoop);
+        }
+    }
+</script>
+</body>
+</html>

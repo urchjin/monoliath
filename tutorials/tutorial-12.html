@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ILLUMINATE: Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Josefin+Sans:wght@300;400;600&display=swap');
+
+        :root {
+            --bg: #0c0917; --surface: #17112a; --surface2: #211940; --border: #3a2860;
+            --gold: #f0c040; --rose: #e87575; --sage: #72d4a8; --sky: #7ab8f0; --lav: #a888e0;
+            --text: #e0ccaa; --text-dim: #6a5880;
+        }
+
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Josefin Sans', sans-serif; background: var(--bg); color: var(--text); 
+            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; 
+            min-height: 100dvh; overflow-x: hidden;
+        }
+        
+        h1 { font-family: 'Cinzel Decorative', serif; color: var(--gold); text-align: center; margin: 0 0 15px 0; font-size: 1.6rem; letter-spacing: 2px; text-shadow: 0 0 10px rgba(240,192,64,0.5);}
+
+        /* Main Wrapper */
+        .panel { 
+            width: 100%; max-width: 450px; background: var(--bg); 
+            display: flex; flex-direction: column; gap: 15px; position: relative;
+        }
+        
+        /* --- STICKY HUD --- */
+        #tutorial-hud {
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(23, 17, 42, 0.95); border-bottom: 2px solid var(--border);
+            padding: 12px; display: flex; flex-direction: column; gap: 8px; z-index: 100;
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
+        }
+        #instruction-text { font-family: 'Cinzel Decorative', serif; font-size: 1.1rem; color: var(--gold); text-align: center; text-transform: uppercase; }
+        #learning-objective {
+            background: rgba(240, 192, 64, 0.05); border: 1px dashed var(--gold);
+            padding: 10px; font-size: 0.85rem; font-weight: 600; color: var(--text); text-align: center; border-radius: 6px; line-height: 1.4;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: fixed; inset: 0; background: rgba(12, 9, 23, 0.95); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px;
+        }
+        .start-btn {
+            background: transparent; color: var(--gold); border: 1px solid var(--gold); padding: 12px 30px; 
+            font-family: 'Josefin Sans', sans-serif; font-size: 1rem; letter-spacing: 2px; text-transform: uppercase;
+            cursor: pointer; margin-top: 20px; transition: 0.2s;
+        }
+        .start-btn:active { background: var(--gold); color: var(--bg); }
+
+        /* --- SHARED PLAIN (BOARD) --- */
+        .board-container { background: var(--surface); padding: 10px; border: 1px solid var(--border); border-radius: 4px;}
+        .board-title { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; text-align: center; margin-bottom: 8px;}
+        .shared-grid {
+            display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; width: 100%;
+        }
+        .scell {
+            aspect-ratio: 1; background: #0d0920; transition: background 0.3s, box-shadow 0.3s; position: relative;
+        }
+        .scell.locked::after {
+            content: ''; position: absolute; inset: 1px; border: 2px solid rgba(255,255,255,0.7);
+            box-shadow: inset 0 0 4px rgba(255,255,255,0.3); pointer-events: none;
+        }
+        @keyframes cellPop { 0% { transform: scale(0.3); opacity: 0; } 65% { transform: scale(1.2); } 100% { transform: scale(1); opacity: 1; } }
+        .scell.pop { animation: cellPop 0.3s ease; }
+
+        /* --- HAND --- */
+        .hand-section { background: var(--surface); border: 1px solid var(--border); padding: 10px; border-radius: 4px; text-align: center;}
+        .hand-lbl { font-size: 0.65rem; letter-spacing: 0.2em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px;}
+        .hand-cards { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        
+        .hcard {
+            width: 80px; height: 115px; background: var(--surface2); border: 2px solid var(--border);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 5px; cursor: pointer; transition: 0.2s; position: relative; border-radius: 4px;
+        }
+        .hcard:active { transform: translateY(4px); }
+        .hc-badge { position: absolute; top: 4px; left: 4px; font-size: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 4px; background: var(--surface); border: 1px solid var(--border); }
+        .hc-val { font-family: 'Cinzel Decorative', serif; font-size: 1.2rem; margin-top: 10px; }
+        .hc-sub { font-size: 0.55rem; color: var(--text-dim); text-align: center; margin-top: 5px; line-height: 1.2; }
+        
+        .hc-charge { border-color: rgba(240,192,64,0.4); }
+        .hc-charge .hc-val { color: var(--gold); }
+        .hc-ward { border-color: rgba(114,212,168,0.4); }
+        .hc-ward .hc-val { color: var(--sage); }
+
+        .highlight-target { animation: pulse 1.2s infinite !important; border-color: var(--gold) !important; z-index: 10;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(240, 192, 64, 0.5); } 70% { box-shadow: 0 0 0 10px rgba(240, 192, 64, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
+        /* --- QUIZ MODAL --- */
+        .modal-ov { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 150; padding: 15px; }
+        .modal { background: var(--surface); border: 1px solid var(--border); padding: 25px 20px; width: 100%; max-width: 350px; text-align: center; position: relative; }
+        .modal::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+        .modal-title { font-family: 'Cinzel Decorative', serif; font-size: 1.2rem; color: var(--gold); margin-bottom: 5px; }
+        .modal-text { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 15px; line-height: 1.5; }
+        .conv-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: 'Josefin Sans', sans-serif; font-size: 1.5rem; padding: 10px; text-align: center; width: 120px; outline: none; margin-bottom: 10px; }
+        .conv-input:focus { border-color: var(--sky); }
+        .err-txt { color: var(--rose); font-size: 0.8rem; min-height: 20px; margin-bottom: 10px; font-weight: bold;}
+        .btn { background: transparent; color: var(--sky); border: 1px solid var(--sky); padding: 10px 20px; font-family: 'Josefin Sans'; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+        .btn:active { background: var(--sky); color: var(--bg); }
+    </style>
+</head>
+<body>
+
+<div id="tutorial-hud">
+    <div id="instruction-text">Phase 1: Claiming Light</div>
+    <div id="learning-objective">
+        Charge cards claim empty cells. To use them, you must decode their fraction into a percentage! Tap the <b>1/10 Charge Card</b>.
+    </div>
+</div>
+
+<div id="start-overlay">
+    <h1 style="font-size: 2.2rem;">ILLUMINATE</h1>
+    <p style="font-size: 1rem; color: var(--text-dim); max-width: 300px; line-height: 1.5;">Learn the sacred geometry. Master fractions, understand the Rebound Rule, and ward your territory.</p>
+    <button class="start-btn" onclick="startTutorial()">Begin Training</button>
+</div>
+
+<div class="panel">
+    
+    <div class="board-container">
+        <div class="board-title">The Shared Plain (100 Cells)</div>
+        <div class="shared-grid" id="grid">
+            </div>
+    </div>
+
+    <div class="hand-section">
+        <div class="hand-lbl">Your Hand</div>
+        <div class="hand-cards" id="hand">
+            </div>
+    </div>
+
+</div>
+
+<div class="modal-ov" id="quiz-modal">
+    <div class="modal">
+        <div class="modal-title">Decode the Light</div>
+        <div style="font-family: 'Cinzel Decorative'; font-size: 3rem; color: var(--sky); margin: 10px 0;" id="quiz-fraction">1/10</div>
+        <div class="modal-text" id="quiz-q">What is 1/10 as a %?<br><span style="font-size: 0.7rem; color: var(--lav);">(1 ÷ 10) × 100</span></div>
+        <input type="number" id="conv-inp" class="conv-input" placeholder="___">
+        <div class="err-txt" id="conv-err"></div>
+        <button class="btn" onclick="submitQuiz()">Confirm</button>
+    </div>
+</div>
+
+<script>
+    let step = 1;
+    let currentQuizAnswer = 10;
+    let gridCells = [];
+    
+    // DOM
+    const gridEl = document.getElementById('grid');
+    const handEl = document.getElementById('hand');
+    const modal = document.getElementById('quiz-modal');
+    const inp = document.getElementById('conv-inp');
+    const err = document.getElementById('conv-err');
+
+    // Initialize Grid
+    for(let i=0; i<100; i++) {
+        let cell = document.createElement('div');
+        cell.className = 'scell';
+        cell.id = 'cell-' + i;
+        gridEl.appendChild(cell);
+        gridCells.push({ el: cell, owner: null, locked: false });
+    }
+
+    function startTutorial() {
+        document.getElementById('start-overlay').style.display = 'none';
+        setupPhase1();
+    }
+
+    function setupPhase1() {
+        step = 1;
+        handEl.innerHTML = `
+            <div class="hcard hc-charge highlight-target" onclick="openQuiz('1/10', 10, 'What is 1/10 as a %?', '(1 ÷ 10) × 100')">
+                <div class="hc-badge">Charge</div>
+                <div class="hc-val">1/10</div>
+                <div class="hc-sub">Claim 10 cells</div>
+            </div>
+        `;
+    }
+
+    function setupPhase2() {
+        step = 2;
+        document.getElementById('instruction-text').innerText = "Phase 2: The Rebound Rule";
+        document.getElementById('instruction-text').style.color = "var(--rose)";
+        document.getElementById('learning-objective').innerHTML = "Crimson has invaded! <b>Overwriting an opponent's cell costs 2 charge points per cell.</b> Play the <b>1/5</b> card to see this in action.";
+        document.getElementById('learning-objective').style.borderColor = "var(--rose)";
+        
+        // Fill remaining 90 cells with Red
+        for(let i=10; i<100; i++) {
+            gridCells[i].owner = 'red';
+            gridCells[i].el.style.background = 'var(--rose)';
+        }
+
+        handEl.innerHTML = `
+            <div class="hcard hc-charge highlight-target" style="border-color: rgba(232,117,117,0.8);" onclick="openQuiz('1/5', 20, 'What is 1/5 as a %?', '(1 ÷ 5) × 100')">
+                <div class="hc-badge">Charge</div>
+                <div class="hc-val" style="color: var(--rose);">1/5</div>
+                <div class="hc-sub">Claim 20 cells</div>
+            </div>
+        `;
+    }
+
+    function setupPhase3() {
+        step = 3;
+        document.getElementById('instruction-text').innerText = "Phase 3: Wards";
+        document.getElementById('instruction-text').style.color = "var(--sage)";
+        document.getElementById('learning-objective').innerHTML = "Wards protect your light. Tap <b>Aegis</b> to permanently lock 15 of your golden cells so they can never be overwritten.";
+        document.getElementById('learning-objective').style.borderColor = "var(--sage)";
+        
+        handEl.innerHTML = `
+            <div class="hcard hc-ward highlight-target" onclick="playAegis()">
+                <div class="hc-badge">Ward</div>
+                <div class="hc-val">Aegis</div>
+                <div class="hc-sub">Lock 15 of your cells permanently</div>
+            </div>
+        `;
+    }
+
+    function openQuiz(fraction, ans, q, hint) {
+        currentQuizAnswer = ans;
+        document.getElementById('quiz-fraction').innerText = fraction;
+        document.getElementById('quiz-q').innerHTML = `${q}<br><span style="font-size: 0.7rem; color: var(--lav);">${hint}</span>`;
+        inp.value = '';
+        err.innerText = '';
+        modal.style.display = 'flex';
+        inp.focus();
+    }
+
+    function submitQuiz() {
+        if(parseInt(inp.value) === currentQuizAnswer) {
+            modal.style.display = 'none';
+            if(step === 1) executePhase1();
+            if(step === 2) executePhase2();
+        } else {
+            err.innerText = "Incorrect. Try again.";
+            inp.value = '';
+            inp.focus();
+        }
+    }
+
+    function executePhase1() {
+        handEl.innerHTML = ''; // Clear hand
+        // Color first 10 cells gold
+        for(let i=0; i<10; i++) {
+            setTimeout(() => {
+                gridCells[i].owner = 'gold';
+                gridCells[i].el.style.background = 'var(--gold)';
+                gridCells[i].el.classList.add('pop');
+            }, i * 50);
+        }
+        
+        setTimeout(setupPhase2, 1500);
+    }
+
+    function executePhase2() {
+        handEl.innerHTML = '';
+        
+        // Explain rebound
+        document.getElementById('learning-objective').innerHTML = "You answered 20%! Because overwriting Crimson costs 2-to-1, your 20% charge only claims <b>10 cells</b>.";
+        
+        // Turn 10 red cells to gold
+        for(let i=10; i<20; i++) {
+            setTimeout(() => {
+                gridCells[i].owner = 'gold';
+                gridCells[i].el.style.background = 'var(--gold)';
+                gridCells[i].el.classList.add('pop');
+            }, i * 100);
+        }
+        
+        setTimeout(setupPhase3, 2500);
+    }
+
+    function playAegis() {
+        if(step !== 3) return;
+        handEl.innerHTML = '';
+        
+        // Lock 15 gold cells
+        for(let i=0; i<15; i++) {
+            setTimeout(() => {
+                gridCells[i].locked = true;
+                gridCells[i].el.classList.add('locked');
+            }, i * 50);
+        }
+
+        setTimeout(() => {
+            document.getElementById('instruction-text').innerText = "Tutorial Complete!";
+            document.getElementById('learning-objective').innerHTML = "<strong>✦ Success! ✦</strong> You mastered fraction decoding, the Rebound Rule, and Aegis locks. Close this window to illuminate the plain!";
+        }, 1200);
+    }
+</script>
+</body>
+</html>
