@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abacuzebra: Tactical Grid Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Datatype&family=Courier+Prime:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #0a0a0a; --panel-bg: #111;
+            --neon-green: #39ff14; --neon-red: #ff3939;
+            --neon-blue: #00f3ff; --neon-yellow: #ffeb3b;
+            --neon-orange: #ff9900; --neon-gold: #ffd700;
+            --text-color: #f0f0f0; --bead-inactive: #333;
+            --zebra-stripe: repeating-linear-gradient(45deg, #0f0f0f, #0f0f0f 10px, #141414 10px, #141414 20px);
+        }
+
+        body { 
+            font-family: 'Courier Prime', Courier, monospace; 
+            background-color: var(--bg-color); background-image: var(--zebra-stripe); 
+            color: var(--text-color); margin: 0; padding: 0; 
+            display: flex; flex-direction: column; align-items: center; 
+            user-select: none; height: 100dvh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            width: 100%; background: rgba(17, 17, 17, 0.95);
+            border-bottom: 2px solid var(--neon-blue);
+            padding: 12px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 50;
+            box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,243,255,0.15); flex-shrink: 0;
+        }
+        #instruction-text {
+            font-size: 16px; font-weight: 700; color: var(--neon-blue); 
+            text-align: center; letter-spacing: 1px; text-transform: uppercase;
+        }
+        #learning-objective {
+            background: rgba(0, 243, 255, 0.05); border: 1px solid rgba(0, 243, 255, 0.2);
+            border-radius: 6px; padding: 8px; font-size: 13px;
+            color: #ccc; text-align: center; line-height: 1.3;
+        }
+        #learning-objective b { color: var(--neon-orange); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(10, 10, 10, 0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; text-align: center; padding: 20px; box-sizing: border-box;
+            backdrop-filter: blur(5px);
+        }
+        .start-title { font-size: 2.2rem; margin-bottom: 10px; color: var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue); font-family: 'Datatype', sans-serif;}
+        .start-desc { font-size: 1rem; max-width: 450px; line-height: 1.6; margin-bottom: 30px; color: #aaa; }
+        .start-btn {
+            padding: 12px 35px; font-size: 1.1rem; font-family: 'Courier Prime'; font-weight: 700; 
+            background: #222; border: 1px solid var(--neon-blue); border-radius: 5px; 
+            color: var(--neon-blue); cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0,243,255,0.2); transition: 0.2s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 153, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 153, 0, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border-color: var(--neon-orange) !important;
+            z-index: 10; position: relative;
+        }
+
+        /* --- GAME AREA --- */
+        #gameContainer {
+            flex: 1; width: 100%; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;
+        }
+
+        /* The Grid */
+        .board-container { background: #000; padding: 15px; border-radius: 8px; border: 2px solid #444; width: fit-content; display: none; }
+        .grid { display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px); gap: 4px; }
+        .cell { background: #1a1a1a; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; font-weight: bold; color: #888; border-radius: 6px; cursor: pointer; transition: all 0.2s; position: relative;}
+        .cell.valid-move { background: #2a332a; border: 1px solid var(--neon-green); color: #fff;}
+        
+        .pawn { position: absolute; width: 40px; height: 40px; border-radius: 50%; box-shadow: 0 0 10px rgba(0,0,0,0.8); z-index: 5; transition: 0.3s;}
+        .pawn-0 { background: var(--neon-green); border: 2px solid #fff;}
+
+        /* Action Menu */
+        .action-menu { background: #050505; padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center; width: 100%; max-width: 350px; display: none;}
+        .math-summary { font-size: 1.2rem; margin-bottom: 20px; color: #fff;}
+        .btn { background: #222; color: #aaa; border: 1px solid #555; padding: 15px; font-size: 1rem; font-family: inherit; font-weight: bold; border-radius: 5px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; width: 100%; margin-bottom: 10px;}
+        .btn-mul { color: var(--neon-green); border-color: var(--neon-green); }
+
+        /* Abacus Workspace */
+        .abacus-wrapper { background: #000; padding: 15px; border-radius: 8px; border: 1px solid #444; text-align: center; width: 100%; max-width: 350px; display: none;}
+        .abacus-box { background: #111; padding: 15px; border-radius: 5px; border: 1px dashed var(--neon-blue); box-shadow: 0 0 20px rgba(0,243,255,0.1); margin-top: 15px;}
+        
+        .abacus-viewport { width: 100%; display: flex; justify-content: center; margin: 15px 0;}
+        .abacus { display: flex; gap: 10px; background: #000; padding: 15px; border-radius: 5px; border: 1px solid #333; position: relative;}
+        .abacus::before { content: ''; position: absolute; top: 62px; left: 0; right: 0; height: 3px; background: #888; z-index: 1; }
+        
+        .column { display: flex; flex-direction: column; align-items: center; width: 28px; position: relative; }
+        .column::after { content: ''; position: absolute; top: 0; bottom: 0; width: 3px; background: #444; z-index: 0; }
+
+        .bead { width: 26px; height: 16px; background: var(--bead-inactive); border-radius: 8px; margin: 3px 0; cursor: pointer; z-index: 2; transition: transform 0.1s, background 0.1s; }
+        .bead.active { background: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+        .bead-top { margin-bottom: 24px; }
+        .bead-top.active { transform: translateY(20px); }
+        .bead-bottom.active { transform: translateY(-20px); }
+
+        .col-label { font-size: 0.7rem; color: #666; margin-top: 5px; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Grid Navigation</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Movement:</strong> You are the Green Pawn. Your starting score is <b>12</b>. Tap the highlighted cell to move to the <b>2</b>.
+        </div>
+    </div>
+
+    <div id="start-overlay">
+        <h1 class="start-title">TACTICAL GRID</h1>
+        <p class="start-desc">Move across the grid, choose your operation, and physically calculate the result on the Soroban Abacus to alter your score.</p>
+        <button class="start-btn" id="btn-start-tut">INITIALIZE SYSTEM</button>
+    </div>
+
+    <div id="gameContainer">
+        
+        <div class="board-container" id="step-grid">
+            <div class="grid">
+                <div class="cell">12<div class="pawn pawn-0" id="player-pawn"></div></div>
+                <div class="cell valid-move" id="target-cell" onclick="executeMove()">2</div>
+                <div class="cell">8</div>
+                <div class="cell">5</div>
+                <div class="cell">15</div>
+                <div class="cell">4</div>
+                <div class="cell">10</div>
+                <div class="cell">7</div>
+                <div class="cell">3</div>
+            </div>
+        </div>
+
+        <div class="action-menu" id="step-menu">
+            <h3 style="margin-top: 0; color: #888;">ACTION REQUIRED</h3>
+            <div class="math-summary">
+                Start: <span style="color:var(--neon-green);">12</span> 
+                | Landed: <span style="color:var(--neon-red);">2</span>
+            </div>
+            <button class="btn btn-mul" id="btn-multiply" onclick="executeMenu()">+ MULTIPLY: Start × Landed</button>
+            <button class="btn" style="opacity: 0.3; cursor: not-allowed;">÷ DIVIDE (Remainder Penalty!)</button>
+        </div>
+
+        <div class="abacus-wrapper" id="step-abacus">
+            <div style="font-size: 1.2rem; color: var(--neon-orange); margin-bottom: 5px;">STEP 1: 12 × 2</div>
+            <div style="font-size: 1.2rem; color: #fff;">TARGET VALUE: 24</div>
+            <div style="font-size: 0.85rem; color: #888; margin-top: 5px;">Toggle beads to match the target exactly!</div>
+
+            <div class="abacus-box">
+                <h4 style="margin: 0 0 5px 0; color: var(--neon-blue);">PRODUCT WORKSPACE</h4>
+                <div class="abacus-viewport">
+                    <div class="abacus" id="abacus-board">
+                        <div>
+                            <div class="column" data-power="2">
+                                <div class="bead bead-top" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                            </div>
+                            <div class="col-label">100s</div>
+                        </div>
+                        <div>
+                            <div class="column" data-power="1">
+                                <div class="bead bead-top" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                            </div>
+                            <div class="col-label">10s</div>
+                        </div>
+                        <div>
+                            <div class="column" data-power="0">
+                                <div class="bead bead-top" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                                <div class="bead bead-bottom" onclick="toggleBead(this)"></div>
+                            </div>
+                            <div class="col-label">1s</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 1rem; margin-top: 5px; color: #888;">Reads: <span id="abacus-readout" style="color: var(--neon-blue); font-weight: bold;">0</span></div>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    let step = 1;
+    let isStarted = false;
+
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    const viewGrid = document.getElementById('step-grid');
+    const viewMenu = document.getElementById('step-menu');
+    const viewAbacus = document.getElementById('step-abacus');
+
+    const targetCell = document.getElementById('target-cell');
+    const btnMultiply = document.getElementById('btn-multiply');
+    const readout = document.getElementById('abacus-readout');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        viewGrid.style.display = 'block';
+        targetCell.classList.add('highlight-target');
+        isStarted = true;
+    });
+
+    // Step 1 -> Step 2
+    function executeMove() {
+        if (step !== 1) return;
+        
+        // Move pawn visually
+        const pawn = document.getElementById('player-pawn');
+        pawn.style.transform = 'translateX(74px)'; // 70px cell + 4px gap
+        
+        targetCell.classList.remove('highlight-target');
+
+        setTimeout(() => {
+            viewGrid.style.display = 'none';
+            viewMenu.style.display = 'block';
+            
+            step = 2;
+            instText.innerText = "Step 2: Operation Selection";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Math:</strong> You landed on a 2. Select <b>MULTIPLY</b> to multiply your starting score (12) by the cell (2).";
+            
+            btnMultiply.classList.add('highlight-target');
+        }, 500);
+    }
+
+    // Step 2 -> Step 3
+    function executeMenu() {
+        if (step !== 2) return;
+
+        btnMultiply.classList.remove('highlight-target');
+        viewMenu.style.display = 'none';
+        viewAbacus.style.display = 'block';
+
+        step = 3;
+        instText.innerText = "Step 3: The Abacus Workspace";
+        objText.innerHTML = "<strong>🎯 Learning Objective - Calculation:</strong> You must prove the math! Toggle the beads in the 10s and 1s columns until the Abacus reads exactly <b>24</b>.";
+    }
+
+    // Abacus Logic
+    function toggleBead(beadElement) {
+        if (step !== 3) return;
+        
+        beadElement.classList.toggle('active');
+        calculateAbacus();
+    }
+
+    function calculateAbacus() {
+        let total = 0;
+        const columns = document.querySelectorAll('.column');
+        
+        columns.forEach(col => {
+            let power = parseInt(col.dataset.power);
+            let colSum = 0;
+            
+            if (col.querySelector('.bead-top').classList.contains('active')) {
+                colSum += 5;
+            }
+            
+            const activeBottoms = col.querySelectorAll('.bead-bottom.active').length;
+            colSum += activeBottoms;
+            
+            total += colSum * Math.pow(10, power);
+        });
+
+        readout.innerText = total;
+
+        if (total === 24) {
+            step = 4;
+            document.querySelector('.abacus-box').style.borderColor = 'var(--neon-green)';
+            document.querySelector('.abacus-box').style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.2)';
+            readout.style.color = 'var(--neon-green)';
+            
+            instText.innerText = "Decryption Complete!";
+            instText.style.color = "var(--neon-green)";
+            objText.innerHTML = "<strong>🎯 Success:</strong> You verified the calculation! In the full game, your score will increase by the product, and you can hack other players. Close this to play.";
+        }
+    }
+</script>
+</body>
+</html>

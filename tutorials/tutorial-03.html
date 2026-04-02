@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vertex Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #F2E8DC; --p1a: #C9BBDB; --p1dk: #7A5FA0;
+            --amber: #D4A84B; --gold: #C09842; --teal: #82ADC0;
+            --rose: #C97A74; --sage: #9DBDAB; --light: #A89890;
+            --bg: #1A1510; --bg2: #221D17; --stone: #5C504A;
+            --hud-bg: rgba(26, 21, 16, 0.95);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: var(--bg);
+            color: var(--cream);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #mv-bg {
+            position: fixed; inset: 0; z-index: 0;
+            background: radial-gradient(ellipse 80% 60% at 15% 85%, rgba(184,168,208,.06), transparent 55%),
+                        radial-gradient(ellipse 60% 70% at 85% 15%, rgba(130,173,192,.06), transparent 55%),
+                        linear-gradient(155deg, #1A1510, #201B14 55%, #181309);
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--hud-bg);
+            border-bottom: 2px solid var(--gold);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(201, 168, 76, 0.15);
+        }
+
+        #instruction-text {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold);
+            text-align: center;
+            letter-spacing: 1.5px;
+        }
+
+        #learning-objective {
+            background: rgba(212, 168, 75, 0.1);
+            border: 1px solid rgba(212, 168, 75, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: var(--cream);
+            text-align: center;
+            line-height: 1.4;
+        }
+        #learning-objective b { color: var(--amber); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0;
+            background: rgba(26, 21, 16, 0.9);
+            backdrop-filter: blur(6px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 50; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-family: 'Cinzel', serif; font-size: 42px; font-weight: 700;
+            color: var(--gold); margin-bottom: 15px; letter-spacing: 4px;
+        }
+        .start-desc {
+            font-size: 14px; color: var(--light); margin-bottom: 35px;
+            max-width: 450px; line-height: 1.6;
+        }
+        .start-btn {
+            font-family: 'Cinzel', serif; font-size: 14px; font-weight: bold;
+            letter-spacing: 2px; padding: 14px 35px; background: transparent;
+            color: var(--gold); border: 2px solid var(--gold); border-radius: 4px;
+            cursor: pointer; transition: all 0.2s;
+            pointer-events: auto;
+        }
+        .start-btn:active { transform: scale(0.95); }
+        .start-btn:hover { background: rgba(201, 168, 76, 0.1); }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1; position: relative; width: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 10; padding: 20px;
+        }
+
+        #board-wrapper {
+            position: relative;
+            filter: drop-shadow(0 8px 28px rgba(0,0,0,.7));
+            margin-bottom: 20px;
+        }
+
+        #board {
+            /* Hardcoded 6x6 for tutorial */
+            --C: clamp(40px, calc((100vw - 40px)/6), 65px);
+            display: grid;
+            grid-template-columns: repeat(6, var(--C));
+            grid-template-rows: repeat(6, var(--C));
+            gap: 1px; background: #0C0906;
+            border: 1.5px solid rgba(192,152,66,.18); border-radius: 4px;
+            overflow: hidden; position: relative; z-index: 1;
+        }
+
+        .cell {
+            width: var(--C); height: var(--C);
+            display: flex; align-items: center; justify-content: center;
+            position: relative; transition: background .12s; overflow: hidden;
+        }
+        .cl { background: #26201A; } .cd { background: #1F1913; }
+        
+        .vm { background: rgba(201,168,76,.17)!important; cursor: pointer; }
+        .vm::after {
+            content: ''; position: absolute; inset: 3px;
+            border: 1px solid rgba(201,168,76,.26); border-radius: 2px; pointer-events: none;
+            animation: pulseIdle 1.5s infinite;
+        }
+        .vm:hover { background: rgba(201,168,76,.32)!important; }
+
+        /* TOKENS */
+        .tok { display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .ta-expr { font-size: clamp(9px, 2vw, 12px); color: var(--amber); font-weight: 500; }
+        .ta-val { font-size: clamp(12px, 2.5vw, 16px); color: var(--cream); font-family: 'Cinzel', serif; }
+
+        /* PAWNS */
+        .pawn {
+            position: absolute; border-radius: 50%; border: 2px solid;
+            display: flex; align-items: center; justify-content: center; z-index: 8;
+            transition: top .32s cubic-bezier(.34,1.56,.64,1), left .32s cubic-bezier(.34,1.56,.64,1);
+            background: var(--p1a); border-color: var(--p1dk); color: #1A1510;
+            box-shadow: 0 0 9px rgba(201,187,219,.4), 0 2px 5px rgba(0,0,0,.4);
+            font-weight: 700; cursor: pointer; pointer-events: all;
+        }
+        @keyframes pulseSel {
+            0%, 100% { box-shadow: 0 0 6px rgba(201,168,76,.4); }
+            50% { box-shadow: 0 0 18px rgba(201,168,76,.8); }
+        }
+        @keyframes pulseIdle {
+            0%, 100% { box-shadow: inset 0 0 5px rgba(255,255,255,.15); }
+            50% { box-shadow: inset 0 0 15px rgba(255,255,255,.4); }
+        }
+        .pawn.selected { animation: pulseSel 1s ease-in-out infinite; border-color: var(--gold)!important; }
+        .pawn.selectable { animation: pulseIdle 1.5s ease-in-out infinite; }
+
+        #path-svg { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 4; }
+
+        /* BUTTONS */
+        .vbtn {
+            background: transparent; border: 1px solid rgba(201,168,76,.38); color: var(--gold);
+            font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 12px 24px; border-radius: 5px; cursor: pointer; transition: all .3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: none; /* Hidden until step 3 */
+        }
+        .vbtn:active { background: rgba(201,168,76,.1); border-color: var(--gold); transform: scale(0.95); }
+
+        /* AREA MODAL */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 200;
+            background: rgba(10,8,5,.85); backdrop-filter: blur(8px);
+            display: none; align-items: center; justify-content: center; padding: 12px;
+        }
+        .modal-box {
+            background: #221D17; border: 1px solid rgba(201,168,76,0.3);
+            border-radius: 18px; padding: 20px; width: 100%; max-width: 400px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .modal-title { font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: 3px; color: var(--gold); text-align: center; text-transform: uppercase; }
+        .modal-sub { font-size: 11px; color: var(--light); text-align: center; line-height: 1.6; margin-bottom: 10px; }
+        
+        #modal-board-wrap {
+            background: #0C0906; border: 1px solid rgba(242,232,220,.1); border-radius: 8px;
+            overflow: hidden; display: flex; align-items: center; justify-content: center; margin: 0 auto;
+        }
+        .modal-pts-info { font-size: 11px; color: var(--amber); letter-spacing: 1px; text-align: center; font-family: 'Cinzel', serif; margin: 10px 0; }
+        
+        .modal-input-row { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+        .modal-input-wrap { display: flex; align-items: center; gap: 8px; }
+        .modal-input {
+            background: rgba(242,232,220,.06); border: 1px solid rgba(201,168,76,.35);
+            border-radius: 6px; padding: 8px 14px; font-family: 'Cinzel', serif; font-size: 18px;
+            color: var(--cream); width: 100px; text-align: center; outline: none;
+        }
+        .modal-input:focus { border-color: var(--gold); }
+        .modal-feedback { font-family: 'Cinzel', serif; font-size: 14px; text-align: center; min-height: 20px; letter-spacing: 1px; transition: color .3s; }
+        .modal-feedback.wrong { color: var(--rose); }
+        
+        .btn-submit {
+            background: rgba(201,168,76,.1); border: 1px solid var(--gold); color: var(--gold);
+            font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+            padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Tap your pawn, then move it.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Movement:</strong> Pawns can move up to 3 spaces horizontally, vertically, or diagonally in a straight line. <b>Tap the pawn</b>, then <b>tap the highlighted token</b> to collect it.
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="start-overlay">
+            <div class="start-title">VERTEX: Core Mechanics</div>
+            <div class="start-desc">Learn how to navigate the grid, gather mathematical tokens, and calculate the area of the polygons you create to maximize your score.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div id="board-wrapper">
+            <div id="board"></div>
+            <svg id="path-svg"></svg>
+        </div>
+        
+        <button class="vbtn" id="btn-claim-area">⬡ Claim Area Bonus</button>
+    </div>
+
+    <div id="area-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-title">⬡ Area Challenge</div>
+            <div class="modal-sub">Select the 3 nodes of the triangle you just created. Then, calculate its area (Base × Height ÷ 2).</div>
+            
+            <div id="modal-board-wrap"><svg id="modal-svg"></svg></div>
+            <div class="modal-pts-info" id="modal-pts-info">Select 3 points</div>
+
+            <div class="modal-input-row">
+                <div style="font-size: 10px; color: var(--light); text-transform: uppercase;">Area (sq units):</div>
+                <div class="modal-input-wrap">
+                    <input id="modal-answer" type="number" step="0.5" placeholder="0.0" class="modal-input">
+                    <span style="color: var(--light); font-size: 12px;">sq</span>
+                </div>
+            </div>
+
+            <div class="modal-feedback" id="modal-feedback"></div>
+            <button class="btn-submit" id="modal-submit">Submit Area</button>
+        </div>
+    </div>
+
+<script>
+    // --- Tutorial State ---
+    let isStarted = false;
+    let step = 1;
+    const BS = 6; // 6x6 grid for the tutorial
+    
+    // Pawn and Board Data
+    let pawn = { pos: [4, 1], path: [[4, 1]], selected: false };
+    let board = Array.from({length: BS}, () => Array(BS).fill(null));
+    
+    // Place predefined tokens to force a Right Triangle (Base 3, Height 3)
+    board[4][4] = { a: 1, b: 1, val: 2 };
+    board[1][4] = { a: 1, b: 2, val: 3 };
+
+    let validMove = null; // The only allowed move per step
+
+    // DOM Elements
+    const boardEl = document.getElementById('board');
+    const svgEl = document.getElementById('path-svg');
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    // --- Core Logic ---
+    function initTutorial() {
+        document.getElementById('btn-start-tut').addEventListener('click', () => {
+            document.getElementById('start-overlay').style.display = 'none';
+            isStarted = true;
+            setStep(1);
+            fullRender();
+        });
+        
+        window.addEventListener('resize', fullRender);
+        fullRender();
+    }
+
+    function setStep(newStep) {
+        step = newStep;
+        pawn.selected = false;
+
+        if (step === 1) {
+            validMove = [4, 4]; // Force moving right
+            instText.innerText = "Step 1: Tap your pawn, then move it.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Movement:</strong> Pawns move up to 3 spaces in a straight line. <b>Tap your pawn</b>, then <b>tap the highlighted token</b>.";
+        } 
+        else if (step === 2) {
+            validMove = [1, 4]; // Force moving up
+            instText.innerText = "Step 2: Move again to build a path.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Edges & Vertices:</strong> Every move leaves a trail. Moving creates the perimeter of a geometric shape. <b>Tap the pawn</b>, then <b>move UP to the next token</b>.";
+        }
+        else if (step === 3) {
+            validMove = null;
+            instText.innerText = "Step 3: Claim your Area Bonus!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Polygons:</strong> You have formed a closed shape! Click the <b>Claim Area Bonus</b> button below to calculate the area inside your path.";
+            document.getElementById('btn-claim-area').style.display = 'block';
+        }
+    }
+
+    function handleCellClick(r, c) {
+        if (!isStarted || step > 2) return;
+
+        // If they click the pawn, toggle selection
+        if (r === pawn.pos[0] && c === pawn.pos[1]) {
+            pawn.selected = !pawn.selected;
+            fullRender();
+            return;
+        }
+
+        // If pawn is selected and they click the valid target
+        if (pawn.selected && validMove && r === validMove[0] && c === validMove[1]) {
+            // Move pawn
+            pawn.pos = [r, c];
+            pawn.path.push([r, c]);
+            board[r][c] = null; // Remove token
+            
+            // Advance tutorial
+            setStep(step + 1);
+            fullRender();
+        }
+    }
+
+    // --- Rendering ---
+    function getCellPx() {
+        const c = document.querySelector('#board .cell');
+        return c ? c.getBoundingClientRect().width : 40;
+    }
+
+    function getCellCenter(r, c) {
+        const wrap = document.getElementById('board-wrapper');
+        const cell = document.querySelector(`#board [data-r='${r}'][data-c='${c}']`);
+        if (!cell || !wrap) return {x: 0, y: 0};
+        const wr = wrap.getBoundingClientRect(), cr = cell.getBoundingClientRect();
+        return { x: cr.left - wr.left + cr.width/2, y: cr.top - wr.top + cr.height/2 };
+    }
+
+    function fullRender() {
+        boardEl.innerHTML = '';
+        
+        for (let r = 0; r < BS; r++) {
+            for (let c = 0; c < BS; c++) {
+                const el = document.createElement('div');
+                el.className = `cell ${(r+c)%2 === 0 ? 'cl' : 'cd'}`;
+                el.dataset.r = r; el.dataset.c = c;
+
+                // Highlight valid move if pawn is selected
+                if (pawn.selected && validMove && r === validMove[0] && c === validMove[1]) {
+                    el.classList.add('vm');
+                }
+
+                const tok = board[r][c];
+                if (tok) {
+                    const w = document.createElement('div'); w.className = 'tok';
+                    w.innerHTML = `<div class='ta-expr'>${tok.a}+${tok.b}</div><div class='ta-val'>=${tok.val}</div>`;
+                    el.appendChild(w);
+                }
+
+                el.addEventListener('click', () => handleCellClick(r, c));
+                boardEl.appendChild(el);
+            }
+        }
+
+        renderPawn();
+        renderPath();
+    }
+
+    function renderPawn() {
+        document.querySelectorAll('.pawn').forEach(e => e.remove());
+        const C = getCellPx(), PS = Math.max(20, C * 0.6);
+        
+        const el = document.createElement('div');
+        el.className = `pawn`;
+        el.textContent = '◆';
+        el.style.width = el.style.height = PS + 'px';
+        el.style.fontSize = (PS * 0.5) + 'px';
+        
+        const {x, y} = getCellCenter(pawn.pos[0], pawn.pos[1]);
+        el.style.left = `${x - PS/2}px`;
+        el.style.top = `${y - PS/2}px`;
+        
+        if (pawn.selected) el.classList.add('selected');
+        else if (step <= 2) el.classList.add('selectable');
+        
+        el.addEventListener('click', (e) => { e.stopPropagation(); handleCellClick(pawn.pos[0], pawn.pos[1]); });
+        document.getElementById('board-wrapper').appendChild(el);
+    }
+
+    function renderPath() {
+        const wrap = document.getElementById('board-wrapper');
+        const wr = wrap.getBoundingClientRect();
+        svgEl.setAttribute('width', wr.width); svgEl.setAttribute('height', wr.height);
+        svgEl.innerHTML = '';
+        
+        if (pawn.path.length < 2) return;
+
+        const pts = pawn.path.map(([r,c]) => {
+            const p = getCellCenter(r,c); return `${p.x},${p.y}`;
+        }).join(' ');
+
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        poly.setAttribute('points', pts);
+        poly.setAttribute('fill', 'none');
+        poly.setAttribute('stroke', 'var(--p1dk)');
+        poly.setAttribute('stroke-width', '3');
+        poly.setAttribute('stroke-dasharray', '6,4');
+        svgEl.appendChild(poly);
+
+        // Draw closed polygon area if step 3 (visual aid)
+        if (step === 3) {
+            const closedPts = [...pawn.path, pawn.path[0]].map(([r,c]) => {
+                const p = getCellCenter(r,c); return `${p.x},${p.y}`;
+            }).join(' ');
+            
+            const fill = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            fill.setAttribute('points', closedPts);
+            fill.setAttribute('fill', 'rgba(201, 187, 219, 0.2)');
+            fill.setAttribute('stroke', 'var(--p1dk)');
+            fill.setAttribute('stroke-width', '2');
+            svgEl.insertBefore(fill, svgEl.firstChild);
+        }
+    }
+
+    // --- Area Modal Logic ---
+    let modalSelectedPts = [];
+    
+    document.getElementById('btn-claim-area').addEventListener('click', () => {
+        document.getElementById('area-modal').style.display = 'flex';
+        modalSelectedPts = [];
+        document.getElementById('modal-answer').value = '';
+        document.getElementById('modal-feedback').textContent = '';
+        updateModalInfo();
+        drawModalSvg();
+    });
+
+    function drawModalSvg() {
+        const svg = document.getElementById('modal-svg');
+        const sz = 280; // Fixed size for tutorial modal
+        const cmz = sz / BS, mx = c => c * cmz + cmz / 2, my = r => r * cmz + cmz / 2;
+        
+        svg.setAttribute('width', sz); svg.setAttribute('height', sz);
+        svg.innerHTML = '';
+
+        // Grid
+        for(let r=0; r<BS; r++) for(let c=0; c<BS; c++) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', c * cmz); rect.setAttribute('y', r * cmz);
+            rect.setAttribute('width', cmz); rect.setAttribute('height', cmz);
+            rect.setAttribute('fill', (r+c)%2 === 0 ? '#26201A' : '#1F1913');
+            rect.setAttribute('stroke', '#111'); rect.setAttribute('stroke-width', '0.5');
+            svg.appendChild(rect);
+        }
+
+        // Polygon Fill
+        if (modalSelectedPts.length === 3) {
+            const fp = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            fp.setAttribute('points', modalSelectedPts.map(n => `${mx(n.c)},${my(n.r)}`).join(' '));
+            fp.setAttribute('fill', 'rgba(122,95,160,.3)');
+            fp.setAttribute('stroke', 'var(--p1dk)'); fp.setAttribute('stroke-width', '2');
+            svg.appendChild(fp);
+        }
+
+        // Path Line
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        line.setAttribute('points', pawn.path.map(([r,c]) => `${mx(c)},${my(r)}`).join(' '));
+        line.setAttribute('fill', 'none'); line.setAttribute('stroke', 'var(--p1dk)');
+        line.setAttribute('stroke-width', '2'); line.setAttribute('stroke-opacity', '.7');
+        svg.appendChild(line);
+
+        // Clickable Nodes
+        const nr = 10;
+        pawn.path.forEach(([r, c], si) => {
+            const isSel = modalSelectedPts.some(n => n.r === r && n.c === c);
+            const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circ.setAttribute('cx', mx(c)); circ.setAttribute('cy', my(r)); circ.setAttribute('r', nr);
+            circ.setAttribute('fill', isSel ? '#C9BBDB' : 'rgba(255,255,255,.1)');
+            circ.setAttribute('stroke', isSel ? '#D4A84B' : 'var(--p1dk)');
+            circ.setAttribute('stroke-width', isSel ? '2' : '1.5');
+            circ.style.cursor = 'pointer';
+            
+            circ.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = modalSelectedPts.findIndex(n => n.r === r && n.c === c);
+                if (idx >= 0) modalSelectedPts.splice(idx, 1);
+                else if (modalSelectedPts.length < 3) modalSelectedPts.push({r, c, si});
+                updateModalInfo();
+                drawModalSvg();
+            });
+            svg.appendChild(circ);
+        });
+    }
+
+    function updateModalInfo() {
+        const el = document.getElementById('modal-pts-info');
+        if (modalSelectedPts.length < 3) {
+            el.textContent = `Select ${3 - modalSelectedPts.length} more nodes...`;
+            el.style.color = 'var(--light)';
+        } else {
+            el.textContent = `Triangle formed! Calculate Area.`;
+            el.style.color = 'var(--amber)';
+        }
+    }
+
+    document.getElementById('modal-submit').addEventListener('click', () => {
+        if (modalSelectedPts.length < 3) {
+            const fb = document.getElementById('modal-feedback');
+            fb.textContent = "Click the 3 nodes on the map first!";
+            fb.className = 'modal-feedback wrong';
+            return;
+        }
+
+        const ans = parseFloat(document.getElementById('modal-answer').value);
+        const fb = document.getElementById('modal-feedback');
+        
+        // The triangle is Base 3 (cols 1 to 4), Height 3 (rows 1 to 4)
+        // Area = (3 * 3) / 2 = 4.5
+        if (ans === 4.5) {
+            fb.textContent = "✓ Correct! Area = (3 × 3) ÷ 2 = 4.5";
+            fb.style.color = "var(--sage)";
+            
+            setTimeout(() => {
+                document.getElementById('area-modal').style.display = 'none';
+                instText.innerText = "Tutorial Complete!";
+                instText.style.color = "var(--sage)";
+                objText.innerHTML = "You have mastered placement, movement, path generation, and area calculations. Close this window to play the main game!";
+                document.getElementById('btn-claim-area').style.display = 'none';
+            }, 1500);
+        } else {
+            fb.textContent = "✗ Incorrect. Hint: Base is 3, Height is 3.";
+            fb.className = 'modal-feedback wrong';
+        }
+    });
+
+    // Boot
+    initTutorial();
+
+</script>
+</body>
+</html>

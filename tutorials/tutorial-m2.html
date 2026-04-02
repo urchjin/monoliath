@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Forge Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc; 
+            --p1: #2dd4bf;
+            --p2: #38bdf8;
+            --gold: #f59e0b;
+            --text: #1e293b;
+            --glass: rgba(255, 255, 255, 0.8);
+            --danger: #fb7185;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: 'Montserrat', sans-serif; overflow: hidden;
+            display: flex; flex-direction: column; height: 100vh;
+            touch-action: none; user-select: none;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: #ffffff;
+            border-bottom: 2px solid var(--p1);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0;
+        }
+        #instruction-text {
+            font-size: 18px; font-weight: 800;
+            color: var(--p1); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(45, 212, 191, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: var(--text); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--p1); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(248, 250, 252, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-size: 32px; font-weight: 900; color: var(--text); margin-bottom: 15px; letter-spacing: 6px; text-transform: uppercase; }
+        .start-desc { font-size: 15px; color: var(--text); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
+            letter-spacing: 2px; padding: 15px 35px; background: var(--p1);
+            color: white; border: none; border-radius: 30px;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 10px 20px rgba(45, 212, 191, 0.3);
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px dashed var(--gold) !important;
+            border-radius: 8px;
+        }
+
+        /* --- GAME AREA --- */
+        #game-wrapper {
+            position: relative; flex: 1; display: flex; width: 100%; overflow: hidden;
+        }
+        
+        canvas { width: 50%; height: 100%; }
+        #cv2 { border-left: 2px dashed rgba(0,0,0,0.1); background: rgba(0,0,0,0.02); }
+
+        /* --- IN-GAME HUD --- */
+        #in-game-hud {
+            position: absolute; top: 0; left: 0; width: 100%; display: flex;
+            justify-content: space-between; padding: 20px 40px; box-sizing: border-box;
+            z-index: 10; pointer-events: none;
+        }
+        .mission-group { display: flex; flex-direction: column; align-items: flex-start; }
+        .mission-group.right { align-items: flex-end; }
+        .m-text { font-size: 0.8rem; font-weight: 900; color: var(--text); text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px; transition: 0.3s; }
+        .m-val-display { font-size: 3.5rem; font-weight: 100; margin-top: -5px; transition: 0.3s; }
+
+        .mission-met .m-text { color: var(--gold); background: rgba(245, 158, 11, 0.1); border-radius: 6px; }
+        .mission-met .m-val-display { color: var(--gold); font-weight: 400; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+
+        #move-hint {
+            position: absolute; bottom: 40px; left: 25%; transform: translateX(-50%);
+            background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 20px;
+            font-size: 12px; font-weight: 800; color: var(--p1);
+            pointer-events: none; border: 2px dashed var(--p1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Move Your Stack.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Controls:</strong> You control the left side. Drag your finger or mouse across the left half of the screen to move your stack.
+        </div>
+    </div>
+
+    <div id="game-wrapper">
+        <div id="start-overlay">
+            <div class="start-title">THE FORGE</div>
+            <div class="start-desc">Learn how to read missions, catch modifiers, and shape your stack to achieve the perfect mathematical balance.</div>
+            <button class="start-btn" id="btn-start-tut">COMMENCE</button>
+        </div>
+
+        <div id="in-game-hud">
+            <div class="mission-group" id="mg1">
+                <div class="m-text" id="m1-text">MISSION: Be 2 units taller</div>
+                <div class="m-val-display" id="m1-val">5</div>
+            </div>
+            <div class="mission-group right" id="mg2">
+                <div class="m-text" style="color:var(--p2);">Opponent (Static)</div>
+                <div class="m-val-display" id="m2-val">5</div>
+            </div>
+        </div>
+
+        <canvas id="cv1"></canvas>
+        <canvas id="cv2"></canvas>
+        <div id="move-hint">◀ DRAG TO MOVE ▶</div>
+    </div>
+
+<script>
+    const cv1 = document.getElementById('cv1');
+    const cv2 = document.getElementById('cv2');
+    const ctx1 = cv1.getContext('2d');
+    const ctx2 = cv2.getContext('2d');
+
+    // DOM
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const moveHint = document.getElementById('move-hint');
+    const mg1 = document.getElementById('mg1');
+    const m1val = document.getElementById('m1-val');
+
+    let isStarted = false;
+    let step = 1;
+    let w, h;
+    let lastTime = 0;
+
+    class Player {
+        constructor(ctx, color) {
+            this.ctx = ctx; 
+            this.color = color; 
+            this.score = 5; 
+            this.x = 0.5; 
+            this.blocks = [];
+            this.isMet = false;
+        }
+        draw() {
+            const c = this.ctx; const cvs = c.canvas;
+            c.clearRect(0,0,cvs.width,cvs.height);
+            
+            const px = this.x * cvs.width - 40;
+            const unitH = 20, unitW = 80;
+
+            // Draw stack
+            for(let i=0; i<this.score; i++) {
+                let y = cvs.height - (i+1)*(unitH+2) - 100;
+                c.fillStyle = this.isMet ? "#f59e0b" : this.color;
+                c.fillRect(px, y, unitW, unitH);
+                c.strokeStyle = "rgba(0,0,0,0.05)";
+                c.strokeRect(px, y, unitW, unitH);
+            }
+
+            // Draw falling blocks
+            this.blocks.forEach(b => {
+                c.fillStyle = b.val > 0 ? "#2dd4bf" : "#fb7185";
+                c.beginPath(); c.arc(b.x * cvs.width, b.y, 16, 0, Math.PI*2); c.fill();
+                c.fillStyle = "white"; c.font = "bold 14px Montserrat"; c.textAlign = "center"; c.textBaseline = "middle";
+                c.fillText((b.val > 0 ? "+" : "") + b.val, b.x * cvs.width, b.y);
+            });
+        }
+    }
+
+    let p1 = new Player(ctx1, '#2dd4bf');
+    let p2 = new Player(ctx2, '#38bdf8');
+
+    function resize() {
+        w = window.innerWidth / 2;
+        h = document.getElementById('game-wrapper').clientHeight;
+        cv1.width = w; cv1.height = h;
+        cv2.width = w; cv2.height = h;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
+    });
+
+    // --- CONTROLS ---
+    function moveP1(clientX) {
+        if (!isStarted) return;
+        const rect = cv1.getBoundingClientRect();
+        // Only allow movement on the left half of the screen
+        if (clientX > rect.right) return; 
+        
+        let n = (clientX - rect.left) / rect.width;
+        p1.x = Math.max(0.1, Math.min(0.9, n));
+        checkMoveProgress();
+    }
+
+    window.addEventListener('mousemove', e => { if(e.buttons > 0) moveP1(e.clientX); });
+    window.addEventListener('touchmove', e => { moveP1(e.touches[0].clientX); }, {passive: true});
+
+    function checkMoveProgress() {
+        if (step === 1 && Math.abs(p1.x - 0.5) > 0.15) {
+            step = 2;
+            moveHint.style.display = 'none';
+            mg1.classList.add('highlight-target');
+            
+            instText.innerText = "Step 2: Understand the Mission.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Relative Goals:</strong> Your mission is to <b>Be 2 units taller</b> than the opponent. They are at 5, so you need <b>7</b>. Catch the falling +2 block!";
+            
+            // Drop a block
+            p1.blocks.push({ x: 0.5, y: -50, val: 2 });
+        }
+    }
+
+    function checkMission() {
+        // Mission: Be 2 units taller
+        let met = (p1.score === p2.score + 2);
+        
+        if (met && !p1.isMet) {
+            // Just became met
+            p1.isMet = true;
+            mg1.classList.add('mission-met');
+            mg1.classList.remove('highlight-target');
+            
+            if (step === 2) {
+                step = 3;
+                instText.innerText = "Tutorial Complete!";
+                instText.style.color = "var(--gold)";
+                objText.innerHTML = "<strong>🎯 Success:</strong> Your stack turned gold because the mathematical condition was met! In a real game, both players constantly catch blocks, making the target constantly shift. Close this to play.";
+            }
+        } else if (!met) {
+            p1.isMet = false;
+            mg1.classList.remove('mission-met');
+        }
+    }
+
+    function loop(time) {
+        if (!isStarted) return;
+        let dt = (time - lastTime) / 1000;
+        lastTime = time;
+
+        // Update P1 Blocks
+        for (let i = p1.blocks.length - 1; i >= 0; i--) {
+            let b = p1.blocks[i]; 
+            b.y += 180 * dt; // Fall speed
+            
+            let pY = h - (p1.score * 22) - 100;
+            let pX = p1.x * w;
+
+            // Collision
+            if (b.y > pY && b.y < pY + 40 && Math.abs((b.x * w) - pX) < 50) {
+                p1.score = Math.max(1, Math.min(25, p1.score + b.val));
+                m1val.innerText = p1.score;
+                p1.blocks.splice(i, 1);
+                checkMission();
+            } 
+            // Missed
+            else if (b.y > h + 50) {
+                p1.blocks.splice(i, 1);
+                if (step === 2) {
+                    // Respawn if they missed the tutorial block
+                    setTimeout(() => p1.blocks.push({ x: Math.random() * 0.6 + 0.2, y: -50, val: 2 }), 500);
+                }
+            }
+        }
+
+        // Draw Target Line if in Step 2
+        p1.draw();
+        p2.draw();
+        
+        if (step === 2) {
+            const targetScore = p2.score + 2;
+            const targetY = h - (targetScore * 22) - 100;
+            ctx1.save();
+            ctx1.setLineDash([10, 10]);
+            ctx1.strokeStyle = "rgba(245, 158, 11, 0.5)"; // Gold
+            ctx1.lineWidth = 2;
+            ctx1.beginPath();
+            ctx1.moveTo(0, targetY);
+            ctx1.lineTo(w, targetY);
+            ctx1.stroke();
+            
+            ctx1.fillStyle = "rgba(245, 158, 11, 0.8)";
+            ctx1.font = "600 12px Montserrat";
+            ctx1.fillText("TARGET HEIGHT (7)", w/2, targetY - 10);
+            ctx1.restore();
+        }
+
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>

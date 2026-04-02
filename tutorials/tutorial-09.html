@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Angle Defender Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&family=Orbitron:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f7f3ee;
+            --panel: #f3efe8;
+            --border: #d4cfc6;
+            --accent: #7ec8c8;
+            --danger: #e67c73;
+            --text: #3b4147;
+            --gold: #c9a66b;
+            --beam1: #cde5e5;
+            --beam2: #e8d4ef;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(180deg, #f7f3ee, #e9e4dc);
+            color: var(--text); display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(255,255,255,0.9); border-bottom: 2px solid var(--accent);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+        }
+        #instruction-text {
+            font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700;
+            color: var(--text); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(126, 200, 200, 0.1); border: 1px solid rgba(126, 200, 200, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: #2b7a7a; text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--danger); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(247, 243, 238, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Orbitron', sans-serif; font-size: 32px; color: var(--text); margin-bottom: 15px; }
+        .start-desc { font-size: 15px; color: #5a646e; margin-bottom: 35px; max-width: 450px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; padding: 12px 30px; background: var(--accent);
+            color: #fff; border: none; border-radius: 6px;
+            cursor: pointer; transition: all 0.2s; pointer-events: auto;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(201, 166, 107, 0.8); }
+            70% { box-shadow: 0 0 0 12px rgba(201, 166, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(201, 166, 107, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--gold) !important;
+            outline: none; z-index: 10; position: relative;
+        }
+        
+        .feedback { color: var(--danger); font-weight: bold; font-size: 14px; margin-top: 5px; height: 20px;}
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; position: relative; align-items: center; justify-content: center; padding: 10px; }
+        canvas { display: block; width: 400px; height: 400px; border-radius: 50%; border: 2px solid var(--border); background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+
+        /* --- CONTROLS --- */
+        .controls {
+            background: var(--panel); border: 2px solid var(--border);
+            padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px;
+            margin-top: 15px; width: 100%; max-width: 400px; text-align: center;
+        }
+
+        .beam-picker { display: flex; gap: 10px; justify-content: center; margin-bottom: 5px; }
+        .b-btn { 
+            padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border);
+            font-weight: bold; cursor: pointer; transition: 0.2s; background: #fff;
+        }
+        .b-btn.active { box-shadow: inset 0 0 0 2px var(--text); }
+
+        .beam-ctrl {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .rbt {
+            background: #ece7df; border: 1px solid var(--border); color: #4a5560;
+            border-radius: 4px; width: 40px; height: 40px; cursor: pointer;
+            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+            transition: all 0.1s;
+        }
+        .rbt:active { background: #e1dbd2; }
+        
+        .btn-next {
+            background: #dfecea; border: 1px solid #b7dcdc; color: #2f5b5b;
+            font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 16px;
+            padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; width: 100%;
+        }
+        .btn-next:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Aim Beam 1 (B1) at 30°.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Multi-Beam Limits:</strong> You have 2 beams! <b>B1</b> is selected. Move it to <b>30°</b> to cover the first enemy. Remember, you can only rotate a max of <b>30° per turn</b>!
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">ANGLE DEFENDER</div>
+            <div class="start-desc">Learn how to manage multiple defence beams simultaneously while adhering to strict rotation limits per turn.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <canvas id="cv" width="600" height="600"></canvas>
+        
+        <div class="controls">
+            <div class="beam-picker">
+                <button class="b-btn active" id="btn-b1" style="color:#2f5b5b; background:var(--beam1);">B1</button>
+                <button class="b-btn" id="btn-b2" style="color:#5e3a66; background:var(--beam2);">B2</button>
+            </div>
+            <div class="beam-ctrl">
+                <span style="font-weight: 600; font-size: 14px;">Angle: <span id="beam-angle" style="color:var(--gold);">0°</span></span>
+                <div style="display:flex; gap:10px;">
+                    <button class="rbt" id="btn-ccw">◀</button>
+                    <button class="rbt" id="btn-cw">▶</button>
+                </div>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <button class="btn-next" id="btn-next">⏭ NEXT TURN</button>
+        </div>
+    </div>
+
+<script>
+    const cv = document.getElementById("cv");
+    const ctx = cv.getContext("2d");
+    const C = 300, RINGS = 5, RING_R = (300 - 20) / RINGS;
+    const DEG = Math.PI / 180;
+    
+    let isStarted = false;
+    let step = 1;
+    
+    let beams = [
+        { angle: 0, startAngle: 0, color: '#cde5e5', border: '#7ec8c8' },
+        { angle: 180, startAngle: 180, color: '#e8d4ef', border: '#b58abb' }
+    ];
+    let selBeam = 0;
+
+    let enemies = [
+        { sector: 2 /* 30 degrees */, ring: 4, type: 'circle', flash: 0, dead: false },
+        { sector: 10 /* 150 degrees */, ring: 4, type: 'circle', flash: 0, dead: false }
+    ];
+
+    const btnCCW = document.getElementById('btn-ccw');
+    const btnCW = document.getElementById('btn-cw');
+    const btnNext = document.getElementById('btn-next');
+    const btnB1 = document.getElementById('btn-b1');
+    const btnB2 = document.getElementById('btn-b2');
+    const txtAngle = document.getElementById('beam-angle');
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const feedback = document.getElementById('feedback');
+
+    function topDegToRad(d) { return ((d + 270) % 360) * DEG; }
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        updateHighlights();
+        requestAnimationFrame(loop);
+    });
+
+    function updateHighlights() {
+        btnCW.classList.remove('highlight-target');
+        btnCCW.classList.remove('highlight-target');
+        btnNext.classList.remove('highlight-target');
+        btnB2.classList.remove('highlight-target');
+
+        if (!isStarted) return;
+        if (step === 1) btnCW.classList.add('highlight-target');
+        if (step === 2) btnB2.classList.add('highlight-target');
+        if (step === 3) btnCCW.classList.add('highlight-target');
+        if (step === 4) btnNext.classList.add('highlight-target');
+    }
+
+    btnB1.addEventListener('click', () => {
+        selBeam = 0;
+        btnB1.classList.add('active'); btnB2.classList.remove('active');
+        txtAngle.innerText = beams[selBeam].angle + "°";
+    });
+
+    btnB2.addEventListener('click', () => {
+        selBeam = 1;
+        btnB2.classList.add('active'); btnB1.classList.remove('active');
+        txtAngle.innerText = beams[selBeam].angle + "°";
+        if (step === 2) {
+            step = 3;
+            instText.innerText = "Step 3: Aim Beam 2 (B2) at 150°.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Multi-Tasking:</strong> Now rotate B2 counter-clockwise to <b>150°</b> to cover the second enemy.";
+            updateHighlights();
+        }
+    });
+
+    function tryRotate(delta) {
+        if (!isStarted || step > 4) return;
+        
+        let cand = ((beams[selBeam].angle + delta) % 360 + 360) % 360;
+        let diff = Math.abs((((cand - beams[selBeam].startAngle + 540) % 360) - 180));
+        
+        if (diff > 30) {
+            feedback.innerText = "⚠ Max rotation of 30° per turn!";
+            setTimeout(() => feedback.innerText = "", 2000);
+            return;
+        }
+
+        beams[selBeam].angle = cand;
+        txtAngle.innerText = beams[selBeam].angle + "°";
+        checkAim();
+    }
+
+    btnCW.addEventListener('click', () => tryRotate(15));
+    btnCCW.addEventListener('click', () => tryRotate(-15));
+
+    function checkAim() {
+        if (step === 1 && beams[0].angle === 30) {
+            step = 2;
+            instText.innerText = "Step 2: Select Beam 2.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Selection:</strong> B1 is locked in! Now click the highlighted <b>B2</b> button to control your second turret.";
+            updateHighlights();
+        } else if (step === 3 && beams[1].angle === 150) {
+            step = 4;
+            instText.innerText = "Step 4: Advance the Turn!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Turn Base:</strong> Both beams are locked on! Click the highlighted <b>NEXT TURN</b> button to apply damage.";
+            updateHighlights();
+        }
+    }
+
+    btnNext.addEventListener('click', () => {
+        if (step === 4 && beams[0].angle === 30 && beams[1].angle === 150) {
+            enemies[0].flash = 1.0; enemies[0].dead = true;
+            enemies[1].flash = 1.0; enemies[1].dead = true;
+            step = 5;
+            btnNext.classList.remove('highlight-target');
+            
+            instText.innerText = "Tutorial Complete!";
+            instText.style.color = "var(--accent)";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Success:</strong> Both enemies destroyed! You understand multiple beams, sectors, and turn limits. Close this to play!";
+        }
+    });
+
+    function loop() {
+        ctx.clearRect(0, 0, 600, 600);
+
+        // Draw Grid
+        ctx.save();
+        for (let r = 1; r <= RINGS; r++) {
+            ctx.beginPath(); ctx.arc(C, C, r * RING_R, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(166,159,150,0.3)'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+        for (let s = 0; s < 24; s++) {
+            const angle = topDegToRad(s * 15);
+            ctx.beginPath(); ctx.moveTo(C, C);
+            ctx.lineTo(C + RINGS * RING_R * Math.cos(angle), C + RINGS * RING_R * Math.sin(angle));
+            ctx.stroke();
+        }
+
+        // Degree Labels
+        ctx.font = '12px Montserrat'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (let s = 0; s < 24; s += 2) {
+            const deg = s * 15;
+            const rad = topDegToRad(deg);
+            const r = RINGS * RING_R + 14;
+            ctx.fillStyle = deg % 90 === 0 ? '#4a5560' : '#6c7c85';
+            if(deg === 30 || deg === 150) ctx.fillStyle = 'var(--danger)'; // Highlight targets
+            ctx.fillText(deg + '°', C + r * Math.cos(rad), C + r * Math.sin(rad));
+        }
+        ctx.restore();
+
+        if (isStarted) {
+            // Draw Beams
+            beams.forEach(b => {
+                const sa = topDegToRad(b.angle - 15); // Width 30 / 2
+                const ea = topDegToRad(b.angle + 15);
+                const rng = RINGS * RING_R;
+                
+                ctx.beginPath(); ctx.moveTo(C, C); ctx.arc(C, C, rng, sa, ea); ctx.closePath();
+                ctx.fillStyle = b.color; ctx.globalAlpha = 0.6; ctx.fill();
+                ctx.globalAlpha = 1.0;
+                ctx.strokeStyle = b.border; ctx.lineWidth = 2; ctx.stroke();
+            });
+
+            // Draw Enemies
+            enemies.forEach(e => {
+                if (!e.dead || e.flash > 0) {
+                    const eAngle = topDegToRad(e.sector * 15);
+                    const er = (e.ring - 0.5) * RING_R;
+                    const ex = C + er * Math.cos(eAngle);
+                    const ey = C + er * Math.sin(eAngle);
+                    
+                    ctx.save();
+                    ctx.translate(ex, ey);
+                    if (e.flash > 0) {
+                        ctx.globalAlpha = e.flash;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
+                        ctx.globalAlpha = 1;
+                        e.flash -= 0.05;
+                    }
+                    
+                    if (!e.dead) {
+                        ctx.fillStyle = '#e88a8a'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+                        ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            });
+
+            // Draw Tower
+            ctx.beginPath(); ctx.arc(C, C, 22, 0, Math.PI * 2);
+            ctx.fillStyle = '#efe7dc'; ctx.fill();
+            ctx.strokeStyle = '#bfb8af'; ctx.lineWidth = 2.2; ctx.stroke();
+            ctx.fillStyle = '#b6bcc2'; ctx.beginPath(); ctx.arc(C, C, 8, 0, Math.PI * 2); ctx.fill();
+        }
+
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>

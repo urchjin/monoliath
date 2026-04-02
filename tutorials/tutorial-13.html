@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Monolith Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600&family=Josefin+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mv-peach: #FFD8CC; --mv-coral: #FFB5A0; --mv-mint: #C4E8C8;
+            --mv-sage: #9DC2A4; --mv-sky: #E8F4F8; --mv-powder: #B8D8E8;
+            --mv-sand: #F4E8D8; --mv-stone: #D4C4B0; --mv-clay: #C89884;
+            --mv-text: #5A4A3A;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: var(--mv-sand);
+            color: var(--mv-text);
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(244, 232, 216, 0.95);
+            border-bottom: 2px solid var(--mv-coral);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-shrink: 0;
+        }
+        #instruction-text {
+            font-family: 'Josefin Sans', sans-serif; font-size: 18px; font-weight: 700;
+            color: var(--mv-clay); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(255, 181, 160, 0.1); border: 1px solid rgba(255, 181, 160, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: var(--mv-text); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--mv-clay); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(244, 232, 216, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Josefin Sans', sans-serif; font-size: 32px; color: var(--mv-clay); margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; }
+        .start-desc { font-size: 15px; color: var(--mv-text); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Josefin Sans', sans-serif; font-size: 14px; font-weight: 600;
+            letter-spacing: 2px; padding: 12px 30px; background: var(--mv-coral);
+            color: white; border: none; border-radius: 4px;
+            cursor: pointer; transition: all 0.2s; pointer-events: auto;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(200, 152, 132, 0.6); transform: scale(1); }
+            70% { box-shadow: 0 0 0 10px rgba(200, 152, 132, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(200, 152, 132, 0); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--mv-clay) !important;
+            z-index: 10; position: relative;
+        }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; padding: 10px 20px; }
+
+        /* Player vs Monolith Board */
+        .battle-board {
+            display: flex; justify-content: space-between; align-items: center;
+            width: 100%; max-width: 400px; gap: 10px;
+        }
+
+        /* Entity Panels */
+        .entity-panel {
+            background: white; padding: 15px; border-radius: 12px;
+            border: 2px solid var(--mv-stone); text-align: center;
+            flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+            position: relative;
+        }
+        .entity-panel.monolith { background: var(--mv-sky); }
+        
+        .entity-name { font-size: 11px; text-transform: uppercase; color: var(--mv-stone); font-weight: 700; }
+        .res-val { font-family: 'Josefin Sans'; font-size: 36px; font-weight: 700; color: var(--mv-text); transition: 0.3s; }
+        
+        .val-change { color: #e67c73; transform: scale(1.2); }
+        .val-boost { color: var(--mv-sage); transform: scale(1.2); }
+        .val-win { color: var(--mv-sage); }
+
+        /* Card Queues / Hands */
+        .card-row {
+            display: flex; gap: 8px; justify-content: center; width: 100%;
+            padding: 10px; background: rgba(255,255,255,0.3); border-radius: 10px;
+        }
+        .card-row-title { font-size: 10px; text-transform: uppercase; font-weight: 700; color: var(--mv-stone); text-align: center; margin-bottom: 5px; width: 100%; }
+
+        .card {
+            width: 50px; height: 70px; background: white; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Josefin Sans'; font-size: 18px; font-weight: 700; color: var(--mv-text);
+            box-shadow: 0 4px 8px rgba(100, 80, 60, 0.1); transition: 0.3s;
+            border: 1px solid var(--mv-stone);
+        }
+        
+        .monolith-card { background: var(--mv-powder); color: var(--mv-text); }
+        .player-card { cursor: pointer; border-color: var(--mv-sage); }
+        .player-card:active { transform: scale(0.9); }
+        .card.played { opacity: 0; transform: translateY(-20px); pointer-events: none; position: absolute; }
+
+        /* Slots for Player's Queued Cards */
+        .slot {
+            width: 50px; height: 70px; border: 2px dashed var(--mv-clay);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Josefin Sans'; font-size: 18px; color: var(--mv-clay);
+            background: rgba(255,255,255,0.3); transition: 0.3s;
+        }
+        .slot.filled { border-style: solid; background: white; border-color: var(--mv-sage); color: var(--mv-text); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+        /* Floating Text Animation */
+        .floating-text {
+            position: absolute; top: -30px; font-family: 'Josefin Sans'; font-size: 24px; font-weight: 700;
+            opacity: 0; pointer-events: none; z-index: 100;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-40px); }
+        }
+
+        .btn-action {
+            width: 100%; max-width: 300px; padding: 15px; border-radius: 10px; border: none;
+            background: var(--mv-stone); color: white; font-family: 'Josefin Sans';
+            font-weight: 700; font-size: 16px; cursor: pointer; transition: 0.3s;
+        }
+        .btn-action.ready { background: var(--mv-sage); box-shadow: 0 5px 15px rgba(157, 194, 164, 0.4); }
+
+        /* Active highlight for execution phase */
+        .executing-card { border: 3px solid var(--mv-coral); transform: scale(1.1); box-shadow: 0 0 15px var(--mv-coral); z-index: 5; }
+
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Check the Monolith's Queue.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Foresight:</strong> The Monolith's intent is visible at the top! It plans to play <b>÷2</b> and <b>-10</b>. You must queue your cards to react.
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">THE MONOLITH</div>
+            <div class="start-desc">Queue all your actions in advance. Once the resonance begins, you will clash turn-by-turn with the ancient stone.</div>
+            <button class="start-btn" id="btn-start-tut">ENTER CHAMBER</button>
+        </div>
+
+        <div style="width: 100%; max-width: 400px;">
+            <div class="card-row-title">Monolith's Queue</div>
+            <div class="card-row">
+                <div class="card monolith-card" id="m-card-1">÷ 2</div>
+                <div class="card monolith-card" id="m-card-2">- 10</div>
+            </div>
+        </div>
+
+        <div class="battle-board">
+            <div class="entity-panel monolith" id="panel-m">
+                <div class="entity-name">Monolith</div>
+                <div id="val-m" class="res-val">50</div>
+                <div class="floating-text" id="float-m"></div>
+            </div>
+            
+            <div style="font-family: 'Josefin Sans'; font-weight: bold; color: var(--mv-clay);">VS</div>
+
+            <div class="entity-panel" id="panel-p">
+                <div class="entity-name">Player (You)</div>
+                <div id="val-p" class="res-val">30</div>
+                <div class="floating-text" id="float-p"></div>
+            </div>
+        </div>
+
+        <div style="width: 100%; max-width: 400px;">
+            <div class="card-row-title">Your Queue (Empty)</div>
+            <div class="card-row">
+                <div class="slot" id="slot-1">?</div>
+                <div class="slot" id="slot-2">?</div>
+            </div>
+        </div>
+
+        <div style="width: 100%; max-width: 400px;" id="hand-container">
+            <div class="card-row-title">Your Hand</div>
+            <div class="card-row">
+                <div class="card player-card" id="p-card-1" onclick="queueCard(1)">+ 10</div>
+                <div class="card player-card" id="p-card-2" onclick="queueCard(2)">- 5</div>
+            </div>
+        </div>
+
+        <button class="btn-action" id="btn-resonate" disabled>RESONATE</button>
+    </div>
+
+<script>
+    let step = 1;
+    let mVal = 50;
+    let pVal = 30;
+
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const displayM = document.getElementById('val-m');
+    const displayP = document.getElementById('val-p');
+    const btnResonate = document.getElementById('btn-resonate');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        step1();
+    });
+
+    function step1() {
+        document.getElementById('p-card-1').classList.add('highlight-target');
+        instText.innerText = "Step 1: Queue Your First Card.";
+        objText.innerHTML = "<strong>🎯 Learning Objective - Preparation:</strong> You play ALL cards before the turn starts. Click the <b>+10</b> card to put it in your queue.";
+    }
+
+    function queueCard(cardNum) {
+        if (step === 1 && cardNum === 1) {
+            document.getElementById('p-card-1').classList.add('played');
+            document.getElementById('p-card-1').classList.remove('highlight-target');
+            
+            const slot1 = document.getElementById('slot-1');
+            slot1.innerText = "+ 10";
+            slot1.classList.add('filled');
+
+            step = 2;
+            instText.innerText = "Step 2: Queue Your Second Card.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Sequence:</strong> Now click your <b>-5</b> card to finish building your queue.";
+            document.getElementById('p-card-2').classList.add('highlight-target');
+        }
+        else if (step === 2 && cardNum === 2) {
+            document.getElementById('p-card-2').classList.add('played');
+            document.getElementById('p-card-2').classList.remove('highlight-target');
+            
+            const slot2 = document.getElementById('slot-2');
+            slot2.innerText = "- 5";
+            slot2.classList.add('filled');
+
+            step = 3;
+            instText.innerText = "Step 3: Begin the Clash!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Execution:</strong> The sequences are set. Click the highlighted <b>RESONATE</b> button to watch the turns execute sequentially!";
+            
+            btnResonate.disabled = false;
+            btnResonate.classList.add('ready', 'highlight-target');
+        }
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    function showFloat(id, text, color) {
+        const el = document.getElementById(id);
+        el.innerText = text;
+        el.style.color = color;
+        el.style.animation = 'none';
+        void el.offsetWidth; // trigger reflow
+        el.style.animation = 'floatUp 1.2s ease-out forwards';
+    }
+
+    btnResonate.addEventListener('click', async () => {
+        if (step !== 3) return;
+        step = 4;
+        
+        btnResonate.classList.remove('highlight-target');
+        btnResonate.classList.remove('ready');
+        btnResonate.innerText = "EXECUTING...";
+        btnResonate.disabled = true;
+        
+        document.getElementById('hand-container').style.opacity = '0.5';
+
+        // Update HUD for observation mode
+        instText.innerText = "Observing Clash...";
+        objText.innerHTML = "<strong>🎯 The Simulation:</strong> Watch the Monolith and Player alternate moves.";
+
+        // --- TURN 1: MONOLITH ---
+        const mc1 = document.getElementById('m-card-1');
+        mc1.classList.add('executing-card');
+        await sleep(800);
+        showFloat('float-m', '÷ 2', '#e67c73');
+        mVal = mVal / 2; // 50 / 2 = 25
+        displayM.innerText = mVal;
+        displayM.classList.add('val-change');
+        await sleep(400);
+        displayM.classList.remove('val-change');
+        mc1.classList.remove('executing-card');
+        mc1.style.opacity = '0.3';
+        await sleep(600);
+
+        // --- TURN 1: PLAYER ---
+        const pc1 = document.getElementById('slot-1');
+        pc1.classList.add('executing-card');
+        await sleep(800);
+        showFloat('float-p', '+ 10', 'var(--mv-sage)');
+        pVal = pVal + 10; // 30 + 10 = 40
+        displayP.innerText = pVal;
+        displayP.classList.add('val-boost');
+        await sleep(400);
+        displayP.classList.remove('val-boost');
+        pc1.classList.remove('executing-card');
+        pc1.style.opacity = '0.3';
+        await sleep(600);
+
+        // --- TURN 2: MONOLITH ---
+        const mc2 = document.getElementById('m-card-2');
+        mc2.classList.add('executing-card');
+        await sleep(800);
+        showFloat('float-m', '- 10', '#e67c73');
+        mVal = mVal - 10; // 25 - 10 = 15
+        displayM.innerText = mVal;
+        displayM.classList.add('val-change');
+        await sleep(400);
+        displayM.classList.remove('val-change');
+        mc2.classList.remove('executing-card');
+        mc2.style.opacity = '0.3';
+        await sleep(600);
+
+        // --- TURN 2: PLAYER ---
+        const pc2 = document.getElementById('slot-2');
+        pc2.classList.add('executing-card');
+        await sleep(800);
+        showFloat('float-p', '- 5', '#e67c73');
+        pVal = pVal - 5; // 40 - 5 = 35
+        displayP.innerText = pVal;
+        displayP.classList.add('val-change');
+        await sleep(400);
+        displayP.classList.remove('val-change');
+        pc2.classList.remove('executing-card');
+        pc2.style.opacity = '0.3';
+        await sleep(600);
+
+        // --- FINISH ---
+        displayP.classList.add('val-win');
+        instText.innerText = "Tutorial Complete!";
+        instText.style.color = "var(--mv-sage)";
+        objText.innerHTML = "<strong>🎯 Success:</strong> Your final resonance (35) beat the Monolith (15). Always check the Monolith's intent before building your queue! Close this to play.";
+        
+        btnResonate.innerText = "VICTORY";
+        btnResonate.classList.add('ready');
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Monoliath Tutorial - The Bar Model</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mint: #a8d8b9; --rose: #f2b5a0; --gold: #f5d6a0; --lavender: #c4b7ea; --sky: #89c4e1;
+            --bg: #0c0d1b; --panel: rgba(255,255,255,0.055); --pborder: rgba(255,255,255,0.09);
+            --text: #f0ecff; --dim: rgba(232,224,245,0.72);
+            --danger: #e67c73;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(12, 13, 27, 0.95);
+            border-bottom: 2px solid var(--lavender);
+            padding: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+        }
+        #instruction-text {
+            font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
+            color: var(--lavender); text-align: center; letter-spacing: 1.5px; line-height: 1.4;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(12, 13, 27, 0.95);
+            backdrop-filter: blur(8px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Cinzel', serif; font-size: 32px; color: var(--gold); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 3px;}
+        .start-desc { font-size: 14px; color: var(--dim); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Raleway', sans-serif; font-size: 14px; font-weight: 600;
+            letter-spacing: 2px; padding: 12px 30px; background: transparent;
+            color: var(--gold); border: 2px solid var(--gold); border-radius: 4px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 20px; }
+
+        /* Ally Status Panel */
+        .ally-panel {
+            background: var(--panel); border: 1px solid var(--pborder);
+            padding: 20px 25px; border-radius: 12px; width: 100%; max-width: 360px;
+            text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;
+            transition: all 0.3s;
+        }
+        .secret-tag {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: rgba(196, 183, 234, 0.15); border: 1px solid var(--lavender);
+            color: var(--lavender); font-size: 10px; padding: 4px 10px; border-radius: 12px;
+            letter-spacing: 1px; text-transform: uppercase; font-weight: 600; white-space: nowrap;
+        }
+
+        .ally-info { display: flex; flex-direction: column; gap: 4px; margin-top: 5px; }
+        .ally-title { font-family: 'Cinzel'; font-size: 16px; color: var(--rose); letter-spacing: 2px; text-transform: uppercase; }
+        .enemy-name { font-size: 11px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+
+        /* Monolith Graphic */
+        .e-shape {
+            width: 50px; height: 58px; margin: 5px 0;
+            background: linear-gradient(180deg, #2d0d4e, #180024);
+            clip-path: polygon(50% 0%, 100% 28%, 100% 100%, 0% 100%, 0% 28%);
+            box-shadow: 0 0 22px rgba(180,0,80,0.28), inset 0 0 14px rgba(120,0,60,0.3);
+            position: relative; transition: box-shadow 0.4s;
+        }
+        .e-shape::after {
+            content: ''; position: absolute; top: 22%; left: 50%; transform: translateX(-50%);
+            width: 14px; height: 14px; background: radial-gradient(circle, rgba(255,50,100,0.55) 0%, transparent 70%);
+        }
+
+        /* Bar Model */
+        .bar-wrapper { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .bar-container {
+            width: 100%; height: 24px; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            position: relative; overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%; width: 40%; /* 10 out of 25 = 40% */
+            background: linear-gradient(90deg, var(--sky), #b8dcf0);
+            transition: width 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67), background 0.5s, box-shadow 0.5s;
+            position: relative;
+        }
+        .bar-fill::after {
+            content: ''; position: absolute; right: 0; top: 0; bottom: 0;
+            width: 2px; background: white; box-shadow: 0 0 8px white;
+        }
+        
+        /* Target Line */
+        .bar-target-marker {
+            position: absolute; top: -2px; bottom: -2px; left: 72%; /* 18 out of 25 = 72% */
+            width: 2px; background: var(--gold); box-shadow: 0 0 8px var(--gold);
+            z-index: 2;
+        }
+        .bar-target-label {
+            position: absolute; top: -18px; left: 72%; transform: translateX(-50%);
+            font-family: 'Cinzel'; font-size: 10px; color: var(--gold); font-weight: bold; letter-spacing: 1px;
+        }
+
+        .stat-text { font-family: 'Cinzel'; font-size: 16px; font-weight: 700; color: var(--text); transition: color 0.3s; }
+
+        /* Player Hand */
+        .hand-area { width: 100%; max-width: 340px; text-align: center; }
+        .hand-title { font-family: 'Cinzel'; font-size: 14px; color: var(--sky); letter-spacing: 2px; margin-bottom: 20px; }
+        .p-hand { display: flex; gap: 20px; justify-content: center; align-items: center; min-height: 80px; }
+
+        /* Cards */
+        .card {
+            width: 55px; height: 55px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: transform 0.22s, box-shadow 0.22s, opacity 0.3s;
+            position: relative; flex-shrink: 0; transform: rotate(45deg);
+        }
+        .card-in {
+            width: 100%; height: 100%;
+            background: rgba(137, 196, 225, 0.1); border: 1px solid rgba(137, 196, 225, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--sky);
+            transform: rotate(-45deg); transition: all 0.22s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .card:hover .card-in { background: rgba(137, 196, 225, 0.25); border-color: var(--sky); box-shadow: 0 0 20px rgba(137, 196, 225, 0.4); }
+        .card:active { transform: rotate(45deg) scale(0.9); }
+        .card.played { opacity: 0; pointer-events: none; transform: rotate(45deg) translateY(-30px); }
+
+        /* Feedback & Reset */
+        #feedback-area {
+            min-height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;
+            opacity: 0; pointer-events: none; transition: opacity 0.4s; text-align: center; max-width: 400px;
+        }
+        #feedback-area.visible { opacity: 1; pointer-events: auto; }
+        #feedback-msg { font-size: 14px; line-height: 1.5; color: var(--text); }
+        
+        .btn-reset {
+            padding: 10px 20px; border-radius: 4px; font-family: 'Raleway'; font-weight: bold; font-size: 12px;
+            border: 1px solid rgba(255,255,255,0.2); background: var(--panel); color: white; letter-spacing: 1px;
+            cursor: pointer; transition: 0.2s; text-transform: uppercase;
+        }
+        .btn-reset:hover { background: rgba(255,255,255,0.1); }
+        .btn-reset:active { transform: scale(0.95); }
+
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">To defeat an enemy, your total must match or exceed its target. Gift your ally a card to push their total over the gold line!</div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">MONOLIATH</div>
+            <div class="start-desc">Learn the core cooperative deduction mechanic. You must help your allies reach or exceed their target values to survive!</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div class="ally-panel" id="ally-panel">
+            <div class="secret-tag">✦ Secret Knowledge</div>
+            
+            <div class="ally-info">
+                <div class="ally-title">Player 2 (Ally)</div>
+                <div class="enemy-name">Fighting: Voidmark</div>
+            </div>
+
+            <div class="e-shape" id="monolith-graphic"></div>
+
+            <div class="bar-wrapper">
+                <div class="bar-container">
+                    <div class="bar-target-label">18</div>
+                    <div class="bar-target-marker"></div>
+                    <div class="bar-fill" id="ally-bar"></div>
+                </div>
+                <div class="stat-text">Total Power: <span id="ally-current">10</span></div>
+            </div>
+        </div>
+
+        <div class="hand-area">
+            <div class="hand-title">Your Hand</div>
+            <div class="p-hand">
+                <div class="card" id="card-5" onclick="playCard(5)">
+                    <div class="card-in">5</div>
+                </div>
+                <div class="card" id="card-8" onclick="playCard(8)">
+                    <div class="card-in">8</div>
+                </div>
+                <div class="card" id="card-12" onclick="playCard(12)">
+                    <div class="card-in">12</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="feedback-area">
+            <div id="feedback-msg"></div>
+            <button class="btn-reset" onclick="resetTutorial()">Reset Simulation</button>
+        </div>
+    </div>
+
+<script>
+    let gameOver = false;
+    let allyTotal = 10;
+    const target = 18;
+    const maxBarCapacity = 25; // The total width of the bar represents 25 power
+
+    const currentEl = document.getElementById('ally-current');
+    const barFill = document.getElementById('ally-bar');
+    const feedbackArea = document.getElementById('feedback-area');
+    const feedbackMsg = document.getElementById('feedback-msg');
+    const monolithGraphic = document.getElementById('monolith-graphic');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+    });
+
+    function playCard(val) {
+        if (gameOver) return;
+        gameOver = true;
+
+        // Hide the played card
+        document.getElementById(`card-${val}`).classList.add('played');
+
+        // Update Total
+        allyTotal += val;
+        currentEl.innerText = allyTotal;
+
+        // Calculate Bar Width (Cap visually at 100%)
+        let fillPct = Math.min((allyTotal / maxBarCapacity) * 100, 100);
+        barFill.style.width = `${fillPct}%`;
+
+        // Evaluate Logic
+        if (allyTotal >= target) {
+            // Success
+            currentEl.style.color = "var(--mint)";
+            barFill.style.background = "linear-gradient(90deg, #72d4a8, #a8d8b9)";
+            barFill.style.boxShadow = "0 0 15px rgba(168, 216, 185, 0.5)";
+            monolithGraphic.style.boxShadow = "0 0 28px rgba(168, 216, 185, 0.6), inset 0 0 14px rgba(168, 216, 185, 0.3)";
+            
+            if (allyTotal === target) {
+                feedbackMsg.innerHTML = `<strong style='color: var(--mint); font-size: 16px;'>Perfect Alignment!</strong><br><br>You gifted an 8, bringing them exactly to 18! The enemy is defeated. This is the most efficient play.`;
+            } else {
+                feedbackMsg.innerHTML = `<strong style='color: var(--mint); font-size: 16px;'>Overwhelming Power!</strong><br><br>You gifted a 12. Since ${allyTotal} is higher than 18, the enemy is defeated! (Just be careful not to waste high cards if your other allies need them).`;
+            }
+        } else {
+            // Too low
+            currentEl.style.color = "var(--danger)";
+            barFill.style.background = "linear-gradient(90deg, #e67c73, #f2b5a0)";
+            
+            feedbackMsg.innerHTML = `<strong style='color: var(--danger); font-size: 16px;'>Fell Short!</strong><br><br>You gifted a 5, bringing them to ${allyTotal}. The bar didn't reach the target line! They must score at least 18 to survive.`;
+        }
+
+        // Show feedback
+        feedbackArea.classList.add('visible');
+    }
+
+    function resetTutorial() {
+        gameOver = false;
+        allyTotal = 10;
+        
+        // Reset HUD values and colors
+        currentEl.innerText = allyTotal;
+        currentEl.style.color = "var(--text)";
+        
+        // Reset Bar
+        let fillPct = (allyTotal / maxBarCapacity) * 100;
+        barFill.style.width = `${fillPct}%`;
+        barFill.style.background = "linear-gradient(90deg, var(--sky), #b8dcf0)";
+        barFill.style.boxShadow = "none";
+        
+        // Reset Monolith SVG shadow
+        monolithGraphic.style.boxShadow = "0 0 22px rgba(180,0,80,0.28), inset 0 0 14px rgba(120,0,60,0.3)";
+
+        // Reset Cards
+        document.getElementById('card-5').classList.remove('played');
+        document.getElementById('card-8').classList.remove('played');
+        document.getElementById('card-12').classList.remove('played');
+
+        // Hide Feedback
+        feedbackArea.classList.remove('visible');
+    }
+</script>
+</body>
+</html>

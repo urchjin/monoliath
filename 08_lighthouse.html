@@ -649,14 +649,19 @@ function newShip(i) {
   const size = 0.65 + Math.random() * 0.25;
   const width = 18 + Math.random() * 12;
   const destAngle = Math.floor(Math.random() * 360);
+  
+  // Define our shapes
+  const SHAPES = ['circle', 'square', 'diamond', 'triangle'];
+  
   return {
     id: i,
+    shape: SHAPES[i % SHAPES.length],
     x: CX + dist * Math.cos(baseAngle),
     y: CY + dist * Math.sin(baseAngle),
     vx: spd * Math.cos(dir),
     vy: spd * Math.sin(dir),
-    len: 8 * size,
-    wid: width,
+    len: (8 * size) * 0.5, // Scaled down by 50%
+    wid: width * 0.5,      // Scaled down by 50%
     destAngle,
     docked: false,
     reappearAt: 0,
@@ -668,12 +673,12 @@ function newShip(i) {
     flash: 0
   };
 }
-let ships = [];
+
 function newBigShip() {
   const i = ships.length;
   const s = newShip(i);
-  s.len = 22;
-  s.wid = 28;
+  s.len = 11; // Scaled down by 50% (was 22)
+  s.wid = 14; // Scaled down by 50% (was 28)
   s.name = `XL-${i+1}`;
   s.big = true;
   return s;
@@ -1835,34 +1840,45 @@ function drawShip(ship) {
     ctx.shadowBlur  = 18;
   }
 
+  // Determine Heading
   const spd = Math.hypot(ship.vx, ship.vy);
   let ax = 0, ay = 0;
   if (spd > 0) {
     ax = (ship.vx / spd) * len;
     ay = (ship.vy / spd) * len;
+  } else {
+    // If stopped, face destination
+    const angDest = (ship.destAngle - 90) * Math.PI / 180;
+    ax = Math.cos(angDest) * len;
+    ay = Math.sin(angDest) * len;
   }
   const ang = Math.atan2(ay, ax);
-  const lx = Math.cos(ang), ly = Math.sin(ang);
-  const px = ax, py = ay;
-  const bx1x = -lx * wid + px * 0.2;
-  const bx1y = -ly * wid + py * 0.2;
-  const bx2x = lx * wid + px * 0.2;
-  const bx2y = ly * wid + py * 0.2;
 
-  // Shaft
-  ctx.beginPath();
-  ctx.moveTo(-lx * (len * 0.4), -ly * (len * 0.4));
-  ctx.lineTo(px, py);
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-  ctx.lineWidth = Math.max(2, 2.0 * DRAW_SCALE);
-  ctx.stroke();
+  // -- SHAPE DRAWING --
+  ctx.save();
+  ctx.rotate(ang);
 
-  // Arrowhead
+  const sz = wid * 1.1; 
   ctx.beginPath();
-  ctx.moveTo(px, py);
-  ctx.lineTo(bx1x, bx1y);
-  ctx.lineTo(bx2x, bx2y);
+  
+  if (ship.shape === 'circle') {
+    ctx.arc(0, 0, sz * 0.8, 0, Math.PI * 2);
+  } else if (ship.shape === 'square') {
+    ctx.rect(-sz * 0.8, -sz * 0.8, sz * 1.6, sz * 1.6);
+  } else if (ship.shape === 'diamond') {
+    ctx.moveTo(sz * 1.2, 0);
+    ctx.lineTo(0, sz * 0.9);
+    ctx.lineTo(-sz * 1.2, 0);
+    ctx.lineTo(0, -sz * 0.9);
+  } else {
+    // Triangle (default)
+    ctx.moveTo(sz * 1.2, 0);
+    ctx.lineTo(-sz * 0.8, sz * 0.9);
+    ctx.lineTo(-sz * 0.8, -sz * 0.9);
+  }
   ctx.closePath();
+
+  // Apply Colors
   if (ship.flash > 0) {
     ctx.fillStyle   = '#ef6f7a';
     ctx.strokeStyle = '#ffffff';
@@ -1881,15 +1897,25 @@ function drawShip(ship) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // Heading label (degrees)
+  // Small heading indicator line so circles/squares have clear direction
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(sz * 1.6, 0);
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore(); // Restore from rotation
+
+  // Heading label (degrees) - floating just above the shape
   const deg = Math.round(normDeg(ship.destAngle));
   ctx.font = 'bold ' + Math.round(16 * Math.max(1, DRAW_SCALE)) + 'px Quicksand, Raleway, sans-serif';
   ctx.fillStyle = 'rgba(255,255,255,0.8)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText(`${deg}°`, 0, -ly * (len * 0.6));
+  ctx.fillText(`${deg}°`, 0, -(wid * 1.5)); 
 
-  ctx.restore();
+  ctx.restore(); // Restore from main translation
 }
 
 // ── Draw lighthouse tower icon on edge ──

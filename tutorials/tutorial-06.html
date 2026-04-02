@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fragment Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;600&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { 
+            background: linear-gradient(135deg, #E8D5C4 0%, #F5E6D3 50%, #D4E5F0 100%);
+            color:#5A5A5A; font-family:'Raleway',sans-serif; 
+            text-align:center; user-select:none; overflow:hidden;
+            touch-action: none; height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 2px solid rgba(200, 180, 160, 0.5);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px;
+            z-index: 20; box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        #instruction-text {
+            font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700;
+            color: #7B6B5D; text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(123, 107, 93, 0.05); border: 1px solid rgba(123, 107, 93, 0.15);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: #5A9E7C; text-align: center; line-height: 1.4; font-weight: 600;
+        }
+        #learning-objective b { color: #C07A5A; }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(232, 213, 196, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Cinzel', serif; font-size: 36px; color: #7B6B5D; margin-bottom: 15px; }
+        .start-desc { font-size: 15px; color: #9B8B7D; margin-bottom: 35px; max-width: 450px; line-height: 1.6; }
+        .start-btn {
+            font-family: 'Raleway', sans-serif; font-size: 14px; font-weight: 600;
+            letter-spacing: 1px; padding: 12px 30px; background: #fff;
+            color: #7B6B5D; border: 2px solid rgba(200, 180, 160, 0.4); border-radius: 25px;
+            cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT & FLASH ANIMATIONS --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(93, 187, 99, 0.6); transform: scale(1); }
+            70% { box-shadow: 0 0 0 10px rgba(93, 187, 99, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(93, 187, 99, 0); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid #5DBB63 !important; z-index: 10;
+        }
+
+        @keyframes textFlashNum {
+            0% { color: #fff; transform: scale(2); text-shadow: 0 0 20px #5DBB63; }
+            100% { color: #5DBB63; transform: scale(1); text-shadow: none; }
+        }
+        @keyframes textFlashDen {
+            0% { color: #fff; transform: scale(2); text-shadow: 0 0 20px #E05C5C; }
+            100% { color: #E05C5C; transform: scale(1); text-shadow: none; }
+        }
+        .text-flash-num { animation: textFlashNum 0.6s ease-out; color: #5DBB63 !important; font-weight: 800; display: inline-block; }
+        .text-flash-den { animation: textFlashDen 0.6s ease-out; color: #E05C5C !important; font-weight: 800; display: inline-block; }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #canvasWrapper { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        canvas { display: block; max-width: 100%; max-height: 100%; outline: none; }
+
+        #controls {
+            background: rgba(255, 255, 255, 0.9); padding: 10px 15px;
+            border-top: 2px solid rgba(200, 180, 160, 0.3); display: flex;
+            justify-content: space-around; align-items: center; min-height: 100px;
+        }
+        .dpad { display: grid; grid-template-areas: ". up ." ". . ." ". down ."; gap: 5px; }
+        .control-btn {
+            width: 60px; height: 60px; font-size: 24px; background: #fff;
+            border: 2px solid rgba(200, 180, 160, 0.3); color: #7B6B5D;
+            border-radius: 15px; display: flex; align-items: center; justify-content: center;
+        }
+        .control-btn.up { grid-area: up; } .control-btn.down { grid-area: down; }
+        .control-btn.fire { width: 70px; height: 70px; background: linear-gradient(135deg, #F5C6A5, #E5B695); font-size: 28px; }
+
+        /* TARGET HUD */
+        #target-hud {
+            position: absolute; top: 10%; right: 15%; background: rgba(255,255,255,0.8);
+            padding: 10px 20px; border-radius: 12px; border: 2px solid rgba(200,180,160,0.4);
+        }
+        .frac-val { font-size: 24px; font-weight: 600; color: #C59B8B; margin-bottom: 5px; }
+        .raw-val { font-size: 16px; color: #9B8B7D; }
+        #t-num, #t-den { transition: color 0.3s; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Move UP to target the Numerator Zone.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Zones:</strong> You must shoot <b>past</b> the opponent's paddle. The top half of the screen targets the <b>Numerator</b>. Use the <b>UP Arrow Key</b> or on-screen button to get a clear shot.
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">FRAGMENT</div>
+            <div class="start-desc">Learn how hitting past your opponent's defenses into the top vs. bottom zones affects their mathematical fraction. Use your Arrow Keys and Spacebar!</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div id="canvasWrapper">
+            <div id="target-hud">
+                <div style="font-size:10px; color:#9B8B7D; text-transform:uppercase;">Opponent Value</div>
+                <div class="frac-val" id="t-frac">1.00</div>
+                <div class="raw-val"><span id="t-num">50</span> / <span id="t-den">50</span></div>
+            </div>
+            <canvas id="game" width="600" height="400" tabindex="0"></canvas>
+        </div>
+        
+        <div id="controls">
+            <div class="dpad">
+                <button class="control-btn up" id="upBtn">△</button>
+                <button class="control-btn down" id="downBtn">▽</button>
+            </div>
+            <button class="control-btn fire" id="fireBtn">◆</button>
+        </div>
+    </div>
+
+<script>
+    const cv = document.getElementById("game");
+    const ctx = cv.getContext("2d");
+    
+    let isStarted = false;
+    let step = 1;
+    let dt = 0, lastTime = 0;
+
+    // Entities
+    const p1 = { x: 40, y: 150, w: 25, h: 100 };
+    const p2 = { x: 500, y: 150, w: 25, h: 100, n: 50, d: 50 }; 
+    let bullets = [];
+    let impacts = [];
+    let cooldown = 0;
+    
+    // Inputs
+    let mUp = false, mDown = false;
+
+    // DOM
+    const btnUp = document.getElementById('upBtn');
+    const btnDown = document.getElementById('downBtn');
+    const btnFire = document.getElementById('fireBtn');
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    // Init & Focus
+    function forceFocus() { window.focus(); if(document.activeElement !== cv) cv.focus(); }
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        lastTime = performance.now();
+        updateHighlights();
+        forceFocus();
+        requestAnimationFrame(loop);
+    });
+
+    document.addEventListener('click', forceFocus);
+
+    function updateHighlights() {
+        btnUp.classList.remove('highlight-target');
+        btnDown.classList.remove('highlight-target');
+        btnFire.classList.remove('highlight-target');
+        
+        if(!isStarted) return;
+        if(step === 1) btnUp.classList.add('highlight-target');
+        if(step === 2) btnFire.classList.add('highlight-target');
+        if(step === 3) btnDown.classList.add('highlight-target');
+        if(step === 4) btnFire.classList.add('highlight-target');
+    }
+
+    // --- KEYBOARD & TOUCH INPUTS ---
+    document.addEventListener('keydown', (e) => {
+        if(!isStarted) return;
+        if(e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); mUp = true; }
+        if(e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); mDown = true; }
+        if(e.code === 'Space' || e.key === ' ') { 
+            e.preventDefault(); 
+            if(cooldown <= 0) fireBullet(); 
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if(e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') mUp = false;
+        if(e.code === 'ArrowDown' || e.key === 's' || e.key === 'S') mDown = false;
+    });
+
+    function bindTouch(btn, onDown, onUp) {
+        btn.addEventListener('mousedown', (e)=>{ e.preventDefault(); onDown(); });
+        btn.addEventListener('touchstart', (e)=>{ e.preventDefault(); onDown(); }, {passive:false});
+        window.addEventListener('mouseup', onUp);
+        window.addEventListener('touchend', onUp);
+    }
+    bindTouch(btnUp, ()=>mUp=true, ()=>mUp=false);
+    bindTouch(btnDown, ()=>mDown=true, ()=>mDown=false);
+    bindTouch(btnFire, ()=>{ if(isStarted && cooldown<=0) fireBullet(); }, ()=>{});
+
+    function fireBullet() {
+        if(step === 1 || step === 3) return; 
+        bullets.push({ x: p1.x + p1.w, y: p1.y + p1.h/2 });
+        cooldown = 1.0; 
+    }
+
+    function checkProgression() {
+        if (step === 1 && p1.y < 100) {
+            step = 2;
+            instText.innerText = "Step 2: Fire PAST the opponent!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Addition:</strong> You have a clear shot! Press <b>SPACEBAR</b> or the SEND button to shoot a <b>+10</b> past their paddle and into the green Numerator Zone.";
+            updateHighlights();
+        }
+        else if (step === 3 && p1.y > 200) {
+            step = 4;
+            instText.innerText = "Step 4: Fire PAST them into the Denominator!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Denominators:</strong> Now, press <b>SPACEBAR</b> to fire a Red projectile into the bottom zone. Adding to a denominator makes the total fraction <b>smaller</b>!";
+            updateHighlights();
+        }
+    }
+
+    function updateTargetUI() {
+        const frac = p2.n / p2.d;
+        document.getElementById('t-frac').innerText = frac.toFixed(2);
+        document.getElementById('t-num').innerText = p2.n;
+        document.getElementById('t-den').innerText = p2.d;
+    }
+
+    function flashValue(type) {
+        const el = document.getElementById(type === 'num' ? 't-num' : 't-den');
+        const flashClass = type === 'num' ? 'text-flash-num' : 'text-flash-den';
+        el.classList.remove(flashClass);
+        void el.offsetWidth; // trigger reflow
+        el.classList.add(flashClass);
+    }
+
+    function loop(ts) {
+        dt = (ts - lastTime) / 1000;
+        lastTime = ts;
+
+        if (cooldown > 0) cooldown -= dt;
+
+        // Move Player
+        if (mUp) p1.y = Math.max(0, p1.y - 250 * dt);
+        if (mDown) p1.y = Math.min(400 - p1.h, p1.y + 250 * dt);
+        checkProgression();
+
+        // Update Bullets
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.x += 400 * dt;
+            
+            // Hit Paddle (Blocked!)
+            if (b.x > p2.x && b.x < p2.x + p2.w && b.y > p2.y && b.y < p2.y + p2.h) {
+                impacts.push({x: b.x - 20, y: b.y, a: 1, text: "Blocked!", color: '#9B8B7D'});
+                bullets.splice(i, 1);
+            }
+            // Hit Zone (Past Paddle)
+            else if (b.x > 580) { 
+                if (b.y < 200) { // Top Half
+                    p2.n += 10;
+                    flashValue('num');
+                    impacts.push({x: 550, y: b.y, a: 1, text: "+10", color: '#5DBB63'});
+                    if(step === 2) {
+                        step = 3;
+                        instText.innerText = "Step 3: Move DOWN to the Denominator Zone.";
+                        objText.innerHTML = "<strong>🎯 Learning Objective - Growth:</strong> The opponent's Numerator increased, so their total value grew! Now, use the <b>DOWN Arrow Key</b> to get a clear shot at the bottom zone.";
+                        updateHighlights();
+                    }
+                } else { // Bottom Half
+                    p2.d += 10;
+                    flashValue('den');
+                    impacts.push({x: 550, y: b.y, a: 1, text: "+10", color: '#E05C5C'});
+                    if(step === 4) {
+                        step = 5;
+                        instText.innerText = "Tutorial Complete!";
+                        instText.style.color = "#5A9E7C";
+                        objText.innerHTML = "You understand the arena! Watch the HUD to see exactly which value is affected. Close this window to play Fragment.";
+                        updateHighlights();
+                    }
+                }
+                bullets.splice(i, 1);
+                updateTargetUI();
+            }
+        }
+
+        // Draw
+        ctx.clearRect(0, 0, 600, 400);
+
+        // Zones
+        ctx.fillStyle = 'rgba(168, 199, 160, 0.15)'; ctx.fillRect(0, 0, 600, 200); // Top (Green)
+        ctx.fillStyle = 'rgba(245, 198, 165, 0.15)'; ctx.fillRect(0, 200, 600, 200); // Bottom (Red)
+        
+        ctx.strokeStyle = 'rgba(155, 139, 125, 0.3)'; ctx.lineWidth = 2; ctx.setLineDash([8,8]);
+        ctx.beginPath(); ctx.moveTo(0, 200); ctx.lineTo(600, 200); ctx.stroke(); ctx.setLineDash([]);
+
+        // End Zone Highlighting
+        ctx.fillStyle = 'rgba(93, 187, 99, 0.3)'; ctx.fillRect(580, 0, 20, 200);
+        ctx.fillStyle = 'rgba(224, 92, 92, 0.3)'; ctx.fillRect(580, 200, 20, 200);
+
+        // Zone Labels
+        ctx.fillStyle = 'rgba(100, 130, 120, 0.4)'; ctx.font = "bold 30px sans-serif";
+        ctx.fillText("NUMERATOR", 300, 100);
+        ctx.fillStyle = 'rgba(180, 120, 90, 0.4)'; 
+        ctx.fillText("DENOMINATOR", 300, 300);
+
+        // Player
+        ctx.fillStyle = '#D4E5F0'; ctx.fillRect(p1.x, p1.y, p1.w, p1.h);
+        ctx.fillStyle = '#7B9B93'; ctx.font = "bold 14px sans-serif";
+        ctx.fillText("+10", p1.x + 2, p1.y - 10);
+
+        // Opponent Blocker
+        ctx.fillStyle = '#F5C6A5'; ctx.fillRect(p2.x, p2.y, p2.w, p2.h);
+        ctx.fillStyle = '#C59B8B'; ctx.font = "bold 14px sans-serif";
+        ctx.fillText("Opponent", p2.x - 20, p2.y - 10);
+
+        // Bullets (Dynamic Color based on Zone)
+        bullets.forEach(b => {
+            ctx.fillStyle = b.y < 200 ? '#5DBB63' : '#E05C5C';
+            ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill();
+        });
+
+        // Impacts
+        for(let i=impacts.length-1; i>=0; i--) {
+            let imp = impacts[i];
+            imp.a -= dt * 1.5;
+            ctx.fillStyle = imp.color;
+            ctx.globalAlpha = Math.max(0, imp.a);
+            ctx.font = "bold 20px sans-serif";
+            ctx.fillText(imp.text, imp.x, imp.y);
+            ctx.globalAlpha = 1.0;
+            if(imp.a <= 0) impacts.splice(i, 1);
+        }
+
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>

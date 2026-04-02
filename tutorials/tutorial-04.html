@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Totemcraft Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Bungee&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 10%, #ffdee9 0%, #b5fffc 100%);
+            --glass: rgba(255,255,255,0.75);
+            --glass-border: rgba(255,255,255,0.9);
+            --text-main: #2c3e50;
+            --text-light: #546e7a;
+            --ruby: #ff6b6b;
+            --gold: #ffe66d;
+            --hud-bg: rgba(255, 255, 255, 0.95);
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-drag: none; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--hud-bg);
+            border-bottom: 2px solid var(--text-main);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #instruction-text {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        #learning-objective {
+            background: rgba(44, 62, 80, 0.05);
+            border: 1px solid rgba(44, 62, 80, 0.1);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: var(--text-light);
+            text-align: center;
+            line-height: 1.4;
+        }
+        #learning-objective b { color: #27ae60; }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 50; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-family: 'Bungee', sans-serif; font-size: 36px;
+            color: var(--text-main); margin-bottom: 15px; letter-spacing: 2px;
+        }
+        .start-desc {
+            font-size: 15px; color: var(--text-light); margin-bottom: 35px;
+            max-width: 450px; line-height: 1.6; font-weight: 600;
+        }
+        .start-btn {
+            font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: bold;
+            letter-spacing: 1px; padding: 15px 40px; background: var(--text-main);
+            color: #fff; border: none; border-radius: 12px;
+            cursor: pointer; transition: transform 0.1s;
+            pointer-events: auto; box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.8); transform: scale(1); }
+            70% { box-shadow: 0 0 0 12px rgba(243, 156, 18, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(243, 156, 18, 0); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid #f39c12 !important;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1; position: relative; width: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding: 15px; gap: 10px; overflow-y: auto;
+        }
+
+        .panel {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 100%; max-width: 500px;
+        }
+
+        /* Top Target HUD */
+        .target-hud { text-align: center; margin-bottom: 10px; }
+        .target-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 5px; }
+        .target-reqs { display: flex; justify-content: center; gap: 15px; font-size: 0.85rem; font-weight: 600; color: var(--text-light); }
+        
+        .hud-weight-pill {
+            background: white; padding: 5px 12px; border-radius: 12px;
+            font-weight: 700; border: 2px solid transparent;
+            display: inline-block; margin-top: 10px; transition: 0.3s;
+        }
+        .hud-weight-pill.ok { border-color: #27ae60; color: #27ae60; }
+        .hud-weight-pill.bad { border-color: #e74c3c; color: #e74c3c; }
+
+        /* Isometric Grid & Progress */
+        .visual-area {
+            display: flex; gap: 15px; align-items: flex-start; justify-content: center;
+            width: 100%; max-width: 500px; position: relative; margin: 10px 0;
+        }
+        #grid-iso {
+            flex: 1; aspect-ratio: 1; max-width: 250px;
+            background: rgba(255,255,255,0.4); border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--glass-border);
+        }
+        #mix-progress {
+            width: 160px; background: rgba(255,255,255,0.9);
+            border-radius: 12px; padding: 10px; font-size: 0.8rem;
+            border: 1px solid var(--glass-border);
+        }
+        .mix-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: 600;}
+        .mix-val.ok { color: #27ae60; }
+        .mix-val.bad { color: #e74c3c; }
+
+        /* Controls */
+        .controls-bar {
+            width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .mat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .mat-card {
+            display: flex; align-items: center; justify-content: space-between;
+            background: white; border-radius: 10px; padding: 8px 12px;
+            border-left: 5px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            opacity: 1; transition: opacity 0.3s;
+        }
+        .mat-card.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
+        .mat-label { font-weight: 700; font-size: 0.85rem; }
+        
+        .mat-btn {
+            width: 34px; height: 34px; border-radius: 8px; border: none;
+            font-weight: 800; font-size: 1.2rem; color: white; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.15); transition: transform 0.1s;
+        }
+        .mat-btn:active { transform: translateY(3px); box-shadow: none; }
+        .mat-btn.rm { background: #ecf0f1; color: #7f8c8d; box-shadow: 0 3px 0 #bdc3c7; }
+
+        .action-row { display: flex; gap: 10px; align-items: center; }
+        
+        .step-control {
+            display: flex; align-items: center; background: white;
+            border-radius: 12px; padding: 5px 10px; font-weight: 700;
+            border: 1px solid var(--glass-border); box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            transition: all 0.3s;
+        }
+        .step-control input {
+            width: 50px; border: none; outline: none; text-align: center;
+            font-size: 1rem; font-weight: 700; color: var(--text-main);
+            background: transparent;
+        }
+        
+        .craft-btn {
+            flex: 1; height: 44px; border-radius: 12px; border: none;
+            background: #bdc3c7; color: white; font-weight: 700; font-size: 1rem;
+            cursor: not-allowed; transition: all 0.3s; font-family: 'Montserrat', sans-serif;
+        }
+        .craft-btn.ready {
+            background: #2ecc71; cursor: pointer; box-shadow: 0 5px 0 #27ae60;
+        }
+        .craft-btn.ready:active { transform: translateY(5px); box-shadow: none; }
+
+        .reset-btn {
+            width: 44px; height: 44px; border-radius: 12px; border: none;
+            background: #e74c3c; color: white; font-weight: 700; font-size: 1.2rem;
+            cursor: pointer; box-shadow: 0 4px 0 #c0392b;
+        }
+        .reset-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* Floating feedback */
+        #feedback {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 2rem; font-weight: 800; opacity: 0; pointer-events: none;
+            transition: opacity 0.4s, top 0.4s; text-shadow: 0 5px 15px rgba(255,255,255,0.9);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Add 50g of Ruby.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Proportions:</strong> Totems require precise material percentages. Click the highlighted <b>+</b> button on the Ruby material 5 times to add 50g.
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="start-overlay">
+            <div class="start-title">Totemcraft</div>
+            <div class="start-desc">Learn how to balance chemical proportions and scale up mass to forge the perfect totem artifact.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div class="panel target-hud">
+            <div class="target-title">Tutorial Artifact</div>
+            <div class="target-reqs">
+                <span>🔴 Ruby: 50%</span>
+                <span>🟡 Gold: 50%</span>
+            </div>
+            <div id="weight-pill" class="hud-weight-pill bad">Current: 0g (Need 200g - 300g)</div>
+        </div>
+
+        <div class="visual-area">
+            <div id="grid-iso">
+                <svg id="iso-svg" width="100%" height="100%" viewBox="0 0 250 250"></svg>
+            </div>
+            <div id="mix-progress">
+                <div style="font-size: 0.7rem; color: #7f8c8d; margin-bottom: 5px; text-transform: uppercase;">Live Breakdown</div>
+                <div class="mix-row">
+                    <span style="color: var(--ruby)">Ruby</span>
+                    <span id="ruby-pct" class="mix-val bad">0%</span>
+                </div>
+                <div class="mix-row">
+                    <span style="color: var(--gold)">Gold</span>
+                    <span id="gold-pct" class="mix-val bad">0%</span>
+                </div>
+                <div style="border-top: 1px dashed #bdc3c7; margin-top: 10px; padding-top: 10px; font-size:0.75rem;">
+                    Mass: <b id="total-mass">0g</b>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-bar">
+            <div class="mat-grid">
+                <div class="mat-card" id="card-ruby" style="border-color: var(--ruby);">
+                    <div class="mat-label">Ruby</div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="mat-btn rm" onclick="modMat('ruby', -1)">−</button>
+                        <button id="btn-ruby-plus" class="mat-btn" style="background: var(--ruby);" onclick="modMat('ruby', 1)">+</button>
+                    </div>
+                </div>
+                <div class="mat-card disabled" id="card-gold" style="border-color: var(--gold);">
+                    <div class="mat-label">Gold</div>
+                    <div style="display:flex; gap:5px;">
+                        <button class="mat-btn rm" onclick="modMat('gold', -1)">−</button>
+                        <button id="btn-gold-plus" class="mat-btn" style="background: var(--gold);" onclick="modMat('gold', 1)">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <div class="step-control" id="step-container">
+                    Step: <input type="number" id="step-input" value="10" min="1" disabled> g
+                </div>
+                <button class="craft-btn" id="craft-btn" onclick="tryCraft()">Forge Totem</button>
+                <button class="reset-btn" onclick="resetMix()">↺</button>
+            </div>
+        </div>
+
+        <div id="feedback"></div>
+    </div>
+
+<script>
+    // --- Tutorial State ---
+    let step = 1;
+    let isStarted = false;
+    let mix = { ruby: 0, gold: 0 };
+    let stepAmount = 10;
+    
+    // Target constraints
+    const TARGET = { rubyPct: 50, goldPct: 50, minW: 200, maxW: 300 };
+
+    // DOM Elements
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const stepInput = document.getElementById('step-input');
+    const stepContainer = document.getElementById('step-container');
+    const cardRuby = document.getElementById('card-ruby');
+    const cardGold = document.getElementById('card-gold');
+    const craftBtn = document.getElementById('craft-btn');
+    const weightPill = document.getElementById('weight-pill');
+    const feedback = document.getElementById('feedback');
+    
+    // Highlight Targets
+    const btnRubyPlus = document.getElementById('btn-ruby-plus');
+    const btnGoldPlus = document.getElementById('btn-gold-plus');
+
+    // --- Init ---
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        updateUI();
+        updateHighlights();
+    });
+
+    stepInput.addEventListener('change', (e) => {
+        stepAmount = Math.max(1, parseInt(e.target.value) || 1);
+        e.target.value = stepAmount;
+        checkProgression();
+        updateHighlights();
+    });
+
+    // --- Mechanics ---
+    function modMat(type, mult) {
+        if (!isStarted) return;
+        
+        const delta = stepAmount * mult;
+        if (mix[type] + delta < 0) {
+            showFeedback("Cannot remove more!", "bad");
+            return;
+        }
+
+        mix[type] += delta;
+        updateUI();
+        checkProgression();
+        updateHighlights();
+    }
+
+    function resetMix() {
+        mix = { ruby: 0, gold: 0 };
+        showFeedback("Mix Reset", "bad");
+        updateUI();
+        checkProgression();
+        updateHighlights();
+    }
+
+    function updateHighlights() {
+        // Reset all highlights
+        btnRubyPlus.classList.remove('highlight-target');
+        btnGoldPlus.classList.remove('highlight-target');
+        stepContainer.classList.remove('highlight-target');
+        craftBtn.classList.remove('highlight-target');
+
+        if (!isStarted) return;
+
+        // Apply highlight based on the current step and state
+        if (step === 1) {
+            btnRubyPlus.classList.add('highlight-target');
+        } 
+        else if (step === 2) {
+            if (stepAmount !== 50) {
+                stepContainer.classList.add('highlight-target');
+            } else {
+                btnGoldPlus.classList.add('highlight-target');
+            }
+        } 
+        else if (step === 3) {
+            // Highlight both plus buttons to show they need to scale up
+            btnRubyPlus.classList.add('highlight-target');
+            btnGoldPlus.classList.add('highlight-target');
+        } 
+        else if (step === 4) {
+            craftBtn.classList.add('highlight-target');
+        }
+    }
+
+    function checkProgression() {
+        const total = mix.ruby + mix.gold;
+        const rPct = total > 0 ? (mix.ruby / total) * 100 : 0;
+        const gPct = total > 0 ? (mix.gold / total) * 100 : 0;
+
+        // Step 1: Add 50g Ruby
+        if (step === 1 && mix.ruby >= 50) {
+            step = 2;
+            instText.innerText = "Step 2: Change Step to 50, add 50g Gold.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Efficiency:</strong> Tapping 10g is slow. Change the highlighted <b>Step</b> input below to <b>50</b>, then tap Gold once to balance the 50/50 ratio!";
+            
+            stepInput.disabled = false;
+            cardGold.classList.remove('disabled');
+            showFeedback("Great!", "good");
+        }
+
+        // Step 2: Set step to 50 and add 50g Gold
+        if (step === 2 && stepAmount === 50 && mix.gold >= 50) {
+            step = 3;
+            instText.innerText = "Step 3: Scale up to 200g total.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Scaling:</strong> You have a perfect 50% / 50% ratio, but the artifact is too light! Use the highlighted buttons to add equal amounts of both materials to increase the total mass into the green zone.";
+            showFeedback("Ratio Balanced!", "good");
+        }
+
+        // Step 3 & 4 Validation (Are we ready to craft?)
+        const isRatioOk = Math.abs(rPct - TARGET.rubyPct) <= 1 && Math.abs(gPct - TARGET.goldPct) <= 1;
+        const isWeightOk = total >= TARGET.minW && total <= TARGET.maxW;
+
+        if (step >= 3) {
+            if (isRatioOk && isWeightOk) {
+                step = 4;
+                instText.innerText = "Step 4: Forge the Totem!";
+                instText.style.color = "#27ae60";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Validation:</strong> The Craft button only activates when BOTH the percentages and the total mass are correct. Click it now!";
+                craftBtn.disabled = false;
+                craftBtn.classList.add('ready');
+            } else {
+                step = 3;
+                instText.innerText = "Step 3: Scale up to 200g total.";
+                instText.style.color = "var(--text-main)";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Scaling:</strong> You have a perfect 50% / 50% ratio, but the artifact is too light! Use the highlighted buttons to add equal amounts of both materials to increase the total mass into the green zone.";
+                craftBtn.disabled = true;
+                craftBtn.classList.remove('ready');
+            }
+        }
+    }
+
+    function tryCraft() {
+        if (craftBtn.disabled) return;
+        showFeedback("Artifact Forged! ✨", "good");
+        
+        setTimeout(() => {
+            instText.innerText = "Tutorial Complete!";
+            objText.innerHTML = "You understand proportions, scaling, and mass! Close this window to play the main game.";
+            craftBtn.disabled = true;
+            craftBtn.classList.remove('ready');
+            craftBtn.classList.remove('highlight-target');
+            cardRuby.classList.add('disabled');
+            cardGold.classList.add('disabled');
+            stepInput.disabled = true;
+        }, 1500);
+    }
+
+    // --- UI & Rendering ---
+    function updateUI() {
+        const total = mix.ruby + mix.gold;
+        const rPct = total > 0 ? (mix.ruby / total) * 100 : 0;
+        const gPct = total > 0 ? (mix.gold / total) * 100 : 0;
+
+        // Update Progress Panel
+        const rVal = document.getElementById('ruby-pct');
+        const gVal = document.getElementById('gold-pct');
+        rVal.innerText = `${rPct.toFixed(1)}%`;
+        gVal.innerText = `${gPct.toFixed(1)}%`;
+        
+        rVal.className = `mix-val ${Math.abs(rPct - 50) <= 1 ? 'ok' : 'bad'}`;
+        gVal.className = `mix-val ${Math.abs(gPct - 50) <= 1 ? 'ok' : 'bad'}`;
+
+        document.getElementById('total-mass').innerText = `${total}g`;
+
+        // Update Weight Pill
+        const isWeightOk = total >= TARGET.minW && total <= TARGET.maxW;
+        weightPill.innerText = `Current: ${total}g (Need 200g - 300g)`;
+        weightPill.className = `hud-weight-pill ${total === 0 ? 'bad' : isWeightOk ? 'ok' : 'bad'}`;
+
+        drawIsometricGrid(total, mix.ruby, mix.gold);
+    }
+
+    function showFeedback(msg, type) {
+        feedback.innerText = msg;
+        feedback.style.color = type === 'good' ? '#27ae60' : '#e74c3c';
+        feedback.style.opacity = 1; 
+        feedback.style.top = '35%';
+        setTimeout(() => { 
+            feedback.style.opacity = 0; 
+            feedback.style.top = '40%'; 
+        }, 1200);
+    }
+
+    // --- Isometric SVG Renderer ---
+    function shadeColor(color, percent) {
+        const num = parseInt(color.replace('#',''), 16);
+        const amt = Math.round(2.55 * percent);
+        const clamp = v => Math.max(0, Math.min(255, v));
+        return '#' +
+            clamp((num >> 16) + amt).toString(16).padStart(2,'0') +
+            clamp(((num >> 8) & 0x00FF) + amt).toString(16).padStart(2,'0') +
+            clamp((num & 0x00FF) + amt).toString(16).padStart(2,'0');
+    }
+
+    function drawIsometricGrid(total, rGrams, gGrams) {
+        const svg = document.getElementById('iso-svg');
+        svg.innerHTML = '';
+        
+        // Max weight for the visual grid representation
+        const VISUAL_MAX = 300; 
+        const cellCount = Math.min(100, Math.floor((total / VISUAL_MAX) * 100));
+        
+        // Determine how many cells are ruby vs gold
+        const rCells = Math.floor((rGrams / Math.max(1, total)) * cellCount);
+        const gCells = cellCount - rCells;
+
+        // Build array of materials to draw
+        let cells = [];
+        for(let i=0; i<rCells; i++) cells.push('#ff6b6b');
+        for(let i=0; i<gCells; i++) cells.push('#ffe66d');
+        
+        // Shuffle slightly for aesthetics, but keep it mostly bottom-up
+        cells.sort(() => Math.random() - 0.5);
+
+        const originX = 125, originY = 45;
+        const edge = 14, ex = edge * Math.cos(Math.PI/6), ey = edge * Math.sin(Math.PI/6);
+        const depth = edge, spread = 1.3;
+
+        const svgNS = 'http://www.w3.org/2000/svg';
+
+        // Draw cells bottom up (visually)
+        for (let i = 0; i < cells.length; i++) {
+            const color = cells[i];
+            const row = Math.floor(i / 10);
+            const col = i % 10;
+            
+            const cx = originX + (col - row) * ex * spread;
+            const cy = originY + (col + row) * ey * spread;
+
+            const g = document.createElementNS(svgNS, 'g');
+            
+            const top = document.createElementNS(svgNS, 'polygon');
+            top.setAttribute('points', `${cx},${cy-ey} ${cx+ex},${cy} ${cx},${cy+ey} ${cx-ex},${cy}`);
+            top.setAttribute('fill', '#f6f8fb');
+            
+            const right = document.createElementNS(svgNS, 'polygon');
+            right.setAttribute('points', `${cx+ex},${cy} ${cx+ex},${cy+depth} ${cx},${cy+ey+depth} ${cx},${cy+ey}`);
+            right.setAttribute('fill', shadeColor(color, -10));
+            
+            const left = document.createElementNS(svgNS, 'polygon');
+            left.setAttribute('points', `${cx-ex},${cy} ${cx},${cy+ey} ${cx},${cy+ey+depth} ${cx-ex},${cy+depth}`);
+            left.setAttribute('fill', shadeColor(color, -20));
+
+            g.appendChild(top); g.appendChild(right); g.appendChild(left);
+            svg.appendChild(g);
+        }
+    }
+
+    // Initial draw empty
+    updateUI();
+
+</script>
+</body>
+</html>

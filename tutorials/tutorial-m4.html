@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dovit Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #02010a;
+            --accent-gold: #f0d060;
+            --accent-green: #68d888;
+            --accent-purple: #6038c8;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg-dark);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none; /* Prevents pull-to-refresh on mobile */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(10, 5, 30, 0.95);
+            border-bottom: 2px solid var(--accent-purple);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(96, 56, 200, 0.3);
+        }
+
+        #instruction-text {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-align: center;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(240, 208, 96, 0.4);
+        }
+
+        #learning-objective {
+            background: rgba(104, 216, 136, 0.1);
+            border: 1px solid rgba(104, 216, 136, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: var(--accent-green);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            background: linear-gradient(180deg, #020109 0%, #0a0120 50%, #180228 100%);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        /* --- MOBILE CONTROLS --- */
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .tc-cluster { display: flex; gap: 10px; }
+        .tc-btn {
+            background: rgba(2, 1, 10, 0.62);
+            border: 2px solid rgba(240, 208, 80, 0.32);
+            color: rgba(240, 208, 80, 0.72);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            pointer-events: auto;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tc-btn:active, .tc-btn.pr {
+            background: rgba(240, 208, 80, 0.22);
+        }
+
+        #live-score {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-gold);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Move right past the digit '5'.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Place Value:</strong> Your dot represents the decimal point. Passing a digit shifts it from a fraction into a whole number, increasing your live score!
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="cv"></canvas>
+        <div id="live-score">Score: 0</div>
+
+        <div id="touchControls">
+            <div class="tc-cluster">
+                <div class="tc-btn" id="btnLeft">◀</div>
+                <div class="tc-btn" id="btnRight">▶</div>
+            </div>
+            <div class="tc-cluster">
+                <div class="tc-btn" id="btnJump">▲</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const cv = document.getElementById('cv');
+    const gx = cv.getContext('2d');
+    
+    // Engine Constants
+    let VW = 960, VH = 620, scale = 1;
+    const PR = 14, GRAV = 2600, SPD = 700, ACC = 2000, JF = -900;
+    const DIG_W = 460, DIG_H = 520, THICK = 36, DIG_GAP = 80;
+    const STAGE_Y = 60;
+    
+    // Geometry Data
+    const SEGS = {
+        '1':[0,0,1,0,0,1,0], '5':[1,1,0,1,0,1,1]
+    };
+
+    // State (Added coyote time, squash & stretch values)
+    let input = { L: false, R: false, J: false, jumpUsed: false };
+    let P = { wx: 100, wy: 150, vx: 0, vy: 0, onG: false, airJumps: 2, coy: 0, sqX: 1, sqY: 1 };
+    let camX = 0;
+    let step = 1;
+    let currentVal = 5;
+    let liveScore = 0;
+    let plats = [], chars = [], totalW = 0;
+    let gem = { wx: 850, wy: 250, active: true };
+    let finishLine = 0;
+
+    // DOM Elements
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const scoreDisplay = document.getElementById('live-score');
+
+    function resize() {
+        const vw = cv.parentElement.clientWidth;
+        const vh = cv.parentElement.clientHeight;
+        scale = Math.min(vw/VW, vh/VH);
+        cv.width = VW * scale; 
+        cv.height = VH * scale;
+        gx.setTransform(scale, 0, 0, scale, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ─── ROBUST INPUT HANDLING (Original Implementation) ───
+    window.addEventListener('keydown', e => {
+        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=true;
+        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=true;
+        if((e.code==='ArrowUp'||e.code==='Space') && !input.jumpUsed) { 
+            e.preventDefault(); input.J=true; input.jumpUsed=true; tryJump(); 
+        }
+    });
+    window.addEventListener('keyup', e => {
+        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=false;
+        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=false;
+        if(e.code==='ArrowUp'||e.code==='Space') input.jumpUsed=false;
+    });
+
+    function bindBtn(id, setVal, isJump) {
+        var el = document.getElementById(id);
+        function on() { 
+            setVal(true); el.classList.add('pr'); 
+            if(isJump && !input.jumpUsed) { input.jumpUsed=true; tryJump(); }
+        }
+        function off() { 
+            setVal(false); el.classList.remove('pr'); 
+            if(isJump) input.jumpUsed = false;
+        }
+        ['touchstart','mousedown'].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); on(); }, {passive:false}));
+        ['touchend','touchcancel','mouseup'].forEach(ev => el.addEventListener(ev, e => { e.preventDefault(); off(); }, {passive:false}));
+    }
+    bindBtn('btnLeft', v => input.L = v, false);
+    bindBtn('btnRight', v => input.R = v, false);
+    bindBtn('btnJump', v => input.J = v, true);
+
+    // ─── MECHANICS ───
+    function tryJump() {
+        // Coyote time allows jumps briefly after leaving a ledge
+        if(P.onG || P.coy > 0) {
+            P.vy = JF; P.onG = false; P.coy = 0; P.airJumps = 2;
+            P.sqY = 0.64; P.sqX = 1.38; // Stretch effect
+        } else if(P.airJumps > 0) {
+            P.vy = -780; P.airJumps--;
+            P.sqY = 0.70; P.sqX = 1.28;
+        }
+    }
+
+    // Geometry Generation
+    function charRects(ch, ox) {
+        let b = SEGS[ch]; if(!b) return [];
+        let hw = DIG_W, hh = DIG_H/2, th = THICK, R = [];
+        let GAP_V = 80; 
+
+        if(b[0]) R.push({x:ox+th, y:STAGE_Y, w:hw-th*2, h:th});
+        if(b[3]) R.push({x:ox+th, y:STAGE_Y+hh-th/2, w:hw-th*2, h:th});
+        if(b[6]) R.push({x:ox+th, y:STAGE_Y+DIG_H-th, w:hw-th*2, h:th});
+
+        let v1top = STAGE_Y+th, v1bot = STAGE_Y+hh-th/2, v1mid = (v1top+v1bot)/2;
+        if(b[1]) { R.push({x:ox, y:v1top, w:th, h:v1mid-v1top-GAP_V/2}); R.push({x:ox, y:v1mid+GAP_V/2, w:th, h:v1bot-(v1mid+GAP_V/2)}); }
+        if(b[2]) { R.push({x:ox+hw-th, y:v1top, w:th, h:v1mid-v1top-GAP_V/2}); R.push({x:ox+hw-th, y:v1mid+GAP_V/2, w:th, h:v1bot-(v1mid+GAP_V/2)}); }
+
+        let v4top = STAGE_Y+hh+th/2, v4bot = STAGE_Y+DIG_H-th, v4mid = (v4top+v4bot)/2;
+        if(b[4]) { R.push({x:ox, y:v4top, w:th, h:v4mid-v4top-GAP_V/2}); R.push({x:ox, y:v4mid+GAP_V/2, w:th, h:v4bot-(v4mid+GAP_V/2)}); }
+        if(b[5]) { R.push({x:ox+hw-th, y:v4top, w:th, h:v4mid-v4top-GAP_V/2}); R.push({x:ox+hw-th, y:v4mid+GAP_V/2, w:th, h:v4bot-(v4mid+GAP_V/2)}); }
+        
+        return R;
+    }
+
+    function buildStage(val) {
+        let str = String(val);
+        chars = []; plats = [];
+        let cx = 200;
+        
+        for(let i=0; i<str.length; i++) {
+            chars.push({ch: str[i], ox: cx, w: DIG_W});
+            let rr = charRects(str[i], cx);
+            for(let k=0; k<rr.length; k++) plats.push({wx: rr[k].x, wy: rr[k].y, w: rr[k].w, h: rr[k].h});
+            cx += DIG_W + DIG_GAP;
+        }
+        totalW = cx + 200;
+        finishLine = totalW - 100;
+        
+        let FLOOR_Y = STAGE_Y + DIG_H + 50;
+        plats.push({wx: 0, wy: FLOOR_Y, w: totalW, h: 28, isFloor: true});
+    }
+
+    function calcScore() {
+        let leftCount = 0;
+        for(let i=0; i<chars.length; i++) {
+            if(P.wx - PR > chars[i].ox + chars[i].w) leftCount++;
+        }
+        let str = String(currentVal);
+        let intPart = str.substring(0, leftCount);
+        return intPart.length ? parseInt(intPart, 10) : 0;
+    }
+
+    // Drawing Utils
+    function sc(wx) { return wx - camX; }
+    function d2(ax,ay,bx,by) { let dx=ax-bx, dy=ay-by; return Math.sqrt(dx*dx+dy*dy); }
+
+    // Logic Loop
+    let lastTime = performance.now();
+    function loop(time) {
+        let dt = Math.min((time - lastTime) / 1000, 0.05);
+        lastTime = time;
+
+        // --- Physics ---
+        if(input.L) P.vx = Math.max(P.vx - ACC*dt, -SPD);
+        else if(input.R) P.vx = Math.min(P.vx + ACC*dt, SPD);
+        else P.vx *= Math.pow(0.72, dt*60); // Smooth friction
+
+        P.vy = Math.min(P.vy + GRAV*dt, 3200);
+        let nx = P.wx + P.vx*dt, ny = P.wy + P.vy*dt;
+        let wasOnG = P.onG;
+        P.onG = false;
+
+        for(let i=0; i<plats.length; i++) {
+            let pl = plats[i];
+            let pL = nx-PR, pR = nx+PR, pT = ny-PR, pB = ny+PR;
+            let rL = pl.wx, rR = pl.wx+pl.w, rT = pl.wy, rB = pl.wy+pl.h;
+            
+            if(pR<=rL || pL>=rR || pB<=rT || pT>=rB) continue;
+            
+            let prevB = P.wy+PR, prevT = P.wy-PR;
+            if(P.vy >= 0 && prevB <= rT+6) { ny = rT-PR; P.vy = 0; P.onG = true; }
+            else if(P.vy < 0 && prevT >= rB-6) { ny = rB+PR; P.vy = 0; }
+            else { if(nx+PR <= rL+6) { nx = rL-PR; P.vx = 0; } else { nx = rR+PR; P.vx = 0; } }
+        }
+
+        P.wx = Math.max(PR, nx); P.wy = ny;
+        
+        // Landing squash and coyote time update
+        if(P.onG && !wasOnG){ P.sqY = 0.65; P.sqX = 1.35; } 
+        if(P.onG) { P.coy = 0.06; P.airJumps = 2; } else { P.coy = Math.max(0, P.coy-dt); }
+        
+        // Smoothly return squash/stretch values to normal
+        P.sqX += (1 - P.sqX) * 0.30; 
+        P.sqY += (1 - P.sqY) * 0.30;
+
+        if(P.wy > VH + 200) { P.wx = 100; P.wy = 150; P.vy = 0; } // Death pit reset
+
+        // --- Camera & Score ---
+        camX += (Math.max(0, Math.min(totalW - VW, P.wx - 280)) - camX) * 0.09;
+        
+        let newScore = calcScore();
+        if(newScore !== liveScore) {
+            liveScore = newScore;
+            scoreDisplay.innerText = `Score: ${liveScore}`;
+        }
+
+        // --- Tutorial Progression Logic ---
+        if(step === 1 && liveScore === 5) {
+            step = 2;
+            instText.innerText = "Step 2: Jump and grab the [+ 10] gem!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Arithmetic & Proportion:</strong> Operations mathematically change your value. Notice how adding 10 creates a larger number (15), physically expanding the stage geometry!";
+        }
+
+        if(step === 2 && gem.active && d2(P.wx, P.wy, gem.wx, gem.wy) < PR + 28) {
+            gem.active = false;
+            currentVal = 15;
+            buildStage(currentVal); // Reshape level!
+            step = 3;
+            instText.innerText = "Step 3: Proceed to the finish line!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Goal Evaluation:</strong> The stage is longer now! Navigate the new structure and ensure your final live score meets the target before finishing.";
+        }
+
+        if(step === 3 && P.wx > finishLine) {
+            step = 4;
+            instText.innerText = "Simulation Complete!";
+            instText.style.color = "var(--accent-green)";
+            objText.innerHTML = "You have mastered the core mechanics! You may exit this tutorial to play the main game.";
+        }
+
+        // --- Rendering ---
+        gx.clearRect(0,0,VW,VH);
+        
+        // Draw Stage
+        for(let i=0; i<plats.length; i++) {
+            let p = plats[i];
+            let sx = sc(p.wx);
+            if(sx+p.w < -20 || sx > VW+20) continue;
+            
+            if(p.isFloor) {
+                gx.fillStyle = 'rgba(30,12,80,0.92)'; gx.fillRect(sx, p.wy, p.w, p.h);
+            } else {
+                gx.fillStyle = 'rgba(0,0,0,0.34)'; gx.fillRect(sx+4, p.wy+p.h+1, p.w, 18);
+                gx.fillStyle = '#6038c8'; gx.fillRect(sx, p.wy, p.w, p.h);
+                gx.strokeStyle = 'rgba(165,135,248,0.48)'; gx.lineWidth = 1.6; gx.strokeRect(sx, p.wy, p.w, p.h);
+            }
+        }
+
+        // Draw Gem
+        if(gem.active) {
+            let gsx = sc(gem.wx), gsy = gem.wy + Math.sin(time/200)*10;
+            gx.fillStyle = '#169038';
+            gx.beginPath(); gx.arc(gsx, gsy, 24, 0, Math.PI*2); gx.fill();
+            gx.strokeStyle = 'rgba(190,255,210,0.72)'; gx.lineWidth = 2.5; gx.stroke();
+            gx.font = 'bold 19px Nunito'; gx.textAlign = 'center';
+            gx.fillStyle = '#fff'; gx.fillText('+ 10', gsx, gsy - 32);
+        }
+
+        // Draw Finish Line
+        if(step >= 3) {
+            let flx = sc(finishLine);
+            gx.setLineDash([12,7]); gx.strokeStyle = 'rgba(90,195,255,0.8)'; gx.lineWidth = 3;
+            gx.beginPath(); gx.moveTo(flx, STAGE_Y - 50); gx.lineTo(flx, VH); gx.stroke();
+            gx.setLineDash([]);
+            gx.font = 'bold 16px Cinzel'; gx.fillStyle = '#fff'; gx.fillText('FINISH', flx, STAGE_Y - 60);
+        }
+
+        // Draw Player with Squash & Stretch
+        let px = sc(P.wx), py = P.wy;
+        gx.save();
+        gx.translate(px, py);
+        gx.scale(P.sqX, P.sqY); // Apply the scale!
+        
+        gx.fillStyle = '#f5cc0e';
+        gx.beginPath(); gx.arc(0, 0, PR, 0, Math.PI*2); gx.fill();
+        gx.strokeStyle = 'rgba(255,252,165,0.82)'; gx.lineWidth = 2.6;
+        gx.beginPath(); gx.arc(0, 0, PR, 0, Math.PI*2); gx.stroke();
+        
+        gx.restore();
+
+        requestAnimationFrame(loop);
+    }
+
+    // Init
+    buildStage(currentVal);
+    requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>

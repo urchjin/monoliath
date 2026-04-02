@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lighthouse Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Raleway:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a1122;
+            --panel: rgba(10,18,36,0.82);
+            --green: #98e3c6;
+            --cyan: #9ad7ff;
+            --border: rgba(150,170,200,0.30);
+            --orange: #f6b47b;
+            --red: #ef6f7a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
+        
+        body {
+            font-family: 'Raleway', sans-serif;
+            background: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, #16223a 0%, #0a1122 80%);
+            color: #fff; display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--panel); border-bottom: 2px solid var(--cyan);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+        }
+        #instruction-text {
+            font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700;
+            color: var(--cyan); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(154, 215, 255, 0.1); border: 1px solid rgba(154, 215, 255, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: var(--green); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--orange); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(10, 17, 34, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Orbitron', sans-serif; font-size: 32px; color: var(--cyan); margin-bottom: 15px; }
+        .start-desc { font-size: 15px; color: #a0b0c0; margin-bottom: 35px; max-width: 450px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; padding: 12px 30px; background: transparent;
+            color: var(--cyan); border: 2px solid var(--cyan); border-radius: 25px;
+            cursor: pointer; transition: all 0.2s; pointer-events: auto;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; position: relative; align-items: center; justify-content: center; }
+        canvas { 
+            display: block; max-width: 100%; max-height: 100%; border-radius: 50%; 
+            box-shadow: 0 0 40px rgba(154, 215, 255, 0.1); cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+
+        @keyframes pulseCanvas {
+            0% { box-shadow: 0 0 0 0 rgba(152, 227, 198, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(152, 227, 198, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(152, 227, 198, 0); }
+        }
+        .highlight-canvas { animation: pulseCanvas 1.5s infinite; border: 2px solid var(--green); }
+
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Drag the Beam to the Ships!</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Safe Passing:</strong> Two ships are on a collision course! <b>Click and drag the green light beam</b> to illuminate them. When a ship is illuminated, its collision hitbox is turned off!
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">LIGHTHOUSE</div>
+            <div class="start-desc">Learn how to drag and drop lighthouse beams to illuminate ships, deactivate their collision boxes, and prevent harbour disasters.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <canvas id="cv" width="400" height="400"></canvas>
+    </div>
+
+<script>
+    const cv = document.getElementById("cv");
+    const ctx = cv.getContext("2d");
+    const CX = 200, CY = 200, R = 180;
+    
+    let isStarted = false;
+    let step = 1;
+    let lastTime = 0;
+    let isDragging = false;
+
+    // Lighthouse
+    let lh = { x: CX, y: CY, beamAngle: 270, halfWidthDeg: 35, color: '#98e3c6' };
+
+    // Ships on collision course
+    let ships = [
+        { x: 50, y: 200, vx: 45, vy: 0, lit: false, crashed: false, passed: false },
+        { x: 350, y: 200, vx: -45, vy: 0, lit: false, crashed: false, passed: false }
+    ];
+
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        cv.classList.add('highlight-canvas');
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
+    });
+
+    // --- DRAG AND DROP MECHANICS ---
+    function getPointerAngle(e) {
+        const rect = cv.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const scaleX = cv.width / rect.width;
+        const scaleY = cv.height / rect.height;
+        const mx = (clientX - rect.left) * scaleX;
+        const my = (clientY - rect.top) * scaleY;
+        
+        let deg = Math.atan2(my - CY, mx - CX) * 180 / Math.PI;
+        return ((deg % 360) + 360) % 360;
+    }
+
+    function startDrag(e) {
+        if(!isStarted) return;
+        isDragging = true;
+        lh.beamAngle = getPointerAngle(e);
+        cv.classList.remove('highlight-canvas');
+    }
+    
+    function moveDrag(e) {
+        if(!isDragging) return;
+        lh.beamAngle = getPointerAngle(e);
+    }
+    
+    function stopDrag() { isDragging = false; }
+
+    cv.addEventListener('mousedown', startDrag);
+    cv.addEventListener('mousemove', moveDrag);
+    window.addEventListener('mouseup', stopDrag);
+
+    cv.addEventListener('touchstart', startDrag, {passive: false});
+    cv.addEventListener('touchmove', moveDrag, {passive: false});
+    window.addEventListener('touchend', stopDrag);
+
+    // --- MATH ---
+    function normDeg(d) { return ((d % 360) + 360) % 360; }
+    function angDiff(a, b) {
+        let d = normDeg(a) - normDeg(b);
+        if (d > 180) d -= 360;
+        if (d < -180) d += 360;
+        return d;
+    }
+
+    function checkLit(ship) {
+        const dx = ship.x - lh.x;
+        const dy = ship.y - lh.y;
+        const shipAngle = normDeg(Math.atan2(dy, dx) * 180 / Math.PI);
+        return Math.abs(angDiff(shipAngle, lh.beamAngle)) <= lh.halfWidthDeg;
+    }
+
+    // --- GAME LOOP ---
+    function loop(time) {
+        let dt = (time - lastTime) / 1000;
+        lastTime = time;
+        if(dt > 0.1) dt = 0.1;
+
+        ctx.clearRect(0, 0, 400, 400);
+
+        // Draw Ocean
+        ctx.beginPath(); ctx.arc(CX, CY, R, 0, Math.PI*2);
+        ctx.fillStyle = '#131c2f'; ctx.fill();
+        ctx.strokeStyle = 'rgba(170,190,210,0.40)'; ctx.lineWidth = 2; ctx.stroke();
+
+        if (isStarted) {
+            let bothLit = true;
+
+            // Update Ships
+            ships.forEach(ship => {
+                if(!ship.crashed) {
+                    ship.lit = checkLit(ship);
+                    if (!ship.lit) bothLit = false;
+
+                    let speedMult = ship.lit ? 0.3 : 1.0; // Slow down slightly
+                    ship.x += ship.vx * speedMult * dt;
+                    ship.y += ship.vy * speedMult * dt;
+                }
+            });
+
+            // Check Collision or Passing
+            let dist = Math.hypot(ships[0].x - ships[1].x, ships[0].y - ships[1].y);
+            
+            if (dist < 15 && !ships[0].crashed && !ships[0].passed) {
+                // If BOTH are in the dark, they crash
+                if (!ships[0].lit && !ships[1].lit) {
+                    ships[0].crashed = true; ships[1].crashed = true;
+                    isDragging = false;
+                    instText.innerText = "Collision Detected!";
+                    instText.style.color = "var(--red)";
+                    objText.innerHTML = "<strong>⚠️ Failed:</strong> The ships were in the dark when they crossed paths! Resetting tutorial...";
+                    
+                    setTimeout(() => {
+                        ships[0].x = 50; ships[1].x = 350;
+                        ships[0].crashed = false; ships[1].crashed = false;
+                        ships[0].passed = false; ships[1].passed = false;
+                        step = 1;
+                        instText.style.color = "var(--cyan)";
+                        instText.innerText = "Step 1: Drag the Beam to the Ships!";
+                        objText.innerHTML = "<strong>🎯 Learning Objective - Safe Passing:</strong> <b>Click and drag the green light beam</b> to illuminate them. When illuminated, their collision hitboxes turn off!";
+                        cv.classList.add('highlight-canvas');
+                    }, 2500);
+                } else {
+                    // Safe passing because at least one is lit
+                    ships[0].passed = true;
+                    ships[1].passed = true;
+                    step = 2;
+                    instText.innerText = "Safe Pass!";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Success:</strong> Because the light was on them, the collision was averted and they safely passed through each other!";
+                }
+            } else if (ships[0].x > 250 && step === 2) {
+                step = 3;
+                isDragging = false;
+                instText.innerText = "Tutorial Complete!";
+                instText.style.color = "var(--green)";
+                objText.innerHTML = "You have mastered beam dragging and collision prevention! Close this window to play Lighthouse.";
+            }
+
+            // Draw Beam
+            const bRad = lh.beamAngle * Math.PI / 180;
+            const hRad = lh.halfWidthDeg * Math.PI / 180;
+            const len = R * 1.5;
+            ctx.beginPath();
+            ctx.moveTo(lh.x, lh.y);
+            ctx.arc(lh.x, lh.y, len, bRad - hRad, bRad + hRad);
+            ctx.closePath();
+            
+            const g = ctx.createRadialGradient(lh.x, lh.y, 0, lh.x, lh.y, len);
+            g.addColorStop(0, 'rgba(152,227,198,0.7)');
+            g.addColorStop(1, 'rgba(152,227,198,0.0)');
+            ctx.fillStyle = g;
+            ctx.fill();
+
+            // Draw Ships
+            ships.forEach(ship => {
+                if (ship.crashed) {
+                    ctx.fillStyle = 'var(--red)';
+                    ctx.beginPath(); ctx.arc(ship.x, ship.y, 15, 0, Math.PI*2); ctx.fill();
+                }
+                ctx.fillStyle = ship.crashed ? 'var(--orange)' : (ship.lit ? 'var(--green)' : 'var(--cyan)');
+                ctx.beginPath(); ctx.arc(ship.x, ship.y, 8, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+            });
+
+            // Draw Lighthouse Icon
+            ctx.fillStyle = '#000c1a'; ctx.beginPath(); ctx.arc(lh.x, lh.y, 13, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = lh.color; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = lh.color; ctx.fillRect(lh.x-2, lh.y-8, 4, 10);
+            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(lh.x, lh.y-9, 3, 0, Math.PI*2); ctx.fill();
+            
+            // Draw Target Coordinate
+            const lx = lh.x + (R - 20) * Math.cos(bRad);
+            const ly = lh.y + (R - 20) * Math.sin(bRad);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Orbitron'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(`${Math.round(lh.beamAngle)}°`, lx, ly);
+        }
+
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>

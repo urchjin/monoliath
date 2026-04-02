@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ascend Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07050e;
+            --text-main: #c8bfe0;
+            --accent-gold: #d4b878;
+            --accent-blue: #40c8f8;
+            --hud-bg: rgba(7, 5, 14, 0.95);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Exo 2', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--hud-bg);
+            border-bottom: 2px solid var(--accent-gold);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(212, 184, 120, 0.15);
+        }
+
+        #instruction-text {
+            font-family: 'Cinzel', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-align: center;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 10px rgba(212, 184, 120, 0.4);
+        }
+
+        #learning-objective {
+            background: rgba(64, 200, 248, 0.1);
+            border: 1px solid rgba(64, 200, 248, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: var(--accent-blue);
+            text-align: center;
+            line-height: 1.4;
+        }
+        #learning-objective b { color: var(--accent-gold); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0;
+            background: rgba(7, 5, 14, 0.9);
+            backdrop-filter: blur(8px);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 50; text-align: center; padding: 20px;
+        }
+        .start-title {
+            font-family: 'Cinzel', serif; font-size: 42px; font-weight: 700;
+            color: var(--accent-gold); margin-bottom: 15px; letter-spacing: 4px;
+        }
+        .start-desc {
+            font-size: 15px; color: var(--text-main); margin-bottom: 35px;
+            max-width: 450px; line-height: 1.6;
+        }
+        .start-btn {
+            font-family: 'Cinzel', serif; font-size: 15px; font-weight: bold;
+            letter-spacing: 2px; padding: 14px 35px; background: transparent;
+            color: var(--accent-gold); border: 2px solid var(--accent-gold); border-radius: 4px;
+            cursor: pointer; transition: all 0.2s;
+            pointer-events: auto; box-shadow: inset 0 0 10px rgba(212, 184, 120, 0.1);
+        }
+        .start-btn:active { transform: scale(0.95); }
+        .start-btn:hover { background: rgba(212, 184, 120, 0.15); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(212, 184, 120, 0.8); transform: scale(1); }
+            70% { box-shadow: 0 0 0 12px rgba(212, 184, 120, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(212, 184, 120, 0); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--accent-gold) !important;
+            z-index: 10; position: relative;
+        }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1; position: relative; width: 100%;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: flex-start;
+            padding: 10px; gap: 10px;
+        }
+
+        /* INVENTORY */
+        #inventory-bar {
+            display: flex; gap: 15px; align-items: center; justify-content: center;
+            background: rgba(26, 21, 40, 0.8); padding: 10px 20px;
+            border-radius: 8px; border: 1px solid rgba(200, 191, 224, 0.2);
+            font-family: 'Cinzel', serif; font-weight: bold; font-size: 14px;
+        }
+        .inv-slot {
+            width: 32px; height: 32px; border: 1px dashed rgba(200, 191, 224, 0.4);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            color: var(--accent-gold); font-size: 18px; background: rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+            outline: none; 
+            border: 2px solid #110d22;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-width: 100%;
+            background: #06040c;
+        }
+
+        /* --- MOBILE CONTROLS (D-PAD) --- */
+        #d-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 55px);
+            grid-template-rows: repeat(2, 55px);
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .d-btn {
+            background: rgba(26, 21, 40, 0.8);
+            border: 1px solid rgba(212, 184, 120, 0.4);
+            color: var(--accent-gold);
+            border-radius: 8px; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        .d-btn:active, .d-btn.pr { background: rgba(212, 184, 120, 0.2); }
+        
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+
+        /* --- FORMULA MODAL --- */
+        #formula-modal {
+            position: absolute; inset: 0;
+            background: rgba(7, 5, 14, 0.95);
+            backdrop-filter: blur(8px);
+            display: none; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 100; padding: 20px; text-align: center;
+        }
+        .fm-title { font-family: 'Cinzel', serif; font-size: 24px; color: var(--accent-blue); margin-bottom: 10px; }
+        .fm-desc { font-size: 14px; color: var(--text-main); margin-bottom: 20px; max-width: 300px; line-height: 1.5; }
+        
+        .fm-equation {
+            display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;
+            font-family: 'Cinzel', serif; font-size: 20px;
+            margin-bottom: 25px; color: var(--accent-gold);
+        }
+        .fo-field { display: flex; flex-direction: column; align-items: center; }
+        .fo-lbl { font-size: 9px; color: #9888c0; text-align: center; margin-top: 4px; }
+        .fm-input {
+            width: 50px; text-align: center; font-size: 20px; font-family: 'Cinzel', serif;
+            background: rgba(0,0,0,0.5); border: 2px solid var(--accent-gold);
+            color: #fff; padding: 5px; border-radius: 6px; outline: none;
+        }
+        .fm-submit {
+            padding: 12px 30px; font-family: 'Cinzel', serif; font-weight: bold;
+            background: var(--accent-blue); color: #000; border: none; border-radius: 6px;
+            cursor: pointer; font-size: 16px; transition: transform 0.1s;
+        }
+        .fm-submit:active { transform: scale(0.95); }
+        .fm-feedback { margin-top: 15px; font-size: 14px; height: 20px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Count the blocks! Walk right.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Length & Width:</strong> The tower has 4 faces (colors). Count how many blocks make up a face to find your Length and Width. Walk right to find the first Gem!
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="start-overlay">
+            <div class="start-title">ASCEND</div>
+            <div class="start-desc">Learn how to calculate dimensions from the environment, use stairs, and decipher the volume of the tower.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div id="inventory-bar">
+            VOLUME GEMS: 
+            <div class="inv-slot" id="inv-1"></div>
+            <div class="inv-slot" id="inv-2"></div>
+        </div>
+
+        <canvas id="cv"></canvas>
+
+        <div id="d-pad">
+            <div class="d-btn" id="btn-up">▲</div>
+            <div class="d-btn" id="btn-left">◀</div>
+            <div class="d-btn" id="btn-down">▼</div>
+            <div class="d-btn" id="btn-right">▶</div>
+        </div>
+    </div>
+
+    <div id="formula-modal">
+        <div class="fm-title">Door of Volume</div>
+        <div class="fm-desc">Enter the dimensions you measured to prove the volume matches the gems you collected!</div>
+        
+        <div class="fm-equation">
+            <div class="fo-field"><input type="number" id="fo-w" class="fm-input" placeholder="W"><span class="fo-lbl">WIDTH</span></div>
+            <span>×</span>
+            <div class="fo-field"><input type="number" id="fo-l" class="fm-input" placeholder="L"><span class="fo-lbl">LENGTH</span></div>
+            <span>×</span>
+            <div class="fo-field"><input type="number" id="fo-h" class="fm-input" placeholder="H"><span class="fo-lbl">HEIGHT</span></div>
+            <span>=</span>
+            <div class="fo-field"><input type="number" id="fo-v" class="fm-input" placeholder="V" style="width: 70px;"><span class="fo-lbl">VOLUME</span></div>
+        </div>
+        
+        <button class="fm-submit" id="btn-submit">UNLOCK</button>
+        <div class="fm-feedback" id="fm-feedback"></div>
+    </div>
+
+<script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    
+    // Engine Constants (Mimicking the real game's viewport)
+    const CS = 40; 
+    const COLS = 9, ROWS = 5; 
+    const PC = 4, PR = 2; // Player fixed center position
+    cv.width = COLS * CS;
+    cv.height = ROWS * CS;
+    
+    // Tutorial Level Data
+    // Width = 3, Depth = 2, Height = 2. Volume = 3 * 2 * 2 = 12.
+    const W = 3, D = 2, H = 2;
+    const PERIM = 2 * (W + D); // 10
+    
+    // Faces Colors (Purple, Blue, Green, Orange)
+    const FACES = [
+        { bg: '#130826', top: '#7040c0' }, // Front (W=3) blocks 0,1,2
+        { bg: '#081426', top: '#3878c0' }, // Right (D=2) blocks 3,4
+        { bg: '#081e10', top: '#38b878' }, // Back (W=3) blocks 5,6,7
+        { bg: '#1e0c04', top: '#c07830' }  // Left (D=2) blocks 8,9
+    ];
+
+    function getFaceData(wx) {
+        if(wx < W) return FACES[0];
+        if(wx < W + D) return FACES[1];
+        if(wx < 2 * W + D) return FACES[2];
+        return FACES[3];
+    }
+
+    // Entities
+    let pX = 0, pY = 0; // Logical Grid Position
+    let stairs = [ {x: 4, y: 0} ]; // Stair to go up to floor 1
+    let gems = [
+        { x: 2, y: 0, val: '1', got: false },
+        { x: 6, y: 1, val: '2', got: false } // '1' and '2' make '12'
+    ];
+    let exit = { x: 8, y: 1 };
+    
+    // State
+    let isStarted = false;
+    let step = 1;
+    let inventory = [];
+
+    // DOM Elements
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const inv1 = document.getElementById('inv-1');
+    const inv2 = document.getElementById('inv-2');
+    const btnRight = document.getElementById('btn-right');
+    const btnUp = document.getElementById('btn-up');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    // ─── START & FOCUS ───
+    function forceFocus() {
+        window.focus();
+        if(document.activeElement.tagName !== 'INPUT') cv.focus();
+    }
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        updateHighlights();
+        forceFocus();
+    });
+
+    document.addEventListener('click', forceFocus);
+    document.addEventListener('touchstart', forceFocus);
+
+    // ─── HIGHLIGHT SYSTEM ───
+    function updateHighlights() {
+        btnRight.classList.remove('highlight-target');
+        btnUp.classList.remove('highlight-target');
+        btnSubmit.classList.remove('highlight-target');
+
+        if (!isStarted) return;
+
+        if (step === 1) btnRight.classList.add('highlight-target');
+        else if (step === 2) {
+            if (pX !== 4) btnRight.classList.add('highlight-target');
+            else btnUp.classList.add('highlight-target');
+        }
+        else if (step === 3) btnRight.classList.add('highlight-target');
+        else if (step === 4) btnSubmit.classList.add('highlight-target');
+    }
+
+    // ─── MOVEMENT LOGIC ───
+    function wrap(x, n) { return ((x % n) + n) % n; }
+
+    function tryMove(dir) {
+        if(!isStarted || step === 4) return;
+        
+        if (dir === 'left') pX = wrap(pX - 1, PERIM);
+        if (dir === 'right') pX = wrap(pX + 1, PERIM);
+        
+        if (dir === 'up' && pY < H - 1) {
+            // Check if standing on stair
+            if (stairs.some(s => s.x === pX && s.y === pY)) pY++;
+        }
+        if (dir === 'down' && pY > 0) {
+            // Check if standing on stair on the floor below
+            if (stairs.some(s => s.x === pX && s.y === pY - 1)) pY--;
+        }
+
+        checkInteractions();
+        updateHighlights();
+    }
+
+    function checkInteractions() {
+        // Check Gems
+        gems.forEach(g => {
+            if(!g.got && pX === g.x && pY === g.y) {
+                g.got = true;
+                inventory.push(g.val);
+                updateInventoryUI();
+                
+                if(inventory.length === 1) {
+                    step = 2;
+                    instText.innerText = "Step 2: Find the Golden Stairs and Climb.";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Height:</strong> Your Height is the number of floors. Walk right until you find the <b style='color:#b88820'>Golden Stairs</b>, then press UP to reach Floor 2.";
+                } else if(inventory.length === 2) {
+                    step = 3;
+                    instText.innerText = "Step 3: Proceed to the Exit Door.";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Total Volume:</strong> You collected '1' and '2'. Your Total Volume is <b>12</b>! Walk right to find the glowing green exit.";
+                }
+            }
+        });
+
+        // Check Exit
+        if(pX === exit.x && pY === exit.y && inventory.length === 2) {
+            step = 4;
+            instText.innerText = "Step 4: Prove the Volume!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Formula:</strong> Enter the Width, Length, and Height you counted to prove it equals the Volume (12).";
+            setTimeout(() => {
+                document.getElementById('formula-modal').style.display = 'flex';
+                updateHighlights();
+            }, 300);
+        }
+    }
+
+    function updateInventoryUI() {
+        if(inventory[0]) inv1.innerText = inventory[0];
+        if(inventory[1]) inv2.innerText = inventory[1];
+    }
+
+    // ─── CONTROLS ───
+    window.addEventListener('keydown', e => {
+        if(step === 4) return; 
+        if(e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); tryMove('up'); }
+        if(e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); tryMove('down'); }
+        if(e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); tryMove('left'); }
+        if(e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); tryMove('right'); }
+    });
+
+    function bindBtn(id, dir) {
+        let el = document.getElementById(id);
+        const trigger = (e) => { e.preventDefault(); el.classList.add('pr'); tryMove(dir); }
+        const release = (e) => { e.preventDefault(); el.classList.remove('pr'); }
+        el.addEventListener('mousedown', trigger); el.addEventListener('touchstart', trigger, {passive:false});
+        window.addEventListener('mouseup', release); window.addEventListener('touchend', release);
+    }
+    bindBtn('btn-up', 'up'); bindBtn('btn-down', 'down');
+    bindBtn('btn-left', 'left'); bindBtn('btn-right', 'right');
+
+    // ─── FORMULA SUBMISSION ───
+    btnSubmit.addEventListener('click', () => {
+        const w = parseInt(document.getElementById('fo-w').value);
+        const l = parseInt(document.getElementById('fo-l').value);
+        const h = parseInt(document.getElementById('fo-h').value);
+        const v = parseInt(document.getElementById('fo-v').value);
+        const fb = document.getElementById('fm-feedback');
+        
+        // Correct: W=3, L=2 (or W=2, L=3), H=2, V=12
+        const isWLCorrect = (w === 3 && l === 2) || (w === 2 && l === 3);
+        
+        if(isWLCorrect && h === 2 && v === 12) { 
+            fb.innerText = "✓ Correct! Door Unlocked.";
+            fb.style.color = "#40c8f8";
+            setTimeout(() => {
+                document.getElementById('formula-modal').style.display = 'none';
+                instText.innerText = "Tutorial Complete!";
+                instText.style.color = "#40c8f8";
+                objText.innerHTML = "You have mastered dimension measuring and volume calculation! Close this window to play Ascend.";
+                btnSubmit.classList.remove('highlight-target');
+            }, 1500);
+        } else {
+            fb.innerText = "✗ Incorrect. Hint: Width 3, Length 2, Height 2, Vol 12.";
+            fb.style.color = "#ff4a4a";
+        }
+    });
+
+    // ─── RENDER LOOP (Mirroring the Original Game) ───
+    function draw() {
+        requestAnimationFrame(draw);
+
+        ctx.fillStyle = '#06040c';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+
+        for(let row = 0; row < ROWS; row++) {
+            for(let col = 0; col < COLS; col++) {
+                let px = col * CS;
+                let py = row * CS;
+                
+                // Wrap-around math relative to player center
+                let wx = wrap(pX + (col - PC), PERIM);
+                let wy = pY + (PR - row);
+
+                // Ignore out of bounds Y
+                if(wy < 0 || wy >= H) {
+                    ctx.fillStyle = '#020108';
+                    ctx.fillRect(px, py, CS, CS);
+                    continue;
+                }
+
+                // Draw Floor Block
+                let fData = getFaceData(wx);
+                ctx.fillStyle = fData.bg;
+                ctx.fillRect(px, py, CS, CS);
+                
+                // 3D Top Edge
+                ctx.fillStyle = fData.top;
+                ctx.fillRect(px, py, CS, 3);
+                
+                // Vertical Seam
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(px + CS - 1, py + 1, 1, CS - 1);
+
+                // Draw Stairs
+                if (stairs.some(s => s.x === wx && s.y === wy)) {
+                    ctx.fillStyle = 'rgba(184, 136, 32, 0.7)';
+                    for(let s = 0; s < 3; s++) ctx.fillRect(px + 4 + s*8, py + CS - 6 + s, 8, 3);
+                    ctx.fillStyle = 'rgba(184, 136, 32, 0.4)';
+                    ctx.fillRect(px, py + CS*0.3, 3, CS*0.4);
+                }
+
+                // Draw Exit
+                if (wx === exit.x && wy === exit.y && inventory.length === 2) {
+                    let pulse = 0.5 + 0.5 * Math.sin(Date.now() / 300);
+                    ctx.fillStyle = `rgba(40, 232, 128, ${0.2 + pulse * 0.2})`;
+                    ctx.fillRect(px + 4, py + 4, CS - 8, CS - 8);
+                    ctx.fillStyle = '#28e880';
+                    ctx.beginPath(); ctx.arc(px + CS/2, py + 8, 4, Math.PI, 0); ctx.fill();
+                }
+
+                // Draw Gems
+                gems.forEach(g => {
+                    if(!g.got && g.x === wx && g.y === wy) {
+                        let bob = Math.sin(Date.now() / 200) * 3;
+                        let cx = px + CS/2, cy = py + CS/2 + bob;
+                        
+                        ctx.fillStyle = '#e8c840';
+                        ctx.beginPath(); ctx.moveTo(cx, cy - 10); ctx.lineTo(cx + 8, cy); 
+                        ctx.lineTo(cx, cy + 10); ctx.lineTo(cx - 8, cy); ctx.fill();
+                        
+                        ctx.fillStyle = '#000'; ctx.font = 'bold 12px sans-serif';
+                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                        ctx.fillText(g.val, cx, cy + 1);
+                    }
+                });
+
+                // Draw Player (Always Center)
+                if (wx === pX && wy === pY) {
+                    ctx.beginPath();
+                    ctx.arc(px + CS/2, py + CS/2 + 2, CS/2 - 8, 0, Math.PI*2);
+                    ctx.fillStyle = '#e8e0f8';
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#c8bfe0';
+                    ctx.fill(); ctx.shadowBlur = 0;
+                }
+            }
+        }
+    }
+
+    draw();
+
+</script>
+</body>
+</html>

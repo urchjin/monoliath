@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cipher Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+        body {
+            font-family:'Quicksand',sans-serif;
+            background: linear-gradient(135deg,#1b1f3b 0%,#2a1a3c 45%,#061a2b 100%);
+            display:flex; flex-direction: column; justify-content:flex-start; align-items:center;
+            color:#e8e8ff; height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            width: 100%; background: rgba(17,20,36,0.9);
+            border-bottom: 2px solid #00ffd5; padding: 15px; 
+            display: flex; flex-direction: column; gap: 8px; z-index: 20;
+        }
+        #instruction-text {
+            font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700;
+            color: #00ffd5; text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(0, 255, 213, 0.1); border: 1px solid rgba(0, 255, 213, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: #9fe7ff; text-align: center; line-height: 1.4;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(17, 20, 36, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Montserrat', sans-serif; font-size: 36px; font-weight: 700; color: #a9baff; margin-bottom: 15px; letter-spacing: 2px;}
+        .start-desc { font-size: 15px; color: #d8c6e6; margin-bottom: 35px; max-width: 450px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Quicksand', sans-serif; font-size: 16px; font-weight: 700;
+            padding: 12px 30px; background: linear-gradient(135deg,#26ffd6,#7adfb1);
+            color: #0a2820; border: none; border-radius: 25px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(38, 255, 214, 0.6); transform: scale(1); }
+            70% { box-shadow: 0 0 0 10px rgba(38, 255, 214, 0); transform: scale(1.05); }
+            100% { box-shadow: 0 0 0 0 rgba(38, 255, 214, 0); transform: scale(1); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid #26ffd6 !important; z-index: 10;
+        }
+
+        /* --- GAME AREA --- */
+        #gameContainer {
+            flex: 1; width: 100%; display: flex; flex-direction: column;
+            align-items: center; padding: 20px; gap: 15px;
+        }
+
+        /* --- LOCK & RINGS --- */
+        .lock-area { position:relative; width: 280px; height: 280px; margin-top: 10px; }
+        .ring {
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            border-radius:50%; transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.06), inset 0 0 40px rgba(255,255,255,0.08);
+        }
+        .ring-1 { width:100%; height:100%; background: linear-gradient(135deg,#284b63,#3b5b78); }
+        .ring-2 { width:75%; height:75%; background: linear-gradient(135deg,#2a9d8f,#3ac7b5); }
+        .ring-3 { width:50%; height:50%; background: linear-gradient(135deg,#4c5fd7,#6f7df5); }
+        .ring-4 { width:25%; height:25%; background: linear-gradient(135deg,#7fd3ff,#a8e4ff); }
+
+        .slot { position:absolute; font-weight:700; color:#fff; left:50%; top:50%; font-size: 18px; }
+        .slot-content { display: inline-block; transform-origin: center; transition: transform 0.4s; }
+        
+        .alignment-marker { 
+            position:absolute; top:-10px; left:50%; transform:translateX(-50%); 
+            width:0; height:0; border-left:10px solid transparent; 
+            border-right:10px solid transparent; border-top:15px solid #ffea7a; z-index: 10;
+        }
+
+        /* --- HUD --- */
+        .equation-display {
+            background:rgba(255,255,255,0.08); padding:15px; border-radius:12px;
+            text-align:center; width: 100%; max-width: 350px;
+        }
+        .current-equation { font-size: 24px; font-weight:700; color:#9fe7ff; letter-spacing: 2px; }
+
+        /* Additional Operator Controls */
+        .op-picker-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-top: 10px; }
+        .op-btn {
+            padding:5px 14px; border-radius:20px; cursor:pointer; font-family:'Quicksand',sans-serif;
+            font-size:0.9em; font-weight:700; border:1.5px solid transparent; color: white; background: rgba(255,255,255,0.1);
+        }
+        .op-btn.active-op { background:rgba(159,231,255,0.22); border-color:rgba(159,231,255,0.7); color:#9fe7ff; transform:scale(1.1); }
+
+        .controls { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center;}
+        .btn-check {
+            background:linear-gradient(135deg,#26ffd6,#7adfb1); color:#143231;
+            padding: 12px 20px; border: none; border-radius: 25px; font-weight: 700;
+            font-size: 15px; cursor: pointer;
+        }
+        .btn-spin {
+            background:linear-gradient(135deg,#f9a8d4,#f472b6); color:#3b0a25;
+            padding: 12px 20px; border: none; border-radius: 25px; font-weight: 700;
+            font-size: 15px; cursor: pointer; transition: transform 0.2s;
+        }
+        .btn-spin:active { transform: scale(0.95); }
+
+        .ring-controls { display:flex; flex-direction:column; gap:8px; width: 100%; max-width: 350px; }
+        .ring-control-row { display:flex; align-items:center; justify-content:space-between; }
+        .ring-label { font-size: 14px; font-weight:600; color:#c0c0de; }
+        .btn-rotate {
+            padding:8px 20px; border:none; border-radius:20px; font-weight:700; cursor:pointer;
+            background:linear-gradient(135deg,rgba(255,200,130,0.22),rgba(255,180,100,0.18)); color:#ffd080;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Rotate the Outer Ring.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Alignment:</strong> The concentric rings form an equation read from the outside in. Use the ◀ button on the Outer Ring to align the '5' at the top!
+        </div>
+    </div>
+
+    <div id="start-overlay">
+        <div class="start-title">CIPHER</div>
+        <div class="start-desc">Learn how to rotate concentric cryptograph rings, utilize inequalities, and shuffle impossible boards to unlock the Vault.</div>
+        <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+    </div>
+
+    <div id="gameContainer">
+        <div class="lock-area">
+            <div class="alignment-marker"></div>
+            <div class="ring ring-1" id="ring1"></div>
+            <div class="ring ring-2" id="ring2"></div>
+            <div class="ring ring-3" id="ring3"></div>
+            <div class="ring ring-4" id="ring4"></div>
+        </div>
+
+        <div class="equation-display">
+            <div class="current-equation" id="currentEquation">? + 3 = 8</div>
+            <div class="op-picker-row">
+                <button class="op-btn active-op" id="opEq">=</button>
+                <button class="op-btn" id="opLt">&lt;</button>
+                <button class="op-btn" id="opGt">&gt;</button>
+            </div>
+        </div>
+
+        <div class="ring-controls">
+            <div class="ring-control-row">
+                <span class="ring-label">Outer Ring (Num 1):</span>
+                <div>
+                    <button class="btn-rotate" id="btn-left-1">◀</button>
+                    <button class="btn-rotate" style="opacity: 0.3; cursor: not-allowed;">▶</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-check" id="checkBtn">✓ Check Alignment</button>
+            <button class="btn-spin" id="spinBtn">🎲 Spin</button>
+        </div>
+    </div>
+
+<script>
+    let isStarted = false;
+    let step = 1;
+    let currentOp = '=';
+    
+    // Hardcoded simplified rings for tutorial
+    const RINGS = [
+        { el: document.getElementById('ring1'), slots: 8, angle: 45, rot: 0, distRatio: 0.875, data: [2, 9, 4, 1, 6, 7, 5, 2] }, 
+        { el: document.getElementById('ring2'), slots: 4, angle: 90, rot: 0, distRatio: 0.833, data: ['+', '-', '×', '÷'] },
+        { el: document.getElementById('ring3'), slots: 4, angle: 90, rot: 0, distRatio: 0.75, data: [3, 2, 4, 1] },
+        { el: document.getElementById('ring4'), slots: 2, angle: 180, rot: 0, distRatio: 0, data: [8, 9] }
+    ];
+
+    // Current top value is 2
+    RINGS[0].rot = 0; 
+
+    const btnLeft1 = document.getElementById('btn-left-1');
+    const checkBtn = document.getElementById('checkBtn');
+    const spinBtn = document.getElementById('spinBtn');
+    const opLt = document.getElementById('opLt');
+    const opGt = document.getElementById('opGt');
+    const opEq = document.getElementById('opEq');
+    
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        renderRings();
+        updateEquation();
+        updateHighlights();
+    });
+
+    function updateHighlights() {
+        btnLeft1.classList.remove('highlight-target');
+        checkBtn.classList.remove('highlight-target');
+        spinBtn.classList.remove('highlight-target');
+        opLt.classList.remove('highlight-target');
+        opGt.classList.remove('highlight-target');
+        
+        if(!isStarted) return;
+        if(step === 1) btnLeft1.classList.add('highlight-target');
+        if(step === 2) checkBtn.classList.add('highlight-target');
+        if(step === 3) opLt.classList.add('highlight-target');
+        if(step === 4) spinBtn.classList.add('highlight-target');
+        if(step === 5) checkBtn.classList.add('highlight-target');
+    }
+
+    function renderRings() {
+        RINGS.forEach((r) => {
+            r.el.innerHTML = '';
+            const radius = r.el.offsetWidth / 2; 
+            
+            r.data.forEach((val, i) => {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                const rad = (i * r.angle - 90) * Math.PI / 180;
+                const dist = radius * r.distRatio; 
+                slot.style.transform = `translate(-50%,-50%) translate(${Math.cos(rad)*dist}px, ${Math.sin(rad)*dist}px)`;
+                
+                const content = document.createElement('span');
+                content.className = 'slot-content';
+                content.textContent = val;
+                content.style.transform = `rotate(-${r.rot}deg)`;
+                
+                slot.appendChild(content);
+                r.el.appendChild(slot);
+            });
+            r.el.style.transform = `translate(-50%, -50%) rotate(${r.rot}deg)`;
+        });
+    }
+
+    function getValues() {
+        return RINGS.map(r => {
+            const normRot = ((360 - r.rot) % 360);
+            const index = Math.round(normRot / r.angle) % r.slots;
+            return r.data[index];
+        });
+    }
+
+    function updateEquation() {
+        const vals = getValues();
+        let sym = currentOp === '<' ? '&lt;' : currentOp === '>' ? '&gt;' : '=';
+        document.getElementById('currentEquation').innerHTML = `${vals[0]} ${vals[1]} ${vals[2]} <span style="color:#ffd070">${sym}</span> ${vals[3]}`;
+        
+        if (step === 1 && vals[0] === 5) {
+            step = 2;
+            instText.innerText = "Step 2: Check the Alignment.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Verification:</strong> Your equation now reads <b>5 + 3 = 8</b>. This is mathematically correct! Press the Check button to submit.";
+            updateHighlights();
+        }
+    }
+
+    btnLeft1.addEventListener('click', () => {
+        if(!isStarted || step > 1) return;
+        RINGS[0].rot += RINGS[0].angle;
+        renderRings();
+        updateEquation();
+    });
+
+    opLt.addEventListener('click', () => {
+        if(!isStarted || step !== 3) return;
+        
+        document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active-op'));
+        opLt.classList.add('active-op');
+        currentOp = '<';
+        updateEquation();
+
+        step = 4;
+        instText.innerText = "Step 4: Use the Spin Button.";
+        objText.innerHTML = "<strong>🎯 Learning Objective - Shuffling:</strong> The equation <b>5 + 3 &lt; 8</b> is false. Click the highlighted <b>Spin</b> button to shuffle the rings for a new combination!";
+        updateHighlights();
+    });
+
+    spinBtn.addEventListener('click', () => {
+        if(!isStarted || step !== 4) return;
+        
+        // Force the rings to a specific inequality state: 2 + 4 < 9
+        RINGS[0].rot = 0;   // 2
+        RINGS[1].rot = 0;   // +
+        RINGS[2].rot = 180; // 4
+        RINGS[3].rot = 180; // 9
+        
+        renderRings();
+        updateEquation();
+        
+        step = 5;
+        instText.innerText = "Step 5: Check the Inequality.";
+        objText.innerHTML = "<strong>🎯 Learning Objective - Flexibility:</strong> The rings shuffled to <b>2 + 4 &lt; 9</b>. Since 6 is less than 9, this is a valid move! Press Check.";
+        updateHighlights();
+    });
+
+    checkBtn.addEventListener('click', () => {
+        if(!isStarted) return;
+        const vals = getValues();
+
+        if (step === 2 && vals[0] === 5 && vals[1] === '+' && vals[2] === 3 && currentOp === '=' && vals[3] === 8) {
+            step = 3;
+            instText.innerText = "Step 3: Try an Inequality.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Alternate Options:</strong> Sometimes exact matches are impossible. Click the highlighted <b>&lt;</b> button to switch your target operator. (Costs 2 moves in the real game!)";
+            updateHighlights();
+        }
+        else if (step === 5 && vals[0] === 2 && vals[1] === '+' && vals[2] === 4 && currentOp === '<' && vals[3] === 9) {
+            step = 6;
+            instText.innerText = "Tutorial Complete!";
+            instText.style.color = "#26ffd6";
+            objText.innerHTML = "Awesome! You've mastered inequalities and spinning. Watch out for <b>Boss Modes</b> where rings auto-rotate against a timer! Close this to play.";
+            updateHighlights();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if(isStarted) renderRings();
+    });
+
+</script>
+</body>
+</html>

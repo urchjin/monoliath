@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Fission Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0B0E14; 
+            --text: #E2E8F0; 
+            --th: #A0AEC0; 
+            --cyan: #38B2AC;  /* Highlight / Resolved */
+            --orange: #ED8936; /* Player / Selected */
+            --yellow: #ECC94B; 
+            --panel: rgba(20, 25, 35, 0.95);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: manipulation; }
+        
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--panel);
+            border-bottom: 2px solid var(--cyan);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 4px 20px rgba(56, 178, 172, 0.15);
+        }
+        #instruction-text {
+            font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 700;
+            color: var(--cyan); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(56, 178, 172, 0.1); border: 1px solid rgba(56, 178, 172, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: var(--text); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--orange); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(11, 14, 20, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; color: var(--text); margin-bottom: 15px; letter-spacing: 4px; text-transform: uppercase; }
+        .start-desc { font-size: 15px; color: var(--th); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700;
+            letter-spacing: 2px; padding: 15px 35px; background: transparent;
+            color: var(--cyan); border: 2px solid var(--cyan); border-radius: 4px;
+            cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(56, 178, 172, 0.2);
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(237, 137, 54, 0.6); }
+            70% { box-shadow: 0 0 0 12px rgba(237, 137, 54, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(237, 137, 54, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--orange) !important; z-index: 10; position: relative;
+        }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; gap: 20px; background: radial-gradient(circle at center, #1A202C 0%, #0B0E14 100%); }
+
+        /* --- SOKOBAN GRID --- */
+        #map-container {
+            position: relative; width: 300px; height: 180px; 
+            background: #12161F; border-radius: 8px; border: 2px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+        }
+        .tile { position: absolute; width: 60px; height: 60px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; transition: left 0.15s, top 0.15s; }
+        
+        .tile-target { border: 2px dashed var(--cyan); border-radius: 4px; flex-direction: column; background: rgba(56, 178, 172, 0.05); }
+        .target-val { font-size: 12px; color: var(--cyan); font-weight: 800; font-family: 'Orbitron'; }
+        
+        .tile-block { background: #2D3748; border: 1px solid #718096; border-radius: 4px; font-weight: 800; font-size: 16px; font-family: 'Orbitron'; color: #FFF; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 2; cursor: pointer; transition: all 0.2s; }
+        .tile-block.selected { border-color: var(--orange) !important; background: var(--orange) !important; color: #000 !important; box-shadow: 0 0 15px var(--orange); transform: scale(1.1); z-index: 5;}
+        .tile-block.resolved { border-color: var(--cyan) !important; background: rgba(56, 178, 172, 0.2) !important; color: var(--cyan) !important; box-shadow: 0 0 15px rgba(56, 178, 172, 0.4); }
+        
+        .tile-player { z-index: 3; }
+        .player-core { width: 70%; height: 70%; background: var(--orange); border-radius: 50%; box-shadow: 0 0 15px var(--orange); }
+
+        /* --- CONTROLS --- */
+        .bottom-hud { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Inventory */
+        .inventory-panel { background: var(--panel); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .inv-title { font-size: 12px; color: var(--th); font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .inv-grid { display: flex; gap: 8px; }
+        
+        .inv-slot { 
+            width: 45px; height: 45px; border-radius: 8px; background: rgba(255,255,255,0.05); 
+            display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; font-family: 'Orbitron'; color: white; border: 2px solid transparent; transition: 0.2s; cursor: pointer;
+        }
+        .inv-slot.filled { background: #2D3748; border-color: #718096; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .inv-slot.selected { border-color: var(--orange) !important; background: var(--orange) !important; color: #000 !important; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(237, 137, 54, 0.3); }
+
+        /* Action + D-Pad */
+        .control-panel { display: flex; justify-content: space-between; align-items: center; }
+        .btn-fuse { padding: 15px 20px; border-radius: 8px; font-size: 14px; background: var(--orange); color: #000; font-family: 'Orbitron'; font-weight: 800; border: none; letter-spacing: 1px; transition: 0.2s; cursor: pointer;}
+        .btn-fuse:disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .d-pad { display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 5px; }
+        .d-btn { background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--cyan); font-size: 1.2rem; cursor: pointer; transition: 0.1s;}
+        .d-btn:active { background: var(--cyan); color: #000; transform: scale(0.9); }
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+        .d-down { grid-column: 2; grid-row: 3; }
+
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Push the Core</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Movement:</strong> You are the orange orb. Use the <b>Right (▶)</b> button or <b>Arrow Right / D</b> to push the derelict core onto the target.
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">THE FISSION</div>
+            <div class="start-desc">Master the geometry of the factory. Push cores into place and inject fragments from your inventory to achieve mathematical equilibrium.</div>
+            <button class="start-btn" id="btn-start-tut">INITIALIZE</button>
+        </div>
+
+        <div id="map-container">
+            <div class="tile" style="left:0; top:60px;"></div>
+            <div class="tile" style="left:60px; top:60px;"></div>
+            <div class="tile" style="left:120px; top:60px;"></div>
+            <div class="tile" style="left:180px; top:60px;"></div>
+            <div class="tile" style="left:240px; top:60px;"></div>
+
+            <div class="tile tile-target" style="left:180px; top:60px;">
+                <div class="target-val">50</div>
+            </div>
+
+            <div class="tile tile-block" id="block" style="left:60px; top:60px;" onclick="selectBlock()">40</div>
+
+            <div class="tile tile-player" id="player" style="left:0px; top:60px;">
+                <div class="player-core"></div>
+            </div>
+        </div>
+
+        <div class="bottom-hud">
+            <div class="inventory-panel">
+                <div class="inv-title"><span>INVENTORY CHEST</span></div>
+                <div class="inv-grid">
+                    <div class="inv-slot filled" id="inv-item" onclick="selectInv()">10</div>
+                    <div class="inv-slot"></div>
+                    <div class="inv-slot"></div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="btn-fuse" id="btn-fuse" disabled onclick="doFuse()">INJECT (FUSE)</button>
+                <div class="d-pad">
+                    <div class="d-btn d-up">▲</div>
+                    <div class="d-btn d-left">◀</div>
+                    <div class="d-btn d-right" id="btn-right" onclick="moveRight()">▶</div>
+                    <div class="d-btn d-down">▼</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let step = 1;
+    let isStarted = false;
+    let px = 0; // Player X (grid units)
+    let bx = 1; // Block X (grid units)
+    let blockVal = 40;
+    
+    let blockSelected = false;
+    let invSelected = false;
+
+    // DOM Elements
+    const playerEl = document.getElementById('player');
+    const blockEl = document.getElementById('block');
+    const invItem = document.getElementById('inv-item');
+    const btnFuse = document.getElementById('btn-fuse');
+    const btnRight = document.getElementById('btn-right');
+    
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        btnRight.classList.add('highlight-target');
+    });
+
+    // Keyboard Controls
+    window.addEventListener('keydown', (e) => {
+        if (!isStarted) return;
+        switch(e.key) {
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+                e.preventDefault();
+                moveRight();
+                break;
+            case 'f':
+            case 'F':
+                if (!btnFuse.disabled) doFuse();
+                break;
+        }
+    });
+
+    // Step 1: Movement
+    function moveRight() {
+        if (!isStarted || step !== 1) return;
+        
+        px++;
+        playerEl.style.left = (px * 60) + 'px';
+
+        // Push block
+        if (px === bx) {
+            bx++;
+            blockEl.style.left = (bx * 60) + 'px';
+        }
+
+        // Check if block reached target (x=3)
+        if (bx === 3) {
+            step = 2;
+            btnRight.classList.remove('highlight-target');
+            
+            setTimeout(() => {
+                instText.innerText = "Step 2: Select the Core";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Selection:</strong> The core is on the target, but its value is only <b>40</b> (Target is 50). Tap the core to select it for modification.";
+                blockEl.classList.add('highlight-target');
+            }, 300);
+        }
+    }
+
+    // Step 2: Select Block
+    function selectBlock() {
+        if (step !== 2 && step !== 3) return;
+
+        blockSelected = !blockSelected;
+        
+        if (blockSelected) {
+            blockEl.classList.add('selected');
+            if (step === 2) {
+                step = 3;
+                blockEl.classList.remove('highlight-target');
+                instText.innerText = "Step 3: Select Inventory Fragment";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Inventory:</strong> You have a fragment worth <b>10</b> in your chest. Tap it to select it for fusion.";
+                invItem.classList.add('highlight-target');
+            }
+        } else {
+            blockEl.classList.remove('selected');
+        }
+        
+        checkActionReady();
+    }
+
+    // Step 3: Select Inventory
+    function selectInv() {
+        if (step !== 3) return;
+
+        invSelected = !invSelected;
+        
+        if (invSelected) {
+            invItem.classList.add('selected');
+            invItem.classList.remove('highlight-target');
+            
+            step = 4;
+            instText.innerText = "Step 4: Inject Energy";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Actions:</strong> Both items are selected! Tap <b>INJECT (FUSE)</b> or press <b>F</b> to add the 10 fragment to the 40 core.";
+            btnFuse.classList.add('highlight-target');
+        } else {
+            invItem.classList.remove('selected');
+        }
+        
+        checkActionReady();
+    }
+
+    function checkActionReady() {
+        if (blockSelected && invSelected) {
+            btnFuse.disabled = false;
+        } else {
+            btnFuse.disabled = true;
+        }
+    }
+
+    // Step 4: Execute Fuse
+    function doFuse() {
+        if (step !== 4) return;
+
+        // Visual updates
+        invItem.style.opacity = '0';
+        btnFuse.classList.remove('highlight-target');
+        btnFuse.disabled = true;
+        
+        blockSelected = false;
+        invSelected = false;
+        
+        blockVal += 10;
+        blockEl.innerText = blockVal;
+        blockEl.classList.remove('selected');
+
+        // Check Win Condition (Target is 50)
+        if (blockVal === 50 && bx === 3) {
+            blockEl.classList.add('resolved'); // Turns Cyan
+            
+            instText.style.color = "var(--cyan)";
+            instText.innerText = "Tutorial Complete!";
+            objText.innerHTML = "<strong>🎯 Success - Equilibrium:</strong> 40 + 10 = 50! The core is fully charged. In the main game, use the E and F keys to quickly open Labs. Close this window to play.";
+        }
+    }
+</script>
+</body>
+</html>

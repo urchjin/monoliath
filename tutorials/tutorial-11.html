@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Architect Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg1: #667eea;
+            --bg2: #764ba2;
+            --accent: #fbbf24;
+            --success: #4ade80;
+            --corner1: #4facfe;
+            --corner2: #00f2fe;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background: linear-gradient(135deg, var(--bg1) 0%, var(--bg2) 100%);
+            color: white; display: flex; flex-direction: column; 
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: rgba(0, 0, 0, 0.5); border-bottom: 2px solid var(--accent);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            backdrop-filter: blur(10px); flex-shrink: 0;
+        }
+        #instruction-text {
+            font-size: 16px; font-weight: 600; color: var(--accent); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 10px; font-size: 13px;
+            color: #e2e8f0; text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--accent); }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-size: 32px; color: white; margin-bottom: 15px; letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+        .start-desc { font-size: 14px; color: #cbd5e1; margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600;
+            padding: 12px 30px; background: linear-gradient(135deg, var(--corner1), var(--corner2));
+            color: white; border: none; border-radius: 25px;
+            cursor: pointer; transition: all 0.2s; pointer-events: auto;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--accent) !important;
+            position: relative; z-index: 10;
+        }
+
+        /* --- GAME AREA --- */
+        #game-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        
+        #rhythm-section { 
+            height: 120px; background: rgba(0,0,0,0.3); position: relative; flex-shrink: 0;
+            border-bottom: 2px solid rgba(255,255,255,0.2); display: flex; justify-content: center;
+        }
+        .lane { width: 80px; border-left: 1px solid rgba(255,255,255,0.1); border-right: 1px solid rgba(255,255,255,0.1); position: relative; background: rgba(255,255,255,0.05); }
+        .hit-bar { position: absolute; bottom: 10px; left: 0; width: 100%; height: 40px; border-top: 2px solid rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); }
+        
+        .note { position: absolute; width: 40px; height: 40px; left: 50%; transform: translateX(-50%); filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+
+        #grid-section { flex: 1; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.1); min-height: 200px; }
+        .grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; 
+            background: rgba(255,255,255,0.1); padding: 10px; border-radius: 8px; 
+            transform: rotateX(20deg) rotateZ(-5deg); transform-style: preserve-3d;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .cell { 
+            width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 4px; 
+            border: 1px solid rgba(255,255,255,0.2); transition: 0.2s;
+        }
+
+        .cell.target { background: rgba(251, 191, 36, 0.2); border: 2px dashed var(--accent); }
+        
+        .cell.filled { 
+            background: linear-gradient(135deg, var(--corner1), var(--corner2)) !important; 
+            transform: translateZ(10px); 
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.2), 0 5px 10px rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            cursor: pointer; 
+        }
+        
+        .cell.selected-piece { border: 2px solid var(--accent) !important; box-shadow: 0 0 15px var(--accent) !important; }
+        
+        /* --- HORIZONTAL CONTROLS (CENTRALIZED & SMALLER) --- */
+        #controls { 
+            background: rgba(0,0,0,0.4); padding: 15px; display: flex; 
+            flex-direction: row; justify-content: center; align-items: center; 
+            gap: 25px; /* Spacing between left actions and right d-pad */
+            border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
+            min-height: 110px;
+        }
+        
+        .actions-left {
+            display: flex; flex-direction: column; gap: 8px;
+        }
+
+        .action-btn { 
+            padding: 8px 15px; border-radius: 8px; border: none; font-weight: bold; 
+            font-family: 'Montserrat'; cursor: pointer; width: 110px; text-transform: uppercase;
+            font-size: 12px; letter-spacing: 1px;
+        }
+        #shape-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); }
+        #pause-btn { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+        
+        .move-controls { 
+            display: grid; grid-template-columns: repeat(3, 32px); gap: 4px; 
+            visibility: hidden; /* Takes up space so layout doesn't jump */
+        }
+        .move-btn { 
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); 
+            border-radius: 6px; color: white; font-size: 14px; cursor: pointer; height: 32px; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .move-btn:active { transform: scale(0.90); }
+        .move-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Catch the Shape!</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Rhythm:</strong> Wait for the falling 3-block shape to reach the bottom zone, then click the highlighted <b>CORNER</b> button to catch it!
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="start-overlay">
+            <div class="start-title">ETHEREAL ARCHITECT</div>
+            <div class="start-desc">Learn how to catch falling geometry, pause time, rotate pieces, and slide them into target zones on the grid.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <div id="rhythm-section">
+            <div class="lane">
+                <div class="hit-bar"></div>
+                <div class="note" id="falling-note" style="display: none;">
+                    <svg viewBox="0 0 40 40">
+                        <defs>
+                            <linearGradient id="g0" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4facfe"/><stop offset="100%" style="stop-color:#00f2fe"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="2" y="2" width="17" height="17" fill="url(#g0)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" rx="3"/>
+                        <rect x="21" y="2" width="17" height="17" fill="url(#g0)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" rx="3"/>
+                        <rect x="2" y="21" width="17" height="17" fill="url(#g0)" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" rx="3"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div id="grid-section">
+            <div class="grid" id="mainGrid">
+                <div class="cell" id="c-0-0"></div><div class="cell target" id="c-0-1"></div><div class="cell target" id="c-0-2"></div>
+                <div class="cell" id="c-1-0"></div><div class="cell" id="c-1-1"></div><div class="cell target" id="c-1-2"></div>
+                <div class="cell" id="c-2-0"></div><div class="cell" id="c-2-1"></div><div class="cell" id="c-2-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <div class="actions-left">
+            <button class="action-btn" id="shape-btn">CORNER</button>
+            <button class="action-btn" id="pause-btn">PAUSE</button>
+        </div>
+        
+        <div class="move-controls" id="move-controls">
+            <div></div><button class="move-btn" disabled>▲</button><div></div>
+            <button class="move-btn" disabled>◀</button>
+            <button class="move-btn" id="btn-rotate">↻</button>
+            <button class="move-btn" id="btn-right">▶</button>
+            <div></div><button class="move-btn" disabled>▼</button><div></div>
+        </div>
+    </div>
+
+<script>
+    let isStarted = false;
+    let step = 1;
+    let notePos = -40;
+    let piecePlaced = false;
+    let pieceSelected = false;
+    let isPaused = false;
+    
+    let piece = { r: 0, c: 0, cells: [[0,0], [0,1], [1,0]] };
+
+    const noteEl = document.getElementById('falling-note');
+    const shapeBtn = document.getElementById('shape-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const moveControls = document.getElementById('move-controls');
+    const btnRotate = document.getElementById('btn-rotate');
+    const btnRight = document.getElementById('btn-right');
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        noteEl.style.display = 'block';
+        shapeBtn.classList.add('highlight-target');
+        requestAnimationFrame(loop);
+    });
+
+    shapeBtn.addEventListener('click', () => {
+        if (step !== 1 || piecePlaced) return;
+        
+        if (notePos > 60 && notePos < 130) {
+            noteEl.style.display = 'none';
+            piecePlaced = true;
+            renderGrid();
+            
+            step = 2;
+            shapeBtn.classList.remove('highlight-target');
+            pauseBtn.classList.add('highlight-target');
+            instText.innerText = "Step 2: Pause Time!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Mechanics:</strong> The piece auto-placed on the grid! Click <b>PAUSE</b> to freeze time so you can arrange it.";
+        }
+    });
+
+    pauseBtn.addEventListener('click', () => {
+        if (step !== 2) return;
+        isPaused = true;
+        pauseBtn.innerText = "RESUME";
+        pauseBtn.style.background = "linear-gradient(135deg, #4ade80, #22c55e)";
+        
+        step = 3;
+        pauseBtn.classList.remove('highlight-target');
+        instText.innerText = "Step 3: Select the Piece.";
+        objText.innerHTML = "<strong>🎯 Learning Objective - Selection:</strong> While paused, you can click pieces to select them. <b>Click anywhere on the blue Corner piece</b>.";
+        
+        piece.cells.forEach(([dr, dc]) => {
+            let el = document.getElementById(`c-${piece.r + dr}-${piece.c + dc}`);
+            if(el) el.classList.add('highlight-target');
+        });
+    });
+
+    for(let r=0; r<3; r++) {
+        for(let c=0; c<3; c++) {
+            document.getElementById(`c-${r}-${c}`).addEventListener('click', () => {
+                let isPiece = piece.cells.some(([dr, dc]) => piece.r + dr === r && piece.c + dc === c);
+                
+                if (step === 3 && isPaused && !pieceSelected && isPiece) {
+                    pieceSelected = true;
+                    
+                    piece.cells.forEach(([dr, dc]) => {
+                        let el = document.getElementById(`c-${piece.r + dr}-${piece.c + dc}`);
+                        if(el) el.classList.remove('highlight-target');
+                    });
+
+                    moveControls.style.visibility = 'visible';
+                    renderGrid();
+                    
+                    step = 4;
+                    btnRotate.classList.add('highlight-target');
+                    instText.innerText = "Step 4: Rotate the Piece.";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Orientation:</strong> The piece doesn't face the right way to fit the target! Click the highlighted <b>↻ (Rotate)</b> button to spin it.";
+                }
+            });
+        }
+    }
+
+    btnRotate.addEventListener('click', () => {
+        if (step === 4 && pieceSelected) {
+            piece.cells = [[0,0], [0,1], [1,1]];
+            renderGrid();
+            
+            step = 5;
+            btnRotate.classList.remove('highlight-target');
+            btnRight.classList.add('highlight-target');
+            instText.innerText = "Step 5: Move to Target.";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Placement:</strong> Perfect! The orientation matches. Now use the highlighted <b>▶ (Right)</b> button to slide it into the glowing target zone.";
+        }
+    });
+
+    btnRight.addEventListener('click', () => {
+        if (step === 5 && pieceSelected) {
+            piece.c += 1;
+            renderGrid();
+            
+            step = 6;
+            btnRight.classList.remove('highlight-target');
+            instText.innerText = "Tutorial Complete!";
+            instText.style.color = "var(--success)";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Success:</strong> You mastered catching, pausing, rotating, and placing geometry! Close this window to play.";
+        }
+    });
+
+    function renderGrid() {
+        for(let r=0; r<3; r++) {
+            for(let c=0; c<3; c++) {
+                let el = document.getElementById(`c-${r}-${c}`);
+                if(el) el.classList.remove('filled');
+            }
+        }
+        
+        if (piecePlaced) {
+            piece.cells.forEach(([dr, dc]) => {
+                let el = document.getElementById(`c-${piece.r + dr}-${piece.c + dc}`);
+                if (el) el.classList.add('filled');
+            });
+        }
+    }
+
+    function loop() {
+        if (isStarted && !isPaused && !piecePlaced) {
+            notePos += 1.5;
+            if (notePos > 140) notePos = -40;
+            noteEl.style.top = notePos + 'px';
+        }
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>

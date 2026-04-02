@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AbacuDJebra Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap');
+
+        * { box-sizing: border-box; user-select: none; -webkit-touch-callout: none; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: #0d0e15;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- TUTORIAL HEADER & INSTRUCTIONS --- */
+        #instruction-panel {
+            background: rgba(181, 0, 255, 0.15);
+            border-bottom: 2px solid #b500ff;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(181, 0, 255, 0.2);
+            z-index: 10;
+        }
+
+        #instruction-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00f3ff;
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.5);
+            margin: 0;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- CANVAS AREA --- */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #11131f 0%, #07070b 100%);
+            width: 100%;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        #tutorial-msg {
+            position: absolute;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: 800;
+            color: #ff007f;
+            text-shadow: 0 0 15px #ff007f;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* --- ABACUS STYLES (Scaled down slightly for tutorial) --- */
+        .dj-board {
+            flex: 0 0 140px;
+            background: #0a0b10; 
+            border-top: 4px solid #1a1a2e; 
+            display: flex;
+            flex-direction: column;
+            padding: 0 10px;
+            position: relative;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+        }
+
+        .dj-board::before {
+            content: '';
+            position: absolute;
+            top: 32px; left: 0; right: 0; height: 4px;
+            background: #b500ff;
+            box-shadow: 0 0 15px #b500ff;
+            z-index: 2;
+        }
+
+        .abacus-heaven {
+            height: 32px;
+            display: flex; justify-content: space-evenly; align-items: flex-start;
+            padding-top: 4px;
+        }
+
+        .abacus-earth {
+            flex: 1;
+            display: flex; justify-content: space-evenly; align-items: flex-end;
+            padding-bottom: 2px;
+        }
+
+        .abacus-rod {
+            width: 50px;
+            display: flex; flex-direction: column; align-items: center;
+            position: relative; height: 100%;
+        }
+
+        .abacus-rod::before {
+            content: '';
+            position: absolute; top: 0; bottom: 0; left: 50%; width: 2px;
+            background: rgba(255, 255, 255, 0.1); 
+            transform: translateX(-50%); z-index: 0; 
+        }
+
+        .rod-label {
+            position: absolute; top: -16px; font-size: 9px;
+            color: #b500ff; font-weight: 800;
+        }
+
+        .bead {
+            width: 40px; height: 15px; 
+            background: transparent; 
+            border: 2px solid #ff007f;
+            border-radius: 15px; 
+            cursor: pointer;
+            transition: all 0.15s ease;
+            z-index: 1; 
+            position: relative;
+            box-shadow: 0 0 10px rgba(255, 0, 127, 0.4); 
+        }
+
+        .bead.active {
+            background: #00f3ff; 
+            border-color: #fff;
+            box-shadow: 0 0 15px #00f3ff, inset 0 0 10px #fff; 
+        }
+
+        .heaven-bead { transform: translateY(0px); }
+        .heaven-bead.active { transform: translateY(10px); }
+
+        .earth-bead-group {
+            display: flex; flex-direction: column; gap: 2px; height: 80px;
+            justify-content: flex-end; width: 100%; align-items: center;
+        }
+
+        .earth-bead { transform: translateY(0px); }
+        .earth-bead.active { transform: translateY(-10px); }
+
+        /* --- RHYTHM BUTTONS --- */
+        .beat-buttons {
+            display: flex; justify-content: space-around;
+            padding: 10px; background: #0a0b10;
+        }
+
+        .beat-btn {
+            width: 28%; height: 40px;
+            background: transparent;
+            border: 2px solid #00f3ff;
+            color: #00f3ff;
+            font-weight: 800; font-size: 14px;
+            border-radius: 20px; cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            transition: all 0.1s;
+        }
+        .beat-btn:active, .beat-btn.simulate-active {
+            background: #00f3ff; color: #000;
+            box-shadow: 0 0 20px #00f3ff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instruction-panel">
+        <p id="instruction-text">Step 1: Let's learn the abacus. Slide 3 bottom beads UP on the '1s' rod (far right).</p>
+    </div>
+
+    <div id="canvas-container">
+        <canvas id="tutorialCanvas"></canvas>
+        <div id="tutorial-msg">PERFECT!</div>
+    </div>
+
+    <div class="dj-board">
+        <div class="abacus-heaven">
+            <div class="abacus-rod">
+                <span class="rod-label">100s</span>
+                <div class="bead heaven-bead" id="bead500" onclick="toggleHeaven(500)"></div>
+            </div>
+            <div class="abacus-rod">
+                <span class="rod-label">10s</span>
+                <div class="bead heaven-bead" id="bead50" onclick="toggleHeaven(50)"></div>
+            </div>
+            <div class="abacus-rod">
+                <span class="rod-label">1s</span>
+                <div class="bead heaven-bead" id="bead5" onclick="toggleHeaven(5)"></div>
+            </div>
+        </div>
+        
+        <div class="abacus-earth">
+            <div class="abacus-rod">
+                <div class="earth-bead-group" id="earth100s">
+                    <div class="bead earth-bead" onclick="setEarth(100, 1)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(100, 2)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(100, 3)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(100, 4)"></div>
+                </div>
+            </div>
+            <div class="abacus-rod">
+                <div class="earth-bead-group" id="earth10s">
+                    <div class="bead earth-bead" onclick="setEarth(10, 1)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(10, 2)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(10, 3)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(10, 4)"></div>
+                </div>
+            </div>
+            <div class="abacus-rod">
+                <div class="earth-bead-group" id="earth1s">
+                    <div class="bead earth-bead" onclick="setEarth(1, 1)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(1, 2)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(1, 3)"></div>
+                    <div class="bead earth-bead" onclick="setEarth(1, 4)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="beat-buttons">
+        <button class="beat-btn" id="btn-L" onclick="hitLane(0)">L</button>
+        <button class="beat-btn" id="btn-M" onclick="hitLane(1)">M</button>
+        <button class="beat-btn" id="btn-R" onclick="hitLane(2)">R</button>
+    </div>
+
+<script>
+    // --- Tutorial State Logic ---
+    let step = 1;
+    let abacusState = { heaven: { 500: false, 50: false, 5: false }, earth: { 100: 0, 10: 0, 1: 0 } };
+    let currentAbacusValue = 0;
+    
+    const instText = document.getElementById('instruction-text');
+    const msgBox = document.getElementById('tutorial-msg');
+
+    function showMessage(text, color = "#ff007f") {
+        msgBox.innerText = text;
+        msgBox.style.color = color;
+        msgBox.style.textShadow = `0 0 15px ${color}`;
+        msgBox.style.opacity = 1;
+        setTimeout(() => { msgBox.style.opacity = 0; }, 1500);
+    }
+
+    // --- Abacus Logic ---
+    function toggleHeaven(value) {
+        abacusState.heaven[value] = !abacusState.heaven[value];
+        document.getElementById(`bead${value}`).classList.toggle('active');
+        updateAbacusValues();
+    }
+
+    function setEarth(rod, count) {
+        abacusState.earth[rod] = (abacusState.earth[rod] === count) ? 0 : count;
+        
+        const beads = document.getElementById(`earth${rod}s`).querySelectorAll('.bead');
+        beads.forEach((bead, index) => {
+            if (index < abacusState.earth[rod]) bead.classList.add('active'); 
+            else bead.classList.remove('active');
+        });
+        updateAbacusValues();
+    }
+
+    function updateAbacusValues() {
+        const h = (abacusState.heaven[500] ? 5 : 0) + abacusState.earth[100];
+        const t = (abacusState.heaven[50] ? 5 : 0) + abacusState.earth[10];
+        const o = (abacusState.heaven[5] ? 5 : 0) + abacusState.earth[1];
+        currentAbacusValue = (h * 100) + (t * 10) + o;
+
+        checkTutorialProgress();
+    }
+
+    function checkTutorialProgress() {
+        if (step === 1 && currentAbacusValue === 3) {
+            showMessage("GREAT!");
+            step = 2;
+            instText.innerHTML = "Step 2: The top bead is worth 5. <br>Reset the bottom beads and slide the top bead DOWN to make 5.";
+        }
+        else if (step === 2 && currentAbacusValue === 5) {
+            showMessage("AWESOME!");
+            step = 3;
+            instText.innerHTML = "Step 3: Let's combine them. <br>Keep the top bead down, and slide two bottom beads up to make exactly 7.";
+        }
+        else if (step === 3 && currentAbacusValue === 7) {
+            showMessage("YOU GOT IT!");
+            step = 4;
+            instText.innerHTML = "Step 4: The Rhythm. <br>Keep your abacus at 7. Wait for the falling number to reach the ring, then press 'M'!";
+            setTimeout(startCanvasAnimation, 2000);
+        }
+    }
+
+    // --- Canvas & Rhythm Logic ---
+    const canvas = document.getElementById('tutorialCanvas');
+    const ctx = canvas.getContext('2d');
+    let isAnimating = false;
+    let noteY = -50;
+    let noteActive = false;
+
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawRings() {
+        const h = canvas.height;
+        const w = canvas.width;
+        const laneWidth = w / 3;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
+        ctx.fillRect(laneWidth, 0, laneWidth, h); 
+
+        for(let i=0; i<3; i++) {
+            ctx.beginPath();
+            ctx.arc((i * laneWidth) + (laneWidth/2), h - 40, 25, 0, Math.PI * 2);
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = 10;
+            ctx.stroke();
+        }
+    }
+
+    function startCanvasAnimation() {
+        isAnimating = true;
+        noteActive = true;
+        noteY = -50;
+        requestAnimationFrame(renderCanvas);
+    }
+
+    function renderCanvas() {
+        if (!isAnimating) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawRings();
+
+        if (noteActive) {
+            noteY += 1.5; // Fall speed
+            const laneWidth = canvas.width / 3;
+            const targetX = (1 * laneWidth) + (laneWidth / 2); // Lane 1 (Middle)
+
+            ctx.save();
+            ctx.translate(targetX, noteY);
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff007f'; 
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 15; 
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 0;
+            ctx.font = '800 18px Montserrat';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('7', 0, 0);
+            
+            ctx.restore();
+
+            if (noteY > canvas.height + 30) {
+                // Missed
+                showMessage("MISSED! Try again.", "#ff0000");
+                noteY = -50; // Reset note
+            }
+        }
+
+        requestAnimationFrame(renderCanvas);
+    }
+
+    function hitLane(laneIdx) {
+        if (step < 4) return; // Prevent clicking early
+        
+        const hitZoneY = canvas.height - 40; 
+        
+        if (laneIdx === 1 && noteActive) { // Middle lane
+            if (Math.abs(noteY - hitZoneY) < 40) { // Accuracy tolerance
+                if (currentAbacusValue === 7) {
+                    showMessage("SIMULATION COMPLETE!", "#00f3ff");
+                    noteActive = false;
+                    isAnimating = false;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    drawRings();
+                    instText.innerHTML = "Tutorial Complete! <br>Click the 'X' at the top right to close this and start playing.";
+                } else {
+                    showMessage("WRONG NUMBER!", "#ff0000");
+                }
+            } else {
+                showMessage("BAD TIMING!", "#ff0000");
+            }
+        }
+    }
+
+    // Initial draw
+    drawRings();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Where's Abzebra Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #e5e5e5; --text-main: #000000;
+            --surface: #ffffff; --border: #000000;
+            --highlight: #f0f0f0; --tut-accent: #0055ff;
+        }
+
+        * { box-sizing: border-box; }
+        
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#bcbcbc 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: var(--text-main);
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; margin: 0;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            width: 100%; background: var(--surface);
+            border-bottom: 3px solid var(--border);
+            padding: 15px 20px; display: flex; flex-direction: column; gap: 8px; z-index: 50;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        #instruction-text {
+            font-size: 18px; font-weight: 800; color: var(--tut-accent); 
+            text-align: center; text-transform: uppercase;
+        }
+        #learning-objective {
+            background: rgba(0, 85, 255, 0.05); border: 2px dashed var(--tut-accent);
+            padding: 10px; font-size: 14px; font-weight: 600;
+            color: var(--text-main); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--tut-accent); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(0, 85, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 85, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 85, 255, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border-color: var(--tut-accent) !important;
+            position: relative; z-index: 10;
+        }
+
+        /* --- GAME CONTAINER --- */
+        .game-container {
+            background: var(--surface); max-width: 600px; width: 95%;
+            border: 3px solid var(--border); box-shadow: 8px 8px 0px var(--border);
+            padding: 20px; margin: 20px auto; position: relative; overflow: hidden;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(229, 229, 229, 0.95);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; text-align: center; padding: 20px; backdrop-filter: blur(4px);
+        }
+        .start-title { font-size: 2.2rem; font-weight: 800; text-transform: uppercase; margin-bottom: 10px;}
+        .start-btn {
+            font-family: 'Open Sans', sans-serif; font-size: 1rem; font-weight: 800;
+            text-transform: uppercase; padding: 15px 30px; background: var(--surface);
+            color: var(--text-main); border: 3px solid var(--border); cursor: pointer;
+            box-shadow: 4px 4px 0px var(--border); transition: 0.1s; margin-top: 20px;
+        }
+        .start-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--border); }
+
+        /* --- MAP --- */
+        .map-container {
+            position: relative; padding: 15px 0; display: flex; flex-direction: column; gap: 30px;
+            margin-bottom: 20px; border-top: 3px solid var(--border); border-bottom: 3px solid var(--border);
+            background: #fafafa;
+        }
+        .grid-row { display: flex; align-items: center; padding: 0 15px; position: relative; }
+        .row-label { font-weight: 800; width: 25px; font-size: 1rem; }
+        .number-line { flex-grow: 1; height: 3px; background: var(--border); position: relative; margin: 0 15px; }
+        .marker { position: absolute; top: -20px; font-size: 0.75rem; font-weight: 800; transform: translateX(-50%); }
+        .marker::after { content: ''; position: absolute; top: 20px; left: 50%; width: 3px; height: 8px; background: var(--border); transform: translateX(-50%); }
+
+        .entity { position: absolute; transform: translate(-50%, -50%); transition: left 0.4s ease, top 0.4s ease; }
+        #rescuer-dot {
+            width: 0; height: 0; border-top: 10px solid transparent; border-bottom: 10px solid transparent; border-left: 16px solid var(--border); z-index: 3;
+        }
+        #rescuer-dot::after {
+            content: attr(data-pos); position: absolute; top: -35px; left: -18px; background: var(--surface);
+            color: var(--text-main); border: 2px solid var(--border); padding: 2px 6px; font-size: 0.75rem;
+            font-weight: 800; box-shadow: 2px 2px 0px var(--border);
+        }
+        #abzebra-dot { width: 14px; height: 14px; background-color: var(--surface); border: 3px solid var(--border); opacity: 0; z-index: 2; }
+        #lkp-dot { width: 10px; height: 10px; background-color: var(--border); border-radius: 50%; opacity: 0.3; z-index: 1; }
+
+        /* --- UI ELEMENTS --- */
+        .panel { border: 3px solid var(--border); padding: 15px; margin-bottom: 15px; background: var(--surface); box-shadow: 4px 4px 0px var(--border); }
+        .panel-title { font-size: 0.85rem; text-transform: uppercase; font-weight: 800; margin-bottom: 15px; display: inline-block; background: var(--border); color: var(--surface); padding: 4px 8px; }
+        
+        .witness-block { border: 2px dashed var(--border); padding: 10px; margin-bottom: 8px; background: #fafafa; }
+        .witness-text { font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; }
+        .witness-controls { display: flex; gap: 10px; align-items: center; }
+        
+        select, input, button { font-family: 'Open Sans', sans-serif; border: 2px solid var(--border); font-size: 0.9rem; font-weight: 800; text-transform: uppercase; padding: 10px; }
+        button { cursor: pointer; box-shadow: 3px 3px 0px var(--border); background: var(--surface); transition: 0.1s; }
+        button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--border); }
+        button:disabled { opacity: 0.4; box-shadow: none; cursor: not-allowed; }
+        
+        .btn-full { width: 100%; margin-top: 10px; }
+        .action-flex { display: flex; gap: 10px; flex-wrap: wrap; }
+        .action-flex select, .action-flex input { flex: 1 1 auto; }
+        .action-flex button { flex: 1 1 100%; }
+        
+        .radio-label { display: flex; align-items: center; font-weight: 800; font-size: 0.8rem; cursor: pointer; }
+        .radio-label input { transform: scale(1.5); margin-right: 5px; }
+
+        #message-log { text-align: center; font-weight: 800; margin-top: 10px; min-height: 48px; border: 2px solid var(--border); padding: 10px; background: var(--highlight); }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Tag the Syntax</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Syntax:</strong> Read the verbs to map the timeline. <b>Walked</b> = Past, <b>Is Resting</b> = Present, <b>Will Reach</b> = Future. Select the correct tense for all three reports.
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div id="start-overlay">
+            <div class="start-title">Rescue Protocol</div>
+            <div style="font-weight: 600; margin-bottom: 20px;">Master the three phases of Search & Rescue:<br>1. Syntax Tagging<br>2. Spatial Logic<br>3. Tactical Interception</div>
+            <button class="start-btn" id="btn-start-tut">COMMENCE TRAINING</button>
+        </div>
+
+        <div style="font-size: 0.85rem; font-weight: 800; text-align: center; background: var(--highlight); padding: 5px; border: 2px solid var(--border); margin-bottom: 15px;">
+            UNIT AT: B-25 | MAX RANGE: ±5
+        </div>
+
+        <div class="map-container" id="map-area">
+            <div class="grid-row"><span class="row-label">A</span><div class="number-line"><div class="marker" style="left:0%">0</div><div class="marker" style="left:50%">25</div><div class="marker" style="left:100%">50</div></div></div>
+            <div class="grid-row"><span class="row-label">B</span><div class="number-line"><div class="marker" style="left:0%">0</div><div class="marker" style="left:50%">25</div><div class="marker" style="left:100%">50</div></div></div>
+            <div class="grid-row"><span class="row-label">C</span><div class="number-line"><div class="marker" style="left:0%">0</div><div class="marker" style="left:50%">25</div><div class="marker" style="left:100%">50</div></div></div>
+            
+            <div id="lkp-dot" class="entity"></div>
+            <div id="rescuer-dot" class="entity" data-pos="25"></div>
+            <div id="abzebra-dot" class="entity"></div>
+        </div>
+
+        <div class="panel" id="interrogation-panel">
+            <span class="panel-title" id="interrogation-title">1. Analyze Reports</span>
+            <span style="font-size: 0.75rem; color: #555; font-weight: 600; display: block;">[LKP (LAST KNOWN POS): B-20]</span>
+            
+            <div id="witness-container" style="margin-top: 10px;">
+                <div class="witness-block">
+                    <div class="witness-text">1. "I saw Abzebra <u>walk</u> through <b>B-20</b>."</div>
+                    <div class="witness-controls" id="wc-1">
+                        <select id="sel-1" onchange="checkTenses()"><option value="">- Tense -</option><option value="past">Past</option><option value="present">Present</option><option value="future">Future</option></select>
+                        <label class="radio-label" style="display:none;"><input type="radio" name="logic" value="1" onchange="checkRadio()"> Select Anomaly</label>
+                    </div>
+                </div>
+                <div class="witness-block">
+                    <div class="witness-text">2. "Abzebra <u>will reach</u> <b>C-50</b> very soon."</div>
+                    <div class="witness-controls" id="wc-2">
+                        <select id="sel-2" onchange="checkTenses()"><option value="">- Tense -</option><option value="past">Past</option><option value="present">Present</option><option value="future">Future</option></select>
+                        <label class="radio-label" style="display:none;"><input type="radio" name="logic" value="2" onchange="checkRadio()"> Select Anomaly</label>
+                    </div>
+                </div>
+                <div class="witness-block">
+                    <div class="witness-text">3. "Abzebra <u>is resting</u> at <b>B-22</b> right now."</div>
+                    <div class="witness-controls" id="wc-3">
+                        <select id="sel-3" onchange="checkTenses()"><option value="">- Tense -</option><option value="past">Past</option><option value="present">Present</option><option value="future">Future</option></select>
+                        <label class="radio-label" style="display:none;"><input type="radio" name="logic" value="3" onchange="checkRadio()"> Select Anomaly</label>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="btn-syntax" class="btn-full" disabled onclick="submitSyntax()">Verify Syntax</button>
+            <button id="btn-logic" class="btn-full" style="display:none;" disabled onclick="submitLogic()">Submit Deduction</button>
+        </div>
+
+        <div class="panel" id="action-panel" style="opacity: 0.4; pointer-events: none;">
+            <span class="panel-title">2. Move Rescue Unit</span>
+            <div class="action-flex">
+                <select id="move-row" onchange="checkMove()">
+                    <option value="A">Lane A</option>
+                    <option value="B" selected>Lane B</option>
+                    <option value="C">Lane C</option>
+                </select>
+                <input type="number" id="move-col" min="0" max="50" placeholder="± 5 Blocks" oninput="checkMove()">
+                <button id="btn-travel" class="btn-action" disabled onclick="submitTravel()">Travel</button>
+            </div>
+        </div>
+
+        <div id="message-log">Awaiting syntax tags...</div>
+    </div>
+
+<script>
+    let step = 1;
+
+    // DOM
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const msgLog = document.getElementById('message-log');
+    
+    // Map positions (Fixed for tutorial)
+    const mapW = () => document.getElementById('map-area').offsetWidth - 70;
+    
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        
+        // Position Rescuer (B-25)
+        document.getElementById('rescuer-dot').style.top = '50%';
+        document.getElementById('rescuer-dot').style.left = `calc(35px + ${0.5 * mapW()}px)`;
+        
+        // Position LKP (B-20)
+        document.getElementById('lkp-dot').style.top = '50%';
+        document.getElementById('lkp-dot').style.left = `calc(35px + ${(20/50) * mapW()}px)`;
+
+        // Highlight step 1
+        document.getElementById('sel-1').classList.add('highlight-target');
+        document.getElementById('sel-2').classList.add('highlight-target');
+        document.getElementById('sel-3').classList.add('highlight-target');
+    });
+
+    // STEP 1: Tagging
+    function checkTenses() {
+        if(step !== 1) return;
+        const v1 = document.getElementById('sel-1').value;
+        const v2 = document.getElementById('sel-2').value;
+        const v3 = document.getElementById('sel-3').value;
+
+        if(v1 !== "" && v2 !== "" && v3 !== "") {
+            document.getElementById('btn-syntax').disabled = false;
+            document.getElementById('sel-1').classList.remove('highlight-target');
+            document.getElementById('sel-2').classList.remove('highlight-target');
+            document.getElementById('sel-3').classList.remove('highlight-target');
+            document.getElementById('btn-syntax').classList.add('highlight-target');
+        }
+    }
+
+    function submitSyntax() {
+        const v1 = document.getElementById('sel-1').value;
+        const v2 = document.getElementById('sel-2').value;
+        const v3 = document.getElementById('sel-3').value;
+
+        if(v1 === 'past' && v2 === 'future' && v3 === 'present') {
+            // Success
+            document.getElementById('btn-syntax').classList.remove('highlight-target');
+            document.getElementById('btn-syntax').style.display = 'none';
+            document.getElementById('btn-logic').style.display = 'block';
+            
+            document.querySelectorAll('select').forEach(s => s.disabled = true);
+            document.querySelectorAll('.radio-label').forEach(r => r.style.display = 'flex');
+
+            msgLog.innerHTML = "[SUCCESS] Syntax verified. Moving to Phase 2.";
+            msgLog.style.background = "#d4edda";
+            
+            step = 2;
+            instText.innerText = "Step 2: Spatial Logic";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Deduction:</strong> Abzebra was last seen at <b>B-20</b>. They cannot teleport to <b>C-50</b> instantly! Report 2 is physically impossible. Select Report 2 as the anomaly.";
+            
+        } else {
+            msgLog.innerHTML = "[ERROR] Incorrect syntax tags. Try again.";
+            msgLog.style.background = "#f8d7da";
+        }
+    }
+
+    // STEP 2: Logic
+    function checkRadio() {
+        if (step !== 2) return;
+        document.getElementById('btn-logic').disabled = false;
+        document.getElementById('btn-logic').classList.add('highlight-target');
+    }
+
+    function submitLogic() {
+        const selected = document.querySelector('input[name="logic"]:checked');
+        if(selected && selected.value === "2") {
+            // Success
+            document.getElementById('btn-logic').classList.remove('highlight-target');
+            document.getElementById('interrogation-panel').style.opacity = '0.5';
+            document.getElementById('interrogation-panel').style.pointerEvents = 'none';
+
+            const ap = document.getElementById('action-panel');
+            ap.style.opacity = '1';
+            ap.style.pointerEvents = 'auto';
+
+            msgLog.innerHTML = "[VERIFIED] Report 2 is false. The truth is Report 3: Abzebra is resting at <b>B-22</b>.";
+            msgLog.style.background = "#d4edda";
+
+            step = 3;
+            instText.innerText = "Step 3: Interception";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Movement:</strong> You are at <b>B-25</b>. Move to Lane <b>B</b>, Block <b>22</b> to rescue them. (This is within your ±5 max range).";
+            
+            document.getElementById('move-row').classList.add('highlight-target');
+            document.getElementById('move-col').classList.add('highlight-target');
+        } else {
+            msgLog.innerHTML = "[ERROR] Incorrect deduction. Look at the LKP (B-20). Which report is impossible?";
+            msgLog.style.background = "#f8d7da";
+        }
+    }
+
+    // STEP 3: Move
+    function checkMove() {
+        if (step !== 3) return;
+        const row = document.getElementById('move-row').value;
+        const col = document.getElementById('move-col').value;
+        if(row !== "" && col !== "") {
+            document.getElementById('btn-travel').disabled = false;
+            document.getElementById('move-row').classList.remove('highlight-target');
+            document.getElementById('move-col').classList.remove('highlight-target');
+            document.getElementById('btn-travel').classList.add('highlight-target');
+        }
+    }
+
+    function submitTravel() {
+        const row = document.getElementById('move-row').value;
+        const col = document.getElementById('move-col').value;
+
+        if (row === 'B' && col === '22') {
+            // Move rescuer visually
+            document.getElementById('btn-travel').classList.remove('highlight-target');
+            const dotR = document.getElementById('rescuer-dot');
+            dotR.style.left = `calc(35px + ${(22/50) * mapW()}px)`;
+            dotR.setAttribute('data-pos', 22);
+
+            // Reveal Abzebra
+            const dotA = document.getElementById('abzebra-dot');
+            dotA.style.top = '50%';
+            dotA.style.left = `calc(35px + ${(22/50) * mapW()}px)`;
+            dotA.style.opacity = '1';
+
+            msgLog.innerHTML = "[MISSION COMPLETE] Abzebra secured at B-22!";
+            msgLog.style.background = "#d4edda";
+            
+            step = 4;
+            instText.innerText = "Tutorial Complete!";
+            instText.style.color = "#28a745";
+            objText.innerHTML = "<strong>🎯 Success:</strong> You mastered grammar parsing, spatial logic, and grid movement. Close this window to begin the real search!";
+            
+            document.getElementById('btn-travel').disabled = true;
+        } else {
+            msgLog.innerHTML = "[ERROR] Wrong coordinates! Read the true report. Move to B-22.";
+            msgLog.style.background = "#f8d7da";
+        }
+    }
+</script>
+</body>
+</html>

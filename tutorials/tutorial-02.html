@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Orb Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #8eb8d0;
+            --accent-gold: #e8c44a;
+            --accent-blue: #4a90c8;
+            --accent-danger: #e05a2b;
+            --hud-bg: rgba(8, 4, 2, 0.92);
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Share Tech Mono', monospace;
+            background: var(--bg-color);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: var(--hud-bg);
+            border-bottom: 2px solid var(--accent-gold);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 20;
+            box-shadow: 0 5px 20px rgba(232, 196, 74, 0.2);
+        }
+
+        #instruction-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent-gold);
+            text-align: center;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 10px rgba(232, 196, 74, 0.4);
+        }
+
+        #learning-objective {
+            background: rgba(74, 144, 200, 0.15);
+            border: 1px solid rgba(74, 144, 200, 0.4);
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 13px;
+            color: #c0daf0;
+            text-align: center;
+            line-height: 1.4;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            background: linear-gradient(160deg, #c0daf0, #6a94b0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        canvas#cv {
+            display: block;
+            touch-action: none;
+            outline: none; 
+            cursor: crosshair;
+        }
+
+        /* --- BOTTOM UI DIALS --- */
+        #bottom-hud {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            height: 130px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 14px 14px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hbox {
+            background: rgba(8,4,2,.88);
+            border: 1px solid rgba(232,196,74,.2);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 8px 10px 6px;
+            gap: 3px;
+        }
+
+        #hl, #hr { width: 88px; }
+        #hc { flex: 1; max-width: 130px; }
+
+        .hlbl {
+            font-size: 7.5px;
+            letter-spacing: .22em;
+            color: rgba(232,196,74,.48);
+            text-transform: uppercase;
+            margin-bottom: 1px;
+        }
+
+        #orbc {
+            font-size: 9px;
+            letter-spacing: .14em;
+            color: rgba(255,255,255,.52);
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(4, 2, 1, 0.88);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .start-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            font-weight: 300;
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(232, 196, 74, 0.4);
+        }
+
+        .start-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 35px;
+            max-width: 450px;
+            line-height: 1.6;
+            letter-spacing: 1px;
+        }
+
+        .start-btn {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            padding: 14px 35px;
+            background: transparent;
+            color: var(--accent-gold);
+            border: 2px solid var(--accent-gold);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 10px rgba(232, 196, 74, 0.1);
+            pointer-events: auto;
+        }
+
+        .start-btn:active { transform: scale(0.95); }
+        .start-btn:hover { 
+            background: var(--accent-gold); 
+            color: #000; 
+            box-shadow: 0 0 20px rgba(232, 196, 74, 0.5); 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Check the MAP and find the Orb.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - UI & Navigation:</strong> Look at the <strong>MAP</strong> below. You are the blue dot. The orb is gold. Navigate circumferentially (around the curve) to bypass the solid walls to reach it!
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="start-overlay">
+            <div class="start-title">ORB: Core Mechanics</div>
+            <div class="start-desc">Learn how to read your instrumentation, navigate radial mazes, and use time dilation to survive.</div>
+            <button class="start-btn" id="btn-start-tut">BEGIN TUTORIAL</button>
+        </div>
+
+        <canvas id="cv" tabindex="0"></canvas>
+
+        <div id="bottom-hud">
+            <div id="hl" class="hbox">
+                <div class="hlbl">TIME</div>
+                <div id="lastTime" style="font-size:10px;letter-spacing:.14em;color:rgba(232,196,74,.7);margin-bottom:3px;text-align:center;font-family:'Share Tech Mono',monospace">00:00</div>
+                <canvas id="clk" width="70" height="70" style="border-radius:50%"></canvas>
+            </div>
+            <div id="hc" class="hbox" style="padding:6px 8px 6px">
+                <div class="hlbl">MAP</div>
+                <canvas id="minimap" width="90" height="90" style="border-radius:50%;border:1px solid rgba(232,196,74,.18)"></canvas>
+                <div id="orbc">ORBS: 0 / 1</div>
+            </div>
+            <div id="hr" class="hbox">
+                <div class="hlbl">MASS</div>
+                <canvas id="mss" width="70" height="70" style="border-radius:50%"></canvas>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    const cv = document.getElementById('cv');
+    const cx = cv.getContext('2d');
+    
+    // Engine Constants
+    let W, H, CX, CY;
+    const RG = 60; // Ring Gap spacing
+    const RC = 5;  // Ring Count
+    const SC = 12; // Sector Count
+    const P_RAD = 6; // Player collision radius
+    
+    // State
+    let isStarted = false;
+    let step = 1;
+    
+    // Physics & Entites
+    let pWX = 0, pWY = -40; // Player starts slightly above the lighthouse
+    let camX = 0, camY = 0;
+    let tapWX = null, tapWY = null;
+    let keys = {};
+    
+    // Orb is placed far out, behind the wall
+    let orb = { r: 3, s: 9, x: 0, y: -210, active: true, phase: 0 };
+    let shadowR = 0; 
+    let timeScale = 1.0; 
+
+    // HUD Data
+    let rTime = 0;
+    let GAM_DUR = 30; // 30 real seconds before shadow maxes out in tutorial
+    let collected = 0;
+
+    // Build the Tutorial Maze Walls
+    let walls = Array.from({length: RC}, () => Array.from({length: SC}, () => ({inner: false, ccw: false})));
+    
+    // Create an Arc Wall on Ring 2 that blocks the direct path upward
+    walls[2][8].inner = true;
+    walls[2][9].inner = true;
+    walls[2][10].inner = true;
+    walls[2][8].ccw = true; 
+    walls[2][11].ccw = true;
+
+    // DOM
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+
+    function resize() {
+        W = cv.width = window.innerWidth;
+        H = cv.height = window.innerHeight;
+        CX = W / 2;
+        CY = H / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // ─── START BUTTON & FOCUS HANDLING ───
+    function forceFocus() {
+        window.focus();
+        if(document.activeElement !== cv) cv.focus();
+    }
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        lastTime = performance.now(); 
+        forceFocus();
+    });
+
+    document.addEventListener('click', forceFocus);
+    document.addEventListener('touchstart', forceFocus);
+
+    // ─── INPUT HANDLING ───
+    window.addEventListener('keydown', e => { keys[e.code] = true; keys[e.key] = true; });
+    window.addEventListener('keyup', e => { keys[e.code] = false; keys[e.key] = false; });
+
+    cv.addEventListener('mousedown', e => {
+        if(!isStarted) return;
+        tapWX = e.clientX - CX + camX;
+        tapWY = e.clientY - CY + camY;
+    });
+    cv.addEventListener('mousemove', e => {
+        if(!isStarted || !(e.buttons & 1)) return;
+        tapWX = e.clientX - CX + camX;
+        tapWY = e.clientY - CY + camY;
+    });
+    cv.addEventListener('mouseup', () => { tapWX = null; tapWY = null; });
+    
+    cv.addEventListener('touchstart', e => {
+        if(!isStarted) return;
+        tapWX = e.changedTouches[0].clientX - CX + camX;
+        tapWY = e.changedTouches[0].clientY - CY + camY;
+    }, {passive: true});
+    cv.addEventListener('touchmove', e => {
+        if(!isStarted) return;
+        tapWX = e.changedTouches[0].clientX - CX + camX;
+        tapWY = e.changedTouches[0].clientY - CY + camY;
+    }, {passive: true});
+    cv.addEventListener('touchend', () => { tapWX = null; tapWY = null; });
+
+    function getMovementVector() {
+        let dx = 0, dy = 0;
+        if(keys['ArrowLeft'] || keys['a']) dx -= 1;
+        if(keys['ArrowRight'] || keys['d']) dx += 1;
+        if(keys['ArrowUp'] || keys['w']) dy -= 1;
+        if(keys['ArrowDown'] || keys['s']) dy += 1;
+        
+        if(tapWX !== null) {
+            let tx = tapWX - pWX, ty = tapWY - pWY;
+            let dist = Math.hypot(tx, ty);
+            if(dist > 5) { dx += tx/dist; dy += ty/dist; } 
+            else { tapWX = null; }
+        }
+        
+        let len = Math.hypot(dx, dy);
+        if(len > 1) { dx /= len; dy /= len; }
+        return {dx, dy};
+    }
+
+    // ─── RADIAL COLLISION LOGIC ───
+    function normA(a) { return ((a % (Math.PI*2)) + Math.PI*2) % (Math.PI*2); }
+    
+    function cellOf(wx, wy) {
+        const r = Math.hypot(wx, wy);
+        const a = normA(Math.atan2(wy, wx));
+        return { ring: Math.min(Math.floor(r/RG), RC-1), sec: Math.floor(a/(Math.PI*2)*SC)%SC };
+    }
+
+    function doMove(dx, dy, speed) {
+        let nx = pWX + dx * speed, ny = pWY + dy * speed;
+        const {ring: cR, sec: cS} = cellOf(pWX, pWY);
+
+        const nd = Math.hypot(nx, ny);
+        const nR = Math.min(Math.floor(nd/RG), RC-1);
+        if(nR !== cR) {
+            const out = nR > cR;
+            const bR = Math.max(cR, nR) * RG;
+            const wr = out ? nR : cR;
+            const blocked = walls[wr]?.[cS]?.inner ?? false;
+            if(blocked) {
+                const ang = Math.atan2(ny, nx);
+                const cr = out ? bR - P_RAD - 1 : bR + P_RAD + 1;
+                nx = Math.cos(ang)*cr; ny = Math.sin(ang)*cr;
+            }
+        }
+
+        const na = normA(Math.atan2(ny, nx));
+        const nS = Math.floor(na/(Math.PI*2)*SC)%SC;
+        if(nS !== cS) {
+            const diff = (nS - cS + SC)%SC;
+            const goCW = diff <= SC/2;
+            const ws = goCW ? nS : cS;
+            const blocked = walls[cR]?.[ws]?.ccw ?? false;
+            if(blocked) {
+                const bAng = ws/SC * Math.PI*2;
+                const eps = 0.012;
+                const ca = goCW ? bAng - eps : bAng + eps;
+                const r = Math.hypot(nx, ny);
+                nx = Math.cos(ca)*r; ny = Math.sin(ca)*r;
+            }
+        }
+        
+        const maxR = RC * RG - P_RAD;
+        if(Math.hypot(nx,ny) > maxR) {
+            const a = Math.atan2(ny,nx);
+            nx = Math.cos(a)*maxR; ny = Math.sin(a)*maxR;
+        }
+        
+        if(Math.hypot(nx,ny) < 20 + P_RAD) {
+            const a = Math.atan2(ny,nx);
+            nx = Math.cos(a)*(20+P_RAD); ny = Math.sin(a)*(20+P_RAD);
+        }
+        
+        pWX = nx; pWY = ny;
+    }
+
+    // ─── HUD DRAWING FUNCTIONS ───
+    function updateHUD() {
+        // Clock
+        const cc = document.getElementById('clk').getContext('2d');
+        cc.clearRect(0,0,70,70);
+        
+        cc.beginPath(); cc.arc(35,35,34,0,Math.PI*2);
+        cc.fillStyle='rgba(8,4,2,.92)'; cc.fill();
+        cc.strokeStyle='rgba(232,196,74,.22)'; cc.lineWidth=1; cc.stroke();
+        
+        for(let i=0;i<12;i++){
+            const a=(i/12)*Math.PI*2-Math.PI/2;
+            const r1=31, r2=i%3===0?23:29.5;
+            cc.beginPath();
+            cc.moveTo(35+Math.cos(a)*r1, 35+Math.sin(a)*r1);
+            cc.lineTo(35+Math.cos(a)*r2, 35+Math.sin(a)*r2);
+            cc.strokeStyle=i%3===0?'rgba(232,196,74,.58)':'rgba(232,196,74,.28)';
+            cc.lineWidth=i%3===0?1.4:.7; cc.stroke();
+        }
+        
+        // Simulated clock hands moving based on timeScale
+        const handA = (rTime * timeScale * 0.1) * Math.PI*2 - Math.PI/2;
+        cc.beginPath(); cc.moveTo(35,35);
+        cc.lineTo(35+Math.cos(handA)*28, 35+Math.sin(handA)*28);
+        cc.strokeStyle='rgba(255,255,255,.9)'; cc.lineWidth=1.4; cc.lineCap='round'; cc.stroke();
+
+        // Mass Dial
+        const mc = document.getElementById('mss').getContext('2d');
+        mc.clearRect(0,0,70,70);
+        mc.beginPath(); mc.arc(35,35,34,0,Math.PI*2);
+        mc.fillStyle='rgba(8,4,2,.92)'; mc.fill();
+        mc.strokeStyle='rgba(232,196,74,.22)'; mc.lineWidth=1; mc.stroke();
+        
+        const sa=Math.PI*.75, ea=Math.PI*2.25;
+        mc.beginPath(); mc.arc(35,35,26,sa,ea);
+        mc.strokeStyle='rgba(255,255,255,.07)'; mc.lineWidth=6; mc.stroke();
+        
+        if(collected > 0) {
+            mc.beginPath(); mc.arc(35,35,26,sa,ea);
+            mc.strokeStyle='#4caf88'; mc.lineWidth=6; mc.stroke();
+            const na = ea;
+            mc.beginPath(); mc.moveTo(35,35);
+            mc.lineTo(35+Math.cos(na)*23, 35+Math.sin(na)*23);
+            mc.strokeStyle='#fff'; mc.lineWidth=1.5; mc.stroke();
+        }
+        mc.fillStyle='rgba(232,196,74,.62)'; mc.font='7px monospace';
+        mc.textAlign='center'; mc.fillText(collected.toString(), 35, 53);
+
+        // Minimap
+        const map = document.getElementById('minimap').getContext('2d');
+        map.setTransform(1, 0, 0, 1, 0, 0); 
+        map.clearRect(0,0,90,90);
+        map.save();
+        map.beginPath(); map.arc(45,45,44,0,Math.PI*2); map.clip();
+        map.fillStyle = 'rgba(14,10,6,.96)'; map.fillRect(0,0,90,90);
+
+        const scale = 44 / (RC * RG);
+
+        // Shadow on map
+        if(shadowR > 0) {
+            map.beginPath(); map.arc(45,45, shadowR*RG*scale, 0, Math.PI*2);
+            map.fillStyle = 'rgba(224, 88, 40, 0.4)'; map.fill();
+        }
+
+        // Draw Walls on map
+        for(let r=0; r<RC; r++) {
+            for(let s=0; s<SC; s++) {
+                const a1 = (s/SC)*Math.PI*2, a2 = ((s+1)/SC)*Math.PI*2;
+                if(walls[r][s].inner) {
+                    map.beginPath(); map.arc(45,45, r*RG*scale, a1, a2);
+                    map.strokeStyle = 'rgba(210,195,162,0.8)'; map.lineWidth = 2; map.stroke();
+                }
+                if(walls[r][s].ccw) {
+                    map.beginPath();
+                    map.moveTo(45+Math.cos(a1)*r*RG*scale, 45+Math.sin(a1)*r*RG*scale);
+                    map.lineTo(45+Math.cos(a1)*(r+1)*RG*scale, 45+Math.sin(a1)*(r+1)*RG*scale);
+                    map.strokeStyle = 'rgba(210,195,162,0.8)'; map.lineWidth = 2; map.stroke();
+                }
+            }
+        }
+
+        // Map Orb
+        if(orb.active) {
+            map.beginPath(); map.arc(45+orb.x*scale, 45+orb.y*scale, 2.5, 0, Math.PI*2);
+            map.fillStyle = '#e8c44a'; map.fill();
+        }
+
+        // Map Player
+        map.beginPath(); map.arc(45+pWX*scale, 45+pWY*scale, 3, 0, Math.PI*2);
+        map.fillStyle = '#4a90c8'; map.fill();
+
+        map.restore();
+        map.beginPath(); map.arc(45,45,44,0,Math.PI*2);
+        map.strokeStyle = 'rgba(232,196,74,.22)'; map.lineWidth=1; map.stroke();
+
+        document.getElementById('orbc').innerText = `ORBS: ${collected} / 1`;
+    }
+
+    // ─── WORLD DRAWING FUNCTIONS ───
+    function drawLighthouse() {
+        const bR = 20;
+        const og = cx.createRadialGradient(0,0,0,0,0, bR*3);
+        og.addColorStop(0, 'rgba(255,242,155,0.6)');
+        og.addColorStop(1, 'rgba(255,150,20,0)');
+        cx.beginPath(); cx.arc(0,0,bR*3,0,Math.PI*2);
+        cx.fillStyle = og; cx.fill();
+
+        cx.beginPath(); cx.arc(0,0,bR,0,Math.PI*2);
+        cx.fillStyle = '#bfb49e'; cx.fill();
+        cx.strokeStyle = '#8a6840'; cx.lineWidth = 2; cx.stroke();
+
+        cx.beginPath(); cx.arc(0,0,bR*0.4,0,Math.PI*2);
+        cx.fillStyle = '#fffcc8'; cx.fill();
+    }
+
+    function drawMaze() {
+        for(let r = 1; r <= RC; r++) {
+            cx.beginPath(); 
+            cx.arc(0, 0, r * RG, 0, Math.PI * 2);
+            cx.strokeStyle = (r === RC) ? 'rgba(232, 196, 74, 0.8)' : 'rgba(172, 158, 134, 0.15)'; 
+            cx.lineWidth = (r === RC) ? 3 : 1;
+            cx.stroke();
+            
+            if (r > 0) {
+                cx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                cx.font = '10px monospace';
+                cx.fillText(`R${r}`, 5, -(r * RG) + 12);
+            }
+        }
+
+        for(let s=0; s<SC; s++){
+            const a=(s/SC)*Math.PI*2;
+            cx.beginPath();
+            cx.moveTo(Math.cos(a)*RG,Math.sin(a)*RG);
+            cx.lineTo(Math.cos(a)*RC*RG,Math.sin(a)*RC*RG);
+            cx.strokeStyle='rgba(172,158,134,.05)'; cx.lineWidth=1; cx.stroke();
+        }
+
+        for(let r=0; r<RC; r++) {
+            for(let s=0; s<SC; s++) {
+                const a1 = (s/SC)*Math.PI*2, a2 = ((s+1)/SC)*Math.PI*2;
+                
+                if(walls[r][s].inner) {
+                    cx.beginPath(); cx.arc(0,0, r*RG, a1, a2);
+                    cx.strokeStyle = 'rgba(210,195,162, 0.85)';
+                    cx.lineWidth = 4;
+                    cx.stroke();
+                    
+                    cx.beginPath(); cx.arc(0,0, r*RG + 2, a1+0.02, a2-0.02);
+                    cx.strokeStyle = 'rgba(232,196,74, 0.6)';
+                    cx.lineWidth = 1.5;
+                    cx.stroke();
+                }
+                if(walls[r][s].ccw) {
+                    cx.beginPath();
+                    cx.moveTo(Math.cos(a1)*r*RG, Math.sin(a1)*r*RG);
+                    cx.lineTo(Math.cos(a1)*(r+1)*RG, Math.sin(a1)*(r+1)*RG);
+                    cx.strokeStyle = 'rgba(210,195,162, 0.85)';
+                    cx.lineWidth = 4;
+                    cx.stroke();
+                    
+                    const pa = a1 + Math.PI/2, of = 2;
+                    cx.beginPath();
+                    cx.moveTo(Math.cos(a1)*r*RG + Math.cos(pa)*of, Math.sin(a1)*r*RG + Math.sin(pa)*of);
+                    cx.lineTo(Math.cos(a1)*(r+1)*RG + Math.cos(pa)*of, Math.sin(a1)*(r+1)*RG + Math.sin(pa)*of);
+                    cx.strokeStyle = 'rgba(232,196,74, 0.6)';
+                    cx.lineWidth = 1.5;
+                    cx.stroke();
+                }
+            }
+        }
+    }
+
+    function drawOrb() {
+        if(!orb.active) return;
+        const rr = 8 + Math.sin(orb.phase) * 2;
+        
+        const g = cx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, rr*3);
+        g.addColorStop(0, 'rgba(255,244,188,0.9)');
+        g.addColorStop(1, 'rgba(232,140,40,0)');
+        cx.beginPath(); cx.arc(orb.x, orb.y, rr*3, 0, Math.PI*2);
+        cx.fillStyle = g; cx.fill();
+        
+        cx.beginPath(); cx.arc(orb.x, orb.y, rr, 0, Math.PI*2);
+        cx.fillStyle = '#fff8c8'; cx.fill();
+    }
+
+    function drawPlayer() {
+        const r = P_RAD;
+        const g = cx.createRadialGradient(pWX, pWY, 0, pWX, pWY, r*4);
+        g.addColorStop(0, 'rgba(175,222,255,0.6)');
+        g.addColorStop(1, 'rgba(75,148,220,0)');
+        cx.beginPath(); cx.arc(pWX, pWY, r*4, 0, Math.PI*2);
+        cx.fillStyle = g; cx.fill();
+        
+        cx.beginPath(); cx.arc(pWX, pWY, r, 0, Math.PI*2);
+        cx.fillStyle = '#d0eeff'; cx.fill();
+        cx.strokeStyle = '#64a8e4'; cx.lineWidth = 2; cx.stroke();
+    }
+
+    function drawShadow() {
+        if(shadowR <= 0) return;
+        cx.beginPath();
+        cx.arc(0, 0, shadowR * RG, 0, Math.PI * 2);
+        cx.fillStyle = 'rgba(40, 20, 10, 0.5)';
+        cx.fill();
+        cx.strokeStyle = 'rgba(224, 88, 40, 0.8)';
+        cx.lineWidth = 2;
+        cx.stroke();
+    }
+
+    // ─── MAIN LOOP ───
+    let lastTime = performance.now();
+    
+    function loop(time) {
+        requestAnimationFrame(loop);
+        
+        let dt = (time - lastTime) / 1000;
+        lastTime = time;
+        if(dt > 0.1) dt = 0.1; 
+
+        cx.setTransform(1, 0, 0, 1, 0, 0); 
+        cx.clearRect(0, 0, W, H);
+
+        if (isStarted) {
+            // --- Logic Updates ---
+            let vec = getMovementVector();
+            let speed = 140 * dt * timeScale; 
+            
+            if(vec.dx !== 0 || vec.dy !== 0) {
+                doMove(vec.dx, vec.dy, speed);
+            }
+
+            camX += (pWX - camX) * 0.1;
+            camY += (pWY - camY) * 0.1;
+
+            orb.phase += dt * 5;
+            rTime += dt;
+
+            updateHUD();
+
+            // --- Tutorial Progression ---
+            
+            // Step 1 -> 2 (Collect Orb)
+            if (step === 1 && orb.active) {
+                let dist = Math.hypot(pWX - orb.x, pWY - orb.y);
+                if (dist < 20) {
+                    orb.active = false;
+                    collected = 1;
+                    step = 2;
+                    timeScale = 0.4; 
+                    
+                    instText.innerText = "Step 2: Watch your dials!";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Time Dilation:</strong> Your <strong>MASS</strong> dial filled up! Because your mass increased, the <strong>TIME</strong> dial is ticking much slower. Use this to your advantage!";
+                }
+            }
+
+            // Step 2 -> 3 (Shadow Growing)
+            if (step >= 2 && step < 4) {
+                shadowR += (0.4 * timeScale) * dt; 
+                
+                if (step === 2 && shadowR > 1.2) {
+                    step = 3;
+                    instText.innerText = "Step 3: Escape! Return to the Lighthouse.";
+                    objText.innerHTML = "<strong>🎯 Learning Objective - Survival:</strong> The shadow (red on the MAP) is growing. If it touches you, you lose! Navigate back to the center Lighthouse immediately.";
+                }
+            }
+
+            // Step 3 -> 4 (Return to center) - FIXED COLLISION THRESHOLD!
+            if (step === 3) {
+                let distToCenter = Math.hypot(pWX, pWY);
+                if (distToCenter < 35) { // Increased from 25 to 35 to ensure the player can trigger it!
+                    step = 4;
+                    instText.innerText = "Simulation Complete!";
+                    instText.style.color = "#4caf88";
+                    objText.innerHTML = "You survived! You know how to navigate the map, read your HUD, and manipulate time. Close this window to enter the Maze.";
+                }
+            }
+        }
+
+        // --- Render ---
+        cx.save();
+        cx.translate(CX, CY); 
+        cx.translate(-camX, -camY); 
+
+        drawMaze(); 
+        drawShadow();
+        drawLighthouse();
+        drawOrb();
+        drawPlayer();
+
+        cx.restore();
+    }
+
+    requestAnimationFrame(loop);
+
+</script>
+</body>
+</html>

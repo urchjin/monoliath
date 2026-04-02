@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Z: Boot Camp</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
+        
+        :root { 
+            --bg: #e0d4ce; 
+            --panel: rgba(109, 76, 65, 0.95); 
+            --text: #ffb300; 
+            --text-light: #fff8e1;
+            --grass: #e6c280; --grass-shadow: #cda661;
+            --trap: #5d4037; --trap-shadow: #3e2723;
+            --start: #34495e; --start-shadow: #2c3e50;
+            --c-blank: #95a5a6; --c-temp-const: #1abc9c;
+            --accent: #00bcd4;
+        }
+
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text-light); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1, h2 { text-transform: uppercase; letter-spacing: 2px; text-align: center; color: var(--text); }
+        .hidden { display: none !important; }
+
+        .panel { width: 100%; max-width: 800px; background: var(--panel); padding: 30px; border-radius: 10px; border: 2px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative;}
+        
+        .instruction-box { background: rgba(0,0,0,0.6); border-left: 4px solid var(--accent); padding: 15px; margin-bottom: 20px; border-radius: 5px; color: #fff; line-height: 1.5; font-size: 14px;}
+
+        /* --- ISOMETRIC TRACK --- */
+        .track-container { position: relative; height: 250px; display: flex; justify-content: center; align-items: center; perspective: 1000px; margin-bottom: 20px; background: rgba(0,0,0,0.2); border-radius: 10px; overflow: hidden;}
+        .track-world { transform-style: preserve-3d; transform: rotateX(60deg) rotateZ(-45deg) scale(1.2); display: flex; gap: 4px; }
+        
+        .cell { width: 70px; height: 70px; position: relative; transform-style: preserve-3d; display: flex; justify-content: center; align-items: center; transition: 0.3s;}
+        .cell::before { content: ''; position: absolute; inset: 0; transform: translateZ(-10px); }
+        .cell.start { background: var(--start); box-shadow: 4px 4px 0px var(--start-shadow); }
+        .cell.grass { background: var(--grass); box-shadow: 4px 4px 0px var(--grass-shadow); }
+        .cell.trap { background: var(--trap); box-shadow: 4px 4px 0px var(--trap-shadow); transform: translateZ(-5px); }
+        .cell.valid-move { background: var(--accent); box-shadow: 4px 4px 0px #008ba3; transform: translateZ(10px); cursor: pointer; }
+        .cell.valid-move:hover { background: white; }
+        
+        .cell-label { position: absolute; transform: translateZ(2px) rotateZ(45deg); font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 2px black; }
+
+        .pawn { position: absolute; width: 34px; height: 34px; transform: translateZ(30px) rotateZ(45deg) rotateX(-60deg); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; border-radius: 6px; box-shadow: -10px 20px 20px rgba(0,0,0,0.6); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: linear-gradient(135deg, #f1f2f6 50%, #2f3640 50%); color: #e94560; border: 2px solid white; z-index: 10;}
+
+        /* --- MATH & CARDS --- */
+        .formula-board { background: rgba(0, 0, 0, 0.8); border: 2px solid var(--accent); border-radius: 8px; padding: 15px; font-family: monospace; font-size: 16px; margin-bottom: 20px; text-align: center;}
+        .f-title { color: var(--accent); font-weight: bold; margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid rgba(0,188,212,0.3); padding-bottom: 5px; }
+        
+        .card-container { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .card-ui { width: 100px; padding: 10px; background: #4e342e; color: white; border-radius: 6px; text-align: center; cursor: pointer; border: 2px solid transparent; position: relative; transition: 0.2s;}
+        .card-ui.blank { background: var(--c-blank); color: #111; }
+        .card-ui.temp-const { background: var(--c-temp-const); color: #fff; }
+        .card-ui:hover { transform: translateY(-5px); }
+        .card-ui.play { border-color: var(--accent); background: #263238; color: white; }
+        .card-ui.discard { border-color: #e94560; background: #3e2723; color: white; opacity: 0.8; }
+        
+        .card-badge { position: absolute; top: -10px; right: -10px; padding: 4px 8px; border-radius: 8px; font-size: 10px; font-weight: bold; display: none; }
+        .card-ui.play .card-badge { display: block; background: var(--accent); color: #111; content: "PLAY"; }
+        .card-ui.discard .card-badge { display: block; background: #e94560; color: white; }
+
+        .btn { background: var(--text); color: #111; border: none; padding: 15px 30px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; text-transform: uppercase; transition: 0.3s; box-shadow: 0 5px 15px rgba(255, 179, 0, 0.4); }
+        .btn:disabled { background: #5d4037; color: #8d6e63; cursor: not-allowed; box-shadow: none; }
+        
+        /* --- MODAL --- */
+        .modal { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: none; align-items: center; justify-content: center; flex-direction: column; border-radius: 10px;}
+        .setup-input { background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 15px; margin: 10px 0; width: 200px; text-align: center; font-size: 24px; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <h1>FORMULA Z: BOOT CAMP</h1>
+
+        <div id="step-1">
+            <div class="instruction-box">
+                <strong>STEP 1: THE ENGINE</strong><br>
+                Movement is dictated by math. Your Zebra's base stats are: <strong>Coefficient (1)</strong>, <strong>X-Value (1)</strong>, and <strong>Constant (0)</strong>.<br>
+                Look at the formula board below. Click the highlighted track cell to move exactly 1 space.
+            </div>
+
+            <div class="formula-board">
+                <div class="f-title">MATH ENGINE</div>
+                Speed = (Coefficient × X) + Constant<br>
+                Speed = (1 × 1) + 0 = <strong style="color: var(--accent); font-size: 20px;">1</strong>
+            </div>
+
+            <div class="track-container">
+                <div class="track-world" id="track-1">
+                    <div class="cell start" id="c1-0"><div class="pawn" id="pawn-1">Z</div></div>
+                    <div class="cell grass valid-move" id="c1-1" onclick="nextStep(2)"></div>
+                    <div class="cell grass"></div>
+                    <div class="cell trap"><span class="cell-label">POTHOLE</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="step-2" class="hidden">
+            <div class="instruction-box">
+                <strong>STEP 2: DISCARD AMPLIFICATION</strong><br>
+                To jump over the pothole, you need a Speed of <strong>4</strong>. You have a <strong>+1 Constant</strong> card.<br>
+                <span style="color: var(--text);">CRITICAL RULE:</span> Every card you select to DISCARD adds +1 to the power of the card you PLAY.<br>
+                Select the green card to <strong>PLAY</strong> it, then select the two grey blank cards to <strong>DISCARD</strong> them.
+            </div>
+
+            <div class="formula-board" id="f-board-2">
+                <div class="f-title">MATH ENGINE</div>
+                Target Speed: <strong style="color: #e74c3c;">4</strong> | Current Speed: <strong id="current-speed" style="color: white;">1</strong><br>
+                <span style="font-size: 12px; color: #888;">(1 x 1) + 0 Base + (<span id="mod-play">0</span> Play + <span id="mod-disc">0</span> Discards)</span>
+            </div>
+
+            <div class="card-container">
+                <div class="card-ui temp-const" id="card-play" onclick="toggleCard('play')">
+                    <strong>Temp Const</strong><br><span style="font-size: 10px;">+1 Const</span><div class="card-badge" id="badge-play">PLAY</div>
+                </div>
+                <div class="card-ui blank" id="card-d1" onclick="toggleCard('d1')">
+                    <strong>Blank</strong><br><span style="font-size: 10px;">Junk</span><div class="card-badge" id="badge-d1">DISC</div>
+                </div>
+                <div class="card-ui blank" id="card-d2" onclick="toggleCard('d2')">
+                    <strong>Blank</strong><br><span style="font-size: 10px;">Junk</span><div class="card-badge" id="badge-d2">DISC</div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn" id="btn-move" disabled onclick="executeStep2Move()">EXECUTE FORMULA</button>
+            </div>
+        </div>
+
+        <div id="step-3" class="hidden">
+            <div class="instruction-box">
+                <strong>STEP 3: ALGEBRA HAZARD</strong><br>
+                Oh no! Your speed of 4 caused you to overshoot and land on the pothole hazard!<br>
+                To avoid losing your next turn, you must quickly solve the equation below.
+            </div>
+
+            <div class="track-container" style="height: 150px;">
+                <div class="track-world" style="transform: rotateX(60deg) rotateZ(-45deg) scale(1.5) translate(-100px, 0);">
+                    <div class="cell grass"></div>
+                    <div class="cell trap"><div class="pawn">Z</div><span class="cell-label">POTHOLE</span></div>
+                    <div class="cell grass"></div>
+                </div>
+            </div>
+
+            <div style="text-align: center;">
+                <button class="btn" style="background: #e74c3c; color: white;" onclick="triggerHazard()">RESOLVE HAZARD</button>
+            </div>
+        </div>
+
+        <div class="modal" id="algebra-modal">
+            <h2 style="color: var(--accent);">⚠️ HAZARD ENCOUNTERED!</h2>
+            <p style="color: white;">Solve the equation to escape.</p>
+            <div class="formula-board" style="font-size: 32px; font-weight: bold; margin: 15px 0;">
+                2X + 5 = 11
+            </div>
+            <input type="number" id="alg-input" class="setup-input" placeholder="X = ?">
+            <p id="alg-feedback" style="color: #e74c3c; font-weight: bold; height: 20px;"></p>
+            <button class="btn" onclick="submitAlgebra()">SUBMIT ANSWER</button>
+        </div>
+
+        <div class="modal" id="success-modal">
+            <h1 style="color: var(--grass); font-size: 48px;">TUTORIAL COMPLETE</h1>
+            <p style="color: white;">You've mastered the Formula Z Engine.</p>
+            <button class="btn" onclick="location.reload()">REBOOT</button>
+        </div>
+
+    </div>
+
+    <script>
+        let playSelected = false;
+        let discardsSelected = 0;
+        let d1Selected = false;
+        let d2Selected = false;
+
+        function nextStep(step) {
+            document.getElementById('step-1').classList.add('hidden');
+            document.getElementById('step-2').classList.remove('hidden');
+            
+            // Visually move the pawn for the transition
+            const pawn = document.getElementById('pawn-1');
+            pawn.style.transform = `translateZ(30px) rotateZ(45deg) rotateX(-60deg) translate(70px, 0)`;
+        }
+
+        // Simulates the Card UI from the main game
+        function toggleCard(id) {
+            const el = document.getElementById(`card-${id}`);
+            
+            if (id === 'play') {
+                playSelected = !playSelected;
+                el.classList.toggle('play');
+            } else if (id === 'd1') {
+                d1Selected = !d1Selected;
+                el.classList.toggle('discard');
+                discardsSelected += d1Selected ? 1 : -1;
+            } else if (id === 'd2') {
+                d2Selected = !d2Selected;
+                el.classList.toggle('discard');
+                discardsSelected += d2Selected ? 1 : -1;
+            }
+
+            updateFormula();
+        }
+
+        // Replicates the `getSpeed()` logic where discards augment the play card
+        function updateFormula() {
+            let speed = 1; // Base: (1x1)+0
+            let playMod = 0;
+            
+            if (playSelected) {
+                playMod = 1; // The Temp Const card grants +1
+                speed += playMod;
+                speed += discardsSelected; // Discards add +1 each to the played card
+            }
+
+            document.getElementById('current-speed').innerText = speed;
+            document.getElementById('mod-play').innerText = playMod;
+            document.getElementById('mod-disc').innerText = playSelected ? discardsSelected : 0;
+
+            const btn = document.getElementById('btn-move');
+            if (speed === 4) {
+                btn.disabled = false;
+                document.getElementById('current-speed').style.color = 'var(--accent)';
+            } else {
+                btn.disabled = true;
+                document.getElementById('current-speed').style.color = 'white';
+            }
+        }
+
+        function executeStep2Move() {
+            document.getElementById('step-2').classList.add('hidden');
+            document.getElementById('step-3').classList.remove('hidden');
+        }
+
+        function triggerHazard() {
+            document.getElementById('algebra-modal').style.display = 'flex';
+        }
+
+        // Replicates the `submitAlgebra()` hazard check
+        function submitAlgebra() {
+            const guess = document.getElementById('alg-input').value;
+            if (guess === "3") { // 2(3) + 5 = 11
+                document.getElementById('algebra-modal').style.display = 'none';
+                document.getElementById('success-modal').style.display = 'flex';
+            } else {
+                document.getElementById('alg-feedback').innerText = "INCORRECT! System locked.";
+            }
+        }
+    </script>
+</body>
+</html>

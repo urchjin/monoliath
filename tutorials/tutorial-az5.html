@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Abacuzebra Tutorial</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300;500;700;900&display=swap');
+
+        :root {
+            --bg-top: #ff7e5f; --bg-bottom: #feb47b;
+            --monolith-wood: #4a2508; --reckoning-bar: #2b1404;
+            --bead-light: #fffdfa; --bead-glow: rgba(255, 253, 250, 0.6);
+            --bead-strike: #ffffff; --panel-bg: rgba(61, 30, 6, 0.6);
+            --danger-red: #ff3333; --energy-color: #f1c40f; 
+            --text-main: #fff; --cyan: #00ffff; --pink: #ff007f;
+        }
+
+        body {
+            margin: 0; padding: 0; 
+            background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+            font-family: 'Quicksand', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start; 
+            min-height: 100vh; color: var(--text-main); touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            width: 100%; background: rgba(43, 20, 4, 0.95);
+            border-bottom: 2px solid var(--energy-color);
+            padding: 12px 15px; display: flex; flex-direction: column; gap: 6px; z-index: 50;
+            box-sizing: border-box; box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-shrink: 0;
+        }
+        #instruction-text {
+            font-size: 16px; font-weight: 700; color: var(--energy-color); 
+            text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(241, 196, 15, 0.1); border: 1px solid rgba(241, 196, 15, 0.3);
+            border-radius: 6px; padding: 8px; font-size: 13px;
+            color: #fff; text-align: center; line-height: 1.3;
+        }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, #2b1404 0%, #4a2508 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 200; text-align: center; padding: 20px; box-sizing: border-box;
+        }
+        .start-title { font-size: 2.5rem; margin-bottom: 10px; color: var(--bead-light); text-shadow: 0 0 20px var(--bead-glow); font-weight: 900;}
+        .start-desc { font-size: 1rem; max-width: 450px; line-height: 1.6; margin-bottom: 30px; color: #ddd; font-weight: 500;}
+        .start-btn {
+            padding: 12px 35px; font-size: 1.1rem; font-family: 'Quicksand'; font-weight: 700; 
+            background: var(--bead-light); border: none; border-radius: 30px; 
+            color: var(--monolith-wood); cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 5px 15px rgba(255,255,255,0.3); transition: 0.2s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--energy-color) !important;
+            z-index: 10; position: relative;
+        }
+
+        /* Energy Bar */
+        #energy-container { width: 260px; height: 8px; background: rgba(0,0,0,0.4); border-radius: 5px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid rgba(255,255,255,0.1); margin: 10px 0; flex-shrink: 0;}
+        #energy-bar { width: 100%; height: 100%; background: var(--energy-color); box-shadow: 0 0 10px var(--energy-color); transition: width 0.3s linear, background 0.3s; }
+
+        /* The Board - Locked to a strict mobile-friendly 4:5 proportion */
+        #board {
+            position: relative; 
+            width: 260px; 
+            height: 325px; 
+            display: flex; justify-content: space-between; padding: 0 25px; box-sizing: border-box;
+            background: var(--monolith-wood); border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 30px rgba(0,0,0,0.6);
+            overflow: hidden; flex-shrink: 0; z-index: 5; margin-bottom: 10px;
+        }
+
+        .reckoning-bar { position: absolute; top: 25%; left: 0; width: 100%; height: 8px; background: var(--reckoning-bar); box-shadow: 0 4px 10px rgba(0,0,0,0.6); z-index: 20; }
+        .rod { position: relative; width: 22%; height: 100%; background: rgba(0,0,0,0.15); display: flex; justify-content: center; }
+        .rod-label { position: absolute; bottom: 5px; font-weight: 700; color: rgba(255,255,255,0.3); font-size: 0.8rem; pointer-events: none; }
+        
+        /* Beads - Height increased to 8% for much better visibility */
+        .bead { 
+            position: absolute; width: 90%; height: 8%; border-radius: 12px; 
+            background: var(--bead-light); box-shadow: 0 4px 10px rgba(0,0,0,0.4); 
+            z-index: 10; transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.1s, box-shadow 0.1s; 
+        }
+        
+        .bead.heaven { top: 4%; }
+        .rod .earth[data-idx="1"] { top: 55%; }
+        .rod .earth[data-idx="2"] { top: 65%; }
+        .rod .earth[data-idx="3"] { top: 75%; }
+        .rod .earth[data-idx="4"] { top: 85%; }
+
+        /* Adjusted active targets to account for slightly chunkier beads */
+        .bead.heaven.active { top: 17%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="1"].active { top: 27%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="2"].active { top: 35%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="3"].active { top: 43%; box-shadow: 0 0 15px var(--bead-glow); }
+        .rod .earth[data-idx="4"].active { top: 51%; box-shadow: 0 0 15px var(--bead-glow); }
+
+        .bead.striking { background: var(--bead-strike); box-shadow: 0 0 30px var(--bead-strike) !important; z-index: 18; }
+
+        /* Enemies */
+        .enemy {
+            position: absolute; transform: rotate(45deg); 
+            z-index: 15; display: flex; align-items: center; justify-content: center; border: 2px solid white;
+            transition: top 0.3s ease-out;
+        }
+        .enemy-label { transform: rotate(-45deg); font-weight: 900; color: #000; font-size: 12px; }
+        .enemy-1 { width: 18px; height: 18px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan); }
+        .enemy-2 { width: 22px; height: 22px; background: var(--pink); box-shadow: 0 0 20px var(--pink); }
+
+        @keyframes vaporize { 0% { transform: scale(1) rotate(45deg); opacity: 1; } 100% { transform: scale(4) rotate(180deg); opacity: 0; } }
+        .dead { animation: vaporize 0.4s ease-out forwards; }
+
+        /* Console */
+        #console { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; flex-grow: 1; justify-content: flex-start; padding: 10px 15px 20px 15px; box-sizing: border-box; z-index: 10; }
+        #readout { font-size: 0.9rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;}
+        #readout-val { font-weight: 700; color: #fff; font-size: 1.2rem; }
+
+        #input-display-area { display: flex; gap: 15px; align-items: center; justify-content: center; background: var(--panel-bg); padding: 5px 20px; border-radius: 15px; backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .op-toggle { width: 35px; height: 35px; border-radius: 10px; border: 2px solid white; background: rgba(255,255,255,0.2); color: white; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        #custom-input-box { font-size: 2rem; font-weight: 300; color: white; border-bottom: 2px solid white; min-width: 80px; text-align: center; letter-spacing: 3px; min-height: 35px; }
+
+        #numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; max-width: 350px; }
+        .num-key { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 8px 0; font-size: 1.4rem; color: white; font-family: 'Quicksand'; font-weight: 500; cursor: pointer; backdrop-filter: blur(5px); transition: 0.1s;}
+        .num-key:active { background: rgba(255,255,255,0.4); transform: scale(0.95); }
+        .num-key.action-key { background: rgba(255,255,255,0.3); font-weight: 700; font-size: 1rem;}
+        .num-key.go-key { background: var(--bead-light); color: var(--monolith-wood); font-size: 1.2rem; font-weight: 900; text-transform: uppercase;}
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: The Basics of Movement</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Columns:</strong> The abacus has three rods: <b>100s, 10s, and 1s</b>. Type <b>1</b> and press <b>GO</b> to move a bead on the 1s rod.
+        </div>
+    </div>
+
+    <div id="start-overlay">
+        <h1 class="start-title">Abacuzebra</h1>
+        <p class="start-desc">Master the ancient abacus. Defend the reckoning bar by calculating values and physically striking bugs with your moving beads.</p>
+        <button class="start-btn" id="btn-start-tut">COMMENCE TRAINING</button>
+    </div>
+
+    <div id="energy-container"><div id="energy-bar"></div></div>
+
+    <div id="board">
+        <div class="reckoning-bar" id="center-bar"></div>
+        <div class="rod" id="rod-100">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">100s</div>
+        </div>
+        <div class="rod" id="rod-10">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">10s</div>
+            </div>
+        <div class="rod" id="rod-1">
+            <div class="bead heaven"></div><div class="bead earth" data-idx="1"></div><div class="bead earth" data-idx="2"></div><div class="bead earth" data-idx="3"></div><div class="bead earth" data-idx="4"></div>
+            <div class="rod-label">1s</div>
+        </div>
+    </div>
+
+    <div id="console">
+        <div id="readout">Core State: <span id="readout-val">0</span></div>
+        <div id="input-display-area">
+            <div class="op-toggle" id="op-btn">+</div>
+            <div id="custom-input-box"></div>
+        </div>
+        <div id="numpad">
+            <button class="num-key" id="nk-1" onclick="appendNum('1')">1</button><button class="num-key" id="nk-2" onclick="appendNum('2')">2</button><button class="num-key" onclick="appendNum('3')">3</button>
+            <button class="num-key" onclick="appendNum('4')">4</button><button class="num-key" id="nk-5" onclick="appendNum('5')">5</button><button class="num-key" onclick="appendNum('6')">6</button>
+            <button class="num-key" onclick="appendNum('7')">7</button><button class="num-key" onclick="appendNum('8')">8</button><button class="num-key" onclick="appendNum('9')">9</button>
+            <button class="num-key action-key" onclick="deleteNum()">DEL</button><button class="num-key" id="nk-0" onclick="appendNum('0')">0</button><button class="num-key go-key" id="nk-go" onclick="executeCommand()">GO</button>
+        </div>
+    </div>
+
+    <script>
+        let step = 1;
+        let isStarted = false;
+        let currentTotal = 0;
+        let typedInput = "";
+        let energy = 100;
+        let currentEnemy = null;
+
+        const instText = document.getElementById('instruction-text');
+        const objText = document.getElementById('learning-objective');
+        const readoutEl = document.getElementById('readout-val');
+        const inputBox = document.getElementById('custom-input-box');
+        const energyBar = document.getElementById('energy-bar');
+
+        // Buttons to highlight
+        const btn1 = document.getElementById('nk-1');
+        const btn2 = document.getElementById('nk-2');
+        const btn5 = document.getElementById('nk-5');
+        const btn0 = document.getElementById('nk-0');
+        const btnGo = document.getElementById('nk-go');
+
+        document.getElementById('btn-start-tut').addEventListener('click', () => {
+            document.getElementById('start-overlay').style.display = 'none';
+            isStarted = true;
+            btn1.classList.add('highlight-target');
+        });
+
+        // --- Input Logic ---
+        function appendNum(num) {
+            if (!isStarted) return;
+            if (typedInput.length < 3) {
+                typedInput += num;
+                inputBox.innerText = typedInput;
+                checkHighlights();
+            }
+        }
+        function deleteNum() {
+            if (typedInput.length > 0) {
+                typedInput = typedInput.slice(0, -1);
+                inputBox.innerText = typedInput;
+                checkHighlights();
+            }
+        }
+
+        function checkHighlights() {
+            btn1.classList.remove('highlight-target');
+            btn0.classList.remove('highlight-target');
+            btn2.classList.remove('highlight-target');
+            btn5.classList.remove('highlight-target');
+            btnGo.classList.remove('highlight-target');
+
+            if (step === 1) {
+                if (typedInput === "1") btnGo.classList.add('highlight-target');
+                else btn1.classList.add('highlight-target');
+            } else if (step === 2) {
+                if (typedInput === "10") btnGo.classList.add('highlight-target');
+                else if (typedInput === "1") btn0.classList.add('highlight-target');
+                else btn1.classList.add('highlight-target');
+            } else if (step === 3) {
+                if (typedInput === "2") btnGo.classList.add('highlight-target');
+                else btn2.classList.add('highlight-target');
+            } else if (step === 4) {
+                if (typedInput === "500") btnGo.classList.add('highlight-target');
+                else if (typedInput === "50") btn0.classList.add('highlight-target');
+                else if (typedInput === "5") btn0.classList.add('highlight-target');
+                else btn5.classList.add('highlight-target');
+            }
+        }
+
+        // --- Execution & Visuals ---
+        function executeCommand() {
+            if (typedInput === "") return;
+            let val = parseInt(typedInput);
+
+            // Progression checks
+            if (step === 1 && val === 1) {
+                applyValue(1);
+                step = 2;
+                spawnEnemy(1, 'rod-10'); // Cyan bug on 10s
+                instText.innerText = "Step 2: Combat Strike";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Striking:</strong> A bug is attacking the 10s rod! The beads moving <b>during</b> the calculation kill bugs. Type <b>10</b> and press <b>GO</b> to strike it.";
+            } 
+            else if (step === 2 && val === 10) {
+                applyValue(11);
+                killEnemy();
+                step = 3;
+                spawnEnemy(2, 'rod-1'); // Pink bug on 1s
+                instText.innerText = "Step 3: Armored Bugs";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Armor:</strong> Pink bugs are armored! The number 2 means you must move <b>two beads simultaneously</b> on its rod. Type <b>2</b> and press <b>GO</b>.";
+            }
+            else if (step === 3 && val === 2) {
+                applyValue(13);
+                killEnemy();
+                step = 4;
+                instText.innerText = "Step 4: Energy Management";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Energy:</strong> Moving beads drains the yellow Energy bar. Moving the Heaven bead (worth 5) drains it heavily. Type <b>500</b> and watch your energy drop!";
+            }
+            else if (step === 4 && val === 500) {
+                applyValue(513);
+                energy -= 60; // Huge drop for effect
+                energyBar.style.width = energy + "%";
+                energyBar.style.background = "var(--danger-red)";
+                
+                step = 5;
+                instText.style.color = "var(--cyan)";
+                instText.innerText = "Tutorial Complete!";
+                objText.innerHTML = "<strong>🎯 Success:</strong> You know how to strike on specific rods, break armor with multi-bead moves, and manage energy. Close this window to play.";
+            } 
+            else {
+                // Invalid input for tutorial
+                inputBox.innerText = "ERR";
+                setTimeout(() => { typedInput = ""; inputBox.innerText = ""; checkHighlights(); }, 500);
+                return;
+            }
+
+            typedInput = "";
+            inputBox.innerText = typedInput;
+            checkHighlights();
+        }
+
+        function applyValue(newTotal) {
+            currentTotal = newTotal;
+            readoutEl.innerText = currentTotal;
+
+            const strVal = currentTotal.toString().padStart(3, '0');
+            applyRodVisual('rod-100', parseInt(strVal[0]));
+            applyRodVisual('rod-10', parseInt(strVal[1]));
+            applyRodVisual('rod-1', parseInt(strVal[2]));
+        }
+
+        function applyRodVisual(rodId, value) {
+            const rod = document.getElementById(rodId);
+            const heaven = rod.querySelector('.heaven');
+            const earth = Array.from(rod.querySelectorAll('.earth'));
+
+            const setBeadState = (bead, shouldBeActive) => {
+                const isCurrentlyActive = bead.classList.contains('active');
+                if (isCurrentlyActive !== shouldBeActive) {
+                    bead.classList.add('striking');
+                    setTimeout(() => bead.classList.remove('striking'), 300); 
+                }
+                if (shouldBeActive) bead.classList.add('active');
+                else bead.classList.remove('active');
+            };
+
+            setBeadState(heaven, value >= 5);
+            const earthCount = value % 5;
+            earth.forEach((bead, index) => setBeadState(bead, index < earthCount));
+        }
+
+        function spawnEnemy(hp, rodId) {
+            const e = document.createElement('div');
+            e.className = `enemy enemy-${hp}`;
+            e.innerHTML = `<div class="enemy-label">${hp}</div>`;
+            e.style.top = '10%'; 
+            document.getElementById(rodId).appendChild(e);
+            currentEnemy = e;
+            
+            // Animate it falling slowly
+            setTimeout(() => {
+                if (e && !e.classList.contains('dead')) {
+                    e.style.top = '40%';
+                }
+            }, 50);
+        }
+
+        function killEnemy() {
+            if (currentEnemy) {
+                const enemyToKill = currentEnemy; 
+                enemyToKill.classList.add('dead');
+                enemyToKill.innerHTML = "";
+                setTimeout(() => { if(enemyToKill) enemyToKill.remove(); }, 400);
+                currentEnemy = null; 
+            }
+        }
+    </script>
+</body>
+</html>

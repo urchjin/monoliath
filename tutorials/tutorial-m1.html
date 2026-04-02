@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Factor Tutorial</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F4F7F9; 
+            --accent: #A29BFE; 
+            --multiple: #6c5ce7; 
+            --non-multiple: #e17055; 
+            --text: #2d3436; 
+            --alert: #FF7675;
+            --success: #00b894;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- TUTORIAL HUD --- */
+        #tutorial-hud {
+            background: #ffffff;
+            border-bottom: 2px solid var(--accent);
+            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        #instruction-text {
+            font-size: 18px; font-weight: 800;
+            color: var(--accent); text-align: center; letter-spacing: 1px;
+        }
+        #learning-objective {
+            background: rgba(162, 155, 254, 0.1); border: 1px solid rgba(162, 155, 254, 0.3);
+            border-radius: 6px; padding: 10px; font-size: 13px;
+            color: var(--text); text-align: center; line-height: 1.4;
+        }
+        #learning-objective b { color: var(--multiple); }
+        #learning-objective .danger { color: var(--alert); font-weight: bold; }
+
+        /* --- START OVERLAY --- */
+        #start-overlay {
+            position: absolute; inset: 0; background: rgba(244, 247, 249, 0.95);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 50; padding: 20px;
+        }
+        .start-title { font-size: 32px; font-weight: 900; color: var(--text); margin-bottom: 15px; letter-spacing: 4px; }
+        .start-desc { font-size: 15px; color: var(--text); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
+        .start-btn {
+            font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
+            letter-spacing: 2px; padding: 15px 35px; background: var(--accent);
+            color: white; border: none; border-radius: 30px;
+            cursor: pointer; transition: all 0.2s; pointer-events: auto;
+            box-shadow: 0 10px 20px rgba(162,155,254,0.3);
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* --- HIGHLIGHT ANIMATION --- */
+        @keyframes pulseHighlight {
+            0% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(162, 155, 254, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0); }
+        }
+        .highlight-target {
+            animation: pulseHighlight 1.2s infinite !important;
+            border: 2px solid var(--accent) !important;
+            z-index: 10; position: relative;
+        }
+        .highlight-danger {
+            animation: pulseHighlightDanger 1.2s infinite !important;
+            border: 2px solid var(--alert) !important;
+        }
+        @keyframes pulseHighlightDanger {
+            0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.6); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 118, 117, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); }
+        }
+
+        /* --- GAME AREA --- */
+        #gameContainer { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg); overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+
+        /* --- CONTROLS --- */
+        #fire-btn { 
+            position: absolute; bottom: 30px; right: 30px; width: 85px; height: 85px; 
+            background: var(--accent); border-radius: 50%; border: 4px solid #FFF; 
+            z-index: 30; box-shadow: 0 10px 20px rgba(162,155,254,0.3); 
+            display: flex; align-items: center; justify-content: center; 
+            color: #FFF; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.1s;
+        }
+        #fire-btn:active { transform: scale(0.9); }
+        
+        #move-hint {
+            position: absolute; bottom: 45px; left: 30px;
+            background: rgba(255,255,255,0.9); padding: 12px 20px; border-radius: 20px;
+            font-size: 13px; font-weight: 800; color: var(--text);
+            pointer-events: none; border: 2px dashed var(--accent);
+        }
+
+        .screen-flash {
+            position: absolute; inset: 0; background: var(--alert); opacity: 0;
+            pointer-events: none; z-index: 40; transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="tutorial-hud">
+        <div id="instruction-text">Step 1: Move Your Ship.</div>
+        <div id="learning-objective">
+            <strong>🎯 Learning Objective - Controls:</strong> You are the <b>x4</b> ship. Drag your finger across the screen (or use Left/Right arrows) to steer.
+        </div>
+    </div>
+
+    <div id="gameContainer">
+        <div id="start-overlay">
+            <div class="start-title">THE FACTOR</div>
+            <div class="start-desc">Learn how to identify multiples, divide through firepower, and spare the innocent non-multiples.</div>
+            <button class="start-btn" id="btn-start-tut">COMMENCE</button>
+        </div>
+
+        <div class="screen-flash" id="flash"></div>
+        <canvas id="cv"></canvas>
+        <div id="move-hint">◀ DRAG TO MOVE ▶</div>
+        <div id="fire-btn">FIRE</div>
+    </div>
+
+<script>
+    const cv = document.getElementById("cv");
+    const ctx = cv.getContext("2d");
+    
+    let w, h;
+    function resize() {
+        w = cv.width = window.innerWidth;
+        h = cv.height = document.getElementById('gameContainer').clientHeight;
+        player.y = h - 80;
+    }
+
+    // Game State
+    let isStarted = false;
+    let step = 1;
+    let factor = 4;
+    
+    let player = { x: 0, y: 0, width: 40, height: 40 };
+    let bullets = [];
+    let enemies = [];
+    
+    let touchActive = false;
+    let keys = {};
+
+    // DOM
+    const instText = document.getElementById('instruction-text');
+    const objText = document.getElementById('learning-objective');
+    const fireBtn = document.getElementById('fire-btn');
+    const moveHint = document.getElementById('move-hint');
+    const flash = document.getElementById('flash');
+
+    window.addEventListener('resize', resize);
+    resize();
+    player.x = w / 2; // Initialize player horizontally centered
+
+    document.getElementById('btn-start-tut').addEventListener('click', () => {
+        document.getElementById('start-overlay').style.display = 'none';
+        isStarted = true;
+        moveHint.classList.add('highlight-target');
+        requestAnimationFrame(loop);
+    });
+
+    // --- ROBUST MOVEMENT CONTROLS ---
+    function updatePlayerPos(clientX) {
+        const rect = cv.getBoundingClientRect();
+        const scaleX = cv.width / rect.width;
+        let mappedX = (clientX - rect.left) * scaleX;
+        player.x = Math.max(30, Math.min(w - 30, mappedX));
+        checkMoveProgress();
+    }
+
+    window.addEventListener('keydown', e => { keys[e.code] = true; if(e.code === 'Space') fire(); });
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    cv.addEventListener('touchstart', (e) => { touchActive = true; updatePlayerPos(e.touches[0].clientX); });
+    cv.addEventListener('touchmove', (e) => { if(touchActive && isStarted) { updatePlayerPos(e.touches[0].clientX); } });
+    cv.addEventListener('touchend', () => touchActive = false);
+
+    cv.addEventListener('mousedown', (e) => { touchActive = true; updatePlayerPos(e.clientX); });
+    window.addEventListener('mousemove', (e) => { if(touchActive && isStarted) { updatePlayerPos(e.clientX); } });
+    window.addEventListener('mouseup', () => touchActive = false);
+
+    fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); fire(); });
+    fireBtn.addEventListener('mousedown', (e) => { e.preventDefault(); fire(); });
+
+    // --- GAME LOGIC ---
+    function checkMoveProgress() {
+        if (step === 1 && Math.abs(player.x - w/2) > 60) {
+            step = 2;
+            moveHint.style.display = 'none';
+            fireBtn.classList.add('highlight-target');
+            instText.innerText = "Step 2: Destroy the Multiple!";
+            objText.innerHTML = "<strong>🎯 Learning Objective - Division:</strong> A purple <b>12</b> block is falling! Since 12 ÷ 4 = 3, you must shoot it exactly <b>3 times</b> to destroy it.";
+            
+            // Hex color: #6c5ce7 for multiples
+            enemies.push({ x: w/2, y: -50, hp: 12, isMultiple: true, w: 65, h: 65, color: '#6c5ce7' });
+        }
+    }
+
+    function fire() {
+        if (!isStarted || step === 1) return;
+        bullets.push({ x: player.x, y: player.y - 30 });
+    }
+
+    function triggerFail(msg) {
+        flash.style.opacity = '0.8';
+        setTimeout(() => flash.style.opacity = '0', 200);
+        
+        instText.innerText = "Mistake Detected!";
+        instText.style.color = "var(--alert)";
+        objText.innerHTML = `<strong>⚠️ Warning:</strong> ${msg} Resetting...`;
+        
+        enemies = [];
+        bullets = [];
+        fireBtn.classList.remove('highlight-target');
+        fireBtn.classList.remove('highlight-danger');
+        
+        setTimeout(() => {
+            instText.style.color = "var(--accent)";
+            if (step === 2) {
+                instText.innerText = "Step 2: Destroy the Multiple!";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Division:</strong> A <b>12</b> block is falling! You must shoot it exactly <b>3 times</b> (12 ÷ 4 = 3).";
+                fireBtn.classList.add('highlight-target');
+                enemies.push({ x: w/2, y: -50, hp: 12, isMultiple: true, w: 65, h: 65, color: '#6c5ce7' });
+            } else if (step === 3) {
+                instText.innerText = "Step 3: Cease Fire!";
+                objText.innerHTML = "<strong>🎯 Learning Objective - Avoidance:</strong> A <span class='danger'>13</span> block is falling. It is NOT a multiple of 4! <span class='danger'>DO NOT SHOOT IT.</span> Let it fall safely.";
+                moveHint.style.display = 'block';
+                moveHint.innerText = "◀ DODGE ▶";
+                // Hex color: #e17055 for non-multiples
+                enemies.push({ x: w/2, y: -50, hp: 13, isMultiple: false, w: 65, h: 65, color: '#e17055' });
+            }
+        }, 2500);
+    }
+
+    function loop() {
+        if (!isStarted) return;
+
+        // Keyboard movement
+        if(keys['ArrowLeft'] || keys['KeyA']) { player.x = Math.max(30, player.x - 6); checkMoveProgress(); }
+        if(keys['ArrowRight'] || keys['KeyD']) { player.x = Math.min(w-30, player.x + 6); checkMoveProgress(); }
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Draw Background dashes (using exact hex instead of CSS variable)
+        ctx.save(); 
+        ctx.globalAlpha = 0.2; 
+        ctx.setLineDash([5, 15]); 
+        ctx.strokeStyle = "#A29BFE"; 
+        for (let x = 50; x < w; x += 100) { 
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); 
+        }
+        ctx.restore();
+
+        // Update & Draw Bullets
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            let b = bullets[i];
+            b.y -= 12;
+            ctx.fillStyle = "#A29BFE"; // Bullet color
+            ctx.fillRect(b.x - 3, b.y, 6, 25);
+            if (b.y < -50) bullets.splice(i, 1);
+        }
+
+        // Update & Draw Enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            let e = enemies[i];
+            e.y += 1.2;
+
+            // Collision with bullets
+            for (let j = bullets.length - 1; j >= 0; j--) {
+                let b = bullets[j];
+                if (Math.abs(b.x - e.x) < e.w/2 + 5 && Math.abs(b.y - e.y) < e.h/2 + 5) {
+                    bullets.splice(j, 1);
+                    
+                    if (e.isMultiple) {
+                        e.hp -= factor; 
+                        if (e.hp <= 0) {
+                            enemies.splice(i, 1);
+                            // Success -> Advance to Step 3
+                            if (step === 2) {
+                                step = 3;
+                                bullets = []; // Clear accidental rapid-fire bullets
+                                fireBtn.classList.remove('highlight-target');
+                                moveHint.style.display = 'block';
+                                moveHint.innerText = "◀ DODGE ▶";
+                                
+                                instText.innerText = "Step 3: Cease Fire!";
+                                objText.innerHTML = "<strong>🎯 Learning Objective - Avoidance:</strong> An orange <span class='danger'>13</span> block is falling. It is NOT a multiple of 4! <span class='danger'>DO NOT SHOOT IT.</span> Shooting non-multiples costs a life. Steer clear and let it pass!";
+                                
+                                enemies.push({ x: w/2, y: -50, hp: 13, isMultiple: false, w: 65, h: 65, color: '#e17055' });
+                            }
+                        }
+                    } else {
+                        // Shot a non-multiple!
+                        enemies.splice(i, 1);
+                        triggerFail("You shot a 13! It is not a multiple of 4. NEVER shoot non-multiples.");
+                    }
+                    break;
+                }
+            }
+
+            // Missed / Fell off screen
+            if (e && e.y > h + 50) {
+                enemies.splice(i, 1);
+                if (e.isMultiple) {
+                    triggerFail("A multiple escaped! You must destroy all multiples of your factor.");
+                } else if (step === 3) {
+                    // Successfully let non-multiple pass
+                    step = 4;
+                    moveHint.style.display = 'none';
+                    instText.innerText = "Tutorial Complete!";
+                    instText.style.color = "var(--success)";
+                    objText.innerHTML = "<strong>🎯 Success:</strong> You identified the multiples, divided them with your blaster, and safely spared the non-multiples! Close this window to play.";
+                }
+            }
+
+            // Draw Enemy Box
+            if (e) {
+                ctx.fillStyle = e.color; // Using the direct hex code now
+                ctx.fillRect(e.x - e.w/2, e.y - e.h/2, e.w, e.h);
+                // Draw bold white text
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "900 24px Montserrat"; 
+                ctx.textAlign = "center"; 
+                ctx.textBaseline = "middle";
+                ctx.fillText(e.hp, e.x, e.y);
+            }
+        }
+
+        // Draw Player Ship (Triangle)
+        ctx.fillStyle = "#2d3436"; // Player ship color
+        ctx.beginPath(); 
+        ctx.moveTo(player.x, player.y - player.height/2);
+        ctx.lineTo(player.x + player.width/2, player.y + player.height/2);
+        ctx.lineTo(player.x - player.width/2, player.y + player.height/2);
+        ctx.closePath(); 
+        ctx.fill();
+        
+        // Draw Factor text below ship
+        ctx.fillStyle = "#2d3436";
+        ctx.font = "900 18px Montserrat"; 
+        ctx.textAlign = "center"; 
+        ctx.textBaseline = "top";
+        ctx.fillText("x" + factor, player.x, player.y + player.height/2 + 5);
+
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>
