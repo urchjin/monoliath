@@ -3,247 +3,284 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ILLUMINATE</title>
+<title>ILLUMINATE — Veil of the Monolith</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0c0917;--surface:#17112a;--surface2:#211940;--border:#3a2860;
-  --gold:#f0c040;--gold2:#ff9b3d;--text:#e0ccaa;--text-dim:#6a5880;
-  --rose:#e87575;--sage:#72d4a8;--sky:#7ab8f0;--lav:#a888e0;--amber:#ffb347;
+  --bg:#07050f;--surface:#110d20;--surface2:#1c1535;--border:#2e2248;
+  --gold:#f0c040;--gold2:#ff9b3d;--text:#ddc8a8;--text-dim:#5a4870;
+  --rose:#e87575;--sage:#72d4a8;--sky:#7ab8f0;--lav:#b088f0;--amber:#ffb347;
+  --void:#3b0a6e;--void-glow:rgba(120,40,220,0.45);--void-cell:#1a0535;
+  --light-glow:rgba(255,230,100,0.5);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'Josefin Sans',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none;}
 #stars{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
-#monolith{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:26px;height:180px;
-  background:linear-gradient(to top,#150d28,#0c0917 60%,transparent);z-index:0;pointer-events:none;}
-#monolith::before{content:'';position:absolute;top:-28px;left:50%;transform:translateX(-50%);
-  border-left:13px solid transparent;border-right:13px solid transparent;border-bottom:28px solid #150d28;}
+#monolith{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:24px;height:180px;
+  background:linear-gradient(to top,#0d0520,#07050f 55%,transparent);z-index:0;pointer-events:none;}
+#monolith::before{content:'';position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+  border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:26px solid #0d0520;}
 body::before{content:'';position:fixed;inset:0;
-  background-image:linear-gradient(rgba(58,40,96,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(58,40,96,0.06) 1px,transparent 1px);
+  background-image:linear-gradient(rgba(46,34,72,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(46,34,72,0.06) 1px,transparent 1px);
   background-size:40px 40px;pointer-events:none;z-index:0;}
+
+/* SCREENS */
 .screen{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;
   align-items:center;justify-content:center;padding:14px;}
 .screen.hidden{display:none!important;}
-.game-title{font-family:'Cinzel Decorative',serif;font-size:clamp(2rem,6vw,3.6rem);color:var(--gold);
-  text-shadow:0 0 20px var(--gold2),0 0 50px rgba(240,155,40,0.4);letter-spacing:0.25em;margin-bottom:0.3rem;}
-.game-sub{font-size:0.7rem;letter-spacing:0.42em;color:var(--text-dim);text-transform:uppercase;margin-bottom:2rem;}
+.game-title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.8rem,5vw,3.2rem);color:var(--gold);
+  text-shadow:0 0 18px var(--gold2),0 0 45px rgba(240,155,40,0.35);letter-spacing:0.22em;margin-bottom:0.25rem;}
+.game-sub{font-size:0.65rem;letter-spacing:0.42em;color:var(--text-dim);text-transform:uppercase;margin-bottom:1.8rem;}
 
 /* BUTTONS */
-.btn{font-family:'Josefin Sans',sans-serif;font-size:0.76rem;letter-spacing:0.2em;text-transform:uppercase;
-  padding:10px 24px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;
-  transition:all 0.16s;position:relative;overflow:hidden;}
-.btn::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);
-  transform-origin:left;transition:transform 0.16s;z-index:-1;}
+.btn{font-family:'Josefin Sans',sans-serif;font-size:0.74rem;letter-spacing:0.2em;text-transform:uppercase;
+  padding:10px 22px;border:1px solid var(--gold);background:transparent;color:var(--gold);cursor:pointer;
+  transition:all 0.15s;position:relative;overflow:hidden;}
+.btn::before{content:'';position:absolute;inset:0;background:var(--gold);transform:scaleX(0);transform-origin:left;transition:transform 0.15s;z-index:-1;}
 .btn:hover::before{transform:scaleX(1);} .btn:hover{color:var(--bg);}
-.btn-primary{background:var(--gold);color:var(--bg);font-weight:600;}
-.btn-primary::before{display:none;} .btn-primary:hover{opacity:0.88;}
-.btn-sm{padding:6px 14px;font-size:0.68rem;} .btn-xs{padding:4px 10px;font-size:0.62rem;}
-.btn-danger{border-color:var(--rose);color:var(--rose);}
-.btn-danger::before{background:var(--rose);} .btn-danger:hover{color:#fff;}
-.btn-sage{border-color:var(--sage);color:var(--sage);}
-.btn-sage::before{background:var(--sage);} .btn-sage:hover{color:var(--bg);}
-.btn-sky{border-color:var(--sky);color:var(--sky);}
-.btn-sky::before{background:var(--sky);} .btn-sky:hover{color:var(--bg);}
-.btn-lav{border-color:var(--lav);color:var(--lav);}
-.btn-lav::before{background:var(--lav);} .btn-lav:hover{color:var(--bg);}
-.btn-amber{border-color:var(--amber);color:var(--amber);}
-.btn-amber::before{background:var(--amber);} .btn-amber:hover{color:var(--bg);}
-.btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+.btn-primary{background:var(--gold);color:var(--bg);font-weight:600;} .btn-primary::before{display:none;} .btn-primary:hover{opacity:0.88;}
+.btn-dark{background:#1a0535;border-color:var(--lav);color:var(--lav);}
+.btn-dark::before{background:var(--lav);} .btn-dark:hover{color:var(--bg);}
+.btn-sm{padding:6px 13px;font-size:0.66rem;} .btn-xs{padding:4px 9px;font-size:0.6rem;}
+.btn-danger{border-color:var(--rose);color:var(--rose);} .btn-danger::before{background:var(--rose);} .btn-danger:hover{color:#fff;}
+.btn-sage{border-color:var(--sage);color:var(--sage);} .btn-sage::before{background:var(--sage);} .btn-sage:hover{color:var(--bg);}
+.btn-sky{border-color:var(--sky);color:var(--sky);} .btn-sky::before{background:var(--sky);} .btn-sky:hover{color:var(--bg);}
+.btn-lav{border-color:var(--lav);color:var(--lav);} .btn-lav::before{background:var(--lav);} .btn-lav:hover{color:var(--bg);}
+.btn:disabled{opacity:0.28;cursor:not-allowed;pointer-events:none;}
 
 /* SETUP */
-.count-label{font-size:0.68rem;letter-spacing:0.32em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.7rem;}
-.count-row{display:flex;gap:10px;justify-content:center;margin-bottom:1.8rem;}
-.count-btn{width:50px;height:50px;border:2px solid var(--border);background:var(--surface);
-  color:var(--text-dim);font-family:'Cinzel Decorative',serif;font-size:1.1rem;cursor:pointer;transition:all 0.16s;}
-.count-btn.active{border-color:var(--gold);color:var(--gold);background:var(--surface2);box-shadow:0 0 14px rgba(240,192,64,0.2);}
-.player-rows{display:flex;flex-direction:column;gap:9px;margin-bottom:1.6rem;width:100%;}
-.player-row{display:flex;align-items:center;gap:10px;padding:9px 13px;background:var(--surface);border:1px solid var(--border);}
-.pdot{width:13px;height:13px;border-radius:50%;flex-shrink:0;}
+.count-label{font-size:0.66rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.65rem;}
+.count-row{display:flex;gap:9px;justify-content:center;margin-bottom:1.6rem;}
+.count-btn{width:48px;height:48px;border:2px solid var(--border);background:var(--surface);
+  color:var(--text-dim);font-family:'Cinzel Decorative',serif;font-size:1rem;cursor:pointer;transition:all 0.15s;}
+.count-btn.active{border-color:var(--gold);color:var(--gold);background:var(--surface2);}
+.player-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:1.5rem;width:100%;}
+.player-row{display:flex;align-items:center;gap:9px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);}
+.pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
 .pname-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border);
-  color:var(--text);font-family:'Josefin Sans',sans-serif;font-size:0.86rem;padding:3px 5px;outline:none;}
+  color:var(--text);font-family:'Josefin Sans',sans-serif;font-size:0.84rem;padding:3px 5px;outline:none;}
 .pname-input:focus{border-bottom-color:var(--gold);}
-.ai-lbl{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.68rem;letter-spacing:0.13em;color:var(--text-dim);flex-shrink:0;}
+.ai-lbl{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.65rem;letter-spacing:0.12em;color:var(--text-dim);flex-shrink:0;}
 .ai-lbl input{display:none;}
-.tog{width:32px;height:17px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;position:relative;transition:all 0.16s;}
-.tog::after{content:'';position:absolute;left:2px;top:2px;width:11px;height:11px;background:var(--text-dim);border-radius:50%;transition:all 0.16s;}
+.tog{width:30px;height:16px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;position:relative;transition:all 0.15s;}
+.tog::after{content:'';position:absolute;left:2px;top:2px;width:10px;height:10px;background:var(--text-dim);border-radius:50%;transition:all 0.15s;}
 .ai-lbl input:checked+.tog{background:var(--lav);border-color:var(--lav);}
-.ai-lbl input:checked+.tog::after{left:17px;background:#fff;}
+.ai-lbl input:checked+.tog::after{left:16px;background:#fff;}
 
-/* PASS */
-.pass-eye{font-size:3.2rem;margin-bottom:0.9rem;opacity:0.5;}
-.pass-to{font-size:0.68rem;letter-spacing:0.38em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.35rem;}
-.pass-name{font-family:'Cinzel Decorative',serif;font-size:1.8rem;margin-bottom:0.55rem;}
-.pass-hint{font-size:0.68rem;letter-spacing:0.13em;color:var(--text-dim);margin-bottom:2rem;}
+/* ROLE REVEAL PASS SCREEN */
+.role-card{
+  width:220px;padding:28px 20px;text-align:center;margin:0 auto 1.6rem;
+  border:2px solid;position:relative;
+}
+.role-card.light{
+  border-color:var(--gold);
+  background:linear-gradient(160deg,#1a1408 0%,#0f0d05 100%);
+  box-shadow:0 0 30px rgba(240,192,64,0.2),inset 0 0 20px rgba(240,192,64,0.05);
+}
+.role-card.dark{
+  border-color:var(--lav);
+  background:linear-gradient(160deg,#12053a 0%,#07040f 100%);
+  box-shadow:0 0 30px rgba(176,136,240,0.25),inset 0 0 20px rgba(176,136,240,0.08);
+}
+.role-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,currentColor,transparent);opacity:0.6;}
+.role-card.light::before{color:var(--gold);}
+.role-card.dark::before{color:var(--lav);}
+.role-icon{font-size:3rem;margin-bottom:0.6rem;display:block;}
+.role-name{font-family:'Cinzel Decorative',serif;font-size:1.1rem;margin-bottom:0.4rem;}
+.role-name.light{color:var(--gold);}
+.role-name.dark{color:var(--lav);}
+.role-desc{font-size:0.64rem;letter-spacing:0.1em;line-height:1.65;}
+.role-desc.light{color:rgba(240,192,64,0.6);}
+.role-desc.dark{color:rgba(176,136,240,0.6);}
+.role-team-count{margin-top:0.7rem;font-size:0.58rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-dim);}
+.pass-to{font-size:0.65rem;letter-spacing:0.36em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.3rem;}
+.pass-name{font-family:'Cinzel Decorative',serif;font-size:1.7rem;margin-bottom:0.5rem;}
+.pass-hint{font-size:0.65rem;letter-spacing:0.12em;color:var(--text-dim);margin-bottom:1.6rem;}
 
 /* GAME HEADER */
 .game-header{display:flex;justify-content:space-between;align-items:center;
-  padding:7px 12px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px;flex-wrap:wrap;gap:6px;}
-.cur-badge{display:flex;align-items:center;gap:7px;}
-.cur-dot{width:10px;height:10px;border-radius:50%;}
-.cur-name{font-size:0.82rem;letter-spacing:0.16em;text-transform:uppercase;}
-.deck-info{font-size:0.62rem;letter-spacing:0.15em;color:var(--text-dim);}
+  padding:6px 11px;background:var(--surface);border:1px solid var(--border);margin-bottom:7px;flex-wrap:wrap;gap:5px;}
+.cur-badge{display:flex;align-items:center;gap:6px;}
+.cur-dot{width:9px;height:9px;border-radius:50%;}
+.cur-name{font-size:0.8rem;letter-spacing:0.15em;text-transform:uppercase;}
+.hdr-right{display:flex;gap:10px;align-items:center;}
+.hdr-info{font-size:0.6rem;letter-spacing:0.13em;color:var(--text-dim);}
 
-/* SCORE LEGEND */
-.score-legend{display:flex;gap:10px;flex-wrap:wrap;padding:7px 12px;
-  background:var(--surface);border:1px solid var(--border);margin-bottom:8px;justify-content:space-between;}
-.legend-item{display:flex;align-items:center;gap:5px;font-size:0.72rem;}
-.legend-dot{width:11px;height:11px;border-radius:50%;}
-.legend-pct{font-size:0.65rem;color:var(--text-dim);}
-.legend-bar{height:3px;background:var(--surface2);flex:1;min-width:40px;max-width:80px;}
-.legend-fill{height:100%;transition:width 0.4s;}
-.legend-tether{font-size:0.65rem;color:var(--lav);}
+/* BOARD BALANCE BAR */
+.balance-bar-wrap{padding:6px 11px;background:var(--surface);border:1px solid var(--border);margin-bottom:7px;}
+.balance-lbl{display:flex;justify-content:space-between;font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:4px;}
+.balance-lbl .lbl-light{color:var(--gold);}
+.balance-lbl .lbl-dark{color:var(--lav);}
+.balance-track{height:8px;background:var(--bg);border:1px solid var(--border);display:flex;overflow:hidden;}
+.balance-lit{background:var(--gold);transition:width 0.4s;}
+.balance-shadow{background:var(--lav);transition:width 0.4s;margin-left:auto;}
+.balance-counts{display:flex;justify-content:space-between;font-size:0.6rem;margin-top:3px;}
+.balance-counts .cnt-light{color:var(--gold);}
+.balance-counts .cnt-dark{color:var(--lav);}
 
 /* SHARED BOARD */
-.board-section{display:flex;flex-direction:column;align-items:center;gap:7px;margin-bottom:10px;}
-.board-title{font-size:0.62rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;}
+.board-wrap{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:8px;}
+.board-title{font-size:0.58rem;letter-spacing:0.28em;color:var(--text-dim);text-transform:uppercase;}
 .shared-grid{
   display:grid;grid-template-columns:repeat(10,1fr);gap:2px;
-  width:100%;max-width:420px;background:var(--surface);border:1px solid var(--border);padding:5px;
+  width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);padding:5px;
 }
-.scell{
-  aspect-ratio:1;background:#0d0920;transition:background 0.22s,box-shadow 0.22s;
-  position:relative;
-}
-.scell.locked::after{
-  content:'';position:absolute;inset:1px;border:2px solid rgba(255,255,255,0.7);
-  box-shadow:inset 0 0 4px rgba(255,255,255,0.3);pointer-events:none;
-}
+.scell{aspect-ratio:1;background:#0a0516;transition:background 0.22s,box-shadow 0.22s;position:relative;}
+.scell.shadow-cell{background:var(--void-cell);box-shadow:inset 0 0 5px rgba(130,50,255,0.3);}
+.scell.locked-lit::after,.scell.locked-shadow::after{
+  content:'';position:absolute;inset:1px;border:1px solid rgba(255,255,255,0.55);pointer-events:none;}
+.scell.locked-shadow::after{border-color:rgba(176,136,240,0.6);}
 @keyframes cellPop{0%{transform:scale(0.3);opacity:0}65%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
-.scell.pop{animation:cellPop 0.28s ease;}
-@keyframes cellLost{0%{opacity:1}50%{opacity:0.2}100%{opacity:1}}
-.scell.lost{animation:cellLost 0.35s ease;}
+.scell.pop{animation:cellPop 0.26s ease;}
+@keyframes cellVoid{0%{transform:scale(1)}50%{transform:scale(0.85);opacity:0.5}100%{transform:scale(1);opacity:1}}
+.scell.voiding{animation:cellVoid 0.3s ease;}
 
-/* EXTRA BOARDS */
-.extra-boards-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;}
-.extra-board{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:opacity 0.18s;}
-.extra-board.inactive{opacity:0.5;}
-.extra-board-lbl{font-size:0.6rem;letter-spacing:0.2em;text-transform:uppercase;}
-.mini-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:1px;padding:4px;
-  background:var(--surface);border:1px solid var(--border);}
-.mini-cell{width:18px;height:18px;background:#0d0920;transition:background 0.2s;}
-.mini-pbar{height:2px;background:var(--surface2);width:100%;}
-.mini-pfill{height:100%;transition:width 0.35s;}
-.mini-pct{font-size:0.65rem;text-align:center;letter-spacing:0.08em;margin-top:1px;}
+/* MY ROLE BADGE */
+.my-role-badge{display:flex;align-items:center;gap:7px;padding:5px 11px;margin-bottom:7px;
+  border:1px solid;font-size:0.65rem;letter-spacing:0.15em;}
+.my-role-badge.light{border-color:rgba(240,192,64,0.3);color:rgba(240,192,64,0.7);background:rgba(240,192,64,0.04);}
+.my-role-badge.dark{border-color:rgba(176,136,240,0.3);color:rgba(176,136,240,0.7);background:rgba(176,136,240,0.04);}
 
-/* TARGET TOGGLE */
-.target-toggle{display:flex;align-items:center;gap:8px;padding:5px 12px;
-  background:var(--surface);border:1px solid var(--border);margin-bottom:6px;flex-wrap:wrap;}
-.target-lbl{font-size:0.62rem;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;}
-.target-btns{display:flex;gap:5px;}
-.tbtn{padding:3px 10px;font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;
-  border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;transition:all 0.14s;}
-.tbtn.active{border-color:var(--gold);color:var(--gold);background:var(--surface2);}
-
-/* STATUS STRIP */
-.status-strip{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px;justify-content:center;}
-.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border:1px solid;font-size:0.58rem;
-  letter-spacing:0.1em;text-transform:uppercase;}
+/* STATUS + TURN */
+.status-strip{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px;justify-content:center;}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border:1px solid;font-size:0.56rem;letter-spacing:0.09em;text-transform:uppercase;}
 .sbadge-surge{border-color:var(--gold);color:var(--gold);}
 .sbadge-skip{border-color:var(--rose);color:var(--rose);}
-.sbadge-refuge{border-color:var(--sage);color:var(--sage);}
-.sbadge-bulwark{border-color:var(--sky);color:var(--sky);}
-.sbadge-tether{border-color:var(--lav);color:var(--lav);}
+.sbadge-beacon{border-color:var(--gold);color:var(--gold);}
+.sbadge-shroud{border-color:var(--lav);color:var(--lav);}
+.sbadge-exposed{border-color:var(--rose);color:var(--rose);}
+.sbadge-veiled{border-color:var(--text-dim);color:var(--text-dim);}
+.sbadge-forced{border-color:var(--rose);color:var(--rose);}
 .sbadge-turn{border-color:var(--border);color:var(--text-dim);}
 
 /* MESSAGE */
-.msg-bar{padding:7px 13px;background:var(--surface);border:1px solid var(--border);
-  font-size:0.74rem;letter-spacing:0.09em;color:var(--text-dim);text-align:center;min-height:34px;
-  display:flex;align-items:center;justify-content:center;margin-bottom:8px;line-height:1.5;}
+.msg-bar{padding:6px 12px;background:var(--surface);border:1px solid var(--border);
+  font-size:0.72rem;letter-spacing:0.08em;color:var(--text-dim);text-align:center;min-height:32px;
+  display:flex;align-items:center;justify-content:center;margin-bottom:7px;line-height:1.5;}
 
-/* HAND SECTION */
-.hand-section{background:var(--surface);border:1px solid var(--border);padding:10px;margin-bottom:7px;}
-.hand-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;}
-.hand-lbl{font-size:0.62rem;letter-spacing:0.28em;color:var(--text-dim);text-transform:uppercase;}
-.turn-status{font-size:0.6rem;letter-spacing:0.1em;color:var(--text-dim);}
-.hand-cards{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
-.hcard{width:70px;height:104px;background:var(--surface2);border:2px solid var(--border);
+/* HAND */
+.hand-section{background:var(--surface);border:1px solid var(--border);padding:9px;margin-bottom:6px;}
+.hand-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.hand-lbl{font-size:0.6rem;letter-spacing:0.26em;color:var(--text-dim);text-transform:uppercase;}
+.hand-sub{font-size:0.55rem;letter-spacing:0.09em;color:var(--text-dim);}
+.hand-cards{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;}
+.hcard{width:68px;height:100px;background:var(--surface2);border:2px solid var(--border);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:6px;cursor:pointer;transition:all 0.16s;position:relative;border-radius:1px;}
-.hcard:hover{transform:translateY(-6px);}
-.hcard.playable:hover{box-shadow:0 8px 20px rgba(0,0,0,0.4);}
-.hcard.no-play{opacity:0.38;cursor:default;} .hcard.no-play:hover{transform:none;}
-.hcard.hc-charge.playable:hover{border-color:var(--gold);box-shadow:0 7px 18px rgba(240,175,40,0.3);}
-.hcard.hc-action.playable:hover{border-color:var(--rose);box-shadow:0 7px 18px rgba(232,80,80,0.25);}
-.hcard.hc-ward.playable:hover{border-color:var(--sage);box-shadow:0 7px 18px rgba(114,212,168,0.25);}
-.hcard.hc-charge{border-color:rgba(240,192,64,0.4);}
-.hcard.hc-action{border-color:rgba(232,117,117,0.4);}
-.hcard.hc-ward{border-color:rgba(114,212,168,0.4);}
-.hc-badge{position:absolute;top:3px;left:3px;font-size:0.44rem;letter-spacing:0.07em;
+  padding:5px;cursor:pointer;transition:all 0.15s;position:relative;}
+.hcard:hover:not(.no-play){transform:translateY(-6px);}
+.hcard.no-play{opacity:0.32;cursor:default;}
+.hcard.hc-charge{border-color:rgba(240,192,64,0.38);}
+.hcard.hc-charge:not(.no-play):hover{border-color:var(--gold);box-shadow:0 7px 18px rgba(240,175,40,0.28);}
+.hcard.hc-action{border-color:rgba(232,117,117,0.38);}
+.hcard.hc-action:not(.no-play):hover{border-color:var(--rose);box-shadow:0 7px 16px rgba(232,80,80,0.22);}
+.hcard.hc-ward{border-color:rgba(114,212,168,0.38);}
+.hcard.hc-ward:not(.no-play):hover{border-color:var(--sage);box-shadow:0 7px 16px rgba(114,212,168,0.22);}
+.hc-badge{position:absolute;top:3px;left:3px;font-size:0.42rem;letter-spacing:0.07em;
   text-transform:uppercase;padding:1px 3px;background:var(--surface);border:1px solid var(--border);}
-.hc-val{font-family:'Cinzel Decorative',serif;font-size:0.95rem;text-align:center;line-height:1.2;}
-.hc-sub{font-size:0.52rem;color:var(--text-dim);text-align:center;margin-top:4px;letter-spacing:0.04em;line-height:1.35;}
-.hc-icon{position:absolute;bottom:4px;right:4px;font-size:0.85rem;opacity:0.65;}
-.hand-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);}
+.hc-val{font-family:'Cinzel Decorative',serif;font-size:0.9rem;text-align:center;line-height:1.2;}
+.hc-sub{font-size:0.5rem;color:var(--text-dim);text-align:center;margin-top:3px;letter-spacing:0.04em;line-height:1.3;}
+.hc-icon{position:absolute;bottom:3px;right:4px;font-size:0.8rem;opacity:0.6;}
+.hand-footer{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:8px;padding-top:7px;border-top:1px solid var(--border);}
+
+/* ACTION LOG */
+.log-section{background:var(--surface);border:1px solid var(--border);padding:8px 10px;margin-bottom:6px;}
+.log-title{font-size:0.58rem;letter-spacing:0.25em;color:var(--text-dim);text-transform:uppercase;margin-bottom:5px;}
+.log-entries{display:flex;flex-direction:column;gap:3px;max-height:72px;overflow-y:auto;}
+.log-entry{font-size:0.64rem;letter-spacing:0.06em;color:var(--text-dim);display:flex;gap:6px;align-items:baseline;}
+.log-turn{color:var(--text-dim);opacity:0.5;flex-shrink:0;font-size:0.56rem;}
+.log-name{flex-shrink:0;}
 
 /* MODALS */
-.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.86);
-  display:flex;align-items:center;justify-content:center;z-index:100;padding:14px;}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,0.9);
+  display:flex;align-items:center;justify-content:center;z-index:100;padding:13px;}
 .modal-ov.hidden{display:none!important;}
 .modal{background:var(--surface);border:1px solid var(--border);
-  padding:24px 20px;max-width:400px;width:100%;text-align:center;position:relative;max-height:90vh;overflow-y:auto;}
+  padding:22px 18px;max-width:380px;width:100%;text-align:center;position:relative;max-height:88vh;overflow-y:auto;}
 .modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-.modal-title{font-family:'Cinzel Decorative',serif;font-size:1.05rem;color:var(--gold);margin-bottom:0.4rem;}
-.modal-text{font-size:0.74rem;letter-spacing:0.08em;color:var(--text-dim);margin-bottom:1.1rem;line-height:1.7;}
-.modal-card-big{font-family:'Cinzel Decorative',serif;font-size:2.8rem;color:var(--sky);margin-bottom:0.5rem;}
+.modal.dark-modal::before{background:linear-gradient(90deg,transparent,var(--lav),transparent);}
+.modal-title{font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--gold);margin-bottom:0.4rem;}
+.modal.dark-modal .modal-title{color:var(--lav);}
+.modal-text{font-size:0.72rem;letter-spacing:0.07em;color:var(--text-dim);margin-bottom:1rem;line-height:1.7;}
+.modal-card-big{font-family:'Cinzel Decorative',serif;font-size:2.6rem;color:var(--sky);margin-bottom:0.4rem;}
 .conv-input{background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  font-family:'Josefin Sans',sans-serif;font-size:1.3rem;padding:8px 13px;
-  text-align:center;width:105px;outline:none;display:block;margin:0 auto 9px;}
+  font-family:'Josefin Sans',sans-serif;font-size:1.2rem;padding:8px 12px;
+  text-align:center;width:100px;outline:none;display:block;margin:0 auto 8px;}
 .conv-input:focus{border-color:var(--sky);}
-.err-txt{color:var(--rose);font-size:0.7rem;min-height:17px;margin-bottom:0.5rem;}
-.target-list{display:flex;flex-direction:column;gap:7px;margin-bottom:1rem;text-align:left;}
-.tgt-btn{display:flex;align-items:center;gap:9px;padding:8px 13px;background:var(--surface2);
-  border:1px solid var(--border);cursor:pointer;transition:all 0.14s;font-family:'Josefin Sans',sans-serif;
-  color:var(--text);font-size:0.8rem;letter-spacing:0.09em;}
-.tgt-btn:hover{border-color:var(--gold);} .tgt-btn:disabled{opacity:0.3;cursor:not-allowed;pointer-events:none;}
+.err-txt{color:var(--rose);font-size:0.68rem;min-height:16px;margin-bottom:0.45rem;}
+.tgt-list{display:flex;flex-direction:column;gap:6px;margin-bottom:0.9rem;text-align:left;}
+.tgt-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);
+  border:1px solid var(--border);cursor:pointer;transition:all 0.13s;font-family:'Josefin Sans',sans-serif;
+  color:var(--text);font-size:0.78rem;letter-spacing:0.08em;}
+.tgt-btn:hover:not(:disabled){border-color:var(--gold);}
+.tgt-btn:disabled{opacity:0.28;cursor:not-allowed;}
 .tgt-btn .tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.tgt-btn .tinfo{margin-left:auto;font-size:0.64rem;color:var(--text-dim);}
-.modal-btns{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:7px;}
-.event-banner{font-size:2.5rem;margin-bottom:0.6rem;}
-.event-type{font-size:0.62rem;letter-spacing:0.35em;color:var(--rose);text-transform:uppercase;margin-bottom:0.3rem;}
+.tgt-btn .tinfo{margin-left:auto;font-size:0.62rem;color:var(--text-dim);}
+.modal-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+/* illuminate/shadow choice */
+.choice-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;}
+.choice-btn{padding:14px 10px;border:2px solid;background:transparent;cursor:pointer;
+  transition:all 0.15s;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.choice-btn.light-choice{border-color:rgba(240,192,64,0.4);color:var(--gold);}
+.choice-btn.light-choice:hover{background:rgba(240,192,64,0.08);border-color:var(--gold);}
+.choice-btn.dark-choice{border-color:rgba(176,136,240,0.4);color:var(--lav);}
+.choice-btn.dark-choice:hover{background:rgba(176,136,240,0.1);border-color:var(--lav);}
+.choice-icon{font-size:1.8rem;}
+.choice-lbl{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;font-family:'Josefin Sans',sans-serif;}
+.choice-sub{font-size:0.55rem;letter-spacing:0.07em;opacity:0.6;}
+/* event */
+.event-type{font-size:0.6rem;letter-spacing:0.32em;color:var(--amber);text-transform:uppercase;margin-bottom:0.3rem;}
+.event-icon{font-size:2.4rem;margin-bottom:0.5rem;}
+/* expand prompt */
+.expand-prompt{background:rgba(176,136,240,0.07);border:1px solid rgba(176,136,240,0.2);padding:12px;margin-bottom:10px;}
+.expand-lbl{font-size:0.6rem;letter-spacing:0.25em;color:var(--lav);text-transform:uppercase;margin-bottom:5px;}
+.expand-desc{font-size:0.68rem;color:var(--text-dim);line-height:1.6;}
 
 /* DECK VIEWER */
-.dv-section{font-size:0.62rem;letter-spacing:0.26em;color:var(--text-dim);text-transform:uppercase;
-  margin:10px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--border);text-align:left;}
-.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
-.dv-item{display:flex;align-items:center;gap:7px;padding:6px 8px;background:var(--surface2);border:1px solid var(--border);}
-.dv-icon{font-size:1rem;width:22px;text-align:center;flex-shrink:0;}
+.dv-section{font-size:0.6rem;letter-spacing:0.24em;color:var(--text-dim);text-transform:uppercase;
+  margin:9px 0 5px;padding-bottom:4px;border-bottom:1px solid var(--border);text-align:left;}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:7px;}
+.dv-item{display:flex;align-items:center;gap:6px;padding:5px 7px;background:var(--surface2);border:1px solid var(--border);}
+.dv-icon{font-size:0.95rem;width:20px;text-align:center;flex-shrink:0;}
 .dv-info{flex:1;min-width:0;}
-.dv-name{font-size:0.74rem;letter-spacing:0.04em;font-weight:600;}
-.dv-desc{font-size:0.55rem;color:var(--text-dim);margin-top:2px;letter-spacing:0.03em;line-height:1.35;}
-.dv-cnt{font-size:0.62rem;padding:1px 5px;border:1px solid;flex-shrink:0;}
+.dv-name{font-size:0.7rem;letter-spacing:0.04em;font-weight:600;}
+.dv-desc{font-size:0.52rem;color:var(--text-dim);margin-top:1px;line-height:1.3;}
+.dv-cnt{font-size:0.58rem;padding:1px 4px;border:1px solid;flex-shrink:0;}
 
 /* END SCREEN */
-@keyframes winGlow{0%,100%{text-shadow:0 0 20px var(--gold2),0 0 50px rgba(240,155,40,0.4);}
-  50%{text-shadow:0 0 40px var(--gold2),0 0 100px rgba(240,155,40,0.7);}}
-.end-header{text-align:center;margin-bottom:1.4rem;}
-.end-icon{font-size:3.5rem;margin-bottom:0.7rem;}
-.end-winner-lbl{font-size:0.68rem;letter-spacing:0.4em;color:var(--text-dim);text-transform:uppercase;margin-bottom:0.3rem;}
-.end-winner-name{font-family:'Cinzel Decorative',serif;font-size:2.2rem;animation:winGlow 2.5s infinite;margin-bottom:0.3rem;}
-.end-winner-sub{font-family:'Cinzel Decorative',serif;font-size:0.8rem;letter-spacing:0.25em;color:var(--text-dim);}
-.end-board{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:1.2rem;}
-.score-cards{display:flex;flex-direction:column;gap:8px;width:100%;max-width:440px;margin-bottom:1.5rem;}
-.score-card{background:var(--surface);border:1px solid var(--border);padding:10px 14px;}
-.sc-header{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.sc-dot{width:11px;height:11px;border-radius:50%;}
-.sc-name{font-size:0.82rem;letter-spacing:0.13em;}
-.sc-final{margin-left:auto;font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);}
-.sc-rows{display:flex;flex-direction:column;gap:3px;}
-.sc-row{display:flex;justify-content:space-between;font-size:0.68rem;letter-spacing:0.07em;color:var(--text-dim);}
-.sc-row.penalty{color:var(--rose);}
-.sc-row.bonus{color:var(--sage);}
+.end-wrap{max-width:480px;width:100%;}
+.end-title{font-family:'Cinzel Decorative',serif;font-size:clamp(1.5rem,4vw,2.4rem);margin-bottom:0.3rem;text-align:center;}
+.end-sub{font-size:0.62rem;letter-spacing:0.38em;text-transform:uppercase;margin-bottom:1.4rem;text-align:center;}
+@keyframes winGlow{0%,100%{text-shadow:0 0 18px var(--gold2),0 0 45px rgba(240,155,40,0.35);}
+  50%{text-shadow:0 0 35px var(--gold2),0 0 90px rgba(240,155,40,0.6);}}
+@keyframes voidGlow{0%,100%{text-shadow:0 0 18px var(--lav),0 0 45px rgba(176,136,240,0.35);}
+  50%{text-shadow:0 0 35px var(--lav),0 0 90px rgba(176,136,240,0.6);}}
+.end-title.light-win{color:var(--gold);animation:winGlow 2.5s infinite;}
+.end-title.dark-win{color:var(--lav);animation:voidGlow 2.5s infinite;}
+.final-board{display:flex;flex-direction:column;align-items:center;margin-bottom:1.2rem;}
+.reveal-grid{display:flex;flex-direction:column;gap:7px;margin-bottom:1.4rem;}
+.reveal-card{display:flex;align-items:center;gap:12px;padding:9px 13px;background:var(--surface);border:1px solid var(--border);}
+.reveal-card.winner-card{border-color:var(--gold);}
+.rc-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+.rc-name{font-size:0.82rem;letter-spacing:0.1em;flex:1;}
+.rc-role{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;padding:2px 8px;border:1px solid;}
+.rc-role.light{border-color:var(--gold);color:var(--gold);}
+.rc-role.dark{border-color:var(--lav);color:var(--lav);}
+.rc-score{font-size:0.78rem;color:var(--text-dim);margin-left:8px;}
+.rc-w{font-size:0.65rem;color:var(--gold);margin-left:4px;}
 
 /* AI OVERLAY */
-#ai-overlay{position:fixed;inset:0;background:rgba(12,9,23,0.7);
+#ai-overlay{position:fixed;inset:0;background:rgba(7,5,15,0.72);
   display:flex;align-items:center;justify-content:center;z-index:50;}
 #ai-overlay.hidden{display:none!important;}
-.ai-orb{width:56px;height:56px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 0.9rem;}
-@keyframes orbPulse{0%,100%{box-shadow:0 0 10px var(--border);}50%{box-shadow:0 0 24px var(--lav),0 0 48px rgba(168,136,224,0.3);}}
+.ai-orb{width:52px;height:52px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin:0 auto 0.8rem;}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 8px var(--border);}50%{box-shadow:0 0 22px var(--lav),0 0 44px rgba(176,136,240,0.28);}}
 .ai-orb{animation:orbPulse 1.5s infinite;}
-.ai-txt{font-size:0.68rem;letter-spacing:0.28em;color:var(--text-dim);text-transform:uppercase;text-align:center;}
+.ai-txt{font-size:0.65rem;letter-spacing:0.26em;color:var(--text-dim);text-transform:uppercase;text-align:center;}
 
-@media(max-width:380px){.hcard{width:60px;height:90px;}}
+@media(max-width:380px){.hcard{width:60px;height:92px;}.shared-grid{max-width:320px;}}
 </style>
 </head>
 <body>
@@ -252,90 +289,102 @@ body::before{content:'';position:fixed;inset:0;
 <div id="ai-overlay" class="hidden">
   <div style="text-align:center">
     <div class="ai-orb">✦</div>
-    <div class="ai-txt" id="ai-txt">Consulting the Monolith...</div>
+    <div class="ai-txt" id="ai-txt">The Monolith deliberates...</div>
   </div>
 </div>
 
-<div id="screen-setup" class="screen"><h1 class="game-title">ILLUMINATE</h1>
-  <p class="game-sub">One plain. Many seekers. One shadow to banish.</p>
-  <div id="setup-content" style="width:100%;max-width:460px;text-align:center;"></div>
+<div id="screen-setup" class="screen">
+  <h1 class="game-title">ILLUMINATE</h1>
+  <p class="game-sub">Veil of the Monolith</p>
+  <div id="setup-content" style="width:100%;max-width:440px;text-align:center;"></div>
 </div>
-<div id="screen-pass" class="screen hidden"><h1 class="game-title" style="font-size:clamp(1.3rem,4vw,2.4rem);margin-bottom:0.2rem;">ILLUMINATE</h1>
-  <div id="pass-content" style="text-align:center;"></div>
+
+<div id="screen-pass" class="screen hidden">
+  <h1 class="game-title" style="font-size:clamp(1.2rem,3.5vw,2.2rem);margin-bottom:0.2rem;">ILLUMINATE</h1>
+  <div id="pass-content" style="text-align:center;width:100%;max-width:320px;"></div>
 </div>
-<div id="screen-game" class="screen hidden" style="justify-content:flex-start;padding-top:10px;">
-  <div id="game-content" style="width:100%;max-width:500px;"></div>
+
+<div id="screen-game" class="screen hidden" style="justify-content:flex-start;padding-top:9px;">
+  <div id="game-content" style="width:100%;max-width:480px;"></div>
 </div>
+
 <div id="screen-end" class="screen hidden">
-  <div id="end-content" style="width:100%;max-width:480px;"></div>
+  <div id="end-content" class="end-wrap"></div>
 </div>
+
 <div id="modal-ov" class="modal-ov hidden"><div id="modal-content"></div></div>
 
 <script>
 // ============================================================
-//   ILLUMINATE v3 — The Shared Constellation
+//  ILLUMINATE — Veil of the Monolith (Secret Roles)
 // ============================================================
 
 const PC = [
-  {main:'#f0c040',glow:'rgba(240,175,40,0.7)',name:'Aureate'},
-  {main:'#e87575',glow:'rgba(232,80,80,0.7)',name:'Crimson'},
-  {main:'#72d4a8',glow:'rgba(60,210,150,0.7)',name:'Verdant'},
-  {main:'#7ab8f0',glow:'rgba(60,150,240,0.7)',name:'Azure'}
+  {main:'#f0c040',glow:'rgba(240,175,40,0.65)'},
+  {main:'#e87575',glow:'rgba(232,80,80,0.65)'},
+  {main:'#72d4a8',glow:'rgba(60,210,150,0.65)'},
+  {main:'#7ab8f0',glow:'rgba(60,150,240,0.65)'}
 ];
 
-// ALL CARD DEFS
-// type: charge | action | ward | event
-// event cards trigger IMMEDIATELY when drawn
+// Role distribution
+function getRoleDistribution(n){
+  if(n===2)return['light','dark'];
+  if(n===3)return['light','light','dark'];
+  return['light','light','dark','dark'];
+}
+
+// ---- CARD DEFINITIONS ----
 const CARD_DEFS = [
-  // CHARGE (45% ≈ 28 cards) — all show as fractions, require quiz
+  // CHARGE (quiz required) — 28 cards
   {id:'c05',type:'charge',val:5, disp:'1/20',ans:5, q:'What is 1/20 as a %?',hint:'(1÷20)×100',cnt:5,icon:'·',  desc:'Claim 5 cells'},
   {id:'c10',type:'charge',val:10,disp:'1/10',ans:10,q:'What is 1/10 as a %?',hint:'(1÷10)×100',cnt:7,icon:'🔆',desc:'Claim 10 cells'},
   {id:'c20',type:'charge',val:20,disp:'1/5', ans:20,q:'What is 1/5 as a %?', hint:'(1÷5)×100', cnt:5,icon:'✦', desc:'Claim 20 cells'},
   {id:'c25',type:'charge',val:25,disp:'1/4', ans:25,q:'What is 1/4 as a %?', hint:'(1÷4)×100', cnt:4,icon:'✦', desc:'Claim 25 cells'},
   {id:'c30',type:'charge',val:30,disp:'3/10',ans:30,q:'What is 3/10 as a %?',hint:'(3÷10)×100',cnt:4,icon:'🌟',desc:'Claim 30 cells'},
-  {id:'c40',type:'charge',val:40,disp:'2/5', ans:40,q:'What is 2/5 as a %?', hint:'(2÷5)×100', cnt:2,icon:'💫',desc:'Claim 40 cells — rare'},
+  {id:'c40',type:'charge',val:40,disp:'2/5', ans:40,q:'What is 2/5 as a %?', hint:'(2÷5)×100', cnt:2,icon:'💫',desc:'Claim 40 cells'},
   {id:'c50',type:'charge',val:50,disp:'1/2', ans:50,q:'What is 1/2 as a %?', hint:'(1÷2)×100', cnt:1,icon:'⭐',desc:'Claim 50 cells — legendary'},
-  // ACTION (30% ≈ 18 cards)
-  {id:'abs',type:'action',eff:'absorb',  disp:'Absorb',  cnt:2,color:'rose',icon:'🌑',desc:'Steal 10 cells from one opponent'},
-  {id:'ext',type:'action',eff:'extract', disp:'Extract', cnt:2,color:'rose',icon:'⚡',desc:'Drain 5 cells from every opponent'},
-  {id:'ecl',type:'action',eff:'eclipse', disp:'Eclipse', cnt:2,color:'lav', icon:'🌒',desc:"Skip an opponent's next turn"},
-  {id:'mir',type:'action',eff:'mirror',  disp:'Mirror',  cnt:2,color:'sky', icon:'🪞',desc:'Copy the last charge card played'},
-  {id:'srg',type:'action',eff:'surge',   disp:'Surge',   cnt:2,color:'gold',icon:'⚡',desc:'Your next charge card counts double'},
-  {id:'eqn',type:'action',eff:'equinox', disp:'Equinox', cnt:2,color:'amber',icon:'⚖️',desc:'Target −15 cells; you +5; last place +10'},
-  {id:'snv',type:'action',eff:'supernova',disp:'Supernova',cnt:1,color:'rose',icon:'💥',desc:'Wipe 40 board cells clean; sacrifice 1 card'},
-  {id:'par',type:'action',eff:'parasite',disp:'Parasite',cnt:2,color:'lav', icon:'🕸️',desc:'Trap opponent — steal half their next charge'},
-  {id:'sht',type:'action',eff:'shatter', disp:'Shatter', cnt:2,color:'rose',icon:'💢',desc:'Remove 20 opponent cells; you lose 5'},
-  {id:'csc',type:'action',eff:'cascade', disp:'Cascade', cnt:1,color:'sky', icon:'🌊',desc:'Draw 3 cards, keep 1, discard rest'},
-  // WARD (15% ≈ 9 cards)
-  {id:'aeg',type:'ward',eff:'aegis',  disp:'Aegis',   cnt:3,color:'sage',icon:'🔒',desc:'Lock 15 of your cells permanently — unoverwritable'},
-  {id:'ref',type:'ward',eff:'refuge', disp:'Refuge',  cnt:3,color:'sage',icon:'🛡️',desc:'Block the next action targeting you'},
-  {id:'blk',type:'ward',eff:'bulwark',disp:'Bulwark', cnt:3,color:'sage',icon:'🏰',desc:'Your cells cannot be overwritten until your next turn'},
-  // EVENT (10% ≈ 6 cards) — trigger immediately on draw, no hand
-  {id:'slf',type:'event',eff:'solar_flare',  disp:'Solar Flare',    cnt:1,color:'gold',icon:'🌅',desc:'15 random unlocked cells wiped from the board'},
-  {id:'vdh',type:'event',eff:'void_hungers', disp:'Void Hungers',   cnt:2,color:'rose',icon:'🕳️',desc:'All players lose 5 cells (excluding locked)'},
-  {id:'cvg',type:'event',eff:'convergence',  disp:'Convergence',    cnt:1,color:'lav', icon:'🌀',desc:'All extra boards merge into the main plain'},
-  {id:'mlg',type:'event',eff:'monolith_gaze',disp:"Monolith's Gaze",cnt:2,color:'text-dim',icon:'👁️',desc:'All players discard and draw 3 new cards'},
+  // ACTION — 20 cards
+  {id:'ecl',type:'action',eff:'eclipse', disp:'Eclipse', cnt:2,color:'rose',icon:'🌒',desc:"Skip an opponent's next turn"},
+  {id:'srg',type:'action',eff:'surge',   disp:'Surge',   cnt:2,color:'gold',icon:'⚡',desc:'Your next charge counts double'},
+  {id:'exp',type:'action',eff:'expose',  disp:'Expose',  cnt:2,color:'amber',icon:'👁️',desc:'Force one player to reveal their role'},
+  {id:'sab',type:'action',eff:'sabotage',disp:'Sabotage',cnt:2,color:'lav', icon:'🕸️',desc:'Force target to Shadow their next charge'},
+  {id:'rcl',type:'action',eff:'reclaim', disp:'Reclaim', cnt:2,color:'gold',icon:'🌅',desc:'Convert 15 shadow cells to lit (your color)'},
+  {id:'cpt',type:'action',eff:'corrupt', disp:'Corrupt', cnt:2,color:'lav', icon:'🌑',desc:'Convert 15 lit cells to shadow'},
+  {id:'ali',type:'action',eff:'align',   disp:'Align',   cnt:2,color:'sage',icon:'⚖️',desc:'Guess a player\'s team — if right, gain 10 cells of your type'},
+  {id:'csc',type:'action',eff:'cascade', disp:'Cascade', cnt:1,color:'sky', icon:'🌊',desc:'Draw 3 cards, keep 1'},
+  {id:'vl', type:'action',eff:'veil',    disp:'Veil',    cnt:2,color:'text-dim',icon:'🌫️',desc:'Your next charge choice is hidden from the action log'},
+  {id:'mir',type:'action',eff:'mirror',  disp:'Mirror',  cnt:1,color:'sky', icon:'🪞',desc:'Copy the last charge card played (same illuminate/shadow choice)'},
+  // WARD — 8 cards
+  {id:'bcn',type:'ward',eff:'beacon',disp:'Beacon',cnt:4,color:'gold',icon:'🔆',desc:'Lock 15 of your lit cells — cannot be shadowed or stolen'},
+  {id:'shr',type:'ward',eff:'shroud',disp:'Shroud',cnt:4,color:'lav', icon:'🌫️',desc:'Lock 15 shadow cells permanently — cannot be reclaimed'},
+  // EVENT — 6 cards (trigger immediately on draw)
+  {id:'dwn',type:'event',eff:'dawn',        disp:'Dawn',          cnt:2,color:'gold',icon:'🌅',desc:'10 random shadow cells flip to lit (no owner)'},
+  {id:'dsk',type:'event',eff:'dusk',        disp:'Dusk',          cnt:2,color:'lav', icon:'🌌',desc:'10 random lit cells flip to shadow'},
+  {id:'mlg',type:'event',eff:'monolith',    disp:"Monolith's Gaze",cnt:2,color:'text-dim',icon:'👁️',desc:'All players discard and redraw 3 cards'},
 ];
 
-// STATE
 let G = {};
 function freshState(){
-  return {
+  return{
     phase:'setup',modal:null,modalD:null,numP:2,
-    players:[],deck:[],
-    shared:Array(100).fill(null),  // null | playerIdx
-    locked:Array(100).fill(false), // Aegis locked
+    players:[],roles:[],      // roles[i] = 'light'|'dark'
+    exposed:[],               // exposed[i] = true if role revealed publicly
+    deck:[],
+    shared:Array(100).fill(null),  // null | {owner:pi, type:'lit'|'shadow'}
+    locked:Array(100).fill(false), // beacon/shroud locked
+    lockedType:Array(100).fill(null), // 'lit'|'shadow' for locked cells
     curI:0,turnNum:0,
     turnPlayed:{charge:false,action:false},
     pendCard:null,convAtt:0,
-    lastCharge:null,
+    lastChargeVal:null,lastChargeType:null, // for Mirror
     skipNext:{},
+    forceShadow:{},  // playerI → true if next charge must be shadow (Sabotage)
+    veiled:{},       // playerI → true if next charge is veiled from log
     msg:'Welcome to Illuminate.',
-    phase:'setup',
-    skipping:false,
-    turningOver:false,
-    turnToken:0,
-    gameOver:false,
+    log:[],          // [{turn,name,text}]
+    skipping:false,turningOver:false,turnToken:0,gameOver:false,
+    extraBoards:[],  // per-player: [null|{cells,pct},...] — index by pi
+    chargeTarget:{}, // pi → 'shared'|boardIdx
   };
 }
 G = freshState();
@@ -346,7 +395,7 @@ const Aud=(()=>{
   function init(){
     if(going)return;
     ctx=new(window.AudioContext||window.webkitAudioContext)();
-    master=ctx.createGain();master.gain.value=0.5;master.connect(ctx.destination);
+    master=ctx.createGain();master.gain.value=0.48;master.connect(ctx.destination);
     rev=makeRev();rev.connect(master);going=true;startAmb();
   }
   function makeRev(){
@@ -354,7 +403,7 @@ const Aud=(()=>{
     for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<l;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/l,2.8);}
     c.buffer=b;return c;
   }
-  function t(f,dur,type='sine',vol=0.09,del=0){
+  function t(f,dur,type='sine',vol=0.08,del=0){
     if(!going)return;
     const st=ctx.currentTime+del,o=ctx.createOscillator(),g=ctx.createGain();
     o.type=type;o.frequency.value=f;
@@ -364,26 +413,28 @@ const Aud=(()=>{
   }
   function startAmb(){
     [55,82.4].forEach((f,i)=>{const o=ctx.createOscillator(),g=ctx.createGain();
-      o.type=i?'triangle':'sine';o.frequency.value=f;g.gain.value=i?0.013:0.026;
+      o.type=i?'triangle':'sine';o.frequency.value=f;g.gain.value=i?0.012:0.024;
       o.connect(g);g.connect(master);o.start();});
-    melody();setInterval(melody,14000);
+    melody();setInterval(melody,15000);
   }
   function melody(){
     const sc=[220,261,293,330,392,440,523,392,330];
-    [0,2,4,3,6,5,4,2,1,3,5,7,6,4,2].forEach((si,i)=>t(sc[si%sc.length]*2,0.62+Math.random()*0.5,'sine',0.04,i*0.68));
+    [0,2,4,3,6,5,4,2,1,3,5,7,6,4,2].forEach((si,i)=>t(sc[si%sc.length]*2,0.6+Math.random()*0.5,'sine',0.038,i*0.7));
   }
   return{
     init,
-    draw:()=>[523,659,784].forEach((f,i)=>t(f,0.26,'sine',0.08,i*0.06)),
-    fill:()=>{t(880,0.2,'sine',0.07);t(1108,0.16,'sine',0.04,0.06);},
-    action:()=>{t(110,0.42,'sawtooth',0.06);t(147,0.32,'sawtooth',0.04,0.16);},
-    ward:()=>{t(660,0.3,'sine',0.07);t(880,0.2,'sine',0.05,0.12);},
-    event:()=>[330,392,494,392,330].forEach((f,i)=>t(f,0.3,'sine',0.07,i*0.12)),
-    win:()=>[261,329,392,523,659,784,1047].forEach((f,i)=>t(f,1.0,'sine',0.1,i*0.17)),
-    err:()=>{t(220,0.16,'sawtooth',0.08);t(185,0.22,'sawtooth',0.06,0.09);},
-    surge:()=>[330,440,660].forEach((f,i)=>t(f,0.32,'triangle',0.07,i*0.07)),
-    cascade:()=>[523,523,523].forEach((f,i)=>t(f,0.2,'sine',0.07,i*0.1)),
-    skip:()=>{t(110,0.5,'sawtooth',0.07);t(73.4,0.38,'sawtooth',0.04,0.18);},
+    draw:()=>[523,659,784].forEach((f,i)=>t(f,0.25,'sine',0.07,i*0.06)),
+    lit:()=>{t(880,0.18,'sine',0.065);t(1108,0.14,'sine',0.035,0.06);},
+    shadow:()=>{t(110,0.4,'sawtooth',0.055);t(82.4,0.5,'sine',0.04,0.15);},
+    action:()=>{t(110,0.38,'sawtooth',0.055);t(147,0.28,'sawtooth',0.035,0.14);},
+    ward:()=>{t(660,0.28,'sine',0.065);t(880,0.18,'sine',0.045,0.11);},
+    event:()=>[330,392,494,392,330].forEach((f,i)=>t(f,0.28,'sine',0.065,i*0.11)),
+    expose:()=>[220,440,220,440].forEach((f,i)=>t(f,0.2,'sawtooth',0.05,i*0.12)),
+    win:()=>[261,329,392,523,659,784].forEach((f,i)=>t(f,1.0,'sine',0.1,i*0.17)),
+    voidWin:()=>[196,233,277,196,233].forEach((f,i)=>t(f,1.0,'triangle',0.09,i*0.2)),
+    err:()=>{t(220,0.15,'sawtooth',0.07);t(185,0.2,'sawtooth',0.055,0.09);},
+    surge:()=>[330,440,660].forEach((f,i)=>t(f,0.3,'triangle',0.065,i*0.07)),
+    skip:()=>{t(110,0.45,'sawtooth',0.06);t(73.4,0.35,'sawtooth',0.04,0.16);},
   };
 })();
 
@@ -394,112 +445,98 @@ function buildDeck(){
   return shuffle(d);
 }
 function shuffle(a){const r=[...a];for(let i=r.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[r[i],r[j]]=[r[j],r[i]];}return r;}
-function deckDraw(){if(!G.deck.length){G.deck=buildDeck();}return G.deck.pop();}
+function deckDraw(){if(!G.deck.length)G.deck=buildDeck();return G.deck.pop();}
 
 // PLAYER
 function makePlayer(name,isAI,ci){
-  return{name,isAI,ci,hand:[],
-    extraBoards:[],     // [{cells:Array(100), pct:0}]
-    chargeTarget:'shared', // 'shared' | 0 | 1 | 2
-    tether:null,        // fromPlayerIdx if tethered
-    status:{surge:false,refuge:false,bulwark:false}};
+  return{name,isAI,ci,hand:[],status:{surge:false}};
 }
 
-// SHARED BOARD UTILS
-function getSharedCount(pi){return G.shared.filter(o=>o===pi).length;}
-function getSharedPct(pi){return getSharedCount(pi);}
+// BOARD HELPERS
+function litCount(){return G.shared.filter(c=>c&&c.type==='lit').length;}
+function shadowCount(){return G.shared.filter(c=>c&&c.type==='shadow').length;}
+function playerLitCount(pi){return G.shared.filter(c=>c&&c.type==='lit'&&c.owner===pi).length;}
 
-// Claim cells on shared board — Rebound rule: empty=1:1, overwrite=2:1
-function claimOnShared(pi,units){
-  const indices=shuffle([...Array(100).keys()]);
-  let rem=units;const gained=[];
-  // Phase 1: empty cells (1:1)
-  for(const i of indices){
+function placeCells(pi,count,type){
+  // Fill empty cells first
+  const emptyCells=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===null));
+  const overwritable=shuffle([...Array(100).keys()].filter(i=>{
+    const c=G.shared[i];
+    if(!c||G.locked[i])return false;
+    if(type==='lit')return c.type==='shadow';  // lit can overwrite shadow
+    if(type==='shadow')return c.type==='lit';  // shadow can overwrite lit
+    return false;
+  }));
+  const targets=[...emptyCells,...overwritable];
+  let rem=count;const placed=[];
+  for(const i of targets){
     if(rem<=0)break;
-    if(G.shared[i]===null){G.shared[i]=pi;gained.push({idx:i,prev:null});rem--;}
-  }
-  // Phase 2: overwrite (2:1 cost, skip locked+bulwark)
-  for(const i of indices){
-    if(rem<2)break;
-    const ow=G.shared[i];
-    if(ow!==null&&ow!==pi&&!G.locked[i]&&!G.players[ow]?.status.bulwark){
-      G.shared[i]=pi;gained.push({idx:i,prev:ow});rem-=2;
+    if(G.shared[i]===null){
+      G.shared[i]={owner:pi,type};placed.push(i);rem--;
+    } else if(!G.locked[i]){
+      G.shared[i]={owner:pi,type};placed.push(i);rem-=2; // Rebound cost
     }
   }
-  return gained;
+  return placed;
 }
 
-function removeFromShared(pi,count){
-  const cells=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===pi&&!G.locked[i]));
+function lockCells(pi,count,type){
+  const cells=shuffle([...Array(100).keys()].filter(i=>{
+    const c=G.shared[i];
+    return c&&c.type===type&&c.owner===pi&&!G.locked[i];
+  }));
   const n=Math.min(count,cells.length);
-  cells.slice(0,n).forEach(i=>G.shared[i]=null);
+  cells.slice(0,n).forEach(i=>{G.locked[i]=true;G.lockedType[i]=type;});
   return n;
 }
 
-function lockCells(pi,count){
-  const own=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===pi&&!G.locked[i]));
-  const n=Math.min(count,own.length);
-  own.slice(0,n).forEach(i=>G.locked[i]=true);
+function removeByType(count,type,excludeLocked=true){
+  const targets=shuffle([...Array(100).keys()].filter(i=>{
+    const c=G.shared[i];
+    return c&&c.type===type&&(!excludeLocked||!G.locked[i]);
+  }));
+  const n=Math.min(count,targets.length);
+  targets.slice(0,n).forEach(i=>G.shared[i]=null);
   return n;
 }
 
-// Extra board fill
-function fillExtra(pi,boardIdx,units){
-  const board=G.players[pi].extraBoards[boardIdx];
-  if(!board)return[];
-  let rem=units;const lit=[];
-  for(let i=0;i<100&&rem>0;i++){
-    if(!board.cells[i]){board.cells[i]=true;lit.push(i);rem--;}
-  }
+// Space check for charge card
+function getEmptySpace(){
+  return G.shared.filter(c=>c===null).length;
+}
+
+function getExtraBoard(pi){return G.extraBoards[pi]||null;}
+function fillExtra(pi,units){
+  let board=G.extraBoards[pi];
+  if(!board)return 0;
+  let rem=units,done=0;
+  for(let i=0;i<100&&rem>0;i++){if(!board.cells[i]){board.cells[i]=true;rem--;done++;}}
   board.pct=board.cells.filter(Boolean).length;
-  return lit;
+  return done;
 }
 
-// SCORING
-function getScore(pi){
-  const p=G.players[pi];
-  const main=getSharedCount(pi);
-  let extra=0,penalty=0;
-  p.extraBoards.forEach(b=>{
-    if(b.pct<50){penalty+=b.pct;}    // Shattered Light: 0 bonus, subtract
-    else{extra+=b.pct;penalty+=Math.floor((100-b.pct)/10)*5;}
-  });
-  return Math.max(0,main+extra-penalty);
+// LOG
+function addLog(text){
+  G.log.unshift({turn:G.turnNum,name:G.players[G.curI].name,text});
+  if(G.log.length>12)G.log.pop();
 }
 
-function getScoreBreakdown(pi){
-  const p=G.players[pi];
-  const main=getSharedCount(pi);
-  let extra=0,penalty=0;const penLines=[];
-  p.extraBoards.forEach((b,bi)=>{
-    if(b.pct<50){
-      penLines.push(`Board ${bi+1}: ${b.pct}% < 50% (Shattered Light) → −${b.pct}`);
-      penalty+=b.pct;
-    } else {
-      extra+=b.pct;
-      const dec=Math.floor((100-b.pct)/10)*5;
-      if(dec>0)penLines.push(`Board ${bi+1}: ${100-b.pct}% unlit (Shadow Decay) → −${dec}`);
-      penalty+=dec;
-    }
-  });
-  return{main,extra,rawScore:main+extra,penalty,finalScore:Math.max(0,main+extra-penalty),penLines};
-}
-
-// Check end game conditions
+// END GAME
 function checkEndGame(){
-  if(G.gameOver)return true;
-  const boardFull=G.shared.every(o=>o!==null);
-  const deckEmpty=G.deck.length===0&&G.players.every(p=>p.hand.length===0);
-  if(boardFull||deckEmpty){triggerEndGame();return true;}
+  if(G.gameOver)return false;
+  const deckDone=G.deck.length===0&&G.players.every(p=>p.hand.length===0);
+  const boardFull=G.shared.every(c=>c!==null);
+  if(deckDone||boardFull){triggerEndGame();return true;}
   return false;
 }
-
 function triggerEndGame(){
-  G.gameOver=true;G.phase='end';
-  Aud.win();renderAll();
+  G.gameOver=true;
+  const lit=litCount(),shadow=shadowCount();
+  if(lit>shadow)Aud.win(); else Aud.voidWin();
+  G.phase='end';renderAll();
 }
 
-// ---- SCREEN HELPERS ----
+// HELPERS
 function show(id){document.getElementById(id).classList.remove('hidden');}
 function hide(id){document.getElementById(id).classList.add('hidden');}
 function renderAll(){
@@ -515,8 +552,13 @@ function renderAll(){
 // ---- SETUP ----
 function renderSetup(){
   const n=G.numP;
+  const dist=getRoleDistribution(n);
+  const lc=dist.filter(r=>r==='light').length,dc=dist.filter(r=>r==='dark').length;
   let h=`<div class="count-label">Seekers</div>
     <div class="count-row">${[2,3,4].map(i=>`<button class="count-btn${n===i?' active':''}" onclick="setN(${i})">${i}</button>`).join('')}</div>
+    <div style="font-size:0.62rem;letter-spacing:0.18em;color:var(--text-dim);margin-bottom:1rem;">
+      ${lc} Light Seeker${lc>1?'s':''} · ${dc} Dark Seeker${dc>1?'s':''} · Roles hidden from others
+    </div>
     <div class="player-rows">`;
   for(let i=0;i<n;i++){
     const c=PC[i],nm=G.players[i]?.name||`Seeker ${i+1}`,ai=G.players[i]?.isAI||false;
@@ -527,7 +569,7 @@ function renderSetup(){
     </div>`;
   }
   h+=`</div>
-    <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="doStart()">✦ Begin ✦</button>
+    <button class="btn btn-primary" style="width:100%;margin-bottom:7px" onclick="doStart()">✦ Begin ✦</button>
     <button class="btn btn-sm btn-lav" style="width:100%" onclick="openDeckViewer()">📖 Deck Composition</button>`;
   document.getElementById('setup-content').innerHTML=h;
 }
@@ -540,10 +582,24 @@ function doStart(){
     const nm=(document.getElementById('nm'+i)?.value||'').trim()||`Seeker ${i+1}`;
     const ai=document.getElementById('ai'+i)?.checked||false;
     G.players.push(makePlayer(nm,ai,i));
+    G.extraBoards.push(null);
+    G.chargeTarget[i]='shared';
   }
-  G.numP=G.players.length;
+  // Assign roles randomly
+  const dist=shuffle(getRoleDistribution(G.numP));
+  G.roles=dist;
+  G.exposed=G.players.map(()=>false);
   G.deck=buildDeck();
-  G.players.forEach(p=>{for(let i=0;i<3;i++){const c=deckDraw();if(c.quiz)c.converted=true;p.hand.push(c);}});
+  // Deal 3 cards each (skip events)
+  G.players.forEach(p=>{
+    let dealt=0;
+    while(dealt<3&&G.deck.length>0){
+      const c=deckDraw();
+      if(c.type==='event'){G.deck.unshift(c);continue;} // put event back and try next
+      if(c.quiz)c.converted=true;
+      p.hand.push(c);dealt++;
+    }
+  });
   G.phase='pass';renderAll();
 }
 
@@ -552,19 +608,32 @@ function renderPass(){
   const p=G.players[G.curI],c=PC[p.ci];
   if(G.skipping){
     document.getElementById('pass-content').innerHTML=`
-      <div class="pass-eye" style="opacity:1">🌒</div>
+      <div style="font-size:3rem;margin-bottom:0.8rem;opacity:0.8">🌒</div>
       <div class="pass-to" style="color:var(--rose)">Eclipsed</div>
-      <div class="pass-name" style="color:${c.main};opacity:0.5">${p.name}</div>
-      <div class="pass-hint" style="color:var(--rose)">Turn skipped by Eclipse</div>
-      <div style="font-size:0.65rem;color:var(--text-dim);margin-top:0.9rem;letter-spacing:0.13em">Advancing...</div>`;
+      <div class="pass-name" style="color:${c.main};opacity:0.45">${p.name}</div>
+      <div class="pass-hint" style="color:var(--rose)">Turn skipped</div>
+      <div style="font-size:0.62rem;color:var(--text-dim);margin-top:0.8rem;letter-spacing:0.12em">Advancing...</div>`;
     return;
   }
+  const role=G.roles[G.curI];
+  const isLight=role==='light';
+  const dist=G.roles;
+  const lc=dist.filter(r=>r==='light').length,dc=dist.filter(r=>r==='dark').length;
   document.getElementById('pass-content').innerHTML=`
-    <div class="pass-eye">🌑</div>
     <div class="pass-to">Hand device to</div>
-    <div class="pass-name" style="color:${c.main};text-shadow:0 0 18px ${c.glow}">${p.name}</div>
-    <div class="pass-hint">${p.isAI?'(AI player — press continue)':'Do not look until ready'}</div>
-    <button class="btn btn-primary" onclick="revealBoard()">${p.isAI?'Continue →':'✦ Reveal Board'}</button>`;
+    <div class="pass-name" style="color:${c.main};text-shadow:0 0 16px ${c.glow}">${p.name}</div>
+    <div class="pass-hint">${p.isAI?'(AI — press continue)':'Do not reveal your role'}</div>
+    <div class="role-card ${isLight?'light':'dark'}">
+      <span class="role-icon">${isLight?'✦':'🌑'}</span>
+      <div class="role-name ${isLight?'light':'dark'}">${isLight?'Light Seeker':'Void Seeker'}</div>
+      <div class="role-desc ${isLight?'light':'dark'}">${isLight
+        ?'Illuminate the plain.\nKeep lit cells greater than shadow cells to win.'
+        :'Embrace the void.\nLet shadow cells outnumber the light to win.'}</div>
+      <div class="role-team-count">${isLight?lc+' Light':'dc='+dc+' Dark'} seeker${(isLight?lc:dc)>1?'s':''} on your team · exact identities unknown</div>
+    </div>
+    <button class="btn ${isLight?'btn-primary':'btn-dark'}" onclick="revealBoard()">
+      ${p.isAI?'Continue →':isLight?'✦ I carry the Light':'🌑 I serve the Void'}
+    </button>`;
 }
 
 function revealBoard(){
@@ -582,97 +651,121 @@ function revealBoard(){
   }
   if(card.quiz)card.converted=true;
   p.hand.push(card);Aud.draw();
-  G.msg=`Drew ${card.disp}. Play your cards.`;
+  G.msg=`Drew ${card.disp}. You are the ${G.roles[G.curI]==='light'?'✦ Light':'🌑 Void'}.`;
   renderAll();
-  if(p.isAI){aiDelay(runAI,900);}
+  if(p.isAI)aiDelay(runAI,900);
 }
 
 // ---- GAME RENDER ----
 function renderGame(){
   const p=G.players[G.curI],c=PC[p.ci];
+  const role=G.roles[G.curI],isLight=role==='light';
+  const lit=litCount(),shadow=shadowCount(),empty=100-lit-shadow;
   let h='';
+
   // Header
   h+=`<div class="game-header">
     <div class="cur-badge">
-      <div class="cur-dot" style="background:${c.main};box-shadow:0 0 7px ${c.glow}"></div>
+      <div class="cur-dot" style="background:${c.main};box-shadow:0 0 6px ${c.glow}"></div>
       <span class="cur-name" style="color:${c.main}">${p.name}</span>
     </div>
-    <div class="deck-info">Deck: ${G.deck.length} · Turn ${G.turnNum}</div>
+    <div class="hdr-right">
+      <span class="hdr-info">Turn ${G.turnNum} · Deck ${G.deck.length}</span>
+      <button style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'Josefin Sans',sans-serif;font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;padding:2px 7px;cursor:pointer;" onclick="openDeckViewer()">📖</button>
+    </div>
   </div>`;
-  // Score legend
-  h+=`<div class="score-legend">`;
-  G.players.forEach((pl,pi)=>{
-    const cnt=getSharedCount(pi),cc=PC[pl.ci];
-    const icon=(G.skipNext[pi]?'🌒 ':'')+(pl.status.surge?'⚡':'')+(pl.status.refuge?'🛡️':'')+(pl.status.bulwark?'🏰':'')+(pl.tether!==null?'🕸️':'');
-    h+=`<div class="legend-item">
-      <div class="legend-dot" style="background:${cc.main}"></div>
-      <span>${pl.name}</span>
-      <div class="legend-bar"><div class="legend-fill" style="width:${cnt}%;background:${cc.main}"></div></div>
-      <span class="legend-pct">${cnt}%</span>
-      <span style="font-size:0.75rem">${icon}</span>
-    </div>`;
-  });
-  h+=`</div>`;
-  // Shared board
-  h+=`<div class="board-section">
-    <div class="board-title">The Shared Plain — ${G.shared.filter(o=>o!==null).length}% Illuminated</div>
+
+  // My role badge
+  h+=`<div class="my-role-badge ${isLight?'light':'dark'}">
+    <span>${isLight?'✦':'🌑'}</span>
+    <span>You are the <strong>${isLight?'Light Seeker':'Void Seeker'}</strong></span>
+    ${G.players[G.curI].status.surge?'<span style="margin-left:auto">⚡ Surge</span>':''}
+  </div>`;
+
+  // Balance bar
+  h+=`<div class="balance-bar-wrap">
+    <div class="balance-lbl">
+      <span class="lbl-light">✦ Light — ${lit} cells</span>
+      <span style="color:var(--text-dim);font-size:0.55rem">${empty} empty</span>
+      <span class="lbl-dark">🌑 Shadow — ${shadow} cells</span>
+    </div>
+    <div class="balance-track">
+      <div class="balance-lit" style="width:${lit}%"></div>
+      <div class="balance-shadow" style="width:${shadow}%"></div>
+    </div>
+    <div class="balance-counts">
+      <span class="cnt-light">${lit > shadow?'▲ Leading':lit===shadow?'= Tied':''}</span>
+      <span class="cnt-dark">${shadow > lit?'▲ Leading':''}</span>
+    </div>
+  </div>`;
+
+  // Board
+  h+=`<div class="board-wrap">
+    <div class="board-title">The Shared Plain — ${lit+shadow}/100 cells claimed</div>
     <div class="shared-grid">`;
   for(let i=0;i<100;i++){
-    const ow=G.shared[i],lk=G.locked[i];
-    const bg=ow!==null?PC[G.players[ow].ci].main:'#0d0920';
-    h+=`<div class="scell${lk?' locked':''}" id="sc-${i}" style="background:${bg}${lk?';box-shadow:inset 0 0 0 2px rgba(255,255,255,0.65)':''}"></div>`;
+    const cell=G.shared[i];
+    const lk=G.locked[i];
+    let bg='#0a0516',cls='scell';
+    if(cell){
+      if(cell.type==='lit'){bg=PC[G.players[cell.owner].ci].main;if(lk)cls+=' locked-lit';}
+      else{bg='#1a0535';cls+=' shadow-cell';if(lk)cls+=' locked-shadow';}
+    }
+    h+=`<div class="${cls}" id="sc-${i}" style="background:${bg}"></div>`;
   }
   h+=`</div></div>`;
-  // Extra boards
-  if(p.extraBoards.length>0){
-    h+=`<div class="extra-boards-row">`;
-    p.extraBoards.forEach((b,bi)=>{
-      const active=p.chargeTarget===bi;
-      h+=`<div class="extra-board${active?'':' inactive'}" onclick="setChargeTarget(${bi})">
-        <div class="extra-board-lbl" style="color:${active?c.main:'var(--text-dim)'}">Board ${bi+1} ${active?'◆':'◇'}</div>
-        <div class="mini-grid">
-          ${b.cells.map(lit=>`<div class="mini-cell" style="background:${lit?c.main:'#0d0920'}"></div>`).join('')}
-        </div>
-        <div class="mini-pbar"><div class="mini-pfill" style="width:${b.pct}%;background:${c.main}"></div></div>
-        <div class="mini-pct" style="color:${c.main}">${b.pct}%</div>
-      </div>`;
-    });
-    h+=`</div>`;
-    // Target toggle
-    h+=`<div class="target-toggle">
-      <span class="target-lbl">Charge Target:</span>
-      <div class="target-btns">
-        <button class="tbtn${p.chargeTarget==='shared'?' active':''}" onclick="setChargeTarget('shared')">Shared Plain</button>
-        ${p.extraBoards.map((_,bi)=>`<button class="tbtn${p.chargeTarget===bi?' active':''}" onclick="setChargeTarget(${bi})">Board ${bi+1}</button>`).join('')}
+
+  // Extra board (if open)
+  const eb=G.extraBoards[G.curI];
+  if(eb){
+    h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);">
+      <div style="font-size:0.6rem;letter-spacing:0.2em;color:var(--text-dim);text-transform:uppercase;">Extra Board</div>
+      <div style="display:grid;grid-template-columns:repeat(10,1fr);gap:1px;padding:3px;background:var(--surface2);border:1px solid var(--border);flex-shrink:0">
+        ${eb.cells.map(lit=>`<div style="width:14px;height:14px;background:${lit?c.main:'#0a0516'}"></div>`).join('')}
+      </div>
+      <div style="font-size:0.7rem;color:${c.main}">${eb.pct}%</div>
+      <div style="display:flex;gap:5px;margin-left:auto">
+        <button class="tbtn${G.chargeTarget[G.curI]==='shared'?' active':''}" onclick="setChargeTarget('shared')">Plain</button>
+        <button class="tbtn${G.chargeTarget[G.curI]==='extra'?' active':''}" onclick="setChargeTarget('extra')">Extra</button>
       </div>
     </div>`;
   }
+
   // Status strip
   const sts=[];
-  if(p.status.surge)sts.push(`<span class="sbadge sbadge-surge">⚡ Surge</span>`);
-  if(p.status.refuge)sts.push(`<span class="sbadge sbadge-refuge">🛡️ Refuge</span>`);
-  if(p.status.bulwark)sts.push(`<span class="sbadge sbadge-bulwark">🏰 Bulwark</span>`);
-  if(p.tether!==null)sts.push(`<span class="sbadge sbadge-tether">🕸️ Tethered by ${G.players[p.tether].name}</span>`);
+  if(G.skipNext[G.curI])sts.push(`<span class="sbadge sbadge-skip">🌒 Eclipsed next</span>`);
+  if(G.veiled[G.curI])sts.push(`<span class="sbadge sbadge-veiled">🌫️ Veiled</span>`);
+  if(G.forceShadow[G.curI])sts.push(`<span class="sbadge sbadge-forced">🕸️ Forced Shadow</span>`);
+  if(G.exposed[G.curI])sts.push(`<span class="sbadge sbadge-exposed">👁️ Role Exposed</span>`);
   const tA=G.turnPlayed.action,tC=G.turnPlayed.charge;
   sts.push(`<span class="sbadge sbadge-turn">${tC?'✓':'○'} Charge &nbsp;${tA?'✓':'○'} Action</span>`);
   if(sts.length)h+=`<div class="status-strip">${sts.join('')}</div>`;
+
   // Message
   h+=`<div class="msg-bar">${G.msg}</div>`;
+
+  // Exposed players notice
+  const expNames=G.players.filter((_,i)=>G.exposed[i]&&i!==G.curI)
+    .map(p=>`${p.name} = ${G.roles[G.players.indexOf(p)]==='light'?'✦ Light':'🌑 Void'}`);
+  if(expNames.length)h+=`<div style="font-size:0.62rem;color:var(--amber);text-align:center;padding:4px 10px;letter-spacing:0.08em;margin-bottom:6px">👁️ Known: ${expNames.join(' · ')}</div>`;
+
   // Hand
+  const tgtShared=G.chargeTarget[G.curI]==='shared';
+  const emptySpace=tgtShared?getEmptySpace():(eb?100-eb.pct:0);
   h+=`<div class="hand-section">
     <div class="hand-header">
       <div>
         <div class="hand-lbl">Your Hand</div>
-        <div class="turn-status">1 Charge + 1 Action per turn · Rebound: overwrites cost 2 cells</div>
+        <div class="hand-sub">1 Charge + 1 Action per turn · others can see the board change, not your choice</div>
       </div>
-      <button style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'Josefin Sans',sans-serif;font-size:0.58rem;letter-spacing:0.13em;text-transform:uppercase;padding:3px 9px;cursor:pointer;" onclick="openDeckViewer()">📖 Deck</button>
     </div>
     <div class="hand-cards">
-      ${p.hand.length===0?'<span style="font-size:0.7rem;color:var(--text-dim);letter-spacing:0.13em">Empty hand</span>':''}
+      ${p.hand.length===0?'<span style="font-size:0.68rem;color:var(--text-dim)">Empty hand — draw a card</span>':''}
       ${p.hand.map((card,i)=>{
         const isA=card.type==='action',isW=card.type==='ward';
-        const used=(isA&&tA)||(!isA&&!isW&&tC);
-        const col=isW?'sage':isA?card.color||'rose':'gold';
+        const usedA=(isA||isW)&&tA,usedC=!isA&&!isW&&tC;
+        const used=usedA||usedC;
+        const col=isW?'sage':isA?(card.color==='text-dim'?'text-dim':card.color||'rose'):'gold';
         const hcCls=isW?'hc-ward':isA?'hc-action':'hc-charge';
         return`<div class="hcard ${hcCls}${used?' no-play':' playable'}" onclick="${used?'':'playHandCard('+i+')'}" title="${card.desc}">
           <div class="hc-badge">${isW?'Ward':isA?'Action':'Charge'}</div>
@@ -682,182 +775,221 @@ function renderGame(){
         </div>`;
       }).join('')}
     </div>
-    <div class="hand-actions">
+    <div class="hand-footer">
       ${(tA||tC)?`<button class="btn btn-sm btn-sage" onclick="doEndTurnManual()">End Turn →</button>`
-       :`<button class="btn btn-sm" disabled style="opacity:0.28">Play a card first</button>`}
-      ${p.extraBoards.length<2?`<button class="btn btn-xs btn-lav" onclick="doExpand()">✦ Expand Domain</button>`:''}
+       :`<button class="btn btn-sm" disabled style="opacity:0.25">Play a card first</button>`}
+      ${!eb&&(!tC)?`<button class="btn btn-xs btn-lav" onclick="doExpand()">✦ Expand Domain</button>`:''}
       <button class="btn btn-xs btn-danger" onclick="doForfeit()">✕ Forfeit</button>
     </div>
   </div>`;
+
+  // Action log
+  if(G.log.length>0){
+    h+=`<div class="log-section">
+      <div class="log-title">Action Log</div>
+      <div class="log-entries">
+        ${G.log.map(e=>`<div class="log-entry">
+          <span class="log-turn">T${e.turn}</span>
+          <span class="log-name" style="color:${PC[G.players.findIndex(p=>p.name===e.name)>=0?G.players.findIndex(p=>p.name===e.name):0]?.main||'var(--text)'}">${e.name}</span>
+          <span>${e.text}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
   document.getElementById('game-content').innerHTML=h;
 }
 
-// ---- END RENDER ----
+// ---- END ----
 function renderEnd(){
-  const scores=G.players.map((_,pi)=>({pi,score:getScore(pi),bd:getScoreBreakdown(pi)}))
-    .sort((a,b)=>b.score-a.score);
-  const winner=G.players[scores[0].pi];
-  const wc=PC[winner.ci];
-  let h=`<div class="end-header">
-    <div class="end-icon">✦</div>
-    <div class="end-winner-lbl">The Light Returns</div>
-    <div class="end-winner-name" style="color:${wc.main}">${winner.name}</div>
-    <div class="end-winner-sub">illuminates the plain!</div>
+  const lit=litCount(),shadow=shadowCount();
+  const lightWins=lit>shadow;
+  const winColor=lightWins?'var(--gold)':'var(--lav)';
+  let h='';
+  h+=`<div class="end-header text-center" style="text-align:center;margin-bottom:1.2rem">
+    <div style="font-size:3rem;margin-bottom:0.6rem">${lightWins?'✦':'🌑'}</div>
+    <div class="end-title ${lightWins?'light-win':'dark-win'}">${lightWins?'Light Prevails':'Void Reigns'}</div>
+    <div class="end-sub" style="color:${winColor}">${lightWins?'The plain is illuminated':'Shadow consumes the world'}</div>
+    <div style="font-size:0.7rem;color:var(--text-dim);letter-spacing:0.15em">
+      ✦ ${lit} lit cells &nbsp;·&nbsp; 🌑 ${shadow} shadow cells &nbsp;·&nbsp; ${100-lit-shadow} empty
+    </div>
   </div>`;
-  // Final shared board
-  h+=`<div class="end-board"><div class="shared-grid" style="max-width:260px;pointer-events:none">`;
+
+  // Final board
+  h+=`<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.1rem">
+    <div class="shared-grid" style="max-width:260px;pointer-events:none">`;
   for(let i=0;i<100;i++){
-    const ow=G.shared[i],lk=G.locked[i];
-    const bg=ow!==null?PC[G.players[ow].ci].main:'#0d0920';
-    h+=`<div class="scell${lk?' locked':''}" style="background:${bg}${lk?';box-shadow:inset 0 0 0 2px rgba(255,255,255,0.65)':''}"></div>`;
+    const cell=G.shared[i];let bg='#0a0516',cls='scell';
+    if(cell){if(cell.type==='lit'){bg=PC[G.players[cell.owner].ci].main;if(G.locked[i])cls+=' locked-lit';}
+      else{bg='#1a0535';cls+=' shadow-cell';if(G.locked[i])cls+=' locked-shadow';}}
+    h+=`<div class="${cls}" style="background:${bg}"></div>`;
   }
   h+=`</div></div>`;
-  // Score cards
-  h+=`<div class="score-cards">`;
-  scores.forEach(({pi,score,bd},rank)=>{
-    const pl=G.players[pi],cc=PC[pl.ci];
-    h+=`<div class="score-card" style="border-color:${rank===0?cc.main:'var(--border)'}">
-      <div class="sc-header">
-        <div class="sc-dot" style="background:${cc.main}"></div>
-        <span class="sc-name" style="color:${cc.main}">${rank===0?'✦ ':''} ${pl.name}</span>
-        <span class="sc-final">${score} cells</span>
-      </div>
-      <div class="sc-rows">
-        <div class="sc-row"><span>Shared plain cells</span><span>${bd.main}</span></div>
-        ${bd.extra>0?`<div class="sc-row bonus"><span>Extra board cells</span><span>+${bd.extra}</span></div>`:''}
-        ${bd.penalty>0?`<div class="sc-row penalty"><span>Penalties</span><span>−${bd.penalty}</span></div>`:''}
-        ${bd.penLines.map(l=>`<div class="sc-row penalty" style="font-size:0.6rem;opacity:0.8"><span>${l}</span></div>`).join('')}
-      </div>
+
+  // Role reveals
+  h+=`<div style="font-size:0.58rem;letter-spacing:0.3em;color:var(--text-dim);text-transform:uppercase;text-align:center;margin-bottom:0.7rem">— The Seekers Revealed —</div>`;
+  h+=`<div class="reveal-grid">`;
+  G.players.forEach((pl,pi)=>{
+    const r=G.roles[pi],isL=r==='light';
+    const isWinnerRole=(lightWins&&isL)||(!lightWins&&!isL);
+    const cc=PC[pl.ci];
+    const litC=playerLitCount(pi);
+    h+=`<div class="reveal-card${isWinnerRole?' winner-card':''}">
+      <div class="rc-dot" style="background:${cc.main}"></div>
+      <span class="rc-name" style="color:${cc.main}">${pl.name}${pl.isAI?' (AI)':''}</span>
+      <span class="rc-role ${r}">${isL?'✦ Light':'🌑 Void'}</span>
+      <span class="rc-score">${litC} lit cells</span>
+      ${isWinnerRole?'<span class="rc-w">✦ Winner</span>':''}
     </div>`;
   });
-  h+=`</div><button class="btn btn-primary" onclick="resetGame()">Play Again ✦</button>`;
+  h+=`</div>`;
+  h+=`<div style="text-align:center"><button class="btn btn-primary" onclick="resetGame()">Play Again ✦</button></div>`;
   document.getElementById('end-content').innerHTML=h;
 }
 
 // ---- MODAL ----
 function renderModal(){
   const type=G.modal,d=G.modalD;
-  let h='<div class="modal">';
+  const role=G.roles[G.curI],isLight=role==='light';
+  let h=`<div class="modal${isLight?'':' dark-modal'}">`;
+
   if(type==='conversion'){
     const card=G.pendCard;
     h+=`<div class="modal-title">Decode the Light</div>
       <div class="modal-card-big">${card.disp}</div>
-      <div class="modal-text">${card.q}<br><span style="font-size:0.65rem;color:var(--lav)">${card.hint}</span></div>
+      <div class="modal-text">${card.q}<br><span style="font-size:0.62rem;color:var(--lav)">${card.hint}</span></div>
       <input type="number" id="conv-inp" class="conv-input" placeholder="___" min="0" max="100"
         onkeydown="if(event.key==='Enter')submitConv()">
       <div class="err-txt" id="conv-err"></div>
       <div class="modal-btns"><button class="btn btn-sm btn-sky" onclick="submitConv()">Confirm →</button></div>`;
   }
+  else if(type==='charge-choice'){
+    const {card,idx}=d;
+    const forced=G.forceShadow[G.curI];
+    h+=`<div class="modal-title">Wield the Light</div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:2rem;color:var(--gold);margin-bottom:4px">${card.disp}</div>
+      <div class="modal-text">${forced?'<span style="color:var(--rose)">🕸️ Sabotaged — you must Shadow.</span><br>':''} ${card.val} cells · How do you use this charge?</div>
+      <div class="choice-row">
+        ${forced?'':`<button class="choice-btn light-choice" onclick="confirmCharge(${idx},'lit')">
+          <span class="choice-icon">✦</span>
+          <span class="choice-lbl">Illuminate</span>
+          <span class="choice-sub">Claim cells for the light</span>
+        </button>`}
+        <button class="choice-btn dark-choice" onclick="confirmCharge(${idx},'shadow')" style="${forced?'grid-column:1/3':''}" >
+          <span class="choice-icon">🌑</span>
+          <span class="choice-lbl">Shadow</span>
+          <span class="choice-sub">Claim cells for the void</span>
+        </button>
+      </div>
+      ${!forced?'<div style="font-size:0.58rem;color:var(--text-dim);letter-spacing:0.1em">Others will see the board change — not this choice.</div>':''}
+      <div class="modal-btns" style="margin-top:8px"><button class="btn btn-xs" onclick="closeModal()">Cancel</button></div>`;
+  }
+  else if(type==='charge-overflow'){
+    const {card,idx,effectiveVal,emptySpace}=d;
+    h+=`<div class="modal-title">Not Enough Empty Space</div>
+      <div style="font-family:'Cinzel Decorative',serif;font-size:1.8rem;color:var(--gold);margin-bottom:6px">${card.disp}</div>
+      <div class="modal-text"><strong style="color:var(--gold)">${card.disp}</strong> needs <strong>${effectiveVal} empty cells</strong> but only <strong style="color:var(--rose)">${emptySpace} empty</strong> remain.<br><br>Choose:</div>
+      <div class="tgt-list">
+        ${G.extraBoards[G.curI]===null?`
+        <button class="tgt-btn" style="flex-direction:column;align-items:flex-start;gap:2px" onclick="expandThenPlay(${idx})">
+          <span style="color:var(--lav);font-weight:600">✦ Expand Domain</span>
+          <span style="font-size:0.6rem;color:var(--text-dim)">Open a personal extra board — full efficiency, no conflicts</span>
+        </button>`:'<div style="font-size:0.68rem;color:var(--text-dim);text-align:center;padding:8px">Extra board already open — cannot expand again</div>'}
+        <button class="tgt-btn" style="flex-direction:column;align-items:flex-start;gap:2px" onclick="closeModal()">
+          <span style="color:var(--text-dim)">✕ Cancel — choose a different card</span>
+        </button>
+      </div>`;
+  }
   else if(type==='target'){
     const {eff}=d;
-    const titleMap={absorb:'Absorb — Choose Target',shatter:'Shatter — Choose Target',eclipse:'Eclipse — Choose Target',
-      equinox:'Equinox — Choose Target',parasite:'Parasite — Choose Target'};
-    const descMap={absorb:'Steal 10 cells from target.',shatter:'Remove 20 target cells; you lose 5.',
-      eclipse:"Skip target's next turn.",equinox:'Target −15, you +5, last place +10.',
-      parasite:'Trap target: steal half their next charge.'};
-    h+=`<div class="modal-title">${titleMap[eff]||'Choose Target'}</div>
-      <div class="modal-text">${descMap[eff]||''}</div>
-      <div class="target-list">
+    const titles={expose:'Expose — Choose Target',eclipse:'Eclipse — Choose Target',
+      sabotage:'Sabotage — Choose Target',align:'Align — Guess a Team',reclaim:'Reclaim',corrupt:'Corrupt'};
+    const descs={expose:'Their role will be permanently revealed to all.',eclipse:"Skip their next turn.",
+      sabotage:'Their next charge card must be played as Shadow.',
+      align:'If you correctly guess their team, you both gain 10 cells of your respective types.',
+      reclaim:'Converts 15 of their shadow cells to lit cells in your color.',
+      corrupt:'Converts 15 of their lit cells to shadow.'};
+    h+=`<div class="modal-title">${titles[eff]||'Choose Target'}</div>
+      <div class="modal-text">${descs[eff]||''}</div>
+      <div class="tgt-list">
         ${G.players.map((op,i)=>{
           if(i===G.curI)return'';
-          const oc=PC[op.ci],cnt=getSharedCount(i);
-          let ok=cnt>0;if(eff==='eclipse'||eff==='parasite')ok=true;
-          return`<button class="tgt-btn" ${ok?`onclick="doTargetAction(${i})"`:'disabled'}>
+          const oc=PC[op.ci];
+          const litC=playerLitCount(i);
+          const roleText=G.exposed[i]?(G.roles[i]==='light'?'✦ Light':'🌑 Void'):'Unknown';
+          return`<button class="tgt-btn" onclick="doTargetAction(${i})">
             <div class="tdot" style="background:${oc.main}"></div>
             <span>${op.name}</span>
-            <span class="tinfo">${cnt} cells${op.status.refuge?' 🛡️':''}</span>
+            <span class="tinfo">${litC} lit · ${roleText}</span>
           </button>`;
         }).join('')}
       </div>
+      ${eff==='align'?`<div style="font-size:0.62rem;color:var(--text-dim);text-align:center;margin-top:5px">After choosing target, you'll be asked their team.</div>`:''}
       <div class="modal-btns"><button class="btn btn-sm btn-danger" onclick="cancelAction()">Cancel</button></div>`;
   }
-  else if(type==='supernova-sacrifice'){
-    const p=G.players[G.curI];
-    h+=`<div class="modal-title">Supernova</div>
-      <div class="modal-text">Sacrifice one card from your hand to power the Supernova.<br>
-        <span style="color:var(--rose)">40 random board cells will be wiped clean.</span></div>
-      <div class="target-list">
-        ${p.hand.map((card,i)=>`
-          <button class="tgt-btn" style="justify-content:center" onclick="confirmSupernova(${i})">
-            <span style="font-family:'Cinzel Decorative',serif;color:var(--${card.type==='ward'?'sage':card.type==='action'?card.color||'rose':'gold'})">${card.disp}</span>
-            <span class="tinfo">${card.desc||''}</span>
-          </button>`).join('')}
-        ${p.hand.length===0?'<div style="color:var(--text-dim);font-size:0.74rem;text-align:center;padding:10px">No cards to sacrifice — Supernova fizzles.</div>':''}
-      </div>
-      <div class="modal-btns">
-        ${p.hand.length===0?`<button class="btn btn-sm btn-sage" onclick="confirmSupernova(-1)">Fizzle (no sacrifice)</button>`:''}
-        <button class="btn btn-sm btn-danger" onclick="cancelAction()">Cancel</button>
-      </div>`;
-  }
-  else if(type==='charge-overflow'){
-    const {card,effectiveVal,emptySpace,cardIdx}=d;
-    const p=G.players[G.curI];
-    const canExpand=p.extraBoards.length<2;
-    const reboundCells=Math.floor(emptySpace+(100-emptySpace)/2); // what rebound would actually give
-    h+=`<div class="modal-title">Not Enough Empty Space</div>
-      <div style="font-size:2rem;margin-bottom:6px">${card.icon||'✦'}</div>
-      <div class="modal-text">
-        <strong style="color:var(--gold)">${card.disp}</strong> needs <strong>${effectiveVal} empty cells</strong>
-        but the target only has <strong style="color:var(--rose)">${emptySpace} empty</strong>.<br><br>
-        Choose how to proceed:
-      </div>
-      <div class="target-list">
-        ${canExpand?`
-        <button class="tgt-btn" style="flex-direction:column;align-items:flex-start;gap:3px" onclick="expandThenPlay(${cardIdx})">
-          <span style="color:var(--lav);font-weight:600">✦ Expand Domain</span>
-          <span style="font-size:0.62rem;color:var(--text-dim)">Open a new board and redirect this card there — full efficiency, no overwrites</span>
-        </button>`:'<div style="font-size:0.7rem;color:var(--text-dim);text-align:center;padding:8px">Max boards reached — cannot expand</div>'}
-        <button class="tgt-btn" style="flex-direction:column;align-items:flex-start;gap:3px" onclick="closeModal()">
-          <span style="color:var(--text-dim)">✕ Cancel — choose a different card</span>
+  else if(type==='align-guess'){
+    const {targetI}=d;
+    const op=G.players[targetI],oc=PC[op.ci];
+    h+=`<div class="modal-title">Align — Guess Team</div>
+      <div class="modal-text">What team is <strong style="color:${oc.main}">${op.name}</strong> on?</div>
+      <div class="choice-row">
+        <button class="choice-btn light-choice" onclick="confirmAlign(${targetI},'light')">
+          <span class="choice-icon">✦</span><span class="choice-lbl">Light</span>
+        </button>
+        <button class="choice-btn dark-choice" onclick="confirmAlign(${targetI},'dark')">
+          <span class="choice-icon">🌑</span><span class="choice-lbl">Void</span>
         </button>
       </div>`;
   }
   else if(type==='cascade'){
     h+=`<div class="modal-title">Cascade — Choose One</div>
       <div class="modal-text">Keep one card. The rest are discarded.</div>
-      <div class="target-list">
+      <div class="tgt-list">
         ${(d?.opts||[]).map((card,i)=>`
-          <button class="tgt-btn" style="justify-content:center;gap:12px" onclick="chooseCascade(${i})">
-            <span style="font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--${card.type==='ward'?'sage':card.type==='action'?card.color||'rose':'gold'})">${card.disp}</span>
+          <button class="tgt-btn" style="justify-content:center;gap:10px" onclick="chooseCascade(${i})">
+            <span style="font-family:'Cinzel Decorative',serif;font-size:0.95rem;color:var(--${card.type==='ward'?'sage':card.type==='action'?(card.color==='text-dim'?'text-dim':card.color||'rose'):'gold'})">${card.disp}</span>
             <span class="tinfo">${card.desc}</span>
           </button>`).join('')}
       </div>`;
   }
   else if(type==='event-trigger'){
     const card=d?.card;
-    h+=`<div class="event-type">⚡ Event Card</div>
-      <div class="event-banner">${card?.icon||'✦'}</div>
+    h+=`<div class="event-type">⚡ Event — Triggers Now</div>
+      <div class="event-icon">${card?.icon||'✦'}</div>
       <div class="modal-title">${card?.disp||'Event'}</div>
       <div class="modal-text">${d?.desc||''}</div>
       <div class="modal-btns"><button class="btn btn-sm btn-amber" onclick="dismissEvent()">Continue ✦</button></div>`;
   }
   else if(type==='deck-viewer'){
-    h+=`<div style="text-align:left">
-      <div class="modal-title" style="text-align:center;margin-bottom:12px">The Illuminate Deck</div>
-      ${['charge','action','ward','event'].map(t=>`
-        <div class="dv-section">${{charge:'⚡ Charge (45%) — Claim cells on the plain',action:'⚔️ Action (30%) — Shape the battlefield',ward:'🛡️ Ward (15%) — Protect your light',event:'🌀 Event (10%) — Triggers immediately on draw'}[t]}</div>
-        <div class="dv-grid">
-          ${CARD_DEFS.filter(d=>d.type===t).map(d=>`
-            <div class="dv-item">
-              <div class="dv-icon" style="color:var(--${d.color||'gold'})">${d.icon}</div>
-              <div class="dv-info">
-                <div class="dv-name" style="color:var(--${d.color||'gold'})">${d.disp}</div>
-                <div class="dv-desc">${d.desc}</div>
-              </div>
-              <div class="dv-cnt" style="color:var(--${d.color||'gold'});border-color:var(--${d.color||'gold'})">×${d.cnt}</div>
-            </div>`).join('')}
-        </div>`).join('')}
-      <div style="font-size:0.6rem;color:var(--text-dim);text-align:center;margin-top:7px;letter-spacing:0.1em">
-        Total: ${CARD_DEFS.reduce((a,d)=>a+d.cnt,0)} cards · Rebound rule: overwrites cost 2 cells each
-      </div>
-    </div>
-    <div class="modal-btns" style="margin-top:12px"><button class="btn btn-sm" onclick="closeModal()">Close</button></div>`;
+    h+=`<div style="text-align:left;font-size:0.7rem;color:var(--text-dim);margin-bottom:10px;line-height:1.65;letter-spacing:0.07em">
+      Light Seekers <strong style="color:var(--gold)">Illuminate</strong> cells. Void Seekers <strong style="color:var(--lav)">Shadow</strong> them.
+      Each charge card asks privately: illuminate or shadow? Others see the board change — not the choice.
+      <br><strong style="color:var(--gold)">Light wins</strong> if lit > shadow at game end.
+      <strong style="color:var(--lav)">Void wins</strong> if shadow ≥ lit.
+    </div>`;
+    ['charge','action','ward','event'].forEach(t=>{
+      const labels={charge:'⚡ Charge (draw, then choose Illuminate or Shadow)',
+        action:'⚔️ Action — tactical cards',ward:'🛡️ Ward — protection cards',
+        event:'🌀 Event — triggers immediately on draw'};
+      h+=`<div class="dv-section">${labels[t]}</div><div class="dv-grid">
+        ${CARD_DEFS.filter(d=>d.type===t).map(d=>`
+          <div class="dv-item">
+            <div class="dv-icon" style="color:var(--${d.color==='text-dim'?'text-dim':d.color||'gold'})">${d.icon}</div>
+            <div class="dv-info">
+              <div class="dv-name" style="color:var(--${d.color==='text-dim'?'text-dim':d.color||'gold'})">${d.disp}</div>
+              <div class="dv-desc">${d.desc}</div>
+            </div>
+            <div class="dv-cnt" style="color:var(--${d.color==='text-dim'?'text-dim':d.color||'gold'});border-color:var(--${d.color==='text-dim'?'text-dim':d.color||'gold'})">×${d.cnt}</div>
+          </div>`).join('')}
+      </div>`;
+    });
+    h+=`<div style="font-size:0.58rem;color:var(--text-dim);text-align:center;margin-top:6px">Total: ${CARD_DEFS.reduce((a,d)=>a+d.cnt,0)} cards</div>
+      <div class="modal-btns" style="margin-top:10px"><button class="btn btn-sm" onclick="closeModal()">Close</button></div>`;
   }
   h+='</div>';
   document.getElementById('modal-content').innerHTML=h;
   if(type==='conversion')setTimeout(()=>document.getElementById('conv-inp')?.focus(),80);
 }
-
 function openDeckViewer(){G.modal='deck-viewer';renderAll();}
 
 // ---- QUIZ ----
@@ -871,69 +1003,33 @@ function submitConv(){
     if(G.players[G.curI].isAI)aiDelay(runAI,900);
   } else {
     G.convAtt++;
-    if(G.convAtt>=2){
-      G.pendCard=null;G.modal=null;
-      G.msg='Incorrect twice — card lost.';Aud.err();renderAll();
-    } else {
-      Aud.err();
-      const el=document.getElementById('conv-err');if(el)el.textContent=`Incorrect (${G.convAtt}/2). Try again.`;
-      const inp=document.getElementById('conv-inp');if(inp){inp.value='';inp.focus();}
-    }
+    if(G.convAtt>=2){G.pendCard=null;G.modal=null;G.msg='Incorrect twice — card lost.';Aud.err();renderAll();}
+    else{Aud.err();const el=document.getElementById('conv-err');if(el)el.textContent=`Incorrect (${G.convAtt}/2). Try again.`;
+      const inp=document.getElementById('conv-inp');if(inp){inp.value='';inp.focus();}}
   }
 }
 
 // ---- EVENTS ----
 function triggerEvent(card){
-  Aud.event();
-  let desc='';
+  Aud.event();let desc='';
   const eff=card.eff;
-  if(eff==='solar_flare'){
-    const occ=shuffle([...Array(100).keys()].filter(i=>G.shared[i]!==null&&!G.locked[i]));
-    const n=Math.min(15,occ.length);
-    occ.slice(0,n).forEach(i=>G.shared[i]=null);
-    desc=`Solar Flare! ${n} cells wiped from the plain.`;
-  } else if(eff==='void_hungers'){
-    G.players.forEach((_,pi)=>{
-      const cells=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===pi&&!G.locked[i]));
-      cells.slice(0,5).forEach(i=>G.shared[i]=null);
-    });
-    desc='Void Hungers! All players lose 5 cells.';
-  } else if(eff==='convergence'){
-    G.players.forEach((p,pi)=>{
-      if(p.extraBoards.length>0){
-        let gain=0;p.extraBoards.forEach(b=>{gain+=b.pct;});
-        p.extraBoards=[];p.chargeTarget='shared';
-        claimOnShared(pi,Math.round(gain/2)); // partial merge
-      }
-    });
-    desc='Convergence! Extra boards dissolved into the plain (partial).';
-  } else if(eff==='monolith_gaze'){
-    G.players.forEach(p=>{
-      p.hand=[];
-      for(let i=0;i<3;i++){
-        if(G.deck.length===0)G.deck=buildDeck();
-        const c=deckDraw();if(c.quiz)c.converted=true;if(c.type!=='event')p.hand.push(c);
-      }
-    });
-    desc="Monolith's Gaze! All seekers discard and draw 3 new cards.";
+  if(eff==='dawn'){const n=removeByType(10,'shadow');if(n>0){const cells=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===null)).slice(0,n);cells.forEach(i=>G.shared[i]={owner:0,type:'lit'});}desc=`Dawn! 10 shadow cells flipped to lit.`;}
+  else if(eff==='dusk'){const n=removeByType(10,'lit');desc=`Dusk! 10 lit cells fell into shadow.`;if(n>0){const cells=shuffle([...Array(100).keys()].filter(i=>G.shared[i]===null)).slice(0,n);cells.forEach(i=>G.shared[i]={owner:0,type:'shadow'});}}
+  else if(eff==='monolith'){
+    G.players.forEach(p=>{p.hand=[];let dealt=0;while(dealt<3&&G.deck.length>0){const c=deckDraw();if(c.type==='event'){G.deck.unshift(c);continue;}if(c.quiz)c.converted=true;p.hand.push(c);dealt++;}});
+    desc="Monolith's Gaze! All seekers draw 3 new cards.";
   }
-  G.modal='event-trigger';G.modalD={card,desc};
-  G.msg=desc;renderAll();
+  G.modal='event-trigger';G.modalD={card,desc};G.msg=desc;renderAll();
 }
-
 function dismissEvent(){
   G.modal=null;G.modalD=null;
   const p=G.players[G.curI];
-  // Continue the turn normally (player still needs to draw)
   const card=deckDraw();G.turnNum++;
   if(card.type==='event'){triggerEvent(card);return;}
-  if(card.quiz&&!p.isAI){
-    G.pendCard=card;G.convAtt=0;G.modal='conversion';
-    G.msg='Decode this card to add it to your hand.';renderAll();return;
-  }
+  if(card.quiz&&!p.isAI){G.pendCard=card;G.convAtt=0;G.modal='conversion';G.msg='Decode this card.';renderAll();return;}
   if(card.quiz)card.converted=true;
   p.hand.push(card);Aud.draw();
-  G.msg=`Drew ${card.disp}. Play your cards.`;
+  G.msg=`Drew ${card.disp}. You are the ${G.roles[G.curI]==='light'?'✦ Light':'🌑 Void'}.`;
   renderAll();
   if(p.isAI)aiDelay(runAI,900);
 }
@@ -944,442 +1040,378 @@ function playHandCard(idx){
   if(!card)return;
   if(card.type==='charge'){
     if(G.turnPlayed.charge){G.msg='Already played a charge card this turn.';renderAll();return;}
-    // Space check on target
+    // Space check
     const surge=p.status.surge;
-    const effectiveVal=surge?card.val*2:card.val;
-    let emptySpace;
-    if(p.chargeTarget==='shared'||typeof p.chargeTarget!=='number'){
-      emptySpace=G.shared.filter(o=>o===null).length;
-    } else {
-      const bi=p.chargeTarget;
-      emptySpace=bi<p.extraBoards.length?(100-p.extraBoards[bi].pct):0;
-    }
-    if(effectiveVal>emptySpace){
-      // Not enough empty space — show options modal
-      G.modal='charge-overflow';
-      G.modalD={cardIdx:idx,card,effectiveVal,emptySpace};
+    const effVal=surge?card.val*2:card.val;
+    const tgt=G.chargeTarget[G.curI];
+    const space=tgt==='extra'&&G.extraBoards[G.curI]?100-G.extraBoards[G.curI].pct:getEmptySpace();
+    if(effVal>space){
+      G.modal='charge-overflow';G.modalD={card,idx,effectiveVal:effVal,emptySpace:space};
       renderAll();return;
     }
-    p.hand.splice(idx,1);
-    useCharge(G.curI,card.val,card);
+    // Show illuminate/shadow choice
+    G.modal='charge-choice';G.modalD={card,idx};renderAll();
   } else if(card.type==='action'){
     if(G.turnPlayed.action){G.msg='Already played an action card this turn.';renderAll();return;}
-    p.hand.splice(idx,1);
-    handleAction(card);
+    p.hand.splice(idx,1);handleAction(card);
   } else if(card.type==='ward'){
-    if(G.turnPlayed.action){G.msg='Already played an action card this turn.';renderAll();return;}
-    p.hand.splice(idx,1);
-    handleWard(card);
+    if(G.turnPlayed.action){G.msg='Already played an action/ward card this turn.';renderAll();return;}
+    p.hand.splice(idx,1);handleWard(card);
   }
 }
 
-// CHARGE — handles surge, tether, target selection
-function useCharge(pi,baseVal,card){
-  const p=G.players[pi];
+function confirmCharge(idx,type){
+  const p=G.players[G.curI],card=G.modalD?.card;
+  G.modal=null;G.modalD=null;
+  if(!card){renderAll();return;}
+  p.hand.splice(idx,1);
   const surge=p.status.surge;
-  const val=surge?baseVal*2:baseVal;
+  const val=surge?card.val*2:card.val;
   if(surge)p.status.surge=false;
-  G.lastCharge=baseVal;
   G.turnPlayed.charge=true;
+  G.lastChargeVal=card.val;G.lastChargeType=type;
+  const forced=G.forceShadow[G.curI];
+  if(forced)G.forceShadow[G.curI]=false;
+  const veiled=G.veiled[G.curI];
+  if(veiled)G.veiled[G.curI]=false;
 
-  // Tether check
-  let actualVal=val,tetherMsg='';
-  if(p.tether!==null){
-    const thiefI=p.tether,thief=G.players[thiefI];
-    const stolen=Math.floor(val/2);
-    actualVal=val-stolen;
-    // thief gains stolen cells on shared
-    claimOnShared(thiefI,stolen);
-    p.tether=null;
-    tetherMsg=` (🕸️ ${thief.name} stole ${stolen}!)`;
-  }
-
-  // Place cells
-  let gainedCells=0,desc='';
-  if(p.chargeTarget==='shared'||typeof p.chargeTarget!=='number'){
-    const gained=claimOnShared(pi,actualVal);
-    gainedCells=gained.length;
-    const overwrites=gained.filter(g=>g.prev!==null).length;
-    desc=`Claimed ${gainedCells} cells${overwrites>0?` (${overwrites} overwrites)`:''} on the plain${surge?' (Surge!)':''}!${tetherMsg}`;
-    Aud.fill();
-    // Animate
-    gained.forEach(({idx},i)=>setTimeout(()=>{
-      const el=document.getElementById(`sc-${idx}`);if(el)el.classList.add('pop');
-    },i*18));
+  const tgt=G.chargeTarget[G.curI];
+  let cellsPlaced=0;
+  if(tgt==='extra'&&G.extraBoards[G.curI]){
+    cellsPlaced=fillExtra(G.curI,val);
+    const logText=veiled?`played ${card.disp} (veiled)`:`played ${card.disp} → Extra Board`;
+    addLog(logText);
   } else {
-    const bi=p.chargeTarget;
-    if(bi<p.extraBoards.length){
-      const lit=fillExtra(pi,bi,actualVal);
-      gainedCells=lit.length;
-      desc=`Filled ${gainedCells} cells on Extra Board ${bi+1}${surge?' (Surge!)':''}!${tetherMsg}`;
-      Aud.fill();
-    }
+    const placed=placeCells(G.curI,val,type);
+    cellsPlaced=placed.length;
+    const logText=veiled?`played ${card.disp} (veiled)`:`played ${card.disp}`;
+    addLog(logText);
+    if(type==='lit')Aud.lit(); else Aud.shadow();
+    placed.forEach((i,n)=>setTimeout(()=>{
+      const el=document.getElementById(`sc-${i}`);if(el)el.classList.add('pop');
+    },n*15));
   }
-
-  G.msg=`${desc} ${G.turnPlayed.action?'Both played — End Turn.':'You may still play an Action/Ward card.'}`;
+  G.msg=`${type==='lit'?'✦ Illuminated':'🌑 Shadowed'} ${cellsPlaced} cells. ${G.turnPlayed.action?'Both played — End Turn.':'You may still play an Action/Ward.'}`;
   if(checkEndGame())return;
   renderAll();
 }
 
-// ---- ACTION HANDLERS ----
+// ---- ACTIONS ----
 function afterAction(msg){
   G.turnPlayed.action=true;
-  G.msg=msg+' '+(G.turnPlayed.charge?'Both played — click End Turn.':'You may still play a Charge card.');
+  G.msg=msg+' '+(G.turnPlayed.charge?'Both played — click End Turn.':'You may still play a Charge.');
   renderAll();
 }
 
 function handleAction(card){
-  const eff=card.eff;
-  if(eff==='absorb'||eff==='shatter'||eff==='eclipse'||eff==='equinox'||eff==='parasite'){
-    G.modal='target';G.modalD={eff,card};G.turnPlayed.action=true;renderAll();
-  } else if(eff==='supernova'){
-    G.modal='supernova-sacrifice';G.modalD={card};G.turnPlayed.action=true;renderAll();
-  } else if(eff==='extract'){
-    G.turnPlayed.action=true;
-    let total=0;
-    G.players.forEach((op,i)=>{
-      if(i===G.curI)return;
-      if(op.status.refuge){op.status.refuge=false;return;}
-      const n=removeFromShared(i,5);
-      claimOnShared(G.curI,n);total+=n;
-    });
-    Aud.action();afterAction(`Extract! Drained ${total} cells from opponents.`);
-  } else if(eff==='mirror'){
-    if(G.lastCharge){
-      const p=G.players[G.curI];
-      const gained=claimOnShared(G.curI,G.lastCharge);
-      Aud.fill();
-      afterAction(`Mirror! Copied last charge (${G.lastCharge}%), gained ${gained.length} cells.`);
-      gained.forEach(({idx},i)=>setTimeout(()=>{const el=document.getElementById(`sc-${idx}`);if(el)el.classList.add('pop');},i*16));
-    } else afterAction('Mirror fizzles — no charge has been played yet.');
+  const eff=card.eff,pi=G.curI,p=G.players[pi];
+  if(eff==='eclipse'||eff==='sabotage'||eff==='expose'||eff==='reclaim'||eff==='corrupt'){
+    G.turnPlayed.action=true;G.modal='target';G.modalD={eff,card};renderAll();
+  } else if(eff==='align'){
+    G.turnPlayed.action=true;G.modal='target';G.modalD={eff,card};renderAll();
   } else if(eff==='surge'){
-    G.players[G.curI].status.surge=true;Aud.surge();
-    afterAction('Surge! Next charge card counts double.');
+    p.status.surge=true;Aud.surge();addLog(`played Surge`);
+    afterAction('⚡ Surge charged! Next charge counts double.');
+  } else if(eff==='veil'){
+    G.veiled[pi]=true;addLog(`played Veil`);
+    afterAction('🌫️ Veiled — your next charge choice is hidden from the log.');
+  } else if(eff==='mirror'){
+    if(G.lastChargeVal){
+      const type=G.lastChargeType||'lit';
+      const placed=placeCells(pi,G.lastChargeVal,type);
+      if(type==='lit')Aud.lit();else Aud.shadow();
+      addLog(`played Mirror (${type})`);
+      afterAction(`🪞 Mirror! Copied last charge (${G.lastChargeVal}%) as ${type}.`);
+      placed.forEach((i,n)=>setTimeout(()=>{const el=document.getElementById(`sc-${i}`);if(el)el.classList.add('pop');},n*15));
+    } else afterAction('Mirror fizzles — no charge played yet.');
   } else if(eff==='cascade'){
     G.turnPlayed.action=true;
-    const opts=[deckDraw(),deckDraw(),deckDraw()];
+    const opts=[deckDraw(),deckDraw(),deckDraw()].filter(c=>c.type!=='event');
     opts.forEach(c=>{if(c.quiz)c.converted=true;});
-    Aud.cascade();G.modal='cascade';G.modalD={opts};
+    addLog(`played Cascade`);G.modal='cascade';G.modalD={opts};
     G.msg='Cascade! Choose one card to keep.';renderAll();
   }
 }
 
 function handleWard(card){
-  const eff=card.eff,p=G.players[G.curI];
+  const eff=card.eff,pi=G.curI,p=G.players[pi];
   G.turnPlayed.action=true;
-  if(eff==='aegis'){
-    const n=lockCells(G.curI,15);Aud.ward();
-    afterAction(`Aegis! ${n} of your cells are now permanently locked. 🔒`);
-  } else if(eff==='refuge'){
-    p.status.refuge=true;Aud.ward();
-    afterAction('Refuge! You are protected from the next action targeting you. 🛡️');
-  } else if(eff==='bulwark'){
-    p.status.bulwark=true;Aud.ward();
-    afterAction('Bulwark! Your cells cannot be overwritten until your next turn. 🏰');
+  if(eff==='beacon'){
+    const n=lockCells(pi,15,'lit');Aud.ward();addLog(`played Beacon (locked ${n} cells)`);
+    afterAction(`🔆 Beacon! ${n} lit cells are now permanently locked.`);
+  } else if(eff==='shroud'){
+    const n=lockCells(pi,15,'shadow');Aud.ward();addLog(`played Shroud (locked ${n} cells)`);
+    afterAction(`🌫️ Shroud! ${n} shadow cells are now permanently locked.`);
   }
 }
 
 function doTargetAction(targetI){
-  const {eff}=G.modalD,p=G.players[G.curI],target=G.players[targetI];
-  G.modal=null;
-  // Refuge check
-  if(target.status.refuge&&eff!=='eclipse'&&eff!=='parasite'){
-    target.status.refuge=false;Aud.ward();
-    afterAction(`${target.name}'s Refuge blocked the attack! Shield consumed.`);return;
-  }
-  if(eff==='absorb'){
-    const n=removeFromShared(targetI,10);claimOnShared(G.curI,n);Aud.action();
-    afterAction(`Absorbed ${n} cells from ${target.name}!`);
-  } else if(eff==='shatter'){
-    const n=removeFromShared(targetI,20);removeFromShared(G.curI,5);Aud.action();
-    afterAction(`Shattered ${n} cells from ${target.name}! (You lost 5)`);
+  const {eff}=G.modalD,pi=G.curI,p=G.players[pi],target=G.players[targetI];
+  if(eff==='align'){G.modal='align-guess';G.modalD={targetI};renderAll();return;}
+  G.modal=null;G.modalD=null;
+  if(eff==='expose'){
+    G.exposed[targetI]=true;Aud.expose();
+    const role=G.roles[targetI];
+    addLog(`exposed ${target.name} = ${role==='light'?'✦ Light':'🌑 Void'}`);
+    afterAction(`👁️ Exposed! ${target.name} is ${role==='light'?'✦ Light Seeker':'🌑 Void Seeker'}!`);
   } else if(eff==='eclipse'){
-    G.skipNext[targetI]=true;Aud.skip();
-    afterAction(`Eclipse! ${target.name}'s next turn is skipped. 🌒`);
-  } else if(eff==='equinox'){
-    // Last place
-    const scores=G.players.map((_,i)=>getSharedCount(i));
-    const lastI=scores.indexOf(Math.min(...scores.filter((_,i)=>i!==G.curI)));
-    const n=removeFromShared(targetI,15);
-    claimOnShared(G.curI,5);
-    if(lastI!==G.curI&&lastI!==targetI)claimOnShared(lastI,10);
-    Aud.action();
-    afterAction(`Equinox! ${target.name} −${n}, you +5, ${G.players[lastI].name} +10.`);
-  } else if(eff==='parasite'){
-    target.tether=G.curI;Aud.action();
-    afterAction(`Parasite attached to ${target.name}! You'll steal half their next charge. 🕸️`);
+    G.skipNext[targetI]=true;Aud.skip();addLog(`eclipsed ${target.name}`);
+    afterAction(`🌒 Eclipse! ${target.name}'s next turn is skipped.`);
+  } else if(eff==='sabotage'){
+    G.forceShadow[targetI]=true;Aud.action();addLog(`sabotaged ${target.name}`);
+    afterAction(`🕸️ Sabotage! ${target.name}'s next charge must be played as Shadow.`);
+  } else if(eff==='reclaim'){
+    const converted=[];
+    const shadows=[...Array(100).keys()].filter(i=>G.shared[i]&&G.shared[i].type==='shadow'&&!G.locked[i]);
+    shuffle(shadows).slice(0,15).forEach(i=>{G.shared[i]={owner:pi,type:'lit'};converted.push(i);});
+    Aud.lit();addLog(`reclaimed ${converted.length} cells`);
+    converted.forEach((i,n)=>setTimeout(()=>{const el=document.getElementById(`sc-${i}`);if(el)el.classList.add('pop');},n*15));
+    afterAction(`🌅 Reclaim! ${converted.length} shadow cells converted to light.`);
+  } else if(eff==='corrupt'){
+    const converted=[];
+    const lits=[...Array(100).keys()].filter(i=>G.shared[i]&&G.shared[i].type==='lit'&&!G.locked[i]&&G.shared[i].owner===targetI);
+    shuffle(lits).slice(0,15).forEach(i=>{G.shared[i]={owner:pi,type:'shadow'};converted.push(i);});
+    Aud.shadow();addLog(`corrupted ${converted.length} cells from ${target.name}`);
+    converted.forEach((i,n)=>setTimeout(()=>{const el=document.getElementById(`sc-${i}`);if(el)el.classList.add('voiding');},n*15));
+    afterAction(`🌑 Corrupt! ${converted.length} of ${target.name}'s lit cells fell to shadow.`);
+    if(checkEndGame())return;
+  }
+}
+
+function confirmAlign(targetI,guessedRole){
+  G.modal=null;G.modalD=null;
+  const actual=G.roles[targetI],pi=G.curI;
+  const correct=actual===guessedRole;
+  if(correct){
+    const myRole=G.roles[pi],myType=myRole==='light'?'lit':'shadow';
+    const theirType=guessedRole==='light'?'lit':'shadow';
+    placeCells(pi,10,myType);
+    placeCells(targetI,10,theirType);
+    addLog(`aligned with ${G.players[targetI].name} — correct!`);
+    afterAction(`⚖️ Align! Correct guess — both gained 10 cells!`);
+  } else {
+    addLog(`aligned with ${G.players[targetI].name} — missed`);
+    afterAction(`⚖️ Align failed — ${G.players[targetI].name} is not ${guessedRole}.`);
   }
   if(checkEndGame())return;
-}
-
-function cancelAction(){
-  // Put action card back in hand... no, action was already removed. Just close.
-  G.modal=null;G.turnPlayed.action=false;renderAll();
-}
-
-function confirmSupernova(sacrificeIdx){
-  const p=G.players[G.curI];
-  G.modal=null;
-  if(sacrificeIdx>=0&&sacrificeIdx<p.hand.length)p.hand.splice(sacrificeIdx,1);
-  // Wipe 40 random unlocked cells
-  const occ=shuffle([...Array(100).keys()].filter(i=>G.shared[i]!==null&&!G.locked[i]));
-  occ.slice(0,Math.min(40,occ.length)).forEach(i=>G.shared[i]=null);
-  Aud.action();
-  afterAction('Supernova! 40 cells wiped from the plain. 💥');
-  if(checkEndGame())return;
-  renderAll();
 }
 
 function chooseCascade(i){
   const chosen=G.modalD?.opts[i];
   if(chosen)G.players[G.curI].hand.push(chosen);
-  G.modal=null;
-  afterAction(`Cascade: Kept ${chosen?.disp||'a card'}. ✦`);
+  G.modal=null;addLog(`cascade — kept ${chosen?.disp||'?'}`);
+  afterAction(`🌊 Cascade: Kept ${chosen?.disp||'a card'}.`);
 }
 
-// ---- EXPAND ----
-function setChargeTarget(t){G.players[G.curI].chargeTarget=t;renderAll();}
+function cancelAction(){G.modal=null;G.turnPlayed.action=false;renderAll();}
 
-// Called from charge-overflow modal: open a new board and play the card there
-function expandThenPlay(cardIdx){
-  G.modal=null;G.modalD=null;
-  const p=G.players[G.curI];
-  if(p.extraBoards.length>=2){G.msg='Cannot expand — max boards reached.';renderAll();return;}
-  // Open board, redirect target, then play card
-  p.extraBoards.push({cells:Array(100).fill(false),pct:0});
-  p.chargeTarget=p.extraBoards.length-1;
-  Aud.fill();
-  // Now play the card into the new board
-  const card=p.hand[cardIdx];
-  if(!card){renderAll();return;}
-  p.hand.splice(cardIdx,1);
-  G.msg=`Domain expanded! Playing ${card.disp} into new Board ${p.extraBoards.length}...`;
-  renderAll();
-  useCharge(G.curI,card.val,card);
-}
-
-// Called from charge-overflow modal: play anyway using Rebound overwrites
-function playWithRebound(cardIdx){
-  G.modal=null;G.modalD=null;
-  const p=G.players[G.curI];
-  const card=p.hand[cardIdx];
-  if(!card){renderAll();return;}
-  p.hand.splice(cardIdx,1);
-  useCharge(G.curI,card.val,card);
-}
+// EXPAND
+function setChargeTarget(t){G.chargeTarget[G.curI]=t;renderAll();}
 
 function doExpand(){
-  const p=G.players[G.curI];
-  if(p.extraBoards.length>=2){G.msg='Maximum 2 extra boards per seeker.';renderAll();return;}
-  if(G.turnPlayed.charge){G.msg='Expand uses your charge slot for this turn.';renderAll();return;}
-  p.extraBoards.push({cells:Array(100).fill(false),pct:0});
-  p.chargeTarget=p.extraBoards.length-1;
-  G.turnPlayed.charge=true;
-  Aud.fill();
-  G.msg=`Domain expanded! Extra Board ${p.extraBoards.length} opened. Fill it or face the Shadow Penalty.`;
-  renderAll();
+  const pi=G.curI,p=G.players[pi];
+  if(G.extraBoards[pi]){G.msg='You already have an extra board open.';renderAll();return;}
+  if(G.turnPlayed.charge){G.msg='Expand uses your charge slot.';renderAll();return;}
+  G.extraBoards[pi]={cells:Array(100).fill(false),pct:0};
+  G.chargeTarget[pi]='extra';
+  G.turnPlayed.charge=true;Aud.ward();addLog(`expanded domain`);
+  G.msg='Domain expanded! Extra board open — fill it or face the Shadow Penalty.';renderAll();
 }
 
-// ---- TURN MANAGEMENT ----
+function expandThenPlay(cardIdx){
+  G.modal=null;G.modalD=null;
+  const pi=G.curI,p=G.players[pi];
+  if(G.extraBoards[pi]){G.msg='Extra board already open.';renderAll();return;}
+  G.extraBoards[pi]={cells:Array(100).fill(false),pct:0};
+  G.chargeTarget[pi]='extra';
+  Aud.ward();addLog(`expanded domain`);
+  // Show charge choice for extra board
+  const card=p.hand[cardIdx];
+  G.modal='charge-choice';G.modalD={card,idx:cardIdx};renderAll();
+}
+
+// TURN
 function endTurn(){
-  if(G.turningOver)return;
-  G.turningOver=true;
-  const p=G.players[G.curI];
-  // Reset bulwark at turn end
-  p.status.bulwark=false;
+  if(G.turningOver)return;G.turningOver=true;
   if(checkEndGame()){G.turningOver=false;return;}
   G.curI=(G.curI+1)%G.players.length;
   G.turnPlayed={charge:false,action:false};
-  G.turnToken++;G.phase='pass';G.turningOver=false;
-  renderAll();
+  G.turnToken++;G.phase='pass';G.turningOver=false;renderAll();
 }
-
 function doEndTurnManual(){
-  if(!G.turnPlayed.charge&&!G.turnPlayed.action){
-    G.msg='Play at least one card before ending your turn.';renderAll();return;
-  }
+  if(!G.turnPlayed.charge&&!G.turnPlayed.action){G.msg='Play at least one card first.';renderAll();return;}
   endTurn();
 }
-
 function doForfeit(){G.modal=null;G.msg='Turn forfeited.';renderAll();setTimeout(endTurn,700);}
 
-// ---- AI ----
+// AI
 function aiDelay(fn,ms){const tok=G.turnToken;setTimeout(()=>{if(G.turnToken===tok&&!G.gameOver)fn();},ms);}
-function aiThink(m){document.getElementById('ai-txt').textContent=m||'Consulting...';show('ai-overlay');}
+function aiThink(m){document.getElementById('ai-txt').textContent=m;show('ai-overlay');}
 function aiDone(){hide('ai-overlay');}
-
-function runAI(){
-  aiThink(`${G.players[G.curI].name} reads the Monolith...`);
-  aiDelay(()=>{aiDone();aiChoosePlay();},800);
-}
+function runAI(){aiThink(`${G.players[G.curI].name}...`);aiDelay(()=>{aiDone();aiChoosePlay();},800);}
 
 function aiChoosePlay(){
-  const p=G.players[G.curI],pi=G.curI;
+  const pi=G.curI,p=G.players[pi],role=G.roles[pi];
+  const isLight=role==='light';
   const actions=p.hand.filter(c=>c.type==='action'||c.type==='ward');
-  const charges=p.hand.filter(c=>c.type==='charge');
-  const myCount=getSharedCount(pi);
-  const scores=G.players.map((_,i)=>getSharedCount(i));
-  const topOppI=scores.map((s,i)=>i!==pi?{i,s}:{i:-1,s:-1}).sort((a,b)=>b.s-a.s)[0]?.i;
-  const topOppCount=topOppI>=0?scores[topOppI]:0;
-  const lastI=scores.map((s,i)=>({i,s})).filter(x=>x.i!==pi).sort((a,b)=>a.s-b.s)[0]?.i;
+  const charges=p.hand.filter(c=>c.type==='charge').sort((a,b)=>b.val-a.val);
+  const lit=litCount(),shadow=shadowCount();
+  const topOppI=G.players.map((_,i)=>i!==pi?{i,s:playerLitCount(i)}:{i:-1,s:-1}).sort((a,b)=>b.s-a.s)[0]?.i??-1;
 
-  let actionChosen=null,chargeChosen=null;
+  let actionCard=null,chargeCard=null;
 
-  // Action selection
   if(!G.turnPlayed.action&&actions.length>0){
-    const absorb=actions.find(a=>a.eff==='absorb');
-    const shatter=actions.find(a=>a.eff==='shatter');
+    const expose=actions.find(a=>a.eff==='expose');
     const eclipse=actions.find(a=>a.eff==='eclipse');
-    const equinox=actions.find(a=>a.eff==='equinox');
+    const sabotage=actions.find(a=>a.eff==='sabotage');
+    const reclaim=actions.find(a=>a.eff==='reclaim');
+    const corrupt=actions.find(a=>a.eff==='corrupt');
     const surge=actions.find(a=>a.eff==='surge');
-    const mirror=actions.find(a=>a.eff==='mirror');
-    const parasite=actions.find(a=>a.eff==='parasite');
-    const aegis=actions.find(a=>a.eff==='aegis');
-    const refuge=actions.find(a=>a.eff==='refuge');
-    const bulwark=actions.find(a=>a.eff==='bulwark');
+    const beacon=actions.find(a=>a.eff==='beacon');
+    const shroud=actions.find(a=>a.eff==='shroud');
     const cascade=actions.find(a=>a.eff==='cascade');
-    const supernova=actions.find(a=>a.eff==='supernova');
-    const extract=actions.find(a=>a.eff==='extract');
+    const veil=actions.find(a=>a.eff==='veil');
 
-    const gap=topOppCount-myCount;
-    if(eclipse&&topOppCount>70&&Math.random()<0.7)actionChosen=eclipse;
-    else if(supernova&&gap>30&&Math.random()<0.5)actionChosen=supernova;
-    else if(shatter&&topOppCount>40&&Math.random()<0.5)actionChosen=shatter;
-    else if(equinox&&gap>20&&Math.random()<0.5)actionChosen=equinox;
-    else if(absorb&&topOppCount>=10&&gap>0&&Math.random()<0.5)actionChosen=absorb;
-    else if(extract&&G.players.length>2&&Math.random()<0.4)actionChosen=extract;
-    else if(parasite&&topOppCount>30&&Math.random()<0.4)actionChosen=parasite;
-    else if(surge&&charges.length>0&&charges[0].val>=20&&Math.random()<0.5)actionChosen=surge;
-    else if(mirror&&G.lastCharge>=20&&Math.random()<0.5)actionChosen=mirror;
-    else if(aegis&&myCount>30&&Math.random()<0.35)actionChosen=aegis;
-    else if(refuge&&myCount>40&&Math.random()<0.3)actionChosen=refuge;
-    else if(bulwark&&topOppCount>myCount&&Math.random()<0.3)actionChosen=bulwark;
-    else if(cascade&&p.hand.length<=3&&Math.random()<0.45)actionChosen=cascade;
-  }
-
-  // Charge selection
-  if(!G.turnPlayed.charge&&charges.length>0){
-    chargeChosen=charges.sort((a,b)=>b.val-a.val)[0];
-  }
-
-  // Execute action first if chosen
-  if(actionChosen){
-    const idx=p.hand.indexOf(actionChosen);if(idx>=0)p.hand.splice(idx,1);
-    G.msg=`${p.name} plays ${actionChosen.disp}...`;renderAll();
-    aiDelay(()=>aiExecAction(actionChosen,chargeChosen),600);
-  } else if(chargeChosen){
-    aiExecCharge(chargeChosen);
-  } else {
-    // Try expanding if behind
-    if(p.extraBoards.length<2&&G.shared.filter(o=>o===null).length<20&&Math.random()<0.3){
-      doExpand();aiDelay(()=>aiTryCharge(),600);
+    if(isLight){
+      if(expose&&Math.random()<0.3)actionCard=expose;
+      else if(eclipse&&shadow>lit+20&&Math.random()<0.6)actionCard=eclipse;
+      else if(reclaim&&shadow>20&&Math.random()<0.6)actionCard=reclaim;
+      else if(corrupt&&Math.random()<0.25)actionCard=corrupt; // light using corrupt to look suspicious
+      else if(beacon&&lit>30&&Math.random()<0.35)actionCard=beacon;
+      else if(surge&&charges.length>0&&Math.random()<0.5)actionCard=surge;
+      else if(cascade&&p.hand.length<=3&&Math.random()<0.4)actionCard=cascade;
+      else if(sabotage&&Math.random()<0.15)actionCard=sabotage; // rare bluff
     } else {
-      G.msg=`${p.name} passes.`;renderAll();aiDelay(endTurn,800);
+      // Dark
+      if(expose&&Math.random()<0.3)actionCard=expose;
+      else if(eclipse&&lit>shadow+20&&Math.random()<0.6)actionCard=eclipse;
+      else if(corrupt&&lit>20&&Math.random()<0.6)actionCard=corrupt;
+      else if(reclaim&&Math.random()<0.15)actionCard=reclaim; // bluff
+      else if(shroud&&shadow>15&&Math.random()<0.35)actionCard=shroud;
+      else if(sabotage&&Math.random()<0.5)actionCard=sabotage;
+      else if(surge&&charges.length>0&&Math.random()<0.5)actionCard=surge;
+      else if(veil&&Math.random()<0.4)actionCard=veil; // dark often veils
+      else if(cascade&&p.hand.length<=3&&Math.random()<0.4)actionCard=cascade;
     }
+  }
+
+  if(!G.turnPlayed.charge&&charges.length>0)chargeCard=charges[0];
+
+  if(actionCard){
+    const idx=p.hand.indexOf(actionCard);if(idx>=0)p.hand.splice(idx,1);
+    addLog(`played ${actionCard.disp}`);
+    G.msg=`${p.name} plays ${actionCard.disp}...`;renderAll();
+    aiDelay(()=>aiExecAction(actionCard,chargeCard),600);
+  } else if(chargeCard){
+    aiExecCharge(chargeCard);
+  } else {
+    G.msg=`${p.name} passes.`;renderAll();aiDelay(endTurn,800);
   }
 }
 
 function aiExecAction(card,chargeNext){
-  const eff=card.eff,pi=G.curI,p=G.players[pi];
+  const eff=card.eff,pi=G.curI,p=G.players[pi],role=G.roles[pi];
+  const isLight=role==='light';
   G.turnPlayed.action=true;
-  const scores=G.players.map((_,i)=>getSharedCount(i));
-  const topOppI=scores.map((s,i)=>i!==pi?{i,s}:{i:-1,s:-1}).sort((a,b)=>b.s-a.s)[0]?.i??0;
-  const target=G.players[topOppI];
+  const topOppI=G.players.map((_,i)=>i!==pi?{i,s:playerLitCount(i)}:{i:-1,s:-1}).sort((a,b)=>b.s-a.s)[0]?.i??0;
 
-  function done(msg){G.msg=msg+' ✦';renderAll();if(G.gameOver)return;if(chargeNext)aiDelay(()=>aiExecCharge(chargeNext),700);else aiDelay(endTurn,700);}
-
-  if(eff==='absorb'){const n=removeFromShared(topOppI,10);claimOnShared(pi,n);Aud.action();done(`${p.name} absorbed ${n} from ${target.name}`);}
-  else if(eff==='shatter'){const n=removeFromShared(topOppI,20);removeFromShared(pi,5);Aud.action();done(`${p.name} shattered ${n} from ${target.name} (-5 self)`);}
-  else if(eff==='eclipse'){G.skipNext[topOppI]=true;Aud.skip();done(`${p.name} eclipses ${target.name}`);}
-  else if(eff==='equinox'){
-    const lastI=scores.map((s,i)=>({i,s})).filter(x=>x.i!==pi).sort((a,b)=>a.s-b.s)[0]?.i??topOppI;
-    const n=removeFromShared(topOppI,15);claimOnShared(pi,5);
-    if(lastI!==pi&&lastI!==topOppI)claimOnShared(lastI,10);
-    Aud.action();done(`${p.name} uses Equinox`);
+  function done(msg){
+    G.msg=msg+' ✦';renderAll();
+    if(G.gameOver)return;
+    if(chargeNext)aiDelay(()=>aiExecCharge(chargeNext),700);else aiDelay(endTurn,700);
   }
-  else if(eff==='extract'){let tot=0;G.players.forEach((_,i)=>{if(i===pi)return;const n=removeFromShared(i,5);claimOnShared(pi,n);tot+=n;});Aud.action();done(`${p.name} extracts ${tot} cells`);}
-  else if(eff==='parasite'){target.tether=pi;Aud.action();done(`${p.name} tethers ${target.name}`);}
+
+  if(eff==='expose'){G.exposed[topOppI]=true;Aud.expose();done(`${p.name} exposes ${G.players[topOppI].name} as ${G.roles[topOppI]==='light'?'Light':'Void'}`);}
+  else if(eff==='eclipse'){G.skipNext[topOppI]=true;Aud.skip();done(`${p.name} eclipses ${G.players[topOppI].name}`);}
+  else if(eff==='sabotage'){G.forceShadow[topOppI]=true;Aud.action();done(`${p.name} sabotages ${G.players[topOppI].name}`);}
+  else if(eff==='reclaim'){const cvt=[...Array(100).keys()].filter(i=>G.shared[i]&&G.shared[i].type==='shadow'&&!G.locked[i]);const n=Math.min(15,cvt.length);shuffle(cvt).slice(0,n).forEach(i=>G.shared[i]={owner:pi,type:'lit'});Aud.lit();done(`${p.name} reclaims ${n} cells`);}
+  else if(eff==='corrupt'){const lts=[...Array(100).keys()].filter(i=>G.shared[i]&&G.shared[i].type==='lit'&&!G.locked[i]);const n=Math.min(15,lts.length);shuffle(lts).slice(0,n).forEach(i=>G.shared[i]={owner:pi,type:'shadow'});Aud.shadow();done(`${p.name} corrupts ${n} cells`);}
   else if(eff==='surge'){p.status.surge=true;Aud.surge();done(`${p.name} surges`);}
-  else if(eff==='mirror'){if(G.lastCharge){const gained=claimOnShared(pi,G.lastCharge);Aud.fill();done(`${p.name} mirrors ${G.lastCharge}%, gains ${gained.length}`);}else done(`${p.name}'s mirror fizzles`);}
-  else if(eff==='aegis'){const n=lockCells(pi,15);Aud.ward();done(`${p.name} locks ${n} cells`);}
-  else if(eff==='refuge'){p.status.refuge=true;Aud.ward();done(`${p.name} activates Refuge`);}
-  else if(eff==='bulwark'){p.status.bulwark=true;Aud.ward();done(`${p.name} activates Bulwark`);}
-  else if(eff==='cascade'){const opts=[deckDraw(),deckDraw(),deckDraw()];opts.forEach(c=>{if(c.quiz)c.converted=true;});const best=opts.filter(c=>c.type==='charge').sort((a,b)=>b.val-a.val)[0]||opts[0];p.hand.push(best);Aud.cascade();done(`${p.name} cascades, keeps ${best.disp}`);}
-  else if(eff==='supernova'){
-    if(p.hand.length>0)p.hand.splice(Math.floor(Math.random()*p.hand.length),1);
-    const occ=shuffle([...Array(100).keys()].filter(i=>G.shared[i]!==null&&!G.locked[i]));
-    occ.slice(0,Math.min(40,occ.length)).forEach(i=>G.shared[i]=null);
-    Aud.action();done(`${p.name} detonates Supernova!`);
+  else if(eff==='veil'){G.veiled[pi]=true;done(`${p.name} veils`);}
+  else if(eff==='beacon'){const n=lockCells(pi,15,'lit');Aud.ward();done(`${p.name} locks ${n} lit cells`);}
+  else if(eff==='shroud'){const n=lockCells(pi,15,'shadow');Aud.ward();done(`${p.name} locks ${n} shadow cells`);}
+  else if(eff==='align'){
+    // AI picks a random opponent and guesses based on what they know
+    const oI=G.players.findIndex((_,i)=>i!==pi);
+    const guess=isLight?'dark':'light'; // try to find enemies
+    confirmAlignAI(oI,guess,chargeNext);return;
   }
+  else if(eff==='cascade'){const opts=[deckDraw(),deckDraw(),deckDraw()].filter(c=>c.type!=='event');opts.forEach(c=>{if(c.quiz)c.converted=true;});const best=opts.filter(c=>c.type==='charge').sort((a,b)=>b.val-a.val)[0]||opts[0];if(best)p.hand.push(best);Aud.draw();done(`${p.name} cascades, keeps ${best?.disp||'?'}`);}
+  else if(eff==='mirror'){if(G.lastChargeVal){const type=G.lastChargeType||'lit';placeCells(pi,G.lastChargeVal,type);if(type==='lit')Aud.lit();else Aud.shadow();done(`${p.name} mirrors ${G.lastChargeType}`);}else done(`${p.name}'s mirror fizzles`);}
   else done(`${p.name} uses ${card.disp}`);
+  if(G.gameOver)return;
+}
+
+function confirmAlignAI(targetI,guess,chargeNext){
+  const pi=G.curI,p=G.players[pi];
+  const actual=G.roles[targetI],correct=actual===guess;
+  if(correct){const myType=G.roles[pi]==='light'?'lit':'shadow';const thType=guess==='light'?'lit':'shadow';placeCells(pi,10,myType);placeCells(targetI,10,thType);}
+  G.msg=`${p.name} aligns — ${correct?'correct!':'missed.'} ✦`;renderAll();
+  if(G.gameOver)return;
+  if(chargeNext)aiDelay(()=>aiExecCharge(chargeNext),700);else aiDelay(endTurn,700);
 }
 
 function aiExecCharge(card){
   if(G.gameOver)return;
-  const p=G.players[G.curI],pi=G.curI;
-  G.turnPlayed.charge=true;
+  const pi=G.curI,p=G.players[pi],role=G.roles[pi];
+  const isLight=role==='light';
   const surge=p.status.surge;
   const val=surge?card.val*2:card.val;
   if(surge)p.status.surge=false;
-  G.lastCharge=card.val;
+  G.turnPlayed.charge=true;
+  G.lastChargeVal=card.val;
   const idx=p.hand.indexOf(card);if(idx>=0)p.hand.splice(idx,1);
+  const forced=G.forceShadow[pi];if(forced)G.forceShadow[pi]=false;
+  const veiled=G.veiled[pi];if(veiled)G.veiled[pi]=false;
 
-  // Tether
-  let actVal=val,tetherMsg='';
-  if(p.tether!==null){
-    const thiefI=p.tether,stolen=Math.floor(val/2);
-    actVal=val-stolen;claimOnShared(thiefI,stolen);p.tether=null;
-    tetherMsg=` (Tether stole ${stolen}!)`;
-  }
+  // AI chooses type based on role (with occasional bluffing)
+  let type;
+  if(forced){type='shadow';}
+  else if(isLight){type=Math.random()<0.15?'shadow':'lit';}  // 15% bluff chance
+  else{type=Math.random()<0.15?'lit':'shadow';}              // 15% bluff chance
 
-  let gained;
-  if(p.chargeTarget==='shared'||typeof p.chargeTarget!=='number'){
-    gained=claimOnShared(pi,actVal);
+  G.lastChargeType=type;
+  const tgt=G.chargeTarget[pi];
+  let desc='';
+  if(tgt==='extra'&&G.extraBoards[pi]){
+    const n=fillExtra(pi,val);desc=`${p.name} fills extra board (${n} cells)`;
   } else {
-    const bi=p.chargeTarget;
-    if(bi<p.extraBoards.length)fillExtra(pi,bi,actVal);
-    gained=[];
+    const placed=placeCells(pi,val,type);
+    if(type==='lit')Aud.lit();else Aud.shadow();
+    desc=`${p.name} plays ${card.disp} (${val} cells)`;
+    placed.forEach((i,n)=>setTimeout(()=>{const el=document.getElementById(`sc-${i}`);if(el)el.classList.add('pop');},n*14));
   }
-  Aud.fill();
-  const ow=gained.filter(g=>g.prev!==null).length;
-  G.msg=`${p.name} claims ${gained.length} cells${ow?` (${ow} overwrites)`:''}${surge?' (Surge!)':''}!${tetherMsg}`;
+  addLog(veiled?`played ${card.disp} (veiled)`:desc.replace(p.name+' ',''));
+  G.msg=desc+' ✦';
   if(checkEndGame())return;
-  renderAll();
-  aiDelay(endTurn,700);
-}
-
-function aiTryCharge(){
-  const p=G.players[G.curI];
-  const ch=p.hand.filter(c=>c.type==='charge');
-  if(ch.length>0)aiExecCharge(ch.sort((a,b)=>b.val-a.val)[0]);
-  else aiDelay(endTurn,600);
+  renderAll();aiDelay(endTurn,700);
 }
 
 // HELPERS
 function closeModal(){G.modal=null;G.modalD=null;renderAll();}
 function resetGame(){G=freshState();renderAll();}
 
-// ---- STARFIELD ----
+// STARFIELD
 (function(){
   const canvas=document.getElementById('stars'),ctx=canvas.getContext('2d');
   function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
   resize();window.addEventListener('resize',resize);
-  const stars=Array.from({length:160},()=>({
-    x:Math.random()*innerWidth,y:Math.random()*innerHeight,
-    r:Math.random()*1.4+0.2,phase:Math.random()*Math.PI*2,spd:Math.random()*0.4+0.15,
-    col:Math.random()<0.2?'rgba(168,136,224,':'rgba(240,192,64,'
+  const stars=Array.from({length:170},()=>({
+    x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.4+0.2,
+    phase:Math.random()*Math.PI*2,spd:Math.random()*0.38+0.14,
+    col:Math.random()<0.3?'rgba(176,136,240,':'rgba(240,192,64,'
   }));
   let shoot={active:false};
-  setInterval(()=>{if(!shoot.active)shoot={active:true,x:Math.random()*canvas.width,y:Math.random()*90,vx:3+Math.random()*5,vy:1+Math.random()*2.5,life:44};},8000);
+  setInterval(()=>{if(!shoot.active)shoot={active:true,x:Math.random()*canvas.width,y:Math.random()*80,vx:3+Math.random()*5,vy:1+Math.random()*2.5,life:44};},8000);
   function draw(){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     const tt=Date.now()/1000;
     stars.forEach(s=>{
-      const a=(Math.sin(tt*s.spd+s.phase)+1)/2*0.52+0.05;
+      const a=(Math.sin(tt*s.spd+s.phase)+1)/2*0.5+0.05;
       ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=s.col+a+')';ctx.fill();
     });
     if(shoot.active){
-      ctx.strokeStyle=`rgba(240,220,160,${shoot.life/44})`;ctx.lineWidth=1.4;
+      ctx.strokeStyle=`rgba(220,200,255,${shoot.life/44})`;ctx.lineWidth=1.3;
       ctx.beginPath();ctx.moveTo(shoot.x,shoot.y);ctx.lineTo(shoot.x-shoot.vx*8,shoot.y-shoot.vy*8);ctx.stroke();
       shoot.x+=shoot.vx;shoot.y+=shoot.vy;shoot.life--;if(shoot.life<=0)shoot.active=false;
     }
