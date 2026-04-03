@@ -366,7 +366,7 @@ const CARD_DEFS = [
 let G = {};
 function freshState(){
   return{
-    phase:'setup',modal:null,modalD:null,numP:2,
+    phase:'setup',modal:null,modalD:null,numP:2,roleRevealed:false,
     players:[],roles:[],      // roles[i] = 'light'|'dark'
     exposed:[],               // exposed[i] = true if role revealed publicly
     deck:[],
@@ -577,10 +577,14 @@ function setN(n){G.numP=n;renderAll();}
 
 function doStart(){
   Aud.init();
+  const savedNumP = G.numP;   // save before freshState resets it
+  const savedNames = [...Array(G.numP)].map((_,i)=>(document.getElementById('nm'+i)?.value||'').trim()||`Seeker ${i+1}`);
+  const savedAI = [...Array(G.numP)].map((_,i)=>document.getElementById('ai'+i)?.checked||false);
   G=freshState();
+  G.numP=savedNumP;
   for(let i=0;i<G.numP;i++){
-    const nm=(document.getElementById('nm'+i)?.value||'').trim()||`Seeker ${i+1}`;
-    const ai=document.getElementById('ai'+i)?.checked||false;
+    const nm=savedNames[i];
+    const ai=savedAI[i];
     G.players.push(makePlayer(nm,ai,i));
     G.extraBoards.push(null);
     G.chargeTarget[i]='shared';
@@ -615,28 +619,47 @@ function renderPass(){
       <div style="font-size:0.62rem;color:var(--text-dim);margin-top:0.8rem;letter-spacing:0.12em">Advancing...</div>`;
     return;
   }
+  if(!G.roleRevealed && !p.isAI){
+    // Stage 1: hand-off screen — role hidden
+    document.getElementById('pass-content').innerHTML=`
+      <div class="pass-eye" style="font-size:3rem;margin-bottom:0.9rem;opacity:0.45">🌑</div>
+      <div class="pass-to">Hand device to</div>
+      <div class="pass-name" style="color:${c.main};text-shadow:0 0 16px ${c.glow}">${p.name}</div>
+      <div class="pass-hint">Cover the screen while passing. Tap only when you are alone.</div>
+      <button class="btn btn-primary" onclick="showRole()">✦ I am ready — show my role</button>`;
+    return;
+  }
+
+  // Stage 2: role revealed (or AI)
   const role=G.roles[G.curI];
   const isLight=role==='light';
   const dist=G.roles;
   const lc=dist.filter(r=>r==='light').length,dc=dist.filter(r=>r==='dark').length;
   document.getElementById('pass-content').innerHTML=`
-    <div class="pass-to">Hand device to</div>
-    <div class="pass-name" style="color:${c.main};text-shadow:0 0 16px ${c.glow}">${p.name}</div>
-    <div class="pass-hint">${p.isAI?'(AI — press continue)':'Do not reveal your role'}</div>
+    <div class="pass-to" style="margin-bottom:0.6rem;color:var(--text-dim)">Your role, ${p.name}</div>
     <div class="role-card ${isLight?'light':'dark'}">
       <span class="role-icon">${isLight?'✦':'🌑'}</span>
       <div class="role-name ${isLight?'light':'dark'}">${isLight?'Light Seeker':'Void Seeker'}</div>
-      <div class="role-desc ${isLight?'light':'dark'}">${isLight
-        ?'Illuminate the plain.\nKeep lit cells greater than shadow cells to win.'
-        :'Embrace the void.\nLet shadow cells outnumber the light to win.'}</div>
-      <div class="role-team-count">${isLight?lc+' Light':'dc='+dc+' Dark'} seeker${(isLight?lc:dc)>1?'s':''} on your team · exact identities unknown</div>
+      <div class="role-desc ${isLight?'light':'dark'}">
+        ${isLight?'Illuminate the plain. Keep lit cells > shadow cells to win.':'Embrace the void. Let shadow cells outnumber the light to win.'}
+      </div>
+      <div class="role-team-count">${isLight?lc:dc} seeker${(isLight?lc:dc)>1?'s':''} on your team · identities unknown</div>
+    </div>
+    <div style="font-size:0.62rem;color:var(--text-dim);letter-spacing:0.13em;margin-bottom:1.2rem">
+      Do not reveal your role to others. Memorise it, then continue.
     </div>
     <button class="btn ${isLight?'btn-primary':'btn-dark'}" onclick="revealBoard()">
-      ${p.isAI?'Continue →':isLight?'✦ I carry the Light':'🌑 I serve the Void'}
+      ${isLight?'✦ I carry the Light →':'🌑 I serve the Void →'}
     </button>`;
 }
 
+function showRole(){
+  G.roleRevealed=true;
+  renderAll();
+}
+
 function revealBoard(){
+  G.roleRevealed=false;  // reset for next player's turn
   if(G.skipNext[G.curI]){
     G.skipNext[G.curI]=false;G.skipping=true;renderAll();
     setTimeout(()=>{G.skipping=false;endTurn();},1800);return;
@@ -1236,6 +1259,7 @@ function endTurn(){
   if(checkEndGame()){G.turningOver=false;return;}
   G.curI=(G.curI+1)%G.players.length;
   G.turnPlayed={charge:false,action:false};
+  G.roleRevealed=false;
   G.turnToken++;G.phase='pass';G.turningOver=false;renderAll();
 }
 function doEndTurnManual(){

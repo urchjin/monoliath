@@ -66,7 +66,7 @@
         /* --- START OVERLAY --- */
         #start-overlay {
             position: absolute; inset: 0;
-            background: rgba(7, 5, 14, 0.9);
+            background: rgba(7, 5, 14, 0.95);
             backdrop-filter: blur(8px);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
@@ -160,7 +160,7 @@
         /* --- FORMULA MODAL --- */
         #formula-modal {
             position: absolute; inset: 0;
-            background: rgba(7, 5, 14, 0.95);
+            background: rgba(7, 5, 14, 0.98);
             backdrop-filter: blur(8px);
             display: none; flex-direction: column;
             align-items: center; justify-content: center;
@@ -193,9 +193,9 @@
 <body>
 
     <div id="tutorial-hud">
-        <div id="instruction-text">Step 1: Count the blocks! Walk right.</div>
+        <div id="instruction-text">Step 1: Walk right.</div>
         <div id="learning-objective">
-            <strong>🎯 Learning Objective - Length & Width:</strong> The tower has 4 faces (colors). Count how many blocks make up a face to find your Length and Width. Walk right to find the first Gem!
+            <strong>🎯 Learning Objective - Dimensions:</strong> The tower has 4 faces (colors). Count how many blocks make up a face to find your Length and Width. Walk right to find the first Gem!
         </div>
     </div>
 
@@ -293,22 +293,29 @@
     const btnRight = document.getElementById('btn-right');
     const btnUp = document.getElementById('btn-up');
     const btnSubmit = document.getElementById('btn-submit');
+    const btnStartTut = document.getElementById('btn-start-tut');
 
-    // ─── START & FOCUS ───
-    function forceFocus() {
+    // ─── START & FOCUS (FIXED FOR MOBILE) ───
+    function handleGlobalFocus(e) {
+        // Prevent stealing focus if the user taps a button or input field
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
         window.focus();
-        if(document.activeElement.tagName !== 'INPUT') cv.focus();
+        cv.focus();
     }
 
-    document.getElementById('btn-start-tut').addEventListener('click', () => {
+    document.addEventListener('click', handleGlobalFocus);
+    document.addEventListener('touchstart', handleGlobalFocus, {passive: true});
+
+    const startTutorialAction = (e) => {
+        if(e.type === 'touchstart') e.preventDefault(); // Prevent ghost clicks
         document.getElementById('start-overlay').style.display = 'none';
         isStarted = true;
         updateHighlights();
-        forceFocus();
-    });
+        cv.focus();
+    };
 
-    document.addEventListener('click', forceFocus);
-    document.addEventListener('touchstart', forceFocus);
+    btnStartTut.addEventListener('click', startTutorialAction);
+    btnStartTut.addEventListener('touchstart', startTutorialAction, {passive: false});
 
     // ─── HIGHLIGHT SYSTEM ───
     function updateHighlights() {
@@ -359,7 +366,7 @@
                 
                 if(inventory.length === 1) {
                     step = 2;
-                    instText.innerText = "Step 2: Find the Golden Stairs and Climb.";
+                    instText.innerText = "Step 2: Find the Golden Stairs.";
                     objText.innerHTML = "<strong>🎯 Learning Objective - Height:</strong> Your Height is the number of floors. Walk right until you find the <b style='color:#b88820'>Golden Stairs</b>, then press UP to reach Floor 2.";
                 } else if(inventory.length === 2) {
                     step = 3;
@@ -399,14 +406,18 @@
         let el = document.getElementById(id);
         const trigger = (e) => { e.preventDefault(); el.classList.add('pr'); tryMove(dir); }
         const release = (e) => { e.preventDefault(); el.classList.remove('pr'); }
-        el.addEventListener('mousedown', trigger); el.addEventListener('touchstart', trigger, {passive:false});
-        window.addEventListener('mouseup', release); window.addEventListener('touchend', release);
+        el.addEventListener('mousedown', trigger); 
+        el.addEventListener('touchstart', trigger, {passive:false});
+        window.addEventListener('mouseup', release); 
+        window.addEventListener('touchend', release);
     }
     bindBtn('btn-up', 'up'); bindBtn('btn-down', 'down');
     bindBtn('btn-left', 'left'); bindBtn('btn-right', 'right');
 
-    // ─── FORMULA SUBMISSION ───
-    btnSubmit.addEventListener('click', () => {
+    // ─── FORMULA SUBMISSION (FIXED FOR MOBILE) ───
+    const submitLogic = (e) => {
+        if(e.type === 'touchstart') e.preventDefault();
+        
         const w = parseInt(document.getElementById('fo-w').value);
         const l = parseInt(document.getElementById('fo-l').value);
         const h = parseInt(document.getElementById('fo-h').value);
@@ -430,7 +441,10 @@
             fb.innerText = "✗ Incorrect. Hint: Width 3, Length 2, Height 2, Vol 12.";
             fb.style.color = "#ff4a4a";
         }
-    });
+    };
+    
+    btnSubmit.addEventListener('click', submitLogic);
+    btnSubmit.addEventListener('touchstart', submitLogic, {passive: false});
 
     // ─── RENDER LOOP (Mirroring the Original Game) ───
     function draw() {
