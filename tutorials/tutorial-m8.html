@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Factory Builder Tutorial</title>
+    <style>
+        :root { 
+            --main-bg: #090a10; 
+            --accent: #6eb5b3; 
+            --accent-hover: #9adcd9; 
+            --danger: #d85c6b; 
+        }
+        
+        * { box-sizing: border-box; user-select: none; -webkit-touch-callout: none; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: var(--main-bg);
+            color: #CDD8F8;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- INSTRUCTION PANEL --- */
+        #instruction-panel {
+            background: rgba(110, 181, 179, 0.15);
+            border-bottom: 2px solid var(--accent);
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(110, 181, 179, 0.2);
+            z-index: 20;
+        }
+
+        #instruction-text {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--accent-hover);
+            margin: 0;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 8px rgba(110, 181, 179, 0.4);
+        }
+
+        /* --- GAME AREA --- */
+        #game-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            background: radial-gradient(ellipse at 50% 38%, rgba(12,14,38,.97), rgba(4,5,14,.99));
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* --- HUD & CONTROLS --- */
+        #btnPhase {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(8,9,20,.9);
+            border: 2px solid #ffcc00;
+            color: #ffcc00;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            z-index: 10;
+            display: none;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+        }
+        #btnPhase:active { background: rgba(255, 204, 0, 0.2); }
+
+        #touchControls {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            right: 15px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .tc-cluster { display: flex; gap: 10px; }
+        .tc-btn {
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            color: #FFF;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        .tc-btn:active {
+            background: rgba(110, 181, 179, 0.4);
+            border-color: var(--accent-hover);
+        }
+
+        /* --- MINI FUSION MODAL --- */
+        #fusion-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(12,14,36,.96);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            width: 85%;
+            max-width: 300px;
+            text-align: center;
+            z-index: 30;
+            display: none;
+            box-shadow: 0 20px 45px rgba(0,0,0,.8);
+        }
+
+        .fusion-title { color: #EDE6D2; font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; }
+        .fusion-desc { color: #7A85B0; font-size: 12px; margin-bottom: 15px; }
+        
+        .token-btn {
+            background: linear-gradient(135deg,#C08820,#8B5510);
+            border: 1px solid rgba(255,200,80,.5);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+        .token-btn:active { transform: scale(0.98); }
+
+        .cta {
+            background: var(--accent);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #090a10;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        .cta:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+    </style>
+</head>
+<body>
+
+    <div id="instruction-panel">
+        <p id="instruction-text">Step 1: Move right using the controls.</p>
+    </div>
+
+    <div id="game-container">
+        <canvas id="cv"></canvas>
+        
+        <button id="btnPhase" onclick="togglePhase()">EDIT LAYOUT</button>
+
+        <div id="touchControls">
+            <div class="tc-cluster" id="move-cluster">
+                <div class="tc-btn" id="btnLeft" onpointerdown="input.L=true" onpointerup="input.L=false" onpointercancel="input.L=false">◀</div>
+                <div class="tc-btn" id="btnRight" onpointerdown="input.R=true" onpointerup="input.R=false" onpointercancel="input.R=false">▶</div>
+            </div>
+            <div class="tc-cluster" id="jump-cluster">
+                <div class="tc-btn" id="btnJump" onpointerdown="input.J=true" onpointerup="input.J=false" onpointercancel="input.J=false">▲</div>
+            </div>
+        </div>
+
+        <div id="fusion-modal">
+            <div class="fusion-title">Blueprint Fusion</div>
+            <div class="fusion-desc">Infuse tokens to give the block mass and length.</div>
+            <button class="token-btn" id="btnAddToken" onclick="addToken()">+ Inject [10s] Token</button>
+            <button class="cta" id="btnBuild" disabled onclick="buildBlock()">Fuse & Build</button>
+        </div>
+    </div>
+
+<script>
+    const cv = document.getElementById('cv');
+    const ctx = cv.getContext('2d');
+    
+    // Engine Constants
+    const GRAV = 0.6, JF = -10, SPD = 4, PW = 20, PH = 20;
+    const P = {
+        skyT:'#0a0b12', skyB:'#1c1d29',
+        slabF:'#225452', slabT:'#368C88', slabS:'#112A29',
+        v10F:'#C08820', v10T:'#E0A840', v10S:'#8B5510',
+        pl:'#FFFFFF', bea:'#E85D75'
+    };
+
+    // State
+    let width, height, camZ = 1.2;
+    let step = 1;
+    let mode = 'PLAY'; // PLAY or BUILD
+    let input = { L: false, R: false, J: false };
+    
+    // PATCH APPLIED: Added w and h to player object for collision logic
+    let player = { x: 30, y: 150, w: PW, h: PH, vx: 0, vy: 0, onGround: false };
+    
+    // PATCH APPLIED: Widened the gap and stretched the blueprint
+    let world = {
+        plats: [
+            { x: 10, y: 200, w: 100, h: 20 }, // Start platform
+            { x: 270, y: 200, w: 120, h: 20 }  // End platform (pushed right)
+        ],
+        frag: null, // The block we will build
+        ghost: { x: 110, y: 200, w: 160, h: 20 }, // Ghost outline (stretched)
+        exit: { x: 320, y: 150, w: 40, h: 50 } // Exit beacon (pushed right)
+    };
+
+    const instText = document.getElementById('instruction-text');
+    const btnPhase = document.getElementById('btnPhase');
+    const touchControls = document.getElementById('touchControls');
+    const fusionModal = document.getElementById('fusion-modal');
+    let addedValue = 0;
+
+    // Resize
+    function resize() {
+        width = cv.parentElement.clientWidth;
+        height = cv.parentElement.clientHeight;
+        cv.width = width;
+        cv.height = height;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Interaction Handlers
+    function setInstruction(text) { instText.innerText = text; }
+
+    function togglePhase() {
+        if(step === 2 && mode === 'PLAY') {
+            mode = 'BUILD';
+            step = 3;
+            setInstruction("Step 3: Tap the glowing yellow gap to draft a block.");
+            btnPhase.style.display = 'none'; // Hide until they build
+            touchControls.style.opacity = '0.2';
+            touchControls.style.pointerEvents = 'none';
+        } 
+        else if(step === 4 && mode === 'BUILD') {
+            mode = 'PLAY';
+            step = 5;
+            setInstruction("Step 5: Cross the gap to the pink beacon!");
+            btnPhase.style.display = 'none';
+            touchControls.style.opacity = '1';
+            touchControls.style.pointerEvents = 'auto';
+            player.x = 80; // Reset player safely before jump
+            player.y = 150;
+        }
+    }
+
+cv.addEventListener('pointerdown', (e) => {
+        if(mode !== 'BUILD' || step !== 3) return;
+        
+        const rect = cv.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        // 1. Calculate the exact camera offsets used in the render loop
+        const translateX = (width/camZ/2) - 190;
+        const translateY = Math.min(0, (height/camZ/2) - 200);
+
+        // 2. Convert raw mouse coordinates into in-game world coordinates
+        const worldX = (mouseX / camZ) - translateX;
+        const worldY = (mouseY / camZ) - translateY;
+        
+        // 3. Check exact collision against the ghost block
+        if(worldX >= world.ghost.x && worldX <= world.ghost.x + world.ghost.w &&
+           worldY >= world.ghost.y - 20 && worldY <= world.ghost.y + world.ghost.h + 20) { 
+            // Note: Added a +/- 20px buffer to the Y-axis to make it easier to tap on mobile
+            fusionModal.style.display = 'block';
+            setInstruction("Step 4: Add value to the block, then Fuse.");
+        }
+    });
+
+    function addToken() {
+        addedValue += 10;
+        document.getElementById('btnAddToken').innerText = `Value: ${addedValue} (MAX)`;
+        document.getElementById('btnAddToken').style.pointerEvents = 'none';
+        document.getElementById('btnBuild').disabled = false;
+        document.getElementById('btnBuild').style.background = '#ffcc00';
+    }
+
+    function buildBlock() {
+        // PATCH APPLIED: The built fragment matches the new 160px gap
+        world.frag = { x: 110, y: 200, w: 160, h: 20 }; 
+        fusionModal.style.display = 'none';
+        step = 4;
+        btnPhase.innerText = "TEST CLIMB";
+        btnPhase.style.color = "#4CAF50";
+        btnPhase.style.borderColor = "#4CAF50";
+        btnPhase.style.display = 'block';
+        setInstruction("Block Built! Tap 'TEST CLIMB' to resume physics.");
+    }
+
+    // Keyboard support for desktop
+    window.addEventListener('keydown', e => {
+        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=true;
+        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=true;
+        if(e.code==='ArrowUp'||e.code==='Space') input.J=true;
+    });
+    window.addEventListener('keyup', e => {
+        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=false;
+        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=false;
+        if(e.code==='ArrowUp'||e.code==='Space') input.J=false;
+    });
+
+    // Isometric Drawing Function
+    function iso(dx, dy, w, h, face, top, side) {
+        const D = 4;
+        ctx.fillStyle=side; ctx.beginPath(); ctx.moveTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+w+D,dy+h-D); ctx.lineTo(dx+w,dy+h); ctx.fill();
+        ctx.fillStyle=top; ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+D,dy-D); ctx.fill();
+        ctx.fillStyle=face; ctx.fillRect(dx,dy,w,h);
+    }
+
+    // AABB Collision
+    function boxOv(a, b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+
+    // Game Loop
+    function loop() {
+        requestAnimationFrame(loop);
+
+        // --- Logic ---
+        if(mode === 'PLAY') {
+            player.vx = 0;
+            if(input.L) player.vx = -SPD;
+            if(input.R) player.vx = SPD;
+            if(input.J && player.onGround) { player.vy = JF; player.onGround = false; }
+
+            player.vy += GRAV;
+
+            // X Collision
+            player.x += player.vx;
+            let obstacles = [...world.plats];
+            if(world.frag) obstacles.push(world.frag);
+            
+            for(let p of obstacles) {
+                if(boxOv(player, p)) {
+                    if(player.vx > 0) player.x = p.x - PW;
+                    else if(player.vx < 0) player.x = p.x + p.w;
+                }
+            }
+
+            // Y Collision
+            player.y += player.vy;
+            player.onGround = false;
+            for(let p of obstacles) {
+                if(boxOv(player, p)) {
+                    if(player.vy > 0) { player.y = p.y - PH; player.vy = 0; player.onGround = true; }
+                }
+            }
+            
+            // Death Pit Reset
+            if(player.y > 400) {
+                player.x = 30; player.y = 150; player.vy = 0;
+            }
+
+            // Progression Logic
+            if(step === 1 && player.x > 70) {
+                step = 2;
+                setInstruction("Step 2: The gap is too wide! Tap 'EDIT LAYOUT' to enter Build Phase.");
+                btnPhase.style.display = 'block';
+                input.R = false; // Force stop
+            }
+            
+            if(step === 5 && boxOv(player, world.exit)) {
+                step = 6;
+                setInstruction("TUTORIAL COMPLETE! Close this window to play.");
+                touchControls.style.display = 'none';
+            }
+        }
+
+        // --- Render ---
+        ctx.fillStyle = P.skyT;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.scale(camZ, camZ);
+        // Center view slightly based on the wider layout
+        ctx.translate((width/camZ/2) - 190, Math.min(0, (height/camZ/2) - 200)); 
+
+        // Draw Platforms
+        for(let p of world.plats) iso(p.x, p.y, p.w, p.h, P.slabF, P.slabT, P.slabS);
+
+        // Draw Built Fragment
+        if(world.frag) {
+            iso(world.frag.x, world.frag.y, world.frag.w, world.frag.h, P.v10F, P.v10T, P.v10S);
+        } else if (mode === 'BUILD' && step === 3) {
+            // Draw Ghost Block
+            ctx.strokeStyle = '#ffcc00';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
+            ctx.fillStyle = 'rgba(255, 204, 0, 0.1)';
+            ctx.fillRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
+            ctx.setLineDash([]);
+        }
+
+        // Draw Exit Beacon
+        ctx.fillStyle='rgba(232,93,117,0.3)'; ctx.fillRect(world.exit.x-10, world.exit.y, 60, 50);
+        ctx.fillStyle=P.bea; ctx.beginPath(); ctx.moveTo(world.exit.x+20, world.exit.y+20); ctx.lineTo(world.exit.x+30, world.exit.y+50); ctx.lineTo(world.exit.x+10, world.exit.y+50); ctx.fill();
+
+        // Draw Player
+        if(mode === 'BUILD') ctx.globalAlpha = 0.5;
+        ctx.fillStyle = P.pl; ctx.fillRect(player.x, player.y, PW, PH);
+        ctx.globalAlpha = 1.0;
+
+        ctx.restore();
+    }
+
+    // Start
+    loop();
+</script>
+</body>
+</html>

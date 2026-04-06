@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1868782246580723"
+     crossorigin="anonymous"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MonoliATH Games | Playing Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --bg-color: #F4EFEA; 
+            --primary-accent: #E69A8D; 
+            --text-main: #2C3E50; 
+            --nav-bg: rgba(244, 239, 234, 1);
+            --ad-bg: #EAE3DC; 
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Josefin Sans', sans-serif; 
+            background-color: var(--bg-color); 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        /* --- TOP BAR --- */
+        nav {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            padding: 0 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: color 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            nav { padding: 12px 0; }
+            .nav-links { gap: 15px; width: 100%; }
+            .nav-links a { font-size: 0.75rem; letter-spacing: 1px; }
+        }
+        
+        .back-btn { font-weight: 300 !important; opacity: 0.7; }
+
+        /* --- THE GAME AREA --- */
+        main.game-wrapper { 
+            flex: 1; 
+            width: 100%; 
+            display: flex; 
+            background-color: #000;
+        }
+        
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+        }
+
+        /* --- INSTRUCTIONAL MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-box {
+            background: var(--bg-color);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-box h2 {
+            color: var(--primary-accent);
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            text-align: left;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .modal-body p { margin-bottom: 15px; }
+
+        .close-modal-btn {
+            background-color: var(--text-main);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-family: 'Josefin Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .close-modal-btn:hover {
+            background-color: var(--primary-accent);
+        }
+
+        /* --- TUTORIAL MINI-FRAME MODAL --- */
+        #tutorialModal {
+            display: none; /* Hidden by default until activated by the first modal */
+        }
+
+/* Container for the tutorial */
+.tutorial-box {
+    width: 95vw;         /* 95% of the screen width on mobile */
+    height: 90vh;        /* 90% of the screen height */
+    max-width: 500px;    /* Prevents it from getting too massive on desktop */
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;    /* Clips the iframe corners cleanly */
+}
+
+/* The actual iframe */
+.tutorial-box iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    flex-grow: 1;
+    background: transparent;
+}
+
+/* Ensure your close button floats above the iframe content nicely */
+.close-tutorial-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 500;
+    /* Add any extra button colors/padding you prefer here */
+}
+
+        .close-tutorial-btn:hover {
+            color: var(--primary-accent);
+        }
+
+        /* --- AD BAR --- */
+        .ad-frame { 
+            width: 100%; 
+            background-color: var(--ad-bg); 
+            padding: 5px; 
+            text-align: center; 
+            border-top: 1px solid rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .ad-content { 
+            width: 100%; 
+            max-width: 728px; 
+            height: 50px; 
+            margin: 0 auto; 
+            background-color: #d1c9c1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: #888; 
+            font-size: 0.75rem; 
+            letter-spacing: 1px; 
+            border: 1px dashed #bbaaa0; 
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-links">
+            <a href="story_monoliath.html" class="back-btn">&larr; Exit Simulation</a>
+            <a href="index.html">Home</a>
+            <a href="about.html">About</a>
+            <a href="story.html" style="color: var(--primary-accent);">Story</a>
+            <a href="topics.html">Topics</a>
+        </div>
+    </nav>
+
+    <main class="game-wrapper">
+        <iframe src="m5_thefunction.html" title="Simulation 1"></iframe>
+    </main>
+
+    <div class="ad-frame">
+        <div class="ad-content">
+            [ ADVERTISEMENT SLOT : 728 x 90 ]
+        </div>
+    </div>
+
+    <div id="instructionModal" class="modal-overlay">
+        <div class="modal-box">
+            <h2>HOW TO PLAY</h2>
+            <div class="modal-body">
+            <p><strong>Goal:</strong> Power the factory by matching energy core values to specific target requirements. You must navigate claustrophobic sectors, push derelict cores onto terminals, and use the Refinery Lab to extract or inject energy. The level is cleared when every target is occupied by a core with a matching numerical value, ideally using recycled "Derelict Energy" to maximize your efficiency score. </p>
+            <p><strong>Controls:</strong> Use the on-screen D-pad (Up, Down, Left, Right) to move your character and push blocks. Click a block to select it, or click items in your Inventory Chest to prepare for a reaction. Use the EXTRACT (SPLIT) and INJECT (FUSE) buttons to enter the Lab, where you click and drag energy units between the 100s, 10s, and 1s columns to balance the math equations.</p>
+            <p><strong>How it helps:</strong> This game enhances spatial awareness and base-10 mathematical logic. It trains your brain to deconstruct large numbers into place-value components while requiring strategic "Sokoban-style" planning to move objects through tight corridors without getting stuck.</p>
+            </div>
+            <button onclick="closeModal()" class="close-modal-btn">BEGIN SIMULATION</button>
+        </div>
+    </div>
+
+    <div id="tutorialModal" class="modal-overlay">
+        <div class="tutorial-box">
+            <button onclick="exitTutorial()" class="close-tutorial-btn">X</button>
+            <iframe src="tutorials\tutorial-m5.html" title="Interactive Tutorial"></iframe>
+        </div>
+    </div>
+
+    <script>
+        // 1. User clicks "BEGIN SIMULATION" on the text modal
+        function closeModal() {
+            // Hide the text modal
+            document.getElementById('instructionModal').style.display = 'none';
+            
+            // Show the interactive tutorial modal
+            document.getElementById('tutorialModal').style.display = 'flex';
+        }
+
+        // 2. User clicks "X" to exit the interactive tutorial
+        function exitTutorial() {
+            const tutorialModal = document.getElementById('tutorialModal');
+            
+            // Hide the tutorial modal to reveal the main game underneath
+            tutorialModal.style.display = 'none';
+            
+            // Stop the tutorial iframe from running in the background to save performance
+            const tutorialIframe = tutorialModal.querySelector('iframe');
+            if (tutorialIframe) {
+                tutorialIframe.src = ""; 
+            }
+        }
+    </script>
+
+</body>
+</html>

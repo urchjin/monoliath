@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ABZebra: Type the Compass</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Montserrat:wght@400;600&display=swap');
+
+        :root {
+            --bg-color: #f4ece6; 
+            --tile-bg: #e0d5ce;
+            --tile-text: #7a6c64;
+            --player-color: #a8d5e2; 
+            --portal-color: #f2c6a0; 
+            --path-color: #d1c4e9; 
+            --error-color: #e57373;
+            --success-color: #81c784;
+            --obstacle-color: #8d8782;
+            --text-main: #5c534f;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg-color);
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-main);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            overflow: hidden; touch-action: none;
+        }
+
+        #game-container {
+            width: 100%; max-width: 600px; display: flex; flex-direction: column;
+            align-items: center; padding: 20px; box-sizing: border-box;
+        }
+
+        #header { text-align: center; margin-bottom: 10px; }
+        h1 { font-family: 'Fredoka', sans-serif; font-weight: 600; margin: 0; font-size: 28px; letter-spacing: 2px; }
+        #level-indicator { font-size: 14px; opacity: 0.7; text-transform: uppercase; letter-spacing: 1px; }
+
+        #timer-ui {
+            display: none; justify-content: space-between; width: 100%;
+            background: white; padding: 10px 20px; border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 10px;
+            box-sizing: border-box; font-weight: bold; color: var(--error-color);
+        }
+
+        #conflict-msg {
+            display: none; width: 100%; background: var(--error-color); color: white;
+            padding: 10px; border-radius: 8px; font-weight: bold; text-align: center;
+            margin-bottom: 10px; box-sizing: border-box; animation: popIn 0.3s ease;
+        }
+
+        /* Grid */
+        #grid {
+            display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: repeat(12, 1fr);
+            gap: 4px; width: 100%; aspect-ratio: 1; background: rgba(255, 255, 255, 0.4);
+            padding: 10px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); box-sizing: border-box;
+        }
+
+        .tile {
+            background-color: var(--tile-bg); border-radius: 6px; display: flex; justify-content: center;
+            align-items: center; font-weight: 600; font-size: 18px; color: var(--tile-text);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); position: relative; box-sizing: border-box;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.05);
+        }
+        
+        .tile.player { background-color: var(--player-color); transform: scale(1.15); box-shadow: 0 6px 15px rgba(168, 213, 226, 0.6); z-index: 2; font-size: 22px; }
+        .tile.portal { background-color: var(--portal-color); color: #fff; animation: pulse 1.5s infinite; font-size: 20px; box-shadow: 0 4px 15px rgba(242, 198, 160, 0.6); z-index: 1;}
+        .tile.visited { background-color: var(--path-color); color: #fff; box-shadow: 0 2px 0 rgba(0,0,0,0.05); transform: scale(0.95); }
+        .tile.obstacle { background-color: var(--obstacle-color); font-size: 20px; box-shadow: 0 4px 0 rgba(0,0,0,0.2); }
+        .tile.adjacent { border: 3px solid var(--player-color); cursor: pointer; }
+
+        .tile.conflict {
+            border: 4px solid var(--error-color); background: #ffebee; color: var(--error-color);
+            animation: conflictPulse 1s infinite; cursor: pointer; z-index: 10;
+        }
+
+        /* Inventory */
+        #inventory-container {
+            margin-top: 15px; width: 100%; background: white; padding: 15px; border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); box-sizing: border-box; min-height: 100px;
+            display: flex; flex-direction: column;
+        }
+        #inventory-title { font-size: 14px; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; color: #7a6c64; display: flex; justify-content: space-between; }
+        #inventory { display: flex; flex-wrap: wrap; gap: 6px; flex-grow: 1; }
+        .inv-letter {
+            background: var(--path-color); color: white; width: 35px; height: 35px; display: flex;
+            justify-content: center; align-items: center; border-radius: 6px; font-weight: bold; font-size: 16px;
+        }
+        
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 236, 230, 0.95);
+            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            text-align: center; max-width: 90%; width: 400px; max-height: 90vh; overflow-y: auto;
+        }
+
+        #lock-inventory { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 10px 0 20px 0; }
+        .lock-inv-letter {
+            background: var(--path-color); color: white; width: 32px; height: 32px; display: flex;
+            justify-content: center; align-items: center; border-radius: 6px; font-weight: bold; font-size: 15px;
+            transition: all 0.2s;
+        }
+        .lock-inv-letter.used { background: #e0d5ce; color: #a8a09b; transform: scale(0.9); box-shadow: inset 0 2px 5px rgba(0,0,0,0.1); }
+
+        #found-words-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 15px 0; }
+        .found-word { background: var(--success-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 14px; }
+        
+        #current-input-display { display: flex; justify-content: center; gap: 5px; height: 50px; margin: 20px 0; flex-wrap: wrap;}
+        .word-char {
+            width: 40px; height: 40px; border: 2px solid var(--player-color); border-radius: 8px;
+            display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: 600;
+            color: white; background: var(--player-color); box-shadow: 0 4px 10px rgba(168, 213, 226, 0.4);
+            animation: popIn 0.2s ease;
+        }
+        .word-char.empty-cursor { background: transparent; border: 2px dashed #ccc; color: #ccc; box-shadow: none; animation: none; }
+
+        .button-row { display: flex; gap: 10px; justify-content: center; margin-top: 10px; flex-wrap: wrap;}
+        button {
+            background: var(--text-main); color: white; border: none; padding: 12px 20px; font-family: inherit;
+            font-size: 14px; font-weight: 600; border-radius: 30px; cursor: pointer; transition: transform 0.2s; margin-top: 5px;
+        }
+        button:hover { transform: scale(1.05); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .btn-submit { background: var(--success-color); }
+        .btn-undo { background: var(--error-color); }
+
+        #error-msg { color: var(--error-color); font-size: 14px; height: 20px; margin-top: 5px; font-weight: 600;}
+
+        @keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(242, 198, 160, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(242, 198, 160, 0); } 100% { box-shadow: 0 0 0 0 rgba(242, 198, 160, 0); } }
+        @keyframes conflictPulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 115, 115, 0.7); } 50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(229, 115, 115, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(229, 115, 115, 0); } }
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+        #loading-dict { font-size: 12px; color: #888; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <input type="text" id="mobile-input" style="position: absolute; opacity: 0; top: -1000px;" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+    <div id="game-container">
+        <div id="header">
+            <h1>ABZebra: Type the Compass</h1>
+            <div id="level-indicator">Loading Game...</div>
+        </div>
+        
+        <div id="timer-ui">
+            <span id="time-left">Time: 60s</span>
+            <span id="score-display">Score: 0</span>
+        </div>
+
+        <div id="conflict-msg">Multiple choices! Tap the tile you want to step on.</div>
+
+        <div id="grid"></div>
+        
+        <div id="inventory-container">
+            <div id="inventory-title">
+                <span>Collected Pool</span>
+                <span id="inv-count">0 Letters</span>
+            </div>
+            <div id="inventory"></div>
+        </div>
+    </div>
+
+    <div id="start-screen" class="modal-overlay" style="display: flex;">
+        <div class="modal-content">
+            <h1>ABZebra: Type The Compass!</h1>
+            <p style="margin: 20px 0; line-height: 1.6; font-size: 14px;">
+                <strong>Campaign:</strong> Guide ABZebra (🦓) to the glowing portal.<br>
+                <strong>Time Attack:</strong> 60 Seconds. Chase the glowing portals, collect letters, and spell words to survive!<br>
+            </p>
+            <div class="button-row">
+                <button onclick="startCampaign()" id="btn-campaign" disabled>Campaign Mode</button>
+                <button onclick="startTimeAttack()" id="btn-timed" class="btn-submit" disabled>Time Attack</button>
+            </div>
+            <div id="loading-dict">Fetching English Dictionary...</div>
+        </div>
+    </div>
+
+    <div id="tutorial-screen" class="modal-overlay">
+        <div class="modal-content">
+            <h1 id="tut-title" style="color: var(--player-color);">Level 1</h1>
+            <h3 id="tut-subtitle" style="margin-top: 5px; color: #7a6c64;">The First Steps</h3>
+            <p id="tut-desc" style="margin: 20px 0; line-height: 1.6; font-size: 15px;"></p>
+            <div style="font-size: 12px; font-weight: bold; color: #999; margin-bottom: 10px;">AVAILABLE LETTERS:</div>
+            <div id="tut-pool" style="font-size: 18px; font-weight: bold; letter-spacing: 3px; color: var(--text-main); margin-bottom: 20px;"></div>
+            <button onclick="beginGridPlay()" class="btn-submit">Begin Weaving</button>
+        </div>
+    </div>
+
+    <div id="lock-screen" class="modal-overlay">
+        <div class="modal-content" onclick="document.getElementById('mobile-input').focus()">
+            <h2>Type The Compass!</h2>
+            <div style="font-size: 12px; font-weight: bold; color: #7a6c64; margin-top: 15px; letter-spacing: 1px;">YOUR AVAILABLE POOL:</div>
+            <div id="lock-inventory"></div>
+            
+            <h3 style="margin:10px 0 5px 0;" id="words-progress">Words Found: 0 / 3</h3>
+            <div id="found-words-container"></div>
+            
+            <div id="current-input-display"><div class="word-char empty-cursor">_</div></div>
+            <div id="error-msg"></div>
+
+            <div class="button-row">
+                <button onclick="deleteLastLetter()" style="background:#888;">Backspace</button>
+                <button onclick="submitWord()" class="btn-submit">Submit Word</button>
+            </div>
+            <br>
+            <button onclick="closeLockScreen()" class="btn-undo" id="btn-close-lock">Retreat 1 Step</button>
+        </div>
+    </div>
+
+    <div id="victory-screen" class="modal-overlay">
+        <div class="modal-content">
+            <h1 id="end-title" style="color: var(--success-color)">Path Cleared!</h1>
+            <p id="end-desc">You have woven the lexicon successfully.</p>
+            <button onclick="nextLevel()" id="btn-next">Next Stage</button>
+            <button onclick="location.reload()" style="background:#888; display:none;" id="btn-menu">Main Menu</button>
+        </div>
+    </div>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const pentatonicScale = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25];
+        let noteIndex = 0;
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'move') {
+                osc.type = 'sine'; osc.frequency.value = pentatonicScale[noteIndex % pentatonicScale.length]; noteIndex++;
+                gain.gain.setValueAtTime(0, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'error') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'success') {
+                [261.63, 329.63, 392.00].forEach(freq => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.type = 'sine'; o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination);
+                    g.gain.setValueAtTime(0, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.05);
+                    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5); o.start(); o.stop(audioCtx.currentTime + 1.5);
+                });
+            }
+        }
+
+        // --- Dictionary ---
+        let validDictionary = new Set();
+        async function loadDictionary() {
+            try {
+                const res = await fetch('https://raw.githubusercontent.com/first20hours/google-10000-english/master/google-10000-english-no-swears.txt');
+                const text = await res.text();
+                text.split('\n').forEach(w => { if (w.length >= 2) validDictionary.add(w.toUpperCase().trim()); });
+                ["CAT","BAT","MAT","MAN","BAN","DOG","LOG","FREE","BEE"].forEach(w => validDictionary.add(w)); 
+                document.getElementById('btn-campaign').disabled = false;
+                document.getElementById('btn-timed').disabled = false;
+                document.getElementById('loading-dict').textContent = "Dictionary Loaded!";
+            } catch (err) {
+                ["CAT","BAT","MAT","MAN","BAN","ANT","TAN","CAB","MAC","DOG","LOG","FREE","BEE","STOP","STEP","STAR"].forEach(w => validDictionary.add(w));
+                document.getElementById('btn-campaign').disabled = false;
+                document.getElementById('btn-timed').disabled = false;
+                document.getElementById('loading-dict').textContent = "Fallback Dictionary Loaded";
+            }
+        }
+        loadDictionary();
+
+        // --- 20 Level Campaign Data ---
+        const FULL_POOL = "EEEEAAAAAARRRRRIIIIIINNNNNOOOOOTTTTTSSSSLLLLCCCCUUUUDDDDPPPPMMMMHHHHGBBFFYYWKVXZJQ";
+        
+        const campaignLevels = [
+            { name: "The First Steps", pool: "AEST", words: 1, obs: 0.05, tut: "Welcome! Let's start with just 4 fundamental keys. Try spelling words like ATE, TEA, or SET." },
+            { name: "New Consonants", pool: "AESTRN", words: 2, obs: 0.05, tut: "Adding R and N. You can now spell words like RAT or NET." },
+            { name: "Left Hand Reach", pool: "AESTRNDL", words: 2, obs: 0.08, tut: "Adding D and L to the mix. Watch out for a few rocks!" },
+            { name: "Vowel Expansion", pool: "AESTRNDLIO", words: 3, obs: 0.08, tut: "Adding the vowels I and O. This opens up many new dictionary words." },
+            { name: "The F & H Reach", pool: "AESTRNDLIOFH", words: 3, obs: 0.10, tut: "Reaching for F and H. Make sure you don't get trapped." },
+            { name: "Dipping Down", pool: "AESTRNDLIOFHCM", words: 3, obs: 0.10, tut: "Adding C and M from the bottom row." },
+            { name: "Reaching Up", pool: "AESTRNDLIOFHCMPU", words: 4, obs: 0.12, tut: "Adding P and U from the top row. The labyrinth is growing." },
+            { name: "The Center Bar", pool: "AESTRNDLIOFHCMPUBG", words: 4, obs: 0.12, tut: "Adding B and G. Obstacles are increasing!" },
+            { name: "Wide Angles", pool: "AESTRNDLIOFHCMPUBGWY", words: 4, obs: 0.15, tut: "Adding W and Y from the far corners." },
+            { name: "The K & V", pool: "AESTRNDLIOFHCMPUBGWYKV", words: 4, obs: 0.15, tut: "Introducing K and V. Take your time to plan your route." },
+            { name: "X Marks the Spot", pool: "AESTRNDLIOFHCMPUBGWYKVXJ", words: 5, obs: 0.18, tut: "Adding X and J. Vocabulary gets trickier now!" },
+            { name: "The Rarest Glyphs", pool: "AESTRNDLIOFHCMPUBGWYKVXJZQ", words: 5, obs: 0.18, tut: "Adding Z and Q. The full alphabet is now in play!" },
+            { name: "The Dense Fog", pool: FULL_POOL, words: 5, obs: 0.20, tut: "The path is cluttered with rocks. You will need to take the long way around." },
+            { name: "Long Words", pool: FULL_POOL, words: 5, obs: 0.20, tut: "Try collecting enough letters to make longer 4 or 5 letter words!" },
+            { name: "The Maze", pool: FULL_POOL, words: 5, obs: 0.22, tut: "The labyrinth is getting tighter. Keep an eye on your available vowels." },
+            { name: "Spelling Bee", pool: FULL_POOL, words: 6, obs: 0.22, tut: "You need 6 valid words to open the exit portal this time." },
+            { name: "The Barricade", pool: FULL_POOL, words: 6, obs: 0.25, tut: "Heavy obstacles ahead. Plan your path before you start typing." },
+            { name: "Master Typist", pool: FULL_POOL, words: 6, obs: 0.25, tut: "Precision is key. Avoid typos so you don't fill your inventory with useless letters." },
+            { name: "The Gauntlet", pool: FULL_POOL, words: 7, obs: 0.28, tut: "Almost at the end. Only true Lexicon Weavers can pass this density." },
+            { name: "The Architect", pool: FULL_POOL, words: 8, obs: 0.30, tut: "The final challenge. A dense maze and 8 words required. Good luck, ABZebra!" }
+        ];
+
+        // --- Game State ---
+        let currentMode = 'campaign'; 
+        let currentLevel = 0;
+        let gridData = [];
+        let playerPos = { x: 0, y: 0 };
+        let inventory = [];
+        let moveHistory = []; 
+        let gameState = 'START'; 
+        let currentTypedWord = "";
+        let foundWords = [];
+        let conflictTiles = [];
+        
+        let timeLeft = 60;
+        let timerInterval = null;
+        let score = 0;
+
+        function hasValidPath() {
+            let queue = [{x: 0, y: 0}];
+            let visited = new Set(["0,0"]);
+            let dirs = [[0,1], [1,0], [0,-1], [-1,0]];
+            
+            while(queue.length > 0) {
+                let curr = queue.shift();
+                if(curr.x === 11 && curr.y === 11) return true;
+                
+                for(let d of dirs) {
+                    let nx = curr.x + d[0], ny = curr.y + d[1];
+                    if(nx >= 0 && nx < 12 && ny >= 0 && ny < 12 && gridData[ny][nx].char !== '*') {
+                        let key = `${nx},${ny}`;
+                        if(!visited.has(key)) {
+                            visited.add(key);
+                            queue.push({x: nx, y: ny});
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function getSafeRandomLetter(x, y, poolStr) {
+            let attempts = 0;
+            while(attempts < 20) {
+                let char = poolStr[Math.floor(Math.random() * poolStr.length)];
+                let conflict = false;
+                let dirs = [[0,1], [1,0], [0,-1], [-1,0]];
+                
+                for(let d of dirs) {
+                    let nx = x + d[0], ny = y + d[1];
+                    if(nx >= 0 && nx < 12 && ny >= 0 && ny < 12 && gridData[ny][nx].char === char) {
+                        conflict = true; break;
+                    }
+                }
+                if (!conflict) return char;
+                attempts++;
+            }
+            return poolStr[Math.floor(Math.random() * poolStr.length)];
+        }
+
+        function spawnRandomPortal() {
+            let placed = false;
+            let attempts = 0;
+            while(!placed && attempts < 100) {
+                let rx = Math.floor(Math.random() * 12);
+                let ry = Math.floor(Math.random() * 12);
+                if (!gridData[ry][rx].visited && gridData[ry][rx].char !== '*' && !gridData[ry][rx].isPortal && (rx !== playerPos.x || ry !== playerPos.y)) {
+                    gridData[ry][rx].isPortal = true;
+                    placed = true;
+                }
+                attempts++;
+            }
+        }
+
+        // --- Core Functions ---
+        function startCampaign() {
+            currentMode = 'campaign';
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('timer-ui').style.display = 'none';
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            loadLevel(0);
+        }
+
+        function startTimeAttack() {
+            currentMode = 'timed';
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('timer-ui').style.display = 'flex';
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            document.getElementById('level-indicator').textContent = "Time Attack Mode";
+            score = 0; timeLeft = 60; updateTimerUI();
+            
+            generateProceduralGrid(FULL_POOL, 0.15, false);
+            
+            timerInterval = setInterval(() => {
+                if(gameState === 'VICTORY') return; 
+                timeLeft--; updateTimerUI();
+                if (timeLeft <= 0) endTimeAttack();
+            }, 1000);
+        }
+
+        function loadLevel(index) {
+            currentLevel = index;
+            if (currentLevel >= campaignLevels.length) {
+                document.getElementById('end-title').textContent = "Campaign Complete!";
+                document.getElementById('end-desc').textContent = "You mastered the Labyrinth.";
+                document.getElementById('btn-next').style.display = 'none';
+                document.getElementById('btn-menu').style.display = 'inline-block';
+                document.getElementById('victory-screen').style.display = 'flex';
+                return;
+            }
+
+            const levelData = campaignLevels[currentLevel];
+            gameState = 'TUTORIAL';
+            document.getElementById('tut-title').textContent = `Level ${currentLevel + 1}`;
+            document.getElementById('tut-subtitle').textContent = levelData.name;
+            document.getElementById('tut-desc').textContent = levelData.tut;
+            
+            const uniquePool = [...new Set(levelData.pool.split(''))].sort().join(' ');
+            document.getElementById('tut-pool').textContent = uniquePool;
+            
+            document.getElementById('tutorial-screen').style.display = 'flex';
+        }
+
+        function beginGridPlay() {
+            document.getElementById('tutorial-screen').style.display = 'none';
+            const levelData = campaignLevels[currentLevel];
+            document.getElementById('level-indicator').textContent = `Level ${currentLevel + 1}: ${levelData.name}`;
+            generateProceduralGrid(levelData.pool, levelData.obs, true);
+        }
+
+        function generateProceduralGrid(poolStr, obsRate, hasExit) {
+            gridData = []; inventory = []; moveHistory = []; foundWords = []; currentTypedWord = [];
+            updateInventoryUI(); playerPos = { x: 0, y: 0 }; 
+            
+            let validGrid = false;
+            while(!validGrid) {
+                gridData = [];
+                for (let y = 0; y < 12; y++) {
+                    gridData.push([]);
+                    for (let x = 0; x < 12; x++) {
+                        let char = '.';
+                        if (x === 0 && y === 0) char = '.'; 
+                        else if (hasExit && x === 11 && y === 11) char = '.'; // Will be made portal later
+                        else if (Math.random() < obsRate) char = '*'; 
+                        gridData[y].push({ char: char, visited: false, isPortal: false });
+                    }
+                }
+                if (!hasExit || hasValidPath()) validGrid = true;
+            }
+            
+            for (let y = 0; y < 12; y++) {
+                for (let x = 0; x < 12; x++) {
+                    if (gridData[y][x].char === '.') {
+                        gridData[y][x].char = getSafeRandomLetter(x, y, poolStr);
+                    }
+                }
+            }
+
+            if (hasExit) {
+                gridData[11][11].isPortal = true;
+            } else {
+                spawnRandomPortal(); spawnRandomPortal(); // Spawn 2 portals for Time Attack
+            }
+
+            gameState = 'GRID'; renderGrid(); document.getElementById('mobile-input').focus();
+        }
+
+        function updateTimerUI() {
+            document.getElementById('time-left').textContent = `Time: ${timeLeft}s`;
+            document.getElementById('score-display').textContent = `Score: ${score}`;
+        }
+
+        function renderGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            for (let y = 0; y < 12; y++) {
+                for (let x = 0; x < 12; x++) {
+                    const tileEl = document.createElement('div'); tileEl.className = 'tile';
+                    const cell = gridData[y][x];
+
+                    if (x === playerPos.x && y === playerPos.y) { 
+                        tileEl.classList.add('player'); tileEl.textContent = '🦓'; 
+                    } 
+                    else if (cell.visited) { 
+                        tileEl.classList.add('visited'); tileEl.textContent = cell.char; 
+                    } 
+                    else if (cell.char === '*') { 
+                        tileEl.classList.add('obstacle'); tileEl.textContent = '🪨'; 
+                    }
+                    else { 
+                        tileEl.classList.add('letter'); 
+                        tileEl.textContent = cell.char; 
+                        if (cell.isPortal) tileEl.classList.add('portal');
+                    }
+
+                    if (gameState === 'CONFLICT') {
+                        const isConflict = conflictTiles.find(c => c.x === x && c.y === y);
+                        if (isConflict) {
+                            tileEl.classList.add('conflict');
+                            tileEl.onclick = () => {
+                                gameState = 'GRID';
+                                document.getElementById('conflict-msg').style.display = 'none';
+                                executeMove(x, y, gridData[y][x].char);
+                            };
+                        }
+                    } else if (!cell.visited && cell.char !== '*' && gameState === 'GRID') {
+                        if (Math.abs(x - playerPos.x) + Math.abs(y - playerPos.y) === 1) tileEl.classList.add('adjacent');
+                    }
+                    
+                    gridEl.appendChild(tileEl);
+                }
+            }
+        }
+
+        function updateInventoryUI() {
+            const invEl = document.getElementById('inventory');
+            const countEl = document.getElementById('inv-count');
+            invEl.innerHTML = '';
+            const allLetters = [...inventory].sort();
+            countEl.textContent = `${allLetters.length} Letters`;
+
+            allLetters.forEach(char => {
+                const el = document.createElement('div');
+                el.className = 'inv-letter'; el.textContent = char;
+                invEl.appendChild(el);
+            });
+        }
+
+        // --- Input Handling ---
+        const mobileInput = document.getElementById('mobile-input');
+        document.addEventListener('click', () => { 
+            if (gameState === 'GRID' || gameState === 'LOCK') mobileInput.focus(); 
+        });
+        
+        mobileInput.addEventListener('input', (e) => {
+            const typedChar = mobileInput.value.slice(-1).toUpperCase();
+            mobileInput.value = ""; 
+            if (!typedChar.match(/[A-Z]/)) return;
+
+            if (gameState === 'GRID' || gameState === 'CONFLICT') attemptMove(typedChar);
+            else if (gameState === 'LOCK') attemptTypeChar(typedChar);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Backspace" && gameState === 'LOCK') {
+                deleteLastLetter();
+            } else if (e.key === "Enter" && gameState === 'LOCK') {
+                submitWord();
+            } else if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) {
+                if (document.activeElement !== mobileInput) {
+                    const char = e.key.toUpperCase();
+                    if (gameState === 'GRID' || gameState === 'CONFLICT') attemptMove(char);
+                    else if (gameState === 'LOCK') attemptTypeChar(char);
+                }
+            }
+        });
+
+        function attemptMove(char) {
+            if (gameState === 'CONFLICT') {
+                gameState = 'GRID'; conflictTiles = [];
+                document.getElementById('conflict-msg').style.display = 'none';
+            }
+
+            const adjacentCoords = [ {x: playerPos.x, y: playerPos.y - 1}, {x: playerPos.x, y: playerPos.y + 1}, {x: playerPos.x - 1, y: playerPos.y}, {x: playerPos.x + 1, y: playerPos.y} ];
+            let matches = [];
+
+            for (let coord of adjacentCoords) {
+                if (coord.x >= 0 && coord.x < 12 && coord.y >= 0 && coord.y < 12) {
+                    const targetChar = gridData[coord.y][coord.x].char;
+                    if (!gridData[coord.y][coord.x].visited && targetChar === char && targetChar !== '*') {
+                        matches.push(coord);
+                    } 
+                }
+            }
+
+            if (matches.length === 1) {
+                executeMove(matches[0].x, matches[0].y, char);
+            } else if (matches.length > 1) {
+                gameState = 'CONFLICT'; conflictTiles = matches; playSound('error'); 
+                document.getElementById('conflict-msg').style.display = 'block';
+                renderGrid();
+            } else {
+                playSound('error');
+            }
+        }
+
+        function executeMove(x, y, char) {
+            moveHistory.push({ x: playerPos.x, y: playerPos.y, char: char });
+            playerPos.x = x; playerPos.y = y;
+            gridData[y][x].visited = true; inventory.push(char);
+
+            playSound('move'); updateInventoryUI(); renderGrid();
+
+            if (gridData[y][x].isPortal) {
+                setTimeout(() => openLockScreen(), 150);
+            }
+        }
+
+        // --- Free Typing Lock Screen Logic ---
+        function openLockScreen() {
+            gameState = 'LOCK'; currentTypedWord = "";
+            document.getElementById('lock-screen').style.display = 'flex';
+            document.getElementById('btn-close-lock').textContent = "Retreat 1 Step";
+            renderLockScreenUI(); document.getElementById('mobile-input').focus();
+        }
+
+        function closeLockScreen() {
+            document.getElementById('lock-screen').style.display = 'none';
+            gameState = 'GRID';
+            
+            if (moveHistory.length > 0) {
+                const lastPos = moveHistory.pop();
+                const currTile = gridData[playerPos.y][playerPos.x];
+                
+                currTile.visited = false;
+                inventory.pop();
+                
+                if (currentMode === 'timed' && currTile.isPortal) {
+                    currTile.isPortal = false;
+                    spawnRandomPortal();
+                }
+
+                playerPos.x = lastPos.x; playerPos.y = lastPos.y;
+                playSound('error'); 
+            }
+            
+            updateInventoryUI(); renderGrid(); document.getElementById('mobile-input').focus();
+        }
+
+        function attemptTypeChar(char) {
+            const errorMsg = document.getElementById('error-msg');
+            const countInInv = inventory.filter(c => c === char).length;
+            const countInWord = currentTypedWord.split('').filter(c => c === char).length;
+
+            if (countInWord < countInInv) {
+                currentTypedWord += char; playSound('move'); errorMsg.style.opacity = '0'; renderLockScreenUI();
+            } else {
+                showLockError(`You don't have enough '${char}'s in your pool!`);
+            }
+        }
+
+        function deleteLastLetter() {
+            if (currentTypedWord.length > 0) {
+                currentTypedWord = currentTypedWord.slice(0, -1);
+                playSound('move'); document.getElementById('error-msg').style.opacity = '0'; renderLockScreenUI();
+            }
+        }
+
+        function submitWord() {
+            if (currentTypedWord.length < 3) { showLockError("Word must be at least 3 letters."); return; }
+            if (foundWords.includes(currentTypedWord)) { showLockError("Already found that word!"); return; }
+            if (!validDictionary.has(currentTypedWord)) { showLockError(`'${currentTypedWord}' is not recognized.`); return; }
+
+            playSound('success'); foundWords.push(currentTypedWord);
+            
+            if (currentMode === 'timed') {
+                let pts = currentTypedWord.length * 10; score += pts; timeLeft += currentTypedWord.length; 
+                updateTimerUI(); showLockError(`+${pts} Pts | +${currentTypedWord.length} Secs!`);
+                document.getElementById('error-msg').style.color = 'var(--success-color)';
+            }
+            
+            currentTypedWord = ""; renderLockScreenUI();
+
+            if (currentMode === 'campaign') {
+                const level = campaignLevels[currentLevel];
+                if (foundWords.length >= level.words) setTimeout(winLevel, 800);
+            }
+        }
+
+        function renderLockScreenUI() {
+            if (currentMode === 'campaign') {
+                const level = campaignLevels[currentLevel];
+                document.getElementById('words-progress').textContent = `Words Found: ${foundWords.length} / ${level.words}`;
+            } else {
+                document.getElementById('words-progress').textContent = `Words Found: ${foundWords.length}`;
+            }
+            
+            const lockInvContainer = document.getElementById('lock-inventory');
+            lockInvContainer.innerHTML = '';
+            const sortedInv = [...inventory].sort();
+            let usedCounts = {};
+            for (let char of currentTypedWord) usedCounts[char] = (usedCounts[char] || 0) + 1;
+
+            sortedInv.forEach(char => {
+                const el = document.createElement('div'); el.className = 'lock-inv-letter'; el.textContent = char;
+                if (usedCounts[char] > 0) { el.classList.add('used'); usedCounts[char]--; }
+                lockInvContainer.appendChild(el);
+            });
+
+            const foundContainer = document.getElementById('found-words-container');
+            foundContainer.innerHTML = '';
+            foundWords.forEach(w => {
+                const badge = document.createElement('div'); badge.className = 'found-word'; badge.textContent = w;
+                foundContainer.appendChild(badge);
+            });
+
+            const inputContainer = document.getElementById('current-input-display');
+            inputContainer.innerHTML = '';
+            for (let i = 0; i < currentTypedWord.length; i++) {
+                const charBox = document.createElement('div'); charBox.className = 'word-char'; charBox.textContent = currentTypedWord[i];
+                inputContainer.appendChild(charBox);
+            }
+            const cursorBox = document.createElement('div'); cursorBox.className = 'word-char empty-cursor'; cursorBox.textContent = '_';
+            inputContainer.appendChild(cursorBox);
+        }
+
+        function showLockError(msg) {
+            playSound('error');
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.style.color = 'var(--error-color)'; errorMsg.textContent = msg; errorMsg.style.opacity = '1';
+            const inputContainer = document.getElementById('current-input-display');
+            inputContainer.classList.add('shake'); setTimeout(() => inputContainer.classList.remove('shake'), 300);
+        }
+
+        function winLevel() {
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('end-title').textContent = "Path Cleared!";
+            document.getElementById('end-desc').textContent = "You have woven the lexicon successfully.";
+            document.getElementById('btn-next').style.display = 'inline-block';
+            document.getElementById('btn-menu').style.display = 'none';
+            document.getElementById('victory-screen').style.display = 'flex';
+            gameState = 'VICTORY'; playSound('success');
+        }
+
+        function nextLevel() {
+            document.getElementById('victory-screen').style.display = 'none';
+            loadLevel(currentLevel + 1);
+        }
+
+        function endTimeAttack() {
+            clearInterval(timerInterval); gameState = 'VICTORY';
+            document.getElementById('lock-screen').style.display = 'none';
+            document.getElementById('end-title').textContent = "Time's Up!";
+            document.getElementById('end-desc').innerHTML = `Final Score: <strong>${score}</strong><br>Words Found: ${foundWords.length}`;
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-menu').style.display = 'inline-block';
+            document.getElementById('victory-screen').style.display = 'flex';
+            playSound('error'); 
+        }
+
+    </script>
+</body>
+</html>
