@@ -1,428 +1,344 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Factory Builder Tutorial</title>
-    <style>
-        :root { 
-            --main-bg: #090a10; 
-            --accent: #6eb5b3; 
-            --accent-hover: #9adcd9; 
-            --danger: #d85c6b; 
-        }
-        
-        * { box-sizing: border-box; user-select: none; -webkit-touch-callout: none; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>the formulA: Boot Camp</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #07050f;
+        --prime: #00ffdd;
+        --op-add: #00ff88;
+        --portal: #ffffff;
+        --text: #c8c0f0;
+        --accent: #8866ff;
+        --player: #00ff00;
+        --hazard: #ff6600;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    
+    body, html { 
+        width: 100%; height: 100%; background: #000; overflow: hidden; 
+        font-family: 'Share Tech Mono', monospace; color: var(--text); 
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    
+    body::after {
+        content: " "; display: block; position: absolute; inset: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        z-index: 999; background-size: 100% 4px, 6px 100%; pointer-events: none; opacity: 0.3;
+    }
 
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: var(--main-bg);
-            color: #CDD8F8;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+    .game-wrapper {
+        width: 100%; max-width: 450px; height: 100%; max-height: 800px;
+        background: var(--bg); position: relative; display: flex; flex-direction: column;
+        border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(136, 102, 255, 0.3);
+    }
 
-        /* --- INSTRUCTION PANEL --- */
-        #instruction-panel {
-            background: rgba(110, 181, 179, 0.15);
-            border-bottom: 2px solid var(--accent);
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(110, 181, 179, 0.2);
-            z-index: 20;
-        }
+    canvas { display: block; flex: 1; width: 100%; border-bottom: 2px solid var(--accent); background: var(--bg);}
 
-        #instruction-text {
-            font-size: 15px;
-            font-weight: bold;
-            color: var(--accent-hover);
-            margin: 0;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-shadow: 0 0 8px rgba(110, 181, 179, 0.4);
-        }
+    #hud { 
+        position: absolute; top: 0; left: 0; width: 100%; 
+        background: rgba(7, 5, 15, 0.85); border-bottom: 2px solid var(--accent);
+        padding: 10px; display: flex; justify-content: space-between; align-items: center;
+        z-index: 10; backdrop-filter: blur(4px);
+    }
+    .hud-box { display: flex; flex-direction: column; gap: 5px; }
+    .hud-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .hud-value { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900; color: #fff; }
+    #target-val { color: var(--portal); text-shadow: 0 0 10px var(--portal); }
+    #eq-val { color: var(--prime); text-shadow: 0 0 10px var(--prime); min-height: 25px; min-width: 150px; text-align: right;}
 
-        /* --- GAME AREA --- */
-        #game-container {
-            flex: 1;
-            position: relative;
-            width: 100%;
-            background: radial-gradient(ellipse at 50% 38%, rgba(12,14,38,.97), rgba(4,5,14,.99));
-        }
+    .modal { 
+        position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; 
+        display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        padding: 20px; backdrop-filter: blur(4px);
+    }
+    .hidden { display: none !important; }
+    
+    .tut-box { 
+        background: rgba(136, 102, 255, 0.05); border: 2px solid var(--accent); 
+        padding: 20px; width: 100%; max-width: 350px; text-align: center; 
+        border-radius: 8px; box-shadow: 0 0 20px rgba(136, 102, 255, 0.2);
+    }
+    .tut-title { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; color: var(--prime); margin-bottom: 10px; text-shadow: 0 0 10px var(--prime); text-transform: uppercase;}
+    .tut-desc { font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; color: #fff;}
+    .tut-desc b { color: var(--op-add); }
+    
+    .btn { 
+        background: rgba(0,0,0,0.8); border: 2px solid var(--prime); color: var(--prime); 
+        font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; 
+        padding: 12px 25px; cursor: pointer; text-transform: uppercase; transition: 0.2s; 
+        border-radius: 4px; width: 100%;
+    }
+    .btn:active { background: var(--prime); color: #000; box-shadow: 0 0 20px var(--prime); }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
-        }
-
-        /* --- HUD & CONTROLS --- */
-        #btnPhase {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background: rgba(8,9,20,.9);
-            border: 2px solid #ffcc00;
-            color: #ffcc00;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
-        }
-        #btnPhase:active { background: rgba(255, 204, 0, 0.2); }
-
-        #touchControls {
-            position: absolute;
-            bottom: 20px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-        }
-
-        .tc-cluster { display: flex; gap: 10px; }
-        .tc-btn {
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            color: #FFF;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            pointer-events: auto;
-            cursor: pointer;
-        }
-        .tc-btn:active {
-            background: rgba(110, 181, 179, 0.4);
-            border-color: var(--accent-hover);
-        }
-
-        /* --- MINI FUSION MODAL --- */
-        #fusion-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(12,14,36,.96);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 20px;
-            width: 85%;
-            max-width: 300px;
-            text-align: center;
-            z-index: 30;
-            display: none;
-            box-shadow: 0 20px 45px rgba(0,0,0,.8);
-        }
-
-        .fusion-title { color: #EDE6D2; font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; }
-        .fusion-desc { color: #7A85B0; font-size: 12px; margin-bottom: 15px; }
-        
-        .token-btn {
-            background: linear-gradient(135deg,#C08820,#8B5510);
-            border: 1px solid rgba(255,200,80,.5);
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .token-btn:active { transform: scale(0.98); }
-
-        .cta {
-            background: var(--accent);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: #090a10;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        .cta:disabled { background: #333; color: #666; cursor: not-allowed; }
-
-    </style>
+    #controls { 
+        height: 180px; background: rgba(7, 5, 15, 0.95); display: flex; 
+        justify-content: center; align-items: center; position: relative; z-index: 50;
+        touch-action: none;
+    }
+    .dpad {
+        display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px;
+    }
+    .d-btn {
+        background: rgba(136, 102, 255, 0.1); border: 1px solid var(--accent); 
+        border-radius: 8px; display: flex; justify-content: center; align-items: center;
+        color: var(--accent); font-size: 1.5rem; font-family: 'Orbitron'; cursor: pointer;
+    }
+    .d-btn:active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+    #up { grid-column: 2; grid-row: 1; }
+    #left { grid-column: 1; grid-row: 2; }
+    #down { grid-column: 2; grid-row: 2; }
+    #right { grid-column: 3; grid-row: 2; }
+</style>
 </head>
 <body>
 
-    <div id="instruction-panel">
-        <p id="instruction-text">Step 1: Move right using the controls.</p>
-    </div>
-
-    <div id="game-container">
-        <canvas id="cv"></canvas>
-        
-        <button id="btnPhase" onclick="togglePhase()">EDIT LAYOUT</button>
-
-        <div id="touchControls">
-            <div class="tc-cluster" id="move-cluster">
-                <div class="tc-btn" id="btnLeft" onpointerdown="input.L=true" onpointerup="input.L=false" onpointercancel="input.L=false">◀</div>
-                <div class="tc-btn" id="btnRight" onpointerdown="input.R=true" onpointerup="input.R=false" onpointercancel="input.R=false">▶</div>
-            </div>
-            <div class="tc-cluster" id="jump-cluster">
-                <div class="tc-btn" id="btnJump" onpointerdown="input.J=true" onpointerup="input.J=false" onpointercancel="input.J=false">▲</div>
-            </div>
+<div class="game-wrapper">
+    <div id="hud">
+        <div class="hud-box">
+            <div class="hud-label">Target</div>
+            <div class="hud-value" id="target-val">5</div>
         </div>
-
-        <div id="fusion-modal">
-            <div class="fusion-title">Blueprint Fusion</div>
-            <div class="fusion-desc">Infuse tokens to give the block mass and length.</div>
-            <button class="token-btn" id="btnAddToken" onclick="addToken()">+ Inject [10s] Token</button>
-            <button class="cta" id="btnBuild" disabled onclick="buildBlock()">Fuse & Build</button>
+        <div class="hud-box">
+            <div class="hud-label" style="text-align: right;">Formula</div>
+            <div class="hud-value" id="eq-val">_</div>
         </div>
     </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <div class="dpad">
+            <div class="d-btn" id="up">▲</div>
+            <div class="d-btn" id="left">◀</div>
+            <div class="d-btn" id="down">▼</div>
+            <div class="d-btn" id="right">▶</div>
+        </div>
+    </div>
+
+    <div id="tut-modal" class="modal">
+        <div class="tut-box">
+            <div class="tut-title" id="tut-title">System Boot</div>
+            <div class="tut-desc" id="tut-desc">Welcome to the formulA.</div>
+            <button class="btn" onclick="resumeGame()">ACKNOWLEDGE</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const cv = document.getElementById('cv');
-    const ctx = cv.getContext('2d');
-    
-    // Engine Constants
-    const GRAV = 0.6, JF = -10, SPD = 4, PW = 20, PH = 20;
-    const P = {
-        skyT:'#0a0b12', skyB:'#1c1d29',
-        slabF:'#225452', slabT:'#368C88', slabS:'#112A29',
-        v10F:'#C08820', v10T:'#E0A840', v10S:'#8B5510',
-        pl:'#FFFFFF', bea:'#E85D75'
-    };
+/** ENGINE SETUP **/
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let cw, ch;
 
-    // State
-    let width, height, camZ = 1.2;
-    let step = 1;
-    let mode = 'PLAY'; // PLAY or BUILD
-    let input = { L: false, R: false, J: false };
-    
-    // PATCH APPLIED: Added w and h to player object for collision logic
-    let player = { x: 30, y: 150, w: PW, h: PH, vx: 0, vy: 0, onGround: false };
-    
-    // PATCH APPLIED: Widened the gap and stretched the blueprint
-    let world = {
-        plats: [
-            { x: 10, y: 200, w: 100, h: 20 }, // Start platform
-            { x: 270, y: 200, w: 120, h: 20 }  // End platform (pushed right)
-        ],
-        frag: null, // The block we will build
-        ghost: { x: 110, y: 200, w: 160, h: 20 }, // Ghost outline (stretched)
-        exit: { x: 320, y: 150, w: 40, h: 50 } // Exit beacon (pushed right)
-    };
+function resize() {
+    cw = canvas.width = canvas.clientWidth;
+    ch = canvas.height = canvas.clientHeight;
+}
+window.addEventListener('resize', resize);
+setTimeout(resize, 100);
 
-    const instText = document.getElementById('instruction-text');
-    const btnPhase = document.getElementById('btnPhase');
-    const touchControls = document.getElementById('touchControls');
-    const fusionModal = document.getElementById('fusion-modal');
-    let addedValue = 0;
+/** GAME STATE **/
+let state = 'PAUSED'; 
+let step = 0;
+let currentVal = 0;
 
-    // Resize
-    function resize() {
-        width = cv.parentElement.clientWidth;
-        height = cv.parentElement.clientHeight;
-        cv.width = width;
-        cv.height = height;
+const Player = { x: 100, y: 150, vx: 0, vy: 0, speed: 180, radius: 12, angle: 0 };
+const Input = { up: false, down: false, left: false, right: false };
+
+let formula = [];
+let targetValue = 5;
+let entities = []; 
+let firewall = null;
+
+/** INPUT HANDLING **/
+const dpad = {
+    'up': document.getElementById('up'),
+    'down': document.getElementById('down'),
+    'left': document.getElementById('left'),
+    'right': document.getElementById('right')
+};
+
+function bindBtn(id, key) {
+    const el = dpad[id];
+    const start = (e) => { e.preventDefault(); Input[key] = true; };
+    const end = (e) => { e.preventDefault(); Input[key] = false; };
+    el.addEventListener('touchstart', start, {passive: false});
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchend', end);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('mouseleave', end);
+}
+
+bindBtn('up', 'up'); bindBtn('down', 'down');
+bindBtn('left', 'left'); bindBtn('right', 'right');
+
+/** TUTORIAL MANAGER **/
+function showPause(title, desc) {
+    state = 'PAUSED';
+    document.getElementById('tut-modal').classList.remove('hidden');
+    document.getElementById('tut-title').innerText = title;
+    document.getElementById('tut-desc').innerHTML = desc;
+    Input.up = false; Input.down = false; Input.left = false; Input.right = false;
+}
+
+function resumeGame() {
+    document.getElementById('tut-modal').classList.add('hidden');
+    state = 'PLAY';
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+}
+
+function updateFormulaUI() {
+    const eqText = formula.length === 0 ? '_' : formula.join(' ');
+    document.getElementById('eq-val').innerText = eqText;
+    
+    // Evaluate current value
+    try {
+        if(formula.length > 0) {
+            let res = eval(formula.join('').replace(/ /g, ''));
+            currentVal = isNaN(res) ? 0 : res;
+        } else {
+            currentVal = 0;
+        }
+    } catch(e) { currentVal = 0; }
+}
+
+function spawnEntity(type, val, rx, ry) {
+    entities.push({
+        x: rx, y: ry, size: 20, type: type, val: val, active: true
+    });
+}
+
+function initTutorial() {
+    showPause("Phase 1: Primes", "To escape, you must build an equation that equals the <b>TARGET (5)</b>.<br><br><b>Learning Objective:</b> Move your ship and collect the Prime Number <b>[ 2 ]</b>.");
+    spawnEntity('prime', '2', 200, 150);
+}
+
+/** GAME LOOP **/
+let lastTime = 0;
+function loop(ts) {
+    if(state !== 'PLAY') return;
+    requestAnimationFrame(loop);
+    let dt = (ts - lastTime) / 1000; lastTime = ts;
+    if(dt > 0.1) dt = 0.1;
+    update(dt);
+    draw();
+}
+
+function update(dt) {
+    if(!cw || !ch) return; 
+    
+    let mx = 0, my = 0;
+    if(Input.up) my -= 1;
+    if(Input.down) my += 1;
+    if(Input.left) mx -= 1;
+    if(Input.right) mx += 1;
+    
+    let len = Math.hypot(mx, my);
+    if(len > 0) { 
+        mx /= len; my /= len; 
+        Player.vx = mx * Player.speed;
+        Player.vy = my * Player.speed;
+        Player.angle = Math.atan2(my, mx);
+    } else {
+        Player.vx *= 0.8; Player.vy *= 0.8;
     }
-    window.addEventListener('resize', resize);
-    resize();
+    
+    let nextX = Player.x + Player.vx * dt;
+    let nextY = Player.y + Player.vy * dt;
 
-    // Interaction Handlers
-    function setInstruction(text) { instText.innerText = text; }
-
-    function togglePhase() {
-        if(step === 2 && mode === 'PLAY') {
-            mode = 'BUILD';
-            step = 3;
-            setInstruction("Step 3: Tap the glowing yellow gap to draft a block.");
-            btnPhase.style.display = 'none'; // Hide until they build
-            touchControls.style.opacity = '0.2';
-            touchControls.style.pointerEvents = 'none';
-        } 
-        else if(step === 4 && mode === 'BUILD') {
-            mode = 'PLAY';
-            step = 5;
-            setInstruction("Step 5: Cross the gap to the pink beacon!");
-            btnPhase.style.display = 'none';
-            touchControls.style.opacity = '1';
-            touchControls.style.pointerEvents = 'auto';
-            player.x = 80; // Reset player safely before jump
-            player.y = 150;
+    // Firewall Collision
+    if (firewall) {
+        let isMultiple = currentVal !== 0 && currentVal % firewall.val === 0;
+        if (isMultiple && nextY < firewall.y + 10) {
+            nextY = Math.max(nextY, firewall.y + 10);
+            if (state === 'PLAY' && step === 3) {
+                 showPause("Blocked!", `Your value is <b>${currentVal}</b>, which is a multiple of ${firewall.val}.<br><br><b>Learning Objective:</b> Collect the [ 3 ] below to change your value to 5, which is NOT a multiple of 2!`);
+                 step = 4;
+            }
         }
     }
+    
+    Player.x = Math.max(Player.radius, Math.min(cw - Player.radius, nextX));
+    Player.y = Math.max(Player.radius, Math.min(ch - Player.radius, nextY));
 
-cv.addEventListener('pointerdown', (e) => {
-        if(mode !== 'BUILD' || step !== 3) return;
-        
-        const rect = cv.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // 1. Calculate the exact camera offsets used in the render loop
-        const translateX = (width/camZ/2) - 190;
-        const translateY = Math.min(0, (height/camZ/2) - 200);
-
-        // 2. Convert raw mouse coordinates into in-game world coordinates
-        const worldX = (mouseX / camZ) - translateX;
-        const worldY = (mouseY / camZ) - translateY;
-        
-        // 3. Check exact collision against the ghost block
-        if(worldX >= world.ghost.x && worldX <= world.ghost.x + world.ghost.w &&
-           worldY >= world.ghost.y - 20 && worldY <= world.ghost.y + world.ghost.h + 20) { 
-            // Note: Added a +/- 20px buffer to the Y-axis to make it easier to tap on mobile
-            fusionModal.style.display = 'block';
-            setInstruction("Step 4: Add value to the block, then Fuse.");
-        }
-    });
-
-    function addToken() {
-        addedValue += 10;
-        document.getElementById('btnAddToken').innerText = `Value: ${addedValue} (MAX)`;
-        document.getElementById('btnAddToken').style.pointerEvents = 'none';
-        document.getElementById('btnBuild').disabled = false;
-        document.getElementById('btnBuild').style.background = '#ffcc00';
-    }
-
-    function buildBlock() {
-        // PATCH APPLIED: The built fragment matches the new 160px gap
-        world.frag = { x: 110, y: 200, w: 160, h: 20 }; 
-        fusionModal.style.display = 'none';
-        step = 4;
-        btnPhase.innerText = "TEST CLIMB";
-        btnPhase.style.color = "#4CAF50";
-        btnPhase.style.borderColor = "#4CAF50";
-        btnPhase.style.display = 'block';
-        setInstruction("Block Built! Tap 'TEST CLIMB' to resume physics.");
-    }
-
-    // Keyboard support for desktop
-    window.addEventListener('keydown', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=true;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=true;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=true;
-    });
-    window.addEventListener('keyup', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=false;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=false;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=false;
-    });
-
-    // Isometric Drawing Function
-    function iso(dx, dy, w, h, face, top, side) {
-        const D = 4;
-        ctx.fillStyle=side; ctx.beginPath(); ctx.moveTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+w+D,dy+h-D); ctx.lineTo(dx+w,dy+h); ctx.fill();
-        ctx.fillStyle=top; ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+D,dy-D); ctx.fill();
-        ctx.fillStyle=face; ctx.fillRect(dx,dy,w,h);
-    }
-
-    // AABB Collision
-    function boxOv(a, b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
-
-    // Game Loop
-    function loop() {
-        requestAnimationFrame(loop);
-
-        // --- Logic ---
-        if(mode === 'PLAY') {
-            player.vx = 0;
-            if(input.L) player.vx = -SPD;
-            if(input.R) player.vx = SPD;
-            if(input.J && player.onGround) { player.vy = JF; player.onGround = false; }
-
-            player.vy += GRAV;
-
-            // X Collision
-            player.x += player.vx;
-            let obstacles = [...world.plats];
-            if(world.frag) obstacles.push(world.frag);
-            
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vx > 0) player.x = p.x - PW;
-                    else if(player.vx < 0) player.x = p.x + p.w;
-                }
-            }
-
-            // Y Collision
-            player.y += player.vy;
-            player.onGround = false;
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vy > 0) { player.y = p.y - PH; player.vy = 0; player.onGround = true; }
-                }
+    for(let i = entities.length - 1; i >= 0; i--) {
+        let e = entities[i];
+        if(e.active && Math.hypot(Player.x - e.x, Player.y - e.y) < Player.radius + e.size) {
+            if(e.type === 'portal') {
+                state = 'WIN';
+                showPause("Sector Cleared!", "<b>✦ FORMULA VERIFIED ✦</b><br><br>You mastered equation building and firewall navigation. Avoid hazards and dive deeper.<br><br>End Tutorial to start.");
+                document.querySelector('#tut-modal .btn').innerText = "END TUTORIAL";
+                document.querySelector('#tut-modal .btn').onclick = () => location.reload();
+                return;
             }
             
-            // Death Pit Reset
-            if(player.y > 400) {
-                player.x = 30; player.y = 150; player.vy = 0;
+            e.active = false;
+            formula.push(e.val);
+            updateFormulaUI();
+            
+            if(step === 0) {
+                step = 1;
+                spawnEntity('op', '+', 150, 250);
+                setTimeout(() => showPause("Phase 2: Operators", "Collect the <b>[ + ]</b> to continue the equation."), 100);
             }
-
-            // Progression Logic
-            if(step === 1 && player.x > 70) {
+            else if(step === 1) {
                 step = 2;
-                setInstruction("Step 2: The gap is too wide! Tap 'EDIT LAYOUT' to enter Build Phase.");
-                btnPhase.style.display = 'block';
-                input.R = false; // Force stop
+                firewall = { y: 100, val: 2 };
+                setTimeout(() => showPause("Phase 3: The Firewall", "A Firewall has appeared! It blocks any ship whose value is a <b>MULTIPLE</b> of its number.<br><br><b>Objective:</b> Try to pass through the orange beam while your value is [ 2 ]."), 100);
+                step = 3;
             }
-            
-            if(step === 5 && boxOv(player, world.exit)) {
-                step = 6;
-                setInstruction("TUTORIAL COMPLETE! Close this window to play.");
-                touchControls.style.display = 'none';
+            else if(step === 4) {
+                step = 5;
+                spawnEntity('portal', '', cw/2, 50);
+                setTimeout(() => showPause("Phase 4: Success", "<b>2 + 3 = 5</b>. Since 5 is not a multiple of 2, you can pass! Reach the Portal."), 100);
             }
         }
+    }
+    entities = entities.filter(e => e.active);
+}
 
-        // --- Render ---
-        ctx.fillStyle = P.skyT;
-        ctx.fillRect(0, 0, width, height);
+function draw() {
+    ctx.fillStyle = '#07050f'; ctx.fillRect(0, 0, cw, ch);
+    ctx.strokeStyle = '#1a1530'; ctx.lineWidth = 1;
+    for(let x=0; x<cw; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke(); }
+    for(let y=0; y<ch; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
 
-        ctx.save();
-        ctx.scale(camZ, camZ);
-        // Center view slightly based on the wider layout
-        ctx.translate((width/camZ/2) - 190, Math.min(0, (height/camZ/2) - 200)); 
-
-        // Draw Platforms
-        for(let p of world.plats) iso(p.x, p.y, p.w, p.h, P.slabF, P.slabT, P.slabS);
-
-        // Draw Built Fragment
-        if(world.frag) {
-            iso(world.frag.x, world.frag.y, world.frag.w, world.frag.h, P.v10F, P.v10T, P.v10S);
-        } else if (mode === 'BUILD' && step === 3) {
-            // Draw Ghost Block
-            ctx.strokeStyle = '#ffcc00';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.fillStyle = 'rgba(255, 204, 0, 0.1)';
-            ctx.fillRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.setLineDash([]);
+    if (firewall) {
+        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(0, firewall.y); ctx.lineTo(cw, firewall.y); ctx.stroke();
+        ctx.fillStyle = '#ff6600'; ctx.font = 'bold 14px Orbitron';
+        ctx.fillText(`FIREWALL: MULTIPLES OF ${firewall.val} BLOCKED`, 10, firewall.y - 10);
+        if (step === 3 || step === 4) {
+             if (!entities.some(e => e.val === '3')) spawnEntity('prime', '3', cw/2, 300);
         }
-
-        // Draw Exit Beacon
-        ctx.fillStyle='rgba(232,93,117,0.3)'; ctx.fillRect(world.exit.x-10, world.exit.y, 60, 50);
-        ctx.fillStyle=P.bea; ctx.beginPath(); ctx.moveTo(world.exit.x+20, world.exit.y+20); ctx.lineTo(world.exit.x+30, world.exit.y+50); ctx.lineTo(world.exit.x+10, world.exit.y+50); ctx.fill();
-
-        // Draw Player
-        if(mode === 'BUILD') ctx.globalAlpha = 0.5;
-        ctx.fillStyle = P.pl; ctx.fillRect(player.x, player.y, PW, PH);
-        ctx.globalAlpha = 1.0;
-
-        ctx.restore();
     }
 
-    // Start
-    loop();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for(let e of entities) {
+        if(e.type === 'portal') {
+            ctx.strokeStyle = '#ffffff'; ctx.strokeRect(e.x - e.size, e.y - e.size, e.size*2, e.size*2);
+        } else {
+            ctx.strokeStyle = e.type === 'prime' ? '#00ffdd' : '#00ff88';
+            ctx.strokeRect(e.x - e.size, e.y - e.size, e.size*2, e.size*2);
+            ctx.fillStyle = ctx.strokeStyle; ctx.font = 'bold 20px Orbitron';
+            ctx.fillText(e.val, e.x, e.y + 2);
+        }
+    }
+
+    ctx.save();
+    ctx.translate(Player.x, Player.y); ctx.rotate(Player.angle);
+    ctx.fillStyle = '#00ff00';
+    ctx.beginPath(); ctx.moveTo(Player.radius, 0); ctx.lineTo(-Player.radius, Player.radius * 0.8); ctx.lineTo(-Player.radius * 0.5, 0); ctx.lineTo(-Player.radius, -Player.radius * 0.8); ctx.closePath(); ctx.fill();
+    ctx.restore();
+}
+
+document.fonts.ready.then(() => initTutorial());
 </script>
 </body>
 </html>

@@ -3,398 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ABZebra: SVO & Grammar Tutorial</title>
+    <title>ABZebra: Type the Compass Tutorial</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Montserrat:wght@400;600;800&display=swap');
 
         :root {
-            --text-dark: #2c3e50;
-            --highlight: #f1c40f;
-            --sing-color: #3498db; --sing-bg: #e1f5fe;
-            --plur-color: #e67e22; --plur-bg: #fff3e0;
-            --obj-color: #9b59b6; --obj-bg: #f3e5f5;
-            --slot-bg: #f8f9fa;
+            --bg-color: #f4ece6; 
+            --tile-bg: #e0d5ce;
+            --tile-text: #7a6c64;
+            --player-color: #a8d5e2; 
+            --portal-color: #f2c6a0; 
+            --key-color: #f1c40f;
+            --error-color: #e57373;
+            --success-color: #81c784;
+            --text-main: #5c534f;
+            --highlight: #ffb74d;
         }
 
-        * { box-sizing: border-box; touch-action: manipulation; }
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
         body {
-            background-color: var(--text-dark); color: white; 
-            font-family: 'Nunito', sans-serif;
-            margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center;
+            font-family: 'Montserrat', sans-serif; background: var(--bg-color); color: var(--text-main);
+            margin: 0; padding: 15px 10px; display: flex; flex-direction: column; align-items: center;
             min-height: 100dvh; overflow-x: hidden; overflow-y: auto;
         }
+        
+        h1 { text-transform: uppercase; letter-spacing: 1px; text-align: center; color: var(--text-main); margin: 0 0 15px 0; font-family: 'Fredoka', sans-serif; font-size: 1.4rem;}
 
-        /* --- STICKY TUTORIAL HUD --- */
+        .panel { 
+            width: 100%; max-width: 450px; background: #ffffff; 
+            padding: 15px; border-radius: 12px; border: 2px solid var(--tile-bg); 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1); position: relative;
+            display: flex; flex-direction: column; gap: 15px; align-items: center;
+        }
+
+        /* --- STICKY HUD --- */
         #tutorial-hud {
-            position: sticky; top: 0; width: 100%; 
-            background: rgba(44, 62, 80, 0.98); border-bottom: 3px solid var(--highlight);
-            padding: 10px 15px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); flex-shrink: 0; backdrop-filter: blur(8px);
+            position: sticky; top: 0; width: 100%; max-width: 450px;
+            background: rgba(255, 255, 255, 0.95); border-bottom: 3px solid var(--highlight);
+            padding: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 100;
+            border-radius: 8px 8px 0 0; margin-bottom: 5px; backdrop-filter: blur(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        #instruction-text {
-            font-size: 16px; font-weight: 900; color: var(--highlight); 
-            text-align: center; text-transform: uppercase; font-family: 'Fredoka One', cursive;
-            letter-spacing: 1px;
-        }
+        #instruction-text { font-family: 'Fredoka', sans-serif; font-size: 15px; color: var(--text-main); text-align: center; text-transform: uppercase; font-weight: 600;}
         #learning-objective {
-            background: rgba(241, 196, 15, 0.1); border: 1px dashed var(--highlight);
-            padding: 8px; font-size: 13px; font-weight: 700;
-            color: #ecf0f1; text-align: center; line-height: 1.3; border-radius: 6px;
+            background: rgba(255, 183, 77, 0.15); border: 1px dashed var(--highlight);
+            padding: 8px; font-size: 12px; font-weight: 600; color: var(--text-main); text-align: center; border-radius: 6px; line-height: 1.3;
         }
-        #learning-objective b { color: var(--highlight); }
+        #learning-objective b { color: #d35400; }
 
         /* --- START OVERLAY --- */
         #start-overlay {
-            position: fixed; inset: 0; 
-            background: rgba(44, 62, 80, 0.98); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 200; text-align: center; padding: 20px;
+            position: fixed; inset: 0; background: rgba(244, 236, 230, 0.95); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; text-align: center; padding: 20px;
         }
-        .start-title {
-            font-family: 'Fredoka One'; font-size: 2.2rem; color: var(--highlight); 
-            margin-bottom: 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.4); line-height: 1.1;
-        }
-        .start-desc { font-size: 1.1rem; font-weight: 700; color: #ecf0f1; max-width: 320px; margin-bottom: 25px; line-height: 1.5; }
         .start-btn {
-            background: #27ae60; color: white; border: 3px solid #fff; padding: 15px 30px; border-radius: 30px;
-            font-family: 'Fredoka One'; font-size: 1.2rem; cursor: pointer; box-shadow: 0 6px 0 #1e8449; transition: 0.1s;
+            background: var(--player-color); color: #fff; border: none; padding: 12px 30px; border-radius: 30px;
+            font-family: 'Fredoka', sans-serif; font-size: 1.2rem; cursor: pointer; box-shadow: 0 5px 0 #7caebd; margin-top: 20px; transition: 0.1s; text-transform: uppercase;
         }
-        .start-btn:active { transform: translateY(6px); box-shadow: 0 0 0 transparent; }
+        .start-btn:active { transform: translateY(5px); box-shadow: none; }
 
-        /* --- HIGHLIGHT ANIMATION --- */
-        @keyframes pulseHighlight {
-            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.8); }
-            70% { box-shadow: 0 0 0 15px rgba(241, 196, 15, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
-        }
-        .highlight-target {
-            animation: pulseHighlight 1.2s infinite !important;
-            border-color: var(--highlight) !important; transform: scale(1.05); z-index: 10;
+        /* --- GRID AREA --- */
+        .grid-container {
+            display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(4, 70px); gap: 8px;
+            background: var(--tile-bg); padding: 10px; border-radius: 12px; border: 2px solid #ccc3bd;
         }
 
-        /* --- GAME BOARD --- */
-        .game-wrapper {
-            width: 100%; max-width: 800px; padding: 20px; display: flex; flex-direction: column; gap: 15px;
-            align-items: center; flex: 1; justify-content: flex-start;
+        .cell {
+            background: #ffffff; border-radius: 8px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: 0.2s ease;
         }
+        .cell.empty { background: transparent; box-shadow: none; }
 
-        .board {
-            background: rgba(255,255,255,0.95); color: var(--text-dark); width: 100%; max-width: 600px;
-            padding: 15px 10px; border-radius: 15px; text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; gap: 10px;
-        }
-        .board h2 { margin: 0; font-family: 'Fredoka One'; color: var(--sing-color); font-size: 1.3rem; transition: color 0.3s;}
+        .cell.player-here { background: var(--player-color); border: 2px solid #fff; box-shadow: 0 0 15px var(--player-color); transform: scale(1.05); z-index: 10; }
+        .cell.portal { background: var(--portal-color); border: 2px dashed #fff; }
         
-        .sentence-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
-
-        .slot {
-            width: 90%; max-width: 180px; height: 60px; border: 3px dashed #bdc3c7; border-radius: 12px;
-            display: flex; justify-content: center; align-items: center; background: var(--slot-bg); font-size: 0.9rem;
-            font-weight: 800; color: #95a5a6; padding: 5px; text-align: center; box-sizing: border-box; transition: 0.2s; cursor: pointer;
-            position: relative; overflow: hidden;
-        }
-
-        /* --- CARDS --- */
-        .hand-area { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; margin-top: 10px;}
-        .player-name { font-family: 'Fredoka One'; background: rgba(0,0,0,0.8); padding: 5px 15px; border-radius: 20px; font-size: 1rem; border: 3px solid var(--highlight); color: var(--highlight);}
-        .hand { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-
-        .card {
-            width: 105px; height: 130px; border-radius: 12px; background: white; box-shadow: -2px 4px 10px rgba(0,0,0,0.4);
-            display: flex; justify-content: center; align-items: center; text-align: center; padding: 8px; font-weight: 800;
-            font-size: 0.85rem; color: white; cursor: pointer; transition: transform 0.2s; user-select: none; box-sizing: border-box;
-            border: 3px solid rgba(255,255,255,0.5); text-shadow: 1px 1px 2px rgba(0,0,0,0.6); position: relative; overflow: hidden;
-        }
-
-        .card-bg-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 3.5rem; opacity: 0.25; pointer-events: none; z-index: 0; }
-        .grammar-badge {
-            position: absolute; top: -2px; right: -2px; padding: 2px 6px; border-radius: 0 0 0 8px;
-            font-size: 0.85rem; font-weight: 900; box-shadow: -2px 2px 5px rgba(0,0,0,0.3); border-left: 2px solid var(--text-dark); border-bottom: 2px solid var(--text-dark); z-index: 2; text-shadow: none; font-family: 'Fredoka One', sans-serif;
-        }
+        .entity { font-size: 2rem; font-weight: 800; font-family: 'Fredoka', sans-serif; color: var(--tile-text); }
+        .player-here .entity { font-size: 2.2rem; } /* Make the Zebra slightly larger */
         
-        .badge-sing { color: var(--sing-color); background-color: var(--sing-bg); }
-        .badge-plur { color: var(--plur-color); background-color: var(--plur-bg); }
-        .badge-obj { color: var(--obj-color); background-color: var(--obj-bg); font-size: 0.7rem; }
-        
-        .card-text { z-index: 1; position: relative; }
-        
-        .type-sing { background-color: var(--sing-color); }
-        .type-plur { background-color: var(--plur-color); }
-        .type-obj { background-color: var(--obj-color); }
-
-        .btn-action {
-            background-color: #27ae60; color: white; border: 2px solid white; padding: 12px 20px; border-radius: 20px;
-            font-family: 'Fredoka One'; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 0 #1e8449; transition: 0.1s;
-            display: none; margin-top: 10px;
+        .icon-badge {
+            position: absolute; top: -5px; right: -5px; font-size: 1.2rem;
+            background: #fff; border-radius: 50%; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .btn-action:active { transform: translateY(4px); box-shadow: 0 0 0 transparent; }
 
-        /* Animation for placed cards in slots */
-        .slot-filled { border: 3px solid white !important; color: white !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.6) !important;}
+        /* --- INPUT AREA --- */
+        .input-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 10px;}
+        .type-input {
+            width: 100%; max-width: 250px; padding: 12px; font-size: 1.5rem; text-align: center;
+            font-family: 'Montserrat', sans-serif; font-weight: 800; text-transform: uppercase; letter-spacing: 5px;
+            border: 3px solid var(--tile-bg); border-radius: 8px; outline: none; color: var(--text-main);
+            transition: 0.2s;
+        }
+        .type-input:focus { border-color: var(--player-color); box-shadow: 0 0 10px rgba(168, 213, 226, 0.5); }
+        .type-input.error { border-color: var(--error-color); animation: shake 0.3s; color: var(--error-color); }
+        
+        /* Collection status */
+        .key-status { font-size: 0.9rem; font-weight: 800; color: var(--tile-text); display: flex; gap: 10px; align-items: center;}
+        .key-badge { background: var(--tile-bg); padding: 4px 10px; border-radius: 20px; color: white; transition: 0.3s;}
+        .key-badge.collected { background: var(--key-color); box-shadow: 0 0 10px var(--key-color); color: #000; }
 
-        @keyframes successFlash { 0%, 100% { transform: scale(1); border-color: #27ae60; box-shadow: 0 0 15px #27ae60; } 50% { transform: scale(1.02); border-color: #fff; box-shadow: 0 0 25px #27ae60; } }
-        .success-state { animation: successFlash 1s ease-in-out infinite; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .highlight-target { animation: pulse 1.2s infinite !important; border-color: var(--highlight) !important; z-index: 15;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 183, 77, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(255, 183, 77, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+
     </style>
 </head>
 <body>
 
 <div id="tutorial-hud">
-    <div id="instruction-text">Phase 1: SVO & Singulars</div>
+    <div id="instruction-text">Step 1: Step-by-Step Typing</div>
     <div id="learning-objective">
-        Let's build an <b>SVO (Subject-Verb-Object)</b> sentence. Tap the <b>Singular Subject [1]</b> card (Zebra) and place it in the first slot.
+        You move by typing the <b>single alphabet</b> of the tile next to you. Tap the keyboard and type <b>K</b> to step onto the tile above you.
     </div>
 </div>
 
 <div id="start-overlay">
-    <h1 class="start-title">SVO & Grammar</h1>
-    <p class="start-desc">Master Subject-Verb-Object (SVO) structures while ensuring your Singular and Plural subjects agree with their verbs!</p>
-    <button class="start-btn" onclick="startTutorial()">Begin Training</button>
+    <h1 style="font-size: 2rem; color: var(--text-main);">Type the Compass</h1>
+    <p style="font-weight: 600; font-size: 1rem; max-width: 320px; line-height: 1.5; color: #7a6c64;">Master the typing grid! Learn how to navigate letter-by-letter to collect keys and reach the exit portal.</p>
+    <button class="start-btn" id="btn-start">Start Training</button>
 </div>
 
-<div class="game-wrapper">
-    <div class="board">
-        <h2 id="board-title">SVO Board (Singular)</h2>
-        <div class="sentence-area">
-            <div class="slot" id="slot-0" onclick="tapSlot(0)">[ Subject ]</div>
-            <div class="slot" id="slot-1" onclick="tapSlot(1)">[ Verb ]</div>
-            <div class="slot" id="slot-2" onclick="tapSlot(2)">[ Object ]</div>
-        </div>
-        <button class="btn-action" id="submitBtn" onclick="checkLogic()">Check Grammar ✨</button>
+<div class="panel">
+    
+    <div class="key-status">
+        REQUIRED KEY: 
+        <div class="key-badge" id="key-badge">🔑</div>
     </div>
 
-    <div class="hand-area">
-        <div class="player-name">Your Hand</div>
-        
-        <div class="hand" id="hand-phase-1">
-            <div class="card type-sing highlight-target" id="card-0" onclick="tapCard(0)">
-                <div class="card-bg-icon">🦓</div>
-                <div class="grammar-badge badge-sing">[1]</div>
-                <span class="card-text">The zebra</span>
-            </div>
-            <div class="card type-sing" id="card-1" onclick="tapCard(1)">
-                <div class="card-bg-icon">👁️</div>
-                <div class="grammar-badge badge-sing">[1]</div>
-                <span class="card-text">finds</span>
-            </div>
-            <div class="card type-obj" id="card-2" onclick="tapCard(2)">
-                <div class="card-bg-icon">🌴</div>
-                <div class="grammar-badge badge-obj">OBJ</div>
-                <span class="card-text">the oasis.</span>
-            </div>
+    <div class="grid-container" id="grid">
         </div>
 
-        <div class="hand" id="hand-phase-2" style="display:none;">
-            <div class="card type-plur" id="card-3" onclick="tapCard(3)">
-                <div class="card-bg-icon">🐘</div>
-                <div class="grammar-badge badge-plur">[2+]</div>
-                <span class="card-text">The elephants</span>
-            </div>
-            <div class="card type-plur" id="card-4" onclick="tapCard(4)">
-                <div class="card-bg-icon">👁️</div>
-                <div class="grammar-badge badge-plur">[2+]</div>
-                <span class="card-text">find</span>
-            </div>
-            <div class="card type-obj" id="card-5" onclick="tapCard(5)">
-                <div class="card-bg-icon">🌴</div>
-                <div class="grammar-badge badge-obj">OBJ</div>
-                <span class="card-text">the oasis.</span>
-            </div>
-        </div>
-
+    <div class="input-area">
+        <input type="text" class="type-input" id="type-input" placeholder="TYPE LETTER" autocomplete="off" spellcheck="false" oninput="handleInput()">
     </div>
+
 </div>
 
 <script>
     let step = 1;
-    let selectedCard = -1;
-    let boardState = [null, null, null]; 
+    let playerPos = { r: 3, c: 1 }; // Start bottom center
+    
+    // Grid Data: l = letter, type = entity type (key, portal, empty)
+    let gridData = [
+        [{ l: 'X', type: 'portal' }, { l: 'Y', type: 'key' }, { l: '', type: 'empty' }],
+        [{ l: '', type: 'empty' },   { l: 'E', type: 'path' }, { l: '', type: 'empty' }],
+        [{ l: '', type: 'empty' },   { l: 'K', type: 'path' }, { l: '', type: 'empty' }],
+        [{ l: '', type: 'empty' },   { l: '🦓', type: 'start'},{ l: '', type: 'empty' }]
+    ];
 
-    // HTML templates for placed cards
-    const cardHTML = {
-        0: `<div class="card-bg-icon">🦓</div><div class="grammar-badge badge-sing">[1]</div><span class="card-text">The zebra</span>`,
-        1: `<div class="card-bg-icon">👁️</div><div class="grammar-badge badge-sing">[1]</div><span class="card-text">finds</span>`,
-        2: `<div class="card-bg-icon">🌴</div><div class="grammar-badge badge-obj">OBJ</div><span class="card-text">the oasis.</span>`,
-        3: `<div class="card-bg-icon">🐘</div><div class="grammar-badge badge-plur">[2+]</div><span class="card-text">The elephants</span>`,
-        4: `<div class="card-bg-icon">👁️</div><div class="grammar-badge badge-plur">[2+]</div><span class="card-text">find</span>`,
-        5: `<div class="card-bg-icon">🌴</div><div class="grammar-badge badge-obj">OBJ</div><span class="card-text">the oasis.</span>`
-    };
+    const gridEl = document.getElementById('grid');
+    const inputEl = document.getElementById('type-input');
+    const keyBadge = document.getElementById('key-badge');
+    const btnStart = document.getElementById('btn-start');
 
-    function startTutorial() {
+    // Handle mobile start clicks cleanly
+    const startTutorial = (e) => {
+        if(e.type === 'touchstart') e.preventDefault();
         document.getElementById('start-overlay').style.display = 'none';
-    }
+        renderGrid();
+        setTimeout(() => inputEl.focus(), 300);
+        document.getElementById('cell-2-1').classList.add('highlight-target');
+    };
+    btnStart.addEventListener('click', startTutorial);
+    btnStart.addEventListener('touchstart', startTutorial, {passive: false});
 
-    function tapCard(cardIndex) {
-        // Step Locks
-        if (step === 1 && cardIndex !== 0) return;
-        if (step === 2 && cardIndex !== 1) return;
-        if (step === 3 && cardIndex !== 2) return;
-        if (step === 5 && cardIndex !== 3) return;
-        if (step === 6 && cardIndex !== 4) return;
-        if (step === 7 && cardIndex !== 5) return;
+    function renderGrid() {
+        gridEl.innerHTML = '';
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 3; c++) {
+                let cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.id = `cell-${r}-${c}`;
+                
+                let data = gridData[r][c];
 
-        // Deselect
-        if (selectedCard === cardIndex) {
-            document.getElementById(`card-${cardIndex}`).style.transform = 'translateY(0)';
-            document.getElementById(`card-${cardIndex}`).style.borderColor = 'rgba(255,255,255,0.5)';
-            selectedCard = -1;
-            return;
-        }
-
-        // Reset visual state of all cards
-        [0,1,2,3,4,5].forEach(i => {
-            let el = document.getElementById(`card-${i}`);
-            if (el) {
-                el.style.transform = 'translateY(0)';
-                el.style.borderColor = 'rgba(255,255,255,0.5)';
+                if (data.type === 'empty') {
+                    cell.classList.add('empty');
+                } else {
+                    if (r === playerPos.r && c === playerPos.c) {
+                        cell.classList.add('player-here');
+                        cell.innerHTML = `<div class="entity">🦓</div>`;
+                    } else {
+                        if (data.type === 'portal') {
+                            cell.classList.add('portal');
+                            cell.innerHTML = `<div class="entity">${data.l}</div><div class="icon-badge">🌀</div>`;
+                        } else if (data.type === 'key') {
+                            cell.innerHTML = `<div class="entity">${data.l}</div><div class="icon-badge">🔑</div>`;
+                        } else if (data.type === 'start') {
+                            cell.innerHTML = `<div class="entity"></div>`; // Empty base tile once left
+                        } else {
+                            cell.innerHTML = `<div class="entity">${data.l}</div>`;
+                        }
+                    }
+                }
+                gridEl.appendChild(cell);
             }
-        });
-
-        // Select and Highlight
-        selectedCard = cardIndex;
-        document.getElementById(`card-${cardIndex}`).style.transform = 'translateY(-15px) scale(1.05)';
-        document.getElementById(`card-${cardIndex}`).style.borderColor = 'var(--highlight)';
-        
-        // Highlight matching slot
-        let targetSlot = (cardIndex === 0 || cardIndex === 3) ? 0 : (cardIndex === 1 || cardIndex === 4) ? 1 : 2;
-        document.getElementById(`slot-${targetSlot}`).classList.add('highlight-target');
+        }
     }
 
-    function tapSlot(slotIndex) {
-        if (selectedCard === -1) return;
-        
-        // Slot Locks
-        if ((step === 1 || step === 5) && slotIndex !== 0) return;
-        if ((step === 2 || step === 6) && slotIndex !== 1) return;
-        if ((step === 3 || step === 7) && slotIndex !== 2) return;
+    function handleInput() {
+        // Read only the last typed character to support continuous typing
+        let val = inputEl.value.slice(-1).toUpperCase();
+        inputEl.value = ''; // Clear immediately to keep it clean
 
-        boardState[slotIndex] = selectedCard;
-        const slotEl = document.getElementById(`slot-${slotIndex}`);
-        
-        slotEl.classList.add('slot-filled');
-        slotEl.classList.remove('highlight-target');
-        
-        // Apply color based on grammar type
-        if (selectedCard === 0 || selectedCard === 1) slotEl.style.background = 'var(--sing-color)';
-        else if (selectedCard === 3 || selectedCard === 4) slotEl.style.background = 'var(--plur-color)';
-        else slotEl.style.background = 'var(--obj-color)';
-        
-        slotEl.innerHTML = cardHTML[selectedCard];
+        if (!val) return;
 
-        // Remove card from hand
-        document.getElementById(`card-${selectedCard}`).style.display = 'none';
-        document.getElementById(`card-${selectedCard}`).classList.remove('highlight-target');
-        selectedCard = -1;
+        // Find adjacent cells
+        const adjacentCoords = [
+            { r: playerPos.r - 1, c: playerPos.c }, // Up
+            { r: playerPos.r + 1, c: playerPos.c }, // Down
+            { r: playerPos.r, c: playerPos.c - 1 }, // Left
+            { r: playerPos.r, c: playerPos.c + 1 }  // Right
+        ];
 
-        progressTutorial();
+        let moved = false;
+
+        for (let coords of adjacentCoords) {
+            if (coords.r >= 0 && coords.r < 4 && coords.c >= 0 && coords.c < 3) {
+                let targetCell = gridData[coords.r][coords.c];
+                
+                if (targetCell.l === val) {
+                    // Valid Move
+                    movePlayer(coords.r, coords.c, targetCell);
+                    moved = true;
+                    break;
+                }
+            }
+        }
+
+        if (!moved) {
+            showError();
+        }
     }
 
-    function progressTutorial() {
-        // --- PHASE 1 (SINGULAR) ---
-        if (step === 1) {
+    function movePlayer(r, c, targetData) {
+        playerPos = { r, c };
+        
+        // Handle Key Collection
+        if (targetData.type === 'key') {
+            targetData.type = 'path'; // Remove key
+            keyBadge.classList.add('collected');
+            keyBadge.innerText = '🔑 ACQUIRED';
+        }
+
+        renderGrid();
+        checkProgress();
+    }
+
+    function showError() {
+        inputEl.classList.add('error');
+        setTimeout(() => {
+            inputEl.classList.remove('error');
+        }, 300);
+    }
+
+    function checkProgress() {
+        // Remove previous highlights
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('highlight-target'));
+
+        if (step === 1 && playerPos.r === 2 && playerPos.c === 1) {
             step = 2;
-            document.getElementById('instruction-text').innerText = "Step 2: Singular Verb";
-            document.getElementById('learning-objective').innerHTML = "A Singular Subject requires a <b>Singular Verb [1]</b> (usually ending in 's'). Place 'finds' in the <b>Verb Slot</b>.";
-            document.getElementById('card-1').classList.add('highlight-target');
+            document.getElementById('instruction-text').innerText = "Step 2: Collect the Key";
+            document.getElementById('learning-objective').innerHTML = "Keep typing adjacent letters to move! Type <b>E</b> then <b>Y</b> to follow the path and collect the Key.";
+            document.getElementById('cell-1-1').classList.add('highlight-target');
         } 
-        else if (step === 2) {
+        else if (step === 2 && playerPos.r === 1 && playerPos.c === 1) {
+            document.getElementById('cell-0-1').classList.add('highlight-target');
+        }
+        else if (step === 2 && playerPos.r === 0 && playerPos.c === 1) {
             step = 3;
-            document.getElementById('instruction-text').innerText = "Step 3: Complete the SVO";
-            document.getElementById('learning-objective').innerHTML = "Complete the <b>Subject-Verb-Object</b> structure by placing the <b>Object</b> card ('the oasis') in the final slot.";
-            document.getElementById('card-2').classList.add('highlight-target');
-            
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            document.getElementById('instruction-text').innerText = "Step 3: Escape through the Portal";
+            document.getElementById('learning-objective').innerHTML = "You have the key! The portal is adjacent to you. Type <b>X</b> to step onto the portal and win.";
+            document.getElementById('cell-0-0').classList.add('highlight-target');
         }
-        else if (step === 3) {
-            step = 4;
-            document.getElementById('instruction-text').innerText = "Step 4: Check SVO Grammar";
-            document.getElementById('learning-objective').innerHTML = "The SVO structure is complete! The Subject [1] and Verb [1] match perfectly. Submit your answer.";
-            
-            const btn = document.getElementById('submitBtn');
-            btn.style.display = 'inline-block';
-            btn.innerText = "Check Grammar ✨";
-            btn.classList.add('highlight-target');
-        }
-        // --- PHASE 2 (PLURAL) ---
-        else if (step === 5) {
-            step = 6;
-            document.getElementById('instruction-text').innerText = "Step 6: Plural Verb";
-            document.getElementById('learning-objective').innerHTML = "A Plural Subject requires a <b>Plural Verb [2+]</b> (no 's'). Place 'find' in the <b>Verb Slot</b>.";
-            document.getElementById('card-4').classList.add('highlight-target');
-        }
-        else if (step === 6) {
-            step = 7;
-            document.getElementById('instruction-text').innerText = "Step 7: Re-apply the Object";
-            document.getElementById('learning-objective').innerHTML = "Notice the verb changed, but the Object stays the same! Place the <b>Object</b> card to finish the SVO sentence.";
-            document.getElementById('card-5').classList.add('highlight-target');
-            
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
-        else if (step === 7) {
-            step = 8;
-            document.getElementById('instruction-text').innerText = "Step 8: Final Check";
-            document.getElementById('learning-objective').innerHTML = "The plural SVO structure is complete! Both the Subject and Verb have the orange <b>[2+]</b> badge. Submit!";
-            
-            const btn = document.getElementById('submitBtn');
-            btn.style.display = 'inline-block';
-            btn.innerText = "Check Grammar ✨";
-            btn.classList.add('highlight-target');
-        }
-    }
-
-    function checkLogic() {
-        const btn = document.getElementById('submitBtn');
-        btn.classList.remove('highlight-target');
-
-        if (step === 4) {
-            // Success Phase 1 -> Transition to Phase 2
-            [0,1,2].forEach(i => { document.getElementById(`slot-${i}`).classList.add('success-state'); });
-            btn.innerText = "Next: Plural SVO ▶";
-            
-            document.getElementById('instruction-text').innerText = "SVO Verified!";
-            document.getElementById('learning-objective').innerHTML = "Great! A single zebra 'finds' the oasis. Now let's see how the SVO sentence changes for a <b>Plural Subject</b>.";
-            
-            step = 4.5; 
-        } 
-        else if (step === 4.5) {
-            // Setup Phase 2
-            step = 5;
-            btn.style.display = 'none';
-            document.getElementById('board-title').innerText = "SVO Board (Plural)";
-            document.getElementById('board-title').style.color = "var(--plur-color)";
-
-            // Reset Slots
-            [0,1,2].forEach(i => {
-                let slot = document.getElementById(`slot-${i}`);
-                slot.classList.remove('success-state', 'slot-filled');
-                slot.style.background = 'var(--slot-bg)';
-            });
-            document.getElementById('slot-0').innerHTML = "[ Subject ]";
-            document.getElementById('slot-1').innerHTML = "[ Verb ]";
-            document.getElementById('slot-2').innerHTML = "[ Object ]";
-            boardState = [null, null, null];
-
-            // Swap Hands
-            document.getElementById('hand-phase-1').style.display = 'none';
-            document.getElementById('hand-phase-2').style.display = 'flex';
-
-            // Update Instructions
-            document.getElementById('instruction-text').innerText = "Phase 2: Plural SVO";
-            document.getElementById('learning-objective').innerHTML = "Start the new sentence by placing the <b>Plural Subject [2+]</b> (Elephants) in the first slot.";
-            document.getElementById('card-3').classList.add('highlight-target');
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        else if (step === 8) {
-            // Final Success
-            [0,1,2].forEach(i => { document.getElementById(`slot-${i}`).classList.add('success-state'); });
-            btn.innerText = "Training Complete!";
-            
+        else if (step === 3 && playerPos.r === 0 && playerPos.c === 0) {
             document.getElementById('instruction-text').innerText = "Tutorial Complete!";
-            document.getElementById('instruction-text').style.color = "#27ae60";
-            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success!</strong> You mastered SVO structures and correctly adjusted the verb for Singular and Plural subjects. Close this to play!";
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('instruction-text').style.color = "var(--success-color)";
+            document.getElementById('learning-objective').innerHTML = "<strong>🎯 Success!</strong> You navigate the grid by typing letters one by one to spell out paths. Close this window to play!";
+            document.getElementById('learning-objective').style.borderColor = "var(--success-color)";
+            inputEl.disabled = true;
+            inputEl.placeholder = "COMPLETE!";
         }
     }
 </script>

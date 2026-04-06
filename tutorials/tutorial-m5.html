@@ -1,428 +1,473 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Factory Builder Tutorial</title>
-    <style>
-        :root { 
-            --main-bg: #090a10; 
-            --accent: #6eb5b3; 
-            --accent-hover: #9adcd9; 
-            --danger: #d85c6b; 
-        }
-        
-        * { box-sizing: border-box; user-select: none; -webkit-touch-callout: none; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Function: Playable Boot Camp</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #020202;
+        --neon-cyan: #00f3ff;
+        --neon-red: #ff003c;
+        --neon-orange: #ff7700;
+        --neon-yellow: #ffea00;
+        --text: #c9d1d9;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    
+    body, html { 
+        width: 100%; height: 100%; background: var(--bg); overflow: hidden; 
+        font-family: 'Share Tech Mono', monospace; color: var(--text); 
+    }
+    
+    /* CRT Scanlines */
+    body::after {
+        content: " "; display: block; position: absolute; inset: 0;
+        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+        z-index: 999; background-size: 100% 4px, 6px 100%; pointer-events: none; opacity: 0.5;
+    }
 
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: var(--main-bg);
-            color: #CDD8F8;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+    canvas { display: block; width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* --- INSTRUCTION PANEL --- */
-        #instruction-panel {
-            background: rgba(110, 181, 179, 0.15);
-            border-bottom: 2px solid var(--accent);
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(110, 181, 179, 0.2);
-            z-index: 20;
-        }
+    /* HUD */
+    #hud { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 10; display: flex; justify-content: space-between; pointer-events: none;}
+    .hud-panel { background: rgba(0,0,0,0.8); border: 1px solid #333; padding: 10px; border-radius: 4px; pointer-events: auto; }
+    .hud-title { font-size: 10px; color: var(--neon-cyan); letter-spacing: 1px; font-family: 'Orbitron', sans-serif;}
+    #battery-bar { width: 150px; height: 10px; border: 1px solid #444; background: #111; margin-top: 5px; max-width: 30vw;}
+    #battery-fill { height: 100%; background: var(--neon-cyan); width: 100%; transition: width 0.2s;}
 
-        #instruction-text {
-            font-size: 15px;
-            font-weight: bold;
-            color: var(--accent-hover);
-            margin: 0;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-shadow: 0 0 8px rgba(110, 181, 179, 0.4);
-        }
+    /* Modals / Pauses */
+    .modal { position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);}
+    .hidden { display: none !important; }
+    
+    .tut-box { background: rgba(0, 243, 255, 0.05); border: 2px solid var(--neon-cyan); padding: 20px; max-width: 400px; text-align: center; border-radius: 8px; box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);}
+    .tut-title { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--neon-cyan); margin-bottom: 10px; text-shadow: 0 0 10px var(--neon-cyan);}
+    .tut-desc { font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px; color: #fff;}
+    .tut-desc b { color: var(--neon-yellow); }
+    
+    .btn { background: rgba(0,0,0,0.8); border: 2px solid var(--neon-cyan); color: var(--neon-cyan); font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; padding: 12px 25px; cursor: pointer; text-transform: uppercase; transition: 0.2s; border-radius: 4px;}
+    .btn:active { background: var(--neon-cyan); color: #000; }
+    .btn:disabled { border-color: #555; color: #555; cursor: not-allowed; }
 
-        /* --- GAME AREA --- */
-        #game-container {
-            flex: 1;
-            position: relative;
-            width: 100%;
-            background: radial-gradient(ellipse at 50% 38%, rgba(12,14,38,.97), rgba(4,5,14,.99));
-        }
+    /* UI Screens */
+    .ui-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 95%; max-width: 400px; background: rgba(5,5,5,0.95); border: 1px solid #333; padding: 20px; z-index: 50; box-shadow: 0 0 30px #000;}
+    .ui-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px;}
+    .builder-row { display: flex; gap: 10px; min-height: 60px; background: rgba(0,0,0,0.8); border: 1px inset #222; padding: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center;}
+    
+    .node { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron'; font-size: 1.2rem; font-weight: 900; background: #111; border: 1px solid #555; color: #fff; cursor: pointer; }
+    .node:active { transform: scale(0.9); border-color: #fff; background: #222;}
+    
+    #eval-readout { text-align: center; font-family: 'Orbitron'; font-size: 1.5rem; font-weight: 900; margin-bottom: 15px; color: #666;}
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
-        }
+    /* Controls */
+    #mobile-controls { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+    #joystick-zone { position: absolute; bottom: 0; left: 0; width: 50%; height: 50%; pointer-events: auto;}
+    #action-btn { position: absolute; bottom: 30px; right: 20px; width: 65px; height: 65px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; font-family: 'Orbitron'; font-weight: 900; font-size: 0.9rem; color: #fff;}
+    #term-btn { position: absolute; bottom: 110px; right: 20px; width: 55px; height: 55px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; pointer-events: auto; font-family: 'Orbitron'; font-size: 10px; text-align: center; color: #fff;}
+    
+    .joystick-base { position: absolute; width: 100px; height: 100px; border: 2px solid rgba(0, 243, 255, 0.3); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none;}
+    .joystick-nub { position: absolute; top: 50%; left: 50%; width: 40px; height: 40px; background: rgba(0, 243, 255, 0.5); border-radius: 50%; transform: translate(-50%, -50%); }
 
-        /* --- HUD & CONTROLS --- */
-        #btnPhase {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background: rgba(8,9,20,.9);
-            border: 2px solid #ffcc00;
-            color: #ffcc00;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
-        }
-        #btnPhase:active { background: rgba(255, 204, 0, 0.2); }
-
-        #touchControls {
-            position: absolute;
-            bottom: 20px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-        }
-
-        .tc-cluster { display: flex; gap: 10px; }
-        .tc-btn {
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            color: #FFF;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            pointer-events: auto;
-            cursor: pointer;
-        }
-        .tc-btn:active {
-            background: rgba(110, 181, 179, 0.4);
-            border-color: var(--accent-hover);
-        }
-
-        /* --- MINI FUSION MODAL --- */
-        #fusion-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(12,14,36,.96);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 20px;
-            width: 85%;
-            max-width: 300px;
-            text-align: center;
-            z-index: 30;
-            display: none;
-            box-shadow: 0 20px 45px rgba(0,0,0,.8);
-        }
-
-        .fusion-title { color: #EDE6D2; font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; }
-        .fusion-desc { color: #7A85B0; font-size: 12px; margin-bottom: 15px; }
-        
-        .token-btn {
-            background: linear-gradient(135deg,#C08820,#8B5510);
-            border: 1px solid rgba(255,200,80,.5);
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .token-btn:active { transform: scale(0.98); }
-
-        .cta {
-            background: var(--accent);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: #090a10;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        .cta:disabled { background: #333; color: #666; cursor: not-allowed; }
-
-    </style>
+    .pulse-btn { animation: btnPulse 1s infinite; border-color: var(--neon-orange) !important; color: var(--neon-orange) !important;}
+    @keyframes btnPulse { 0% { box-shadow: 0 0 0 0 rgba(255, 119, 0, 0.8); } 70% { box-shadow: 0 0 0 15px rgba(255, 119, 0, 0); } 100% { box-shadow: 0 0 0 0 transparent; } }
+</style>
 </head>
 <body>
 
-    <div id="instruction-panel">
-        <p id="instruction-text">Step 1: Move right using the controls.</p>
+<canvas id="gameCanvas"></canvas>
+
+<div id="hud">
+    <div class="hud-panel">
+        <div class="hud-title">BATTERY</div>
+        <div id="battery-bar"><div id="battery-fill"></div></div>
     </div>
-
-    <div id="game-container">
-        <canvas id="cv"></canvas>
-        
-        <button id="btnPhase" onclick="togglePhase()">EDIT LAYOUT</button>
-
-        <div id="touchControls">
-            <div class="tc-cluster" id="move-cluster">
-                <div class="tc-btn" id="btnLeft" onpointerdown="input.L=true" onpointerup="input.L=false" onpointercancel="input.L=false">◀</div>
-                <div class="tc-btn" id="btnRight" onpointerdown="input.R=true" onpointerup="input.R=false" onpointercancel="input.R=false">▶</div>
-            </div>
-            <div class="tc-cluster" id="jump-cluster">
-                <div class="tc-btn" id="btnJump" onpointerdown="input.J=true" onpointerup="input.J=false" onpointercancel="input.J=false">▲</div>
-            </div>
-        </div>
-
-        <div id="fusion-modal">
-            <div class="fusion-title">Blueprint Fusion</div>
-            <div class="fusion-desc">Infuse tokens to give the block mass and length.</div>
-            <button class="token-btn" id="btnAddToken" onclick="addToken()">+ Inject [10s] Token</button>
-            <button class="cta" id="btnBuild" disabled onclick="buildBlock()">Fuse & Build</button>
-        </div>
+    <div class="hud-panel" id="inv-hud">
+        <div class="hud-title">FRAGMENTS</div>
+        <div style="font-family: 'Orbitron'; font-size: 1.2rem; font-weight: bold;" id="inv-count">0/3</div>
     </div>
+</div>
+
+<div id="mobile-controls">
+    <div id="joystick-zone"></div>
+    <div class="joystick-base" id="j-base"><div class="joystick-nub" id="j-nub"></div></div>
+    <div id="term-btn" onclick="openTerminal()">FIELD<br>TERM</div>
+    <div id="action-btn" onclick="Input.action = true">INT</div>
+</div>
+
+<div id="tut-modal" class="modal">
+    <div class="tut-box">
+        <div class="tut-title" id="tut-title">System Initialization</div>
+        <div class="tut-desc" id="tut-desc">Waiting for systems to sync...</div>
+        <button class="btn" id="ack-btn" onclick="resumeGame()" style="display:none;">ACKNOWLEDGE</button>
+    </div>
+</div>
+
+<div id="gen-ui" class="ui-screen hidden">
+    <div class="ui-header">
+        <div style="color:#aaa; font-size:0.8rem;">INPUT_x:<br><span style="color:#fff; font-size:1rem;">1</span></div>
+        <div style="color:#aaa; font-size:0.8rem;">TARGET:<br><span style="color:var(--neon-cyan); font-size:1rem;">6</span></div>
+    </div>
+    <div style="font-size: 10px; color: #666; margin-bottom: 5px;">> ASSEMBLE_FORMULA_f(x)</div>
+    <div class="builder-row" id="gen-build"></div>
+    <div id="eval-readout">f(x) = ?</div>
+    <div style="font-size: 10px; color: #666; margin-bottom: 5px;">> INVENTORY_FRAGMENTS</div>
+    <div class="builder-row" id="gen-inv"></div>
+    <div style="display: flex; justify-content: space-between;">
+        <button class="btn" style="border-color:#555; color:#aaa; font-size: 0.8rem;" onclick="closeGen()">LEAVE</button>
+        <button class="btn" id="btn-exec" style="font-size: 0.8rem;" disabled onclick="executeGen()">EXECUTE</button>
+    </div>
+</div>
+
+<div id="term-ui" class="ui-screen hidden">
+    <div class="ui-header">
+        <div style="color:var(--neon-orange); font-family: 'Orbitron'; font-size: 1.2rem;">FIELD TERMINAL</div>
+    </div>
+    <div style="font-size: 0.8rem; margin-bottom: 15px; color: #aaa;">Sacrifice fragments to restore battery power.</div>
+    <div class="builder-row" id="term-inv"></div>
+    <button class="btn" style="width: 100%; font-size: 0.8rem;" onclick="closeTerminal()">RESUME SHIFT</button>
+</div>
 
 <script>
-    const cv = document.getElementById('cv');
-    const ctx = cv.getContext('2d');
+/** ENGINE SETUP **/
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+let cw, ch;
+
+function resize() {
+    cw = canvas.width = canvas.clientWidth || window.innerWidth;
+    ch = canvas.height = canvas.clientHeight || window.innerHeight;
+}
+window.addEventListener('resize', resize);
+
+/** GAME STATE **/
+let state = 'PAUSED'; 
+let step = 0;
+
+// World Size is 1000x1000. Player starts in the center.
+const WORLD_SIZE = 1000;
+const Player = { x: WORLD_SIZE/2, y: WORLD_SIZE/2, vx: 0, vy: 0, speed: 180, radius: 15, battery: 100, maxBattery: 100 };
+let cam = { x: 0, y: 0 }; // Camera offset
+
+const Input = { x: 0, y: 0, action: false };
+const keys = {};
+
+let inventory = [];
+let formula = [];
+let fragmentsOnGround = [];
+let generator = null;
+let targetValue = 6;
+let floorX = 1;
+
+/** INPUT HANDLING **/
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+const jZone = document.getElementById('joystick-zone');
+const jBase = document.getElementById('j-base');
+const jNub = document.getElementById('j-nub');
+let jCenter = {x:0, y:0}, touchId = null;
+
+jZone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    let t = e.changedTouches[0]; touchId = t.identifier;
+    jCenter = {x: t.clientX, y: t.clientY};
+    jBase.style.display = 'block'; jBase.style.left = jCenter.x + 'px'; jBase.style.top = jCenter.y + 'px';
+    updateJoy(t);
+}, {passive:false});
+
+jZone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for(let t of e.changedTouches) if(t.identifier === touchId) { updateJoy(t); break; }
+}, {passive:false});
+
+const endJoy = (e) => {
+    for(let t of e.changedTouches) if(t.identifier === touchId) { touchId = null; jBase.style.display = 'none'; jNub.style.transform = `translate(-50%, -50%)`; Input.x = 0; Input.y = 0; break; }
+};
+jZone.addEventListener('touchend', endJoy); jZone.addEventListener('touchcancel', endJoy);
+
+function updateJoy(t) {
+    let dx = t.clientX - jCenter.x, dy = t.clientY - jCenter.y;
+    let dist = Math.hypot(dx, dy), maxD = 50;
+    if(dist > maxD) { dx = (dx/dist)*maxD; dy = (dy/dist)*maxD; }
+    jNub.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    Input.x = dx/maxD; Input.y = dy/maxD;
+}
+
+/** TUTORIAL MANAGER **/
+function showPause(title, desc) {
+    state = 'PAUSED';
+    document.getElementById('tut-modal').classList.remove('hidden');
+    document.getElementById('tut-title').innerText = title;
+    document.getElementById('tut-desc').innerHTML = desc;
+    Input.x = 0; Input.y = 0; // Reset movement
+}
+
+function resumeGame() {
+    document.getElementById('tut-modal').classList.add('hidden');
+    state = 'PLAY';
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+}
+
+function initTutorial() {
+    resize(); 
     
-    // Engine Constants
-    const GRAV = 0.6, JF = -10, SPD = 4, PW = 20, PH = 20;
-    const P = {
-        skyT:'#0a0b12', skyB:'#1c1d29',
-        slabF:'#225452', slabT:'#368C88', slabS:'#112A29',
-        v10F:'#C08820', v10T:'#E0A840', v10S:'#8B5510',
-        pl:'#FFFFFF', bea:'#E85D75'
-    };
-
-    // State
-    let width, height, camZ = 1.2;
-    let step = 1;
-    let mode = 'PLAY'; // PLAY or BUILD
-    let input = { L: false, R: false, J: false };
+    showPause("Phase 1: Fragments", "Welcome to the Monolith. You must restore power to descend.<br><br><b>Learning Objective:</b> Use the joystick (or WASD) to move. Collect the scattered mathematical fragments <b>[x]</b>, <b>[+]</b>, and <b>[5]</b>.");
+    document.getElementById('ack-btn').style.display = 'inline-block';
     
-    // PATCH APPLIED: Added w and h to player object for collision logic
-    let player = { x: 30, y: 150, w: PW, h: PH, vx: 0, vy: 0, onGround: false };
+    // Spawn fragments at fixed world coordinates around the center (500,500)
+    fragmentsOnGround = [
+        { x: WORLD_SIZE/2 - 80, y: WORLD_SIZE/2 - 80, val: 'x' },
+        { x: WORLD_SIZE/2 + 80, y: WORLD_SIZE/2 - 40, val: '+' },
+        { x: WORLD_SIZE/2, y: WORLD_SIZE/2 + 80, val: '5' }
+    ];
+}
+
+/** UI LOGIC (GENERATOR & TERMINAL) **/
+function createNode(val, onClick) {
+    let n = document.createElement('div');
+    n.className = 'node'; n.innerText = val;
+    if(['+','-','*'].includes(val)) n.style.color = 'var(--neon-orange)';
+    if(['x'].includes(val)) n.style.color = 'var(--neon-red)';
+    n.onclick = onClick;
+    return n;
+}
+
+function renderGenUI() {
+    const invD = document.getElementById('gen-inv');
+    const bldD = document.getElementById('gen-build');
+    invD.innerHTML = ''; bldD.innerHTML = '';
     
-    // PATCH APPLIED: Widened the gap and stretched the blueprint
-    let world = {
-        plats: [
-            { x: 10, y: 200, w: 100, h: 20 }, // Start platform
-            { x: 270, y: 200, w: 120, h: 20 }  // End platform (pushed right)
-        ],
-        frag: null, // The block we will build
-        ghost: { x: 110, y: 200, w: 160, h: 20 }, // Ghost outline (stretched)
-        exit: { x: 320, y: 150, w: 40, h: 50 } // Exit beacon (pushed right)
-    };
-
-    const instText = document.getElementById('instruction-text');
-    const btnPhase = document.getElementById('btnPhase');
-    const touchControls = document.getElementById('touchControls');
-    const fusionModal = document.getElementById('fusion-modal');
-    let addedValue = 0;
-
-    // Resize
-    function resize() {
-        width = cv.parentElement.clientWidth;
-        height = cv.parentElement.clientHeight;
-        cv.width = width;
-        cv.height = height;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Interaction Handlers
-    function setInstruction(text) { instText.innerText = text; }
-
-    function togglePhase() {
-        if(step === 2 && mode === 'PLAY') {
-            mode = 'BUILD';
-            step = 3;
-            setInstruction("Step 3: Tap the glowing yellow gap to draft a block.");
-            btnPhase.style.display = 'none'; // Hide until they build
-            touchControls.style.opacity = '0.2';
-            touchControls.style.pointerEvents = 'none';
-        } 
-        else if(step === 4 && mode === 'BUILD') {
-            mode = 'PLAY';
-            step = 5;
-            setInstruction("Step 5: Cross the gap to the pink beacon!");
-            btnPhase.style.display = 'none';
-            touchControls.style.opacity = '1';
-            touchControls.style.pointerEvents = 'auto';
-            player.x = 80; // Reset player safely before jump
-            player.y = 150;
-        }
-    }
-
-cv.addEventListener('pointerdown', (e) => {
-        if(mode !== 'BUILD' || step !== 3) return;
-        
-        const rect = cv.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // 1. Calculate the exact camera offsets used in the render loop
-        const translateX = (width/camZ/2) - 190;
-        const translateY = Math.min(0, (height/camZ/2) - 200);
-
-        // 2. Convert raw mouse coordinates into in-game world coordinates
-        const worldX = (mouseX / camZ) - translateX;
-        const worldY = (mouseY / camZ) - translateY;
-        
-        // 3. Check exact collision against the ghost block
-        if(worldX >= world.ghost.x && worldX <= world.ghost.x + world.ghost.w &&
-           worldY >= world.ghost.y - 20 && worldY <= world.ghost.y + world.ghost.h + 20) { 
-            // Note: Added a +/- 20px buffer to the Y-axis to make it easier to tap on mobile
-            fusionModal.style.display = 'block';
-            setInstruction("Step 4: Add value to the block, then Fuse.");
-        }
+    inventory.forEach((v, i) => {
+        invD.appendChild(createNode(v, () => {
+            formula.push(inventory.splice(i, 1)[0]);
+            renderGenUI(); evalMath();
+        }));
     });
-
-    function addToken() {
-        addedValue += 10;
-        document.getElementById('btnAddToken').innerText = `Value: ${addedValue} (MAX)`;
-        document.getElementById('btnAddToken').style.pointerEvents = 'none';
-        document.getElementById('btnBuild').disabled = false;
-        document.getElementById('btnBuild').style.background = '#ffcc00';
-    }
-
-    function buildBlock() {
-        // PATCH APPLIED: The built fragment matches the new 160px gap
-        world.frag = { x: 110, y: 200, w: 160, h: 20 }; 
-        fusionModal.style.display = 'none';
-        step = 4;
-        btnPhase.innerText = "TEST CLIMB";
-        btnPhase.style.color = "#4CAF50";
-        btnPhase.style.borderColor = "#4CAF50";
-        btnPhase.style.display = 'block';
-        setInstruction("Block Built! Tap 'TEST CLIMB' to resume physics.");
-    }
-
-    // Keyboard support for desktop
-    window.addEventListener('keydown', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=true;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=true;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=true;
+    
+    formula.forEach((v, i) => {
+        bldD.appendChild(createNode(v, () => {
+            inventory.push(formula.splice(i, 1)[0]);
+            renderGenUI(); evalMath();
+        }));
     });
-    window.addEventListener('keyup', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=false;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=false;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=false;
+}
+
+function evalMath() {
+    let out = document.getElementById('eval-readout');
+    let btn = document.getElementById('btn-exec');
+    if(formula.length === 0) { out.innerText = 'f(x) = ?'; out.style.color = '#666'; btn.disabled = true; return; }
+    
+    let str = formula.join('').replace(/x/g, `(${floorX})`);
+    try {
+        let res = new Function('return ' + str)();
+        if(isNaN(res)) throw "ERR";
+        out.innerText = `f(${floorX}) = ${res}`;
+        if(res === targetValue) {
+            out.style.color = 'var(--neon-cyan)'; btn.disabled = false;
+        } else {
+            out.style.color = '#fff'; btn.disabled = true;
+        }
+    } catch(e) { out.innerText = "ERROR"; out.style.color = 'var(--neon-red)'; btn.disabled = true; }
+}
+
+function openGen() {
+    if(step !== 1) return;
+    state = 'UI';
+    document.getElementById('gen-ui').classList.remove('hidden');
+    renderGenUI(); evalMath();
+}
+
+function closeGen() {
+    inventory.push(...formula); formula = [];
+    document.getElementById('gen-ui').classList.add('hidden');
+    state = 'PLAY'; lastTime = performance.now(); requestAnimationFrame(loop);
+}
+
+function executeGen() {
+    document.getElementById('gen-ui').classList.add('hidden');
+    generator.fixed = true;
+    formula = []; // consumed
+    step = 2;
+    
+    // Give player dummy fragments for terminal
+    inventory.push('3');
+    
+    showPause("Phase 3: Battery Draining", "Excellent! The generator is online.<br><br><b>Learning Objective:</b> Your battery (top left) is now failing rapidly. Press the <b>FIELD TERM</b> button to sacrifice fragments and restore power!");
+    document.getElementById('term-btn').classList.add('pulse-btn');
+}
+
+function openTerminal() {
+    if(state !== 'PLAY' || step < 2) return;
+    state = 'UI';
+    document.getElementById('term-ui').classList.remove('hidden');
+    document.getElementById('term-btn').classList.remove('pulse-btn');
+    renderTermUI();
+}
+
+function closeTerminal() {
+    document.getElementById('term-ui').classList.add('hidden');
+    state = 'PLAY'; lastTime = performance.now(); requestAnimationFrame(loop);
+}
+
+function renderTermUI() {
+    const invD = document.getElementById('term-inv');
+    invD.innerHTML = '';
+    inventory.forEach((v, i) => {
+        invD.appendChild(createNode(v, () => {
+            inventory.splice(i, 1);
+            Player.battery = 100; // Restore
+            renderTermUI();
+            
+            // Win state
+            if(step === 2) {
+                step = 3;
+                document.getElementById('term-ui').classList.add('hidden');
+                showPause("Training Complete", "<b>✦ SYSTEM OPTIMIZED ✦</b><br><br>You understand how to build functions <i>f(x)</i> to fix generators, and how to sacrifice leftover fragments to survive.<br><br>Close this simulation to begin your shift.");
+                document.querySelector('#tut-modal .btn').innerText = "END TUTORIAL";
+                document.querySelector('#tut-modal .btn').onclick = () => location.reload();
+            }
+        }));
     });
+}
 
-    // Isometric Drawing Function
-    function iso(dx, dy, w, h, face, top, side) {
-        const D = 4;
-        ctx.fillStyle=side; ctx.beginPath(); ctx.moveTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+w+D,dy+h-D); ctx.lineTo(dx+w,dy+h); ctx.fill();
-        ctx.fillStyle=top; ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+D,dy-D); ctx.fill();
-        ctx.fillStyle=face; ctx.fillRect(dx,dy,w,h);
+/** GAME LOOP **/
+let lastTime = 0;
+function loop(ts) {
+    if(state !== 'PLAY') return;
+    requestAnimationFrame(loop);
+    let dt = (ts - lastTime) / 1000; lastTime = ts;
+    if(dt > 0.1) dt = 0.1;
+    
+    update(dt);
+    draw();
+}
+
+function update(dt) {
+    // Keyboard input override
+    let kx = 0, ky = 0;
+    if(keys['w'] || keys['arrowup']) ky -= 1;
+    if(keys['s'] || keys['arrowdown']) ky += 1;
+    if(keys['a'] || keys['arrowleft']) kx -= 1;
+    if(keys['d'] || keys['arrowright']) kx += 1;
+    
+    let mx = Input.x !== 0 ? Input.x : kx;
+    let my = Input.y !== 0 ? Input.y : ky;
+    
+    let len = Math.hypot(mx, my);
+    if(len > 0) { mx /= len; my /= len; }
+    
+    Player.x += mx * Player.speed * dt;
+    Player.y += my * Player.speed * dt;
+    
+    // Keep in absolute bounds of the World
+    Player.x = Math.max(Player.radius, Math.min(WORLD_SIZE - Player.radius, Player.x));
+    Player.y = Math.max(Player.radius, Math.min(WORLD_SIZE - Player.radius, Player.y));
+
+    // Update Camera so it centers on the player
+    cam.x = Player.x - cw/2;
+    cam.y = Player.y - ch/2;
+
+    // Battery Drain in Step 2
+    if(step === 2) {
+        Player.battery -= 30 * dt;
+        if(Player.battery <= 0) Player.battery = 1; // Don't let them actually die in tutorial
     }
+    
+    let batPct = (Player.battery / Player.maxBattery) * 100;
+    let bFill = document.getElementById('battery-fill');
+    bFill.style.width = batPct + '%';
+    bFill.style.background = batPct < 30 ? '#ff003c' : '#00f3ff';
 
-    // AABB Collision
-    function boxOv(a, b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
-
-    // Game Loop
-    function loop() {
-        requestAnimationFrame(loop);
-
-        // --- Logic ---
-        if(mode === 'PLAY') {
-            player.vx = 0;
-            if(input.L) player.vx = -SPD;
-            if(input.R) player.vx = SPD;
-            if(input.J && player.onGround) { player.vy = JF; player.onGround = false; }
-
-            player.vy += GRAV;
-
-            // X Collision
-            player.x += player.vx;
-            let obstacles = [...world.plats];
-            if(world.frag) obstacles.push(world.frag);
+    // Collection
+    for(let i = fragmentsOnGround.length - 1; i >= 0; i--) {
+        let f = fragmentsOnGround[i];
+        if(Math.hypot(Player.x - f.x, Player.y - f.y) < 30) {
+            inventory.push(f.val);
+            fragmentsOnGround.splice(i, 1);
+            document.getElementById('inv-count').innerText = `${inventory.length}/3`;
             
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vx > 0) player.x = p.x - PW;
-                    else if(player.vx < 0) player.x = p.x + p.w;
-                }
-            }
-
-            // Y Collision
-            player.y += player.vy;
-            player.onGround = false;
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vy > 0) { player.y = p.y - PH; player.vy = 0; player.onGround = true; }
-                }
-            }
-            
-            // Death Pit Reset
-            if(player.y > 400) {
-                player.x = 30; player.y = 150; player.vy = 0;
-            }
-
-            // Progression Logic
-            if(step === 1 && player.x > 70) {
-                step = 2;
-                setInstruction("Step 2: The gap is too wide! Tap 'EDIT LAYOUT' to enter Build Phase.");
-                btnPhase.style.display = 'block';
-                input.R = false; // Force stop
-            }
-            
-            if(step === 5 && boxOv(player, world.exit)) {
-                step = 6;
-                setInstruction("TUTORIAL COMPLETE! Close this window to play.");
-                touchControls.style.display = 'none';
+            // Check step 1 completion
+            if(step === 0 && inventory.length === 3) {
+                step = 1;
+                // Spawn generator safely inside the world, near the player
+                generator = { x: WORLD_SIZE/2, y: WORLD_SIZE/2 - 150, fixed: false };
+                showPause("Phase 2: The Generator", "Excellent. You have raw data.<br><br><b>Learning Objective:</b> A broken Generator has appeared. Approach it and press <b>INT</b> (Interact) to open its interface. Use your fragments to build a formula that outputs its Target Power!");
             }
         }
-
-        // --- Render ---
-        ctx.fillStyle = P.skyT;
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.save();
-        ctx.scale(camZ, camZ);
-        // Center view slightly based on the wider layout
-        ctx.translate((width/camZ/2) - 190, Math.min(0, (height/camZ/2) - 200)); 
-
-        // Draw Platforms
-        for(let p of world.plats) iso(p.x, p.y, p.w, p.h, P.slabF, P.slabT, P.slabS);
-
-        // Draw Built Fragment
-        if(world.frag) {
-            iso(world.frag.x, world.frag.y, world.frag.w, world.frag.h, P.v10F, P.v10T, P.v10S);
-        } else if (mode === 'BUILD' && step === 3) {
-            // Draw Ghost Block
-            ctx.strokeStyle = '#ffcc00';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.fillStyle = 'rgba(255, 204, 0, 0.1)';
-            ctx.fillRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.setLineDash([]);
+    }
+    
+    // Interaction
+    if(Input.action || keys['e']) {
+        Input.action = false; keys['e'] = false;
+        if(generator && !generator.fixed && Math.hypot(Player.x - generator.x, Player.y - generator.y) < 60) {
+            openGen();
         }
+    }
+}
 
-        // Draw Exit Beacon
-        ctx.fillStyle='rgba(232,93,117,0.3)'; ctx.fillRect(world.exit.x-10, world.exit.y, 60, 50);
-        ctx.fillStyle=P.bea; ctx.beginPath(); ctx.moveTo(world.exit.x+20, world.exit.y+20); ctx.lineTo(world.exit.x+30, world.exit.y+50); ctx.lineTo(world.exit.x+10, world.exit.y+50); ctx.fill();
-
-        // Draw Player
-        if(mode === 'BUILD') ctx.globalAlpha = 0.5;
-        ctx.fillStyle = P.pl; ctx.fillRect(player.x, player.y, PW, PH);
-        ctx.globalAlpha = 1.0;
-
-        ctx.restore();
+function draw() {
+    // Clear Screen
+    ctx.fillStyle = '#050505'; ctx.fillRect(0, 0, cw, ch);
+    
+    ctx.save();
+    // Apply Camera Translation
+    ctx.translate(-cam.x, -cam.y);
+    
+    // Dynamic Grid lines (Only draw what is visible on camera)
+    ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+    let startX = Math.floor(cam.x / 50) * 50;
+    let startY = Math.floor(cam.y / 50) * 50;
+    
+    for(let x = startX; x < startX + cw + 100; x += 50) { 
+        ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, startY + ch + 100); ctx.stroke(); 
+    }
+    for(let y = startY; y < startY + ch + 100; y += 50) { 
+        ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(startX + cw + 100, y); ctx.stroke(); 
     }
 
-    // Start
-    loop();
+    // World Boundary (Optional, shows the edge of the 1000x1000 map)
+    ctx.strokeStyle = '#222'; ctx.lineWidth = 5;
+    ctx.strokeRect(0, 0, WORLD_SIZE, WORLD_SIZE);
+
+    // Generator
+    if(generator) {
+        ctx.fillStyle = '#222'; ctx.fillRect(generator.x-30, generator.y-30, 60, 60);
+        ctx.strokeStyle = generator.fixed ? '#00f3ff' : '#ff003c'; 
+        ctx.lineWidth = 3; ctx.strokeRect(generator.x-25, generator.y-25, 50, 50);
+        
+        ctx.fillStyle = '#fff'; ctx.textAlign='center'; ctx.textBaseline='middle'; 
+        ctx.font="14px 'Orbitron', sans-serif"; ctx.fillText("GEN", generator.x, generator.y);
+        
+        if(!generator.fixed && Math.hypot(Player.x - generator.x, Player.y - generator.y) < 60) {
+            ctx.fillStyle = '#ffea00'; ctx.fillText("PRESS [INT]", generator.x, generator.y - 45);
+        }
+    }
+
+    // Fragments
+    ctx.font = "900 24px 'Orbitron', sans-serif"; ctx.textAlign='center'; ctx.textBaseline='middle'; 
+    for(let f of fragmentsOnGround) {
+        ctx.fillStyle = ['+','-','*'].includes(f.val) ? '#ff7700' : (f.val==='x' ? '#ff003c' : '#fff');
+        ctx.fillText(f.val, f.x, f.y);
+        ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10; ctx.fillText(f.val, f.x, f.y); ctx.shadowBlur = 0;
+    }
+
+    // Player
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(Player.x, Player.y, Player.radius, 0, Math.PI*2); ctx.fill();
+    ctx.shadowColor = '#00f3ff'; ctx.shadowBlur = 15; ctx.fill(); ctx.shadowBlur = 0;
+
+    ctx.restore();
+}
+
+// Ensure fonts load before first draw
+document.fonts.ready.then(() => {
+    setTimeout(() => {
+        initTutorial();
+    }, 150);
+});
+
 </script>
 </body>
 </html>
