@@ -1069,7 +1069,8 @@ function handleTyping(e) {
             Game.currentGenIndex = Game.generators.indexOf(activeGen);
             openGenerator(); 
         } 
-        else if (Game.generatorFixed && Math.hypot(Player.x - Game.stairs.x, Player.y - Game.stairs.y) < 50) {
+  else if (Game.generatorFixed && Math.hypot(Player.x - Game.stairs.x, Player.y - Game.stairs.y) < 50) {
+            Game.state = 'TRANSITION'; // FIX: Lock game state to prevent multiple triggers
             Audio.playSuccess();
             let flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;transition:opacity 0.5s;';
@@ -1077,7 +1078,7 @@ function handleTyping(e) {
             setTimeout(()=> { 
                 flash.style.opacity = 0; setTimeout(()=>flash.remove(),500); 
                 if(Game.floor >= Game.maxFloors) triggerEnd(true);
-                else { Game.floor++; Game.inventory.push(...Game.formula); Game.formula = []; generateLevel(); }
+                else { Game.floor++; Game.inventory.push(...Game.formula); Game.formula = []; generateLevel(); Game.state = 'PLAY'; } // FIX: Re-enable game state
             }, 500);
         }
     } else if (Game.state === 'UI') {
@@ -1292,15 +1293,18 @@ function updateGame(dt) {
             Input.justAction = false; 
             Game.currentGenIndex = Game.generators.indexOf(activeGen);
             openGenerator();
-        } else if (Game.generatorFixed && Math.hypot(Player.x - Game.stairs.x, Player.y - Game.stairs.y) < 50) {
-            Input.justAction = false; Audio.playSuccess();
+} else if (Game.generatorFixed && Math.hypot(Player.x - Game.stairs.x, Player.y - Game.stairs.y) < 50) {
+            Input.justAction = false; 
+            keys['e'] = false; // FIX: Force clear the keypress
+            Game.state = 'TRANSITION'; // FIX: Lock game state to prevent multiple triggers
+            Audio.playSuccess();
             let flash = document.createElement('div');
             flash.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;transition:opacity 0.5s;';
             document.body.appendChild(flash);
             setTimeout(()=> { 
                 flash.style.opacity = 0; setTimeout(()=>flash.remove(),500); 
                 if(Game.floor >= Game.maxFloors) triggerEnd(true);
-                else { Game.floor++; Game.inventory.push(...Game.formula); Game.formula = []; generateLevel(); }
+                else { Game.floor++; Game.inventory.push(...Game.formula); Game.formula = []; generateLevel(); Game.state = 'PLAY'; } // FIX: Re-enable game state
             }, 500);
         }
     }
