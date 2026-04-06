@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>THE FALLACY: SYNC PROTOCOL</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root {
+    --neon-green: #39ff14;
+    --toxic: #a8ff00;
+    --orange: #ff6600;
+    --amber: #ffaa00;
+    --rad-red: #ff2222;
+    --cyan: #00e5ff;
+    --dark: #050802;
+    --panel-bg: rgba(5, 15, 3, 0.92);
+    --border: rgba(60,120,10,0.5);
+  }
+
+  html, body {
+    width:100%; height:100%; overflow-x:hidden;
+    background: var(--dark); color: var(--toxic);
+    font-family: 'Share Tech Mono', monospace; user-select: none; text-shadow: 0 0 10px var(--cyan);
+  }
+
+  body::before {
+    content:''; position:fixed; inset:0; z-index:9999; pointer-events:none;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px), radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
+  }
+
+  #root { display:flex; flex-direction:column; align-items:center; min-height:100vh; padding:14px 10px 10px; }
+  #hdr { text-align:center; margin-bottom:10px; position:relative; width: 100%; max-width: 1040px; }
+  #title { font-family:'Orbitron', sans-serif; font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight:900; color: var(--cyan); letter-spacing:.35em; text-shadow: 0 0 12px var(--cyan), 0 0 30px #00aaff88; }
+  #subtitle { font-size:.8rem; letter-spacing:.6em; color:#007777; margin-top:4px; }
+
+  .status-bar { color: var(--amber); font-size: 1.2rem; font-weight: bold; text-shadow: 0 0 10px var(--amber); margin-bottom: 15px; text-align: center; }
+
+  #arena { display:flex; gap:20px; align-items:flex-start; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 1200px; }
+
+  .grid-panel { 
+    background: var(--panel-bg); border: 2px solid var(--cyan); border-radius:4px; 
+    padding:15px; box-shadow: 0 0 15px rgba(0, 229, 255, 0.1); 
+    width: 100%; max-width: 420px; 
+  }
+  
+  .grid-title { text-align: center; font-size: 1.2rem; color: var(--cyan); letter-spacing: .2em; margin-bottom: 15px; border-bottom: 1px solid var(--cyan); padding-bottom: 5px; }
+
+  /* --- NEW FLEX ROW ARCHITECTURE FOR PERFECT MOBILE ALIGNMENT --- */
+  .grid-body-rows { display: flex; flex-direction: column; gap: 5px; }
+  .grid-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+  
+  .hulk-cell { width: 100px; height: 50px; display: flex; flex-direction: column; align-items: flex-end; justify-content: center; font-size: 0.7rem; color: var(--amber); text-shadow: 0 0 5px var(--amber); text-align: right; transition: all 0.2s; border-radius: 4px; padding-right: 5px; }
+  .hulk-cell span { font-size: 1.2rem; font-weight: bold; }
+  .hulk-breached { color: var(--rad-red); text-shadow: 0 0 8px var(--rad-red); }
+  .hulk-stunned { color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+  .hulk-cell.stunnable { cursor: crosshair; outline: 1px dashed var(--cyan); background: rgba(0, 229, 255, 0.1); }
+  .hulk-cell.stunnable:hover { background: rgba(0, 229, 255, 0.3); transform: scale(1.05); }
+
+  .matrix-row { display: flex; gap: 5px; }
+  .cell { 
+    width: 50px; height: 50px; border: 1px dashed rgba(0, 229, 255, 0.5); 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 1.5rem; font-family: 'VT323', monospace; color: white; 
+    cursor: pointer; position: relative; transition: all 0.2s; 
+  }
+  .cell:hover { background: rgba(0, 229, 255, 0.2); }
+  .cell.locked { border: 2px solid var(--rad-red); background: rgba(255, 0, 0, 0.1); color: var(--rad-red); text-shadow: 0 0 10px var(--rad-red); cursor: not-allowed; }
+  .cell.synced { border: 2px solid var(--neon-green); background: rgba(57, 255, 20, 0.1); color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); cursor: not-allowed; }
+  
+  .pawn { position: absolute; width: 16px; height: 16px; border-radius: 50%; bottom: 3px; right: 3px; box-shadow: 0 0 8px currentColor; border: 2px solid #fff; z-index: 5; }
+
+  .res-cell { width: 55px; height: 50px; display: flex; align-items: center; font-size: 1.4rem; font-weight: bold; color: var(--neon-green); }
+  
+  #hud-panel { width: 100%; max-width: 900px; background: var(--panel-bg); border: 1px solid var(--border); padding: 15px; margin-top: 20px; display: flex; flex-direction: column; align-items: center; }
+
+  #hand { display: flex; gap: 15px; margin-top: 10px; }
+  .card {
+    width: 60px; height: 80px; border: 2px solid var(--border); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-family: 'VT323', monospace; cursor: pointer;
+    background: #111; color: var(--toxic); transition: transform 0.1s;
+  }
+  .card.selected { border-color: var(--orange); box-shadow: 0 0 15px var(--orange); transform: translateY(-10px); color: var(--orange); }
+  .power-card { font-size: 1rem; font-weight: bold; font-family: 'Share Tech Mono', monospace; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    background: transparent; border: 2px solid var(--orange); color: var(--orange);
+    padding: 10px 15px; font-family: 'Share Tech Mono', monospace; font-size: 0.9rem;
+    cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+  }
+  .btn:hover { background: var(--orange); color: #000; box-shadow: 0 0 15px var(--orange); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; border-color: #555; color: #555; box-shadow: none; background: transparent; }
+  
+  .btn.ready { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 15px rgba(57, 255, 20, 0.4); }
+
+  #team-hands {
+    display: flex; flex-wrap: wrap; gap: 15px; margin-top: 20px; width: 100%;
+    justify-content: center; border-top: 1px dashed var(--border); padding-top: 15px;
+  }
+  .team-player { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.5); padding: 8px; border: 1px solid #222; border-radius: 4px; min-width: 130px; }
+  .team-name { font-size: 0.8rem; font-weight: bold; margin-bottom: 8px; text-shadow: 0 0 5px currentColor; }
+  .team-cards { display: flex; gap: 5px; }
+  .mini-card { width: 30px; height: 45px; border: 1px solid var(--border); border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-family: 'VT323', monospace; background: #111; color: var(--cyan); }
+  .mini-power { font-size: 0.55rem; font-family: 'Share Tech Mono', monospace; font-weight: bold; }
+
+  #log { margin-top: 15px; width: 100%; height: 80px; overflow-y: auto; border: 1px solid #333; background: #000; padding: 5px; font-size: 0.85rem; color: #aaa; text-shadow: none; }
+  #log::-webkit-scrollbar { width: 0px; }
+
+  .overlay { position:absolute; inset:0; background: rgba(2,5,1,.95); display:flex; flex-direction:column; align-items:center; justify-content: flex-start; overflow-y: auto; z-index:100; text-align: center; padding: 40px 20px 80px 20px; }
+  .ov-title { font-family:'Orbitron',sans-serif; font-size: 3rem; color: var(--cyan); margin-top: auto; margin-bottom: 5px; text-shadow: 0 0 30px var(--cyan); }
+  .ov-subtitle { font-size: 1.2rem; color: var(--amber); letter-spacing: 0.4em; margin-bottom: 30px; font-weight: bold; text-shadow: 0 0 10px var(--amber); }
+  .ov-body { max-width: 600px; line-height: 1.8; margin-bottom: 20px; color: #ccc; font-size: 0.9rem; }
+  .setup-row { margin: 10px 0; font-size: 0.9rem; }
+  .setup-row select { background: #000; color: var(--cyan); border: 1px solid var(--cyan); padding: 5px; font-family: 'Share Tech Mono'; }
+  .ov-spacer { margin-bottom: auto; }
+  
+  @media (max-width: 600px) {
+    .hulk-cell { width: 75px; }
+    .hulk-cell span { font-size: 1rem; }
+    .res-cell { width: 45px; font-size: 1.1rem; }
+    .card { width: 50px; height: 70px; font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root">
+  <div id="hdr">
+    <div id="title">THE FALLACY</div>
+    <div id="subtitle">PROTOCOL SYNC · DEFENSE ENGINE</div>
+  </div>
+
+  <div class="status-bar" id="threat-level">SYSTEM INTEGRITY: 0 / 3 ROWS LOCKED (SAFE)</div>
+
+  <div id="arena"></div>
+
+  <div id="hud-panel">
+    <div style="font-size: 1.2rem; color: var(--orange);" id="turn-indicator">PLAYER 1'S TURN</div>
+    <div id="hand"></div>
+    <div class="btn-row">
+      <button class="btn" id="btn-transport" onclick="transport()">TRANSPORT</button>
+      <button class="btn" id="btn-redraw" onclick="redrawHand()">REDRAW</button>
+      <button class="btn" id="btn-undo" onclick="undoMove()">UNDO MOVE</button>
+      <button class="btn" id="btn-confirm" onclick="confirmMove()">CONFIRM MOVE</button>
+    </div>
+    
+    <div id="team-hands"></div>
+    <div id="log"><div>> SYSTEM BOOTED. AWAITING SYNC...</div></div>
+  </div>
+</div>
+
+<div id="welcome" class="overlay">
+  <div class="ov-title">THE FALLACY</div>
+  <div class="ov-subtitle">SYNC PROTOCOL</div>
+  <div class="ov-body">
+    <b>1.</b> Move & Play cards to build formulas (Num Op Num).<br>
+    <b>2.</b> <span style="color:var(--neon-green)">SYNC:</span> If all grids match equations EXACTLY, the row is secured!<br>
+    <b>3.</b> <span style="color:var(--amber)">VIRUS:</span> Unmatched equations attract Composite Hulks to the grid that formed them.<br>
+    <b>4.</b> <span style="color:var(--cyan)">ANTIVIRUS:</span> Destroy a Hulk by forming its exact number on ANOTHER grid.<br>
+    <b>5.</b> <span style="color:var(--rad-red)">BREACH:</span> If a Hulk breaches, its row locks. Form a number <b>GREATER (>)</b> on another grid to OVERRIDE it!<br>
+    <i>Game Over if 3 rows are locked simultaneously.</i>
+  </div>
+  <div class="setup-row">
+    Player Roster: 
+    <select id="ai-count">
+      <option value="solo" selected>1 Player (Solo Mode)</option>
+      <option value="3">4 Players (1 Human, 3 AI)</option>
+      <option value="2">4 Players (2 Humans, 2 AI)</option>
+      <option value="1">4 Players (3 Humans, 1 AI)</option>
+      <option value="0">4 Players (Hotseat Co-op, 0 AI)</option>
+    </select>
+  </div>
+  <div class="setup-row">
+    Difficulty: 
+    <select id="diff-level">
+      <option value="2">Normal (Alpha & Beta)</option>
+      <option value="3">Hard (Alpha, Beta & Gamma)</option>
+    </select>
+  </div>
+  <button class="btn" style="margin-top: 20px;" onclick="startGame()">▶ COMMENCE SYNC</button>
+  <div class="ov-spacer"></div>
+</div>
+
+<div id="game-over" class="overlay" style="display:none;">
+  <div class="ov-title" style="color: var(--rad-red); font-size: 2.5rem; margin-top: auto;">SYSTEM OVERRUN</div>
+  <div class="ov-body">All sectors locked. System integrity collapsed.</div>
+  <button class="btn" onclick="resetGame()">REBOOT OS</button>
+  <div class="ov-spacer"></div>
+</div>
+
+<div id="victory" class="overlay" style="display:none;">
+  <div class="ov-title" style="color: var(--neon-green); font-size: 2.5rem; margin-top: auto;">SYNC COMPLETE</div>
+  <div class="ov-body">All sectors mathematically stabilized. The Swarm has been eradicated.</div>
+  <button class="btn" onclick="resetGame()">PLAY AGAIN</button>
+  <div class="ov-spacer"></div>
+</div>
+
+<script>
+// --- Web Audio API ---
+let actx = null;
+function playSfx(type) {
+    try {
+        if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+        if (actx.state === 'suspended') actx.resume();
+        
+        let osc = actx.createOscillator(); let gain = actx.createGain();
+        osc.connect(gain); gain.connect(actx.destination);
+        
+        if(type === 'win') {
+            osc.type = 'sine'; let notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((f, i) => {
+                setTimeout(() => {
+                    let o = actx.createOscillator(); let g = actx.createGain();
+                    o.type = 'sine'; o.frequency.value = f;
+                    o.connect(g); g.connect(actx.destination);
+                    g.gain.setValueAtTime(0, actx.currentTime); g.gain.linearRampToValueAtTime(0.2, actx.currentTime+0.1); g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime+0.8);
+                    o.start(); o.stop(actx.currentTime+1);
+                }, i * 200);
+            });
+        } else if(type === 'alert') {
+            osc.type = 'sawtooth'; osc.frequency.value = 110;
+            gain.gain.setValueAtTime(0.2, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.5);
+            osc.start(); osc.stop(actx.currentTime + 0.5);
+        } else if(type === 'breach') {
+            osc.type = 'square'; osc.frequency.value = 80;
+            gain.gain.setValueAtTime(0.3, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 1.0);
+            osc.start(); osc.stop(actx.currentTime + 1.0);
+        } else if(type === 'override') {
+            osc.type = 'triangle'; osc.frequency.value = 440;
+            gain.gain.setValueAtTime(0.2, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.3);
+            osc.start(); osc.stop(actx.currentTime + 0.3);
+        } else if(type === 'sync') {
+            osc.type = 'sine'; osc.frequency.value = 880;
+            gain.gain.setValueAtTime(0.1, actx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.3);
+            osc.start(); osc.stop(actx.currentTime + 0.3);
+        }
+    } catch(e) {}
+}
+
+// --- Game State ---
+const P_COLORS = ['#39ff14', '#ff4444', '#00e5ff', '#ffcc00'];
+const P_NAMES = ['PLAYER 1', 'PLAYER 2', 'PLAYER 3', 'PLAYER 4'];
+const NUMBERS = ['1','2','3','4','5','6','7','8','9'];
+const OPS = ['+', '-', 'x', '/'];
+const POWERS = ['STUN', 'WARP', 'SWAP'];
+const COMPOSITES = [4, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22];
+
+let numGrids = 2; 
+let grids = []; 
+let rowTargets = [null, null, null]; 
+let players = [];
+let currentPlayerIdx = 0;
+let selectedCardIdx = null;
+
+let isProcessing = false;
+let aiTimeout = null;
+let hasActedThisTurn = false;
+let turnStartState = null; 
+
+// --- Deck ---
+function drawCard() {
+    let r = Math.random();
+    if (r < 0.65) return NUMBERS[Math.floor(Math.random() * NUMBERS.length)];
+    if (r < 0.85) return OPS[Math.floor(Math.random() * OPS.length)];
+    return POWERS[Math.floor(Math.random() * POWERS.length)];
+}
+
+function getRandomComposite() {
+    return COMPOSITES[Math.floor(Math.random() * COMPOSITES.length)];
+}
+
+function getHulkTurns() {
+    return players.length === 1 ? 12 : 4;
+}
+
+// --- State Management ---
+function saveState() {
+    turnStartState = JSON.stringify({ grids, rowTargets, players, currentPlayerIdx });
+}
+
+function resetGame() {
+    clearTimeout(aiTimeout);
+    isProcessing = false;
+    document.getElementById('game-over').style.display = 'none';
+    document.getElementById('victory').style.display = 'none';
+    document.getElementById('welcome').style.display = 'flex';
+}
+
+// --- Init ---
+function startGame() {
+    grids = [];
+    players = [];
+    rowTargets = [null, null, null];
+    currentPlayerIdx = 0;
+    selectedCardIdx = null;
+    hasActedThisTurn = false;
+    document.getElementById('log').innerHTML = '<div>> SYSTEM BOOTED. AWAITING SYNC...</div>';
+
+    document.getElementById('welcome').style.display = 'none';
+    
+    let mode = document.getElementById('ai-count').value;
+    numGrids = parseInt(document.getElementById('diff-level').value);
+    
+    let numPlayers = mode === "solo" ? 1 : 4;
+    let aiCount = mode === "solo" ? 0 : parseInt(mode);
+    
+    let gridNames = ['ALPHA', 'BETA', 'GAMMA'];
+    for(let i=0; i<numGrids; i++) {
+        grids.push({ name: gridNames[i], cells: [['','',''],['','',''],['','','']], hulks: [null, null, null] });
+    }
+
+    for(let i=0; i<numPlayers; i++) {
+        players.push({
+            id: i, name: numPlayers === 1 ? 'SOLO SURVIVOR' : P_NAMES[i], color: P_COLORS[i],
+            isAI: numPlayers === 1 ? false : i >= (numPlayers - aiCount),
+            gridIdx: i % numGrids,
+            x: i < 2 ? 0 : 2, y: i < 2 ? 0 : 2,
+            hand: [drawCard(), drawCard(), drawCard()]
+        });
+    }
+
+    buildUI(); 
+    handleTurnStart();
+}
+
+function buildUI() {
+    let arena = document.getElementById('arena');
+    arena.innerHTML = '';
+    grids.forEach((g, gIdx) => {
+        let html = `<div class="grid-panel">
+            <div class="grid-title">SECTOR ${g.name}</div>
+            <div class="grid-body-rows">`;
+        for(let y=0; y<3; y++) {
+            html += `<div class="grid-row">
+                <div class="hulk-cell" id="hulk-${gIdx}-${y}" onclick="handleHulkClick(${gIdx}, ${y})"></div>
+                <div class="matrix-row">
+                    <div class="cell" id="cell-${gIdx}-0-${y}" onclick="handleCellClick(${gIdx},0,${y})"></div>
+                    <div class="cell" id="cell-${gIdx}-1-${y}" onclick="handleCellClick(${gIdx},1,${y})"></div>
+                    <div class="cell" id="cell-${gIdx}-2-${y}" onclick="handleCellClick(${gIdx},2,${y})"></div>
+                </div>
+                <div class="res-cell" id="res-${gIdx}-${y}"></div>
+            </div>`;
+        }
+        html += `</div></div>`;
+        arena.innerHTML += html;
+    });
+}
+
+function evaluateRow(gIdx, y) {
+    let c = grids[gIdx].cells;
+    let n1 = c[0][y], op = c[1][y], n2 = c[2][y];
+    if(!NUMBERS.includes(n1) || !OPS.includes(op) || !NUMBERS.includes(n2)) return null;
+    let val1 = parseInt(n1), val2 = parseInt(n2);
+    if(op === '+') return val1 + val2;
+    if(op === '-') return val1 - val2;
+    if(op === 'x') return val1 * val2;
+    if(op === '/') { 
+        if(val2 === 0) return null; 
+        return Math.round((val1 / val2) * 100) / 100;
+    }
+    return null;
+}
+
+// --- Turn Cycle ---
+function handleTurnStart() {
+    let p = players[currentPlayerIdx];
+    while(p.hand.length < 3) p.hand.push(drawCard());
+    selectedCardIdx = null;
+    hasActedThisTurn = false;
+    
+    saveState();
+    updateUI();
+    
+    if(p.isAI) {
+        isProcessing = true;
+        aiTimeout = setTimeout(playAI, 800);
+    } else {
+        isProcessing = false;
+    }
+}
+
+function log(msg) {
+    let l = document.getElementById('log');
+    l.innerHTML = `<div>> ${msg}</div>` + l.innerHTML;
+}
+
+function confirmMove() {
+    if (!hasActedThisTurn) { log("Action required to confirm."); return; }
+    isProcessing = true;
+    endTurn();
+}
+
+function undoMove() {
+    if (isProcessing || !hasActedThisTurn) return;
+    
+    let prevState = JSON.parse(turnStartState);
+    grids = prevState.grids;
+    rowTargets = prevState.rowTargets;
+    players = prevState.players;
+    currentPlayerIdx = prevState.currentPlayerIdx;
+
+    hasActedThisTurn = false;
+    selectedCardIdx = null;
+    log("Turn reverted.");
+    updateUI();
+}
+
+function endTurn() {
+    processEngine();
+    if(document.getElementById('game-over').style.display === 'flex' || document.getElementById('victory').style.display === 'flex') return;
+    
+    currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+    if(currentPlayerIdx === 0) advanceHulks(); 
+    
+    handleTurnStart();
+}
+
+function redrawHand() {
+    if (isProcessing) return;
+    if (hasActedThisTurn) { log("Action already taken."); return; }
+    
+    let p = players[currentPlayerIdx];
+    p.hand = [drawCard(), drawCard(), drawCard()];
+    hasActedThisTurn = true;
+    log(`${p.name} redrew hand.`);
+    updateUI();
+}
+
+function transport() {
+    if (isProcessing) return;
+    if (hasActedThisTurn) { log("Action already taken."); return; }
+    
+    let p = players[currentPlayerIdx];
+    p.gridIdx = (p.gridIdx + 1) % numGrids;
+    hasActedThisTurn = true;
+    log(`${p.name} transported.`);
+    updateUI();
+}
+
+function advanceHulks() {
+    for(let gIdx=0; gIdx<numGrids; gIdx++) {
+        for(let y=0; y<3; y++) {
+            let h = grids[gIdx].hulks[y];
+            if(h) {
+                if(h.stunTurns > 0) {
+                    h.stunTurns--;
+                    if(h.stunTurns === 0) log(`Row ${y+1} Hulk recovery.`);
+                } else if (h.state === 'approaching') {
+                    h.turns--;
+                    if(h.turns <= 0) {
+                        h.state = 'breached';
+                        playSfx('breach');
+                        log(`[!] HULK BREACH SECTOR ${grids[gIdx].name} ROW ${y+1}!`);
+                    }
+                }
+            }
+        }
+    }
+    updateUI();
+    processWinLoss();
+}
+
+function processEngine() {
+    let rowVals = [];
+    for(let y=0; y<3; y++) {
+        let vals = [];
+        for(let gIdx=0; gIdx<numGrids; gIdx++) vals.push(evaluateRow(gIdx, y));
+        rowVals.push(vals);
+    }
+
+    for(let y=0; y<3; y++) {
+        let vals = rowVals[y];
+        let isRowSynced = false;
+
+        let firstVal = vals[0];
+        if (firstVal !== null) {
+            isRowSynced = true;
+            for(let gIdx=1; gIdx<numGrids; gIdx++) {
+                if (vals[gIdx] !== firstVal) isRowSynced = false;
+            }
+        }
+
+        if (isRowSynced) {
+            if (!rowTargets[y] || !rowTargets[y].synced) {
+                log(`ROW ${y+1} SECURED!`);
+                playSfx('sync');
+            }
+            rowTargets[y] = { val: firstVal, synced: true };
+            for(let gIdx=0; gIdx<numGrids; gIdx++) grids[gIdx].hulks[y] = null;
+            continue; 
+        }
+
+        rowTargets[y] = { synced: false };
+        let hulkDestroyedThisTurn = false;
+
+        for(let gIdx=0; gIdx<numGrids; gIdx++) {
+            let h = grids[gIdx].hulks[y];
+
+            if (h) {
+                let cleared = false;
+                for(let other=0; other<numGrids; other++) {
+                    if (other !== gIdx && vals[other] !== null) {
+                        if (h.state === 'approaching' && vals[other] === h.val) {
+                            cleared = true;
+                            log(`Hulk neutralized! Sector ${grids[other].name} provided antivirus.`);
+                        }
+                        else if (h.state === 'breached' && vals[other] > h.val) {
+                            cleared = true;
+                            log(`OVERRIDE! Sector ${grids[other].name} power > ${h.val}.`);
+                        }
+                        else if (h.state === 'breached' && h.stunTurns > 0 && vals[other] === h.val) {
+                            cleared = true;
+                            log(`STUN PURGE! Sector ${grids[other].name} neutralized breached Hulk.`);
+                        }
+                    }
+                }
+
+                if (!cleared && h.state === 'approaching' && vals[gIdx] === null) {
+                    cleared = true;
+                    log(`Formula broken. Hulk dissipated.`);
+                }
+
+                if (cleared) {
+                    grids[gIdx].hulks[y] = null;
+                    playSfx('override');
+                    hulkDestroyedThisTurn = true;
+                }
+            }
+        }
+
+        let activeHulksOnRow = 0;
+        for(let gIdx=0; gIdx<numGrids; gIdx++) {
+            if (grids[gIdx].hulks[y] !== null) activeHulksOnRow++;
+        }
+
+        if (activeHulksOnRow === 0 && !hulkDestroyedThisTurn) {
+            for(let gIdx=0; gIdx<numGrids; gIdx++) {
+                if (vals[gIdx] !== null) {
+                    let newTarget = getRandomComposite();
+                    grids[gIdx].hulks[y] = { val: newTarget, turns: getHulkTurns(), state: 'approaching', stunTurns: 0 };
+                    log(`Virus detected! Hulk [${newTarget}] attracted to Sector ${grids[gIdx].name}.`);
+                    playSfx('alert');
+                    break; 
+                }
+            }
+        }
+    }
+    processWinLoss();
+}
+
+function processWinLoss() {
+    let win = true;
+    for(let y=0; y<3; y++) { if(!rowTargets[y] || !rowTargets[y].synced) win = false; }
+    if(win) { document.getElementById('victory').style.display = 'flex'; playSfx('win'); return; }
+
+    let lockedRowCount = 0;
+    for(let y=0; y<3; y++) {
+        let isRowLocked = false;
+        for(let gIdx=0; gIdx<numGrids; gIdx++) {
+            let h = grids[gIdx].hulks[y];
+            if (h && h.state === 'breached' && h.stunTurns === 0) isRowLocked = true;
+        }
+        if (isRowLocked) lockedRowCount++;
+    }
+
+    document.getElementById('threat-level').innerText = `INTEGRITY: ${lockedRowCount} / 3 ROWS LOCKED (${lockedRowCount >= 3 ? 'CRITICAL' : 'SAFE'})`;
+    if(lockedRowCount >= 3) document.getElementById('game-over').style.display = 'flex';
+}
+
+function selectCard(idx) {
+    if(players[currentPlayerIdx].isAI) return;
+    if(selectedCardIdx === idx) selectedCardIdx = null;
+    else selectedCardIdx = idx;
+    updateUI();
+}
+
+function handleHulkClick(gIdx, y) {
+    if (isProcessing || hasActedThisTurn) return;
+    let p = players[currentPlayerIdx];
+    if (gIdx !== p.gridIdx) return;
+
+    if (selectedCardIdx === null || p.hand[selectedCardIdx] !== 'STUN') return;
+
+    let h = grids[gIdx].hulks[y];
+    if (!h) return;
+
+    if (confirm(`STUN Hulk on Sector ${grids[gIdx].name} Row ${y+1}?`)) {
+        h.stunTurns += 2;
+        log(`Hulk Stunned!`);
+        p.hand.splice(selectedCardIdx, 1);
+        hasActedThisTurn = true;
+        updateUI();
+    }
+}
+
+function handleCellClick(gIdx, x, y) {
+    if (isProcessing || hasActedThisTurn) return;
+    let p = players[currentPlayerIdx];
+    if(gIdx !== p.gridIdx) { log("Move to that sector first."); return; }
+
+    let isAdjacent = (Math.abs(p.x - x) + Math.abs(p.y - y)) <= 1;
+
+    if(selectedCardIdx === null) {
+        if(isAdjacent && (p.x !== x || p.y !== y)) {
+            p.x = x; p.y = y;
+            log(`${p.name} moved.`);
+            hasActedThisTurn = true;
+            updateUI();
+        }
+        return;
+    }
+
+    let isLocked = false;
+    let h = grids[gIdx].hulks[y];
+    if(h && h.state === 'breached' && h.stunTurns === 0) isLocked = true;
+
+    if(isLocked) { log("LOCKED!"); return; }
+    if(rowTargets[y] && rowTargets[y].synced) { log("Secured."); return; }
+
+    let card = p.hand[selectedCardIdx];
+    let isWarp = card === 'WARP';
+    if(!isAdjacent && !isWarp) return;
+
+    if(card === 'STUN') return;
+    
+    if(card === 'SWAP') {
+        let boardSymbol = grids[gIdx].cells[x][y];
+        if (boardSymbol === '') return;
+        p.x = x; p.y = y;
+        p.hand[selectedCardIdx] = boardSymbol; 
+        log(`SWAP complete.`);
+        hasActedThisTurn = true;
+        updateUI();
+        return;
+    }
+
+    if(isWarp) { 
+        p.x = x; p.y = y; 
+        p.hand.splice(selectedCardIdx, 1); 
+        hasActedThisTurn = true;
+        updateUI();
+        return; 
+    }
+
+    if(x === 1 && !OPS.includes(card)) return;
+    if((x === 0 || x === 2) && !NUMBERS.includes(card)) return;
+
+    p.x = x; p.y = y;
+    grids[gIdx].cells[x][y] = card;
+    p.hand.splice(selectedCardIdx, 1);
+    hasActedThisTurn = true;
+    updateUI();
+}
+
+// --- Predictive AI Engine ---
+function playAI() {
+    let p = players[currentPlayerIdx];
+    let validMoves = [];
+    let gridCells = grids[p.gridIdx].cells;
+    
+    for(let dx=-1; dx<=1; dx++) {
+        for(let dy=-1; dy<=1; dy++) {
+            if(Math.abs(dx) + Math.abs(dy) !== 1) continue;
+            let nx = p.x + dx, ny = p.y + dy;
+            if(nx>=0 && nx<3 && ny>=0 && ny<3) {
+                
+                let isLocked = false;
+                let h = grids[p.gridIdx].hulks[ny];
+                if(h && h.state === 'breached' && h.stunTurns === 0) isLocked = true;
+
+                if(!isLocked && !(rowTargets[ny] && rowTargets[ny].synced)) {
+                    let cellEmpty = gridCells[nx][ny] === '';
+                    let isRowCurrentlyFull = (gridCells[0][ny] !== '' && gridCells[1][ny] !== '' && gridCells[2][ny] !== '');
+
+                    p.hand.forEach((card, cIdx) => {
+                        let isValid = false;
+                        if(nx === 1 && OPS.includes(card)) isValid = true;
+                        if((nx === 0 || nx === 2) && NUMBERS.includes(card)) isValid = true;
+                        
+                        if(isValid) {
+                            let weight = cellEmpty ? 10 : 1;
+
+                            // Penalize destroying completed formulas unless necessary
+                            if (isRowCurrentlyFull && !cellEmpty) {
+                                if (h && h.state === 'breached') {
+                                    // Needs override, okay to destroy
+                                } else {
+                                    weight -= 100; 
+                                }
+                            }
+
+                            // Simulation
+                            let originalVal = gridCells[nx][ny];
+                            gridCells[nx][ny] = card;
+                            
+                            let n1 = gridCells[0][ny], op = gridCells[1][ny], n2 = gridCells[2][ny];
+                            let isRowFull = (n1 !== '' && op !== '' && n2 !== '');
+                            
+                            if (isRowFull) {
+                                let res = null;
+                                let v1 = parseInt(n1), v2 = parseInt(n2);
+                                if(op === '+') res = v1 + v2;
+                                else if(op === '-') res = v1 - v2;
+                                else if(op === 'x') res = v1 * v2;
+                                else if(op === '/') { if(v2 !== 0) res = Math.round((v1/v2)*100)/100; }
+                                
+                                if (res !== null) {
+                                    // Look at Hulks on other grids to save them
+                                    let needsToSaveOtherGrid = false;
+                                    for(let other=0; other<numGrids; other++) {
+                                        if (other !== p.gridIdx) {
+                                            let otherHulk = grids[other].hulks[ny];
+                                            if (otherHulk) {
+                                                if (otherHulk.state === 'breached' && res > otherHulk.val) {
+                                                    weight += 1000; // Found an override!
+                                                    needsToSaveOtherGrid = true;
+                                                } else if ((otherHulk.state === 'approaching' || otherHulk.stunTurns > 0) && res === otherHulk.val) {
+                                                    weight += 1000; // Found a sync match!
+                                                    needsToSaveOtherGrid = true;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    if (!needsToSaveOtherGrid) {
+                                        weight += 50; // Just sets a target, valid move
+                                    }
+                                } else {
+                                    weight -= 5000; // Divide by zero
+                                }
+                            } else {
+                                weight += 5; // Partial building
+                            }
+                            
+                            gridCells[nx][ny] = originalVal; // Revert
+                            
+                            if (weight > 0) {
+                                validMoves.push({x: nx, y: ny, cardIdx: cIdx, card: card, weight: weight});
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    }
+    
+    if(validMoves.length > 0) {
+        validMoves.sort((a,b) => b.weight - a.weight);
+        let bestMoves = validMoves.filter(m => m.weight === validMoves[0].weight);
+        let move = bestMoves[Math.floor(Math.random() * bestMoves.length)];
+        p.x = move.x; p.y = move.y;
+        grids[p.gridIdx].cells[move.x][move.y] = move.card;
+        p.hand.splice(move.cardIdx, 1);
+        log(`AI deployed [${move.card}].`);
+    } else {
+        let moved = false;
+        let emptySpaces = [];
+        for(let y=0; y<3; y++) {
+            for(let x=0; x<3; x++) {
+                if(gridCells[x][y] === '' && !(rowTargets[y] && rowTargets[y].synced)) emptySpaces.push({x, y});
+            }
+        }
+        if(emptySpaces.length > 0) {
+            let target = emptySpaces[0];
+            if(p.x < target.x) p.x++;
+            else if(p.x > target.x) p.x--;
+            else if(p.y < target.y) p.y++;
+            else if(p.y > target.y) p.y--;
+            moved = true;
+        } 
+        if(!moved) { p.gridIdx = (p.gridIdx + 1) % numGrids; }
+    }
+    
+    hasActedThisTurn = true;
+    endTurn();
+}
+
+function updateUI() {
+    let p = players[currentPlayerIdx];
+    let hasStunSelected = (selectedCardIdx !== null && p.hand[selectedCardIdx] === 'STUN');
+
+    grids.forEach((g, gIdx) => {
+        for(let y=0; y<3; y++) {
+            let isLocked = false;
+            let isSynced = rowTargets[y] && rowTargets[y].synced;
+            let h = grids[gIdx].hulks[y];
+            if(h && h.state === 'breached' && h.stunTurns === 0) isLocked = true;
+
+            for(let x=0; x<3; x++) {
+                let cell = document.getElementById(`cell-${gIdx}-${x}-${y}`);
+                if(cell) {
+                    cell.innerHTML = g.cells[x][y];
+                    cell.className = 'cell';
+                    if(isLocked) cell.classList.add('locked');
+                    if(isSynced) cell.classList.add('synced');
+                    players.forEach(pl => {
+                        if(pl.gridIdx === gIdx && pl.x === x && pl.y === y) {
+                            cell.innerHTML += `<div class="pawn" style="background: ${pl.color};"></div>`;
+                        }
+                    });
+                }
+            }
+            
+            let res = evaluateRow(gIdx, y);
+            let resEl = document.getElementById(`res-${gIdx}-${y}`);
+            if(resEl) resEl.innerText = res !== null ? `= ${res}` : '';
+            
+            let hulkEl = document.getElementById(`hulk-${gIdx}-${y}`);
+            if(hulkEl) {
+                if(h) {
+                    if(h.state === 'breached') {
+                        let lockTxt = h.stunTurns > 0 ? `<span class="hulk-stunned">STUN (${h.stunTurns})</span><br>NEED = ${h.val}` : `<span class="hulk-breached">LOCKED</span><br>NEED > ${h.val}`;
+                        hulkEl.innerHTML = `HULK [${h.val}]<br>${lockTxt}`;
+                    } else {
+                        let stunTxt = h.stunTurns > 0 ? `<br><span style="color:var(--cyan)">STUN (${h.stunTurns})</span>` : '';
+                        hulkEl.innerHTML = `HULK [${h.val}]<br><span>IN ${h.turns}</span>${stunTxt}`;
+                    }
+                    if (hasStunSelected && !p.isAI && p.gridIdx === gIdx && !hasActedThisTurn) {
+                        hulkEl.classList.add('stunnable');
+                    } else {
+                        hulkEl.classList.remove('stunnable');
+                    }
+                } else { 
+                    hulkEl.innerHTML = ''; 
+                    hulkEl.classList.remove('stunnable');
+                }
+            }
+        }
+    });
+
+    let ti = document.getElementById('turn-indicator');
+    ti.innerText = `${p.name}'S TURN ${p.isAI ? '(COMPUTING...)' : ''}`;
+    ti.style.color = p.color;
+    
+    document.getElementById('btn-transport').disabled = p.isAI || hasActedThisTurn;
+    document.getElementById('btn-redraw').disabled = p.isAI || hasActedThisTurn;
+    document.getElementById('btn-undo').disabled = p.isAI || !hasActedThisTurn;
+    
+    let btnConfirm = document.getElementById('btn-confirm');
+    btnConfirm.disabled = p.isAI || !hasActedThisTurn;
+    if (hasActedThisTurn && !p.isAI) btnConfirm.classList.add('ready');
+    else btnConfirm.classList.remove('ready');
+    
+    let handHtml = '';
+    p.hand.forEach((card, idx) => {
+        let sel = idx === selectedCardIdx ? 'selected' : '';
+        let isPow = POWERS.includes(card) ? 'power-card' : '';
+        handHtml += `<div class="card ${sel} ${isPow}" onclick="selectCard(${idx})">${card}</div>`;
+    });
+    document.getElementById('hand').innerHTML = handHtml;
+
+    let teamHtml = '';
+    players.forEach(player => {
+        teamHtml += `<div class="team-player" style="border-color: ${player.color}55">
+            <div class="team-name" style="color:${player.color}">${player.name} [SEC ${grids[player.gridIdx].name}]</div>
+            <div class="team-cards">`;
+        player.hand.forEach(c => {
+            let isPow = POWERS.includes(c) ? 'mini-power' : '';
+            teamHtml += `<div class="mini-card ${isPow}">${c}</div>`;
+        });
+        teamHtml += `</div></div>`;
+    });
+    document.getElementById('team-hands').innerHTML = teamHtml;
+}
+</script>
+</body>
+</html>
