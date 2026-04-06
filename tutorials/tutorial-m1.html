@@ -1,362 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>The Factor Tutorial</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #F4F7F9; 
-            --accent: #A29BFE; 
-            --multiple: #6c5ce7; 
-            --non-multiple: #e17055; 
-            --text: #2d3436; 
-            --alert: #FF7675;
-            --success: #00b894;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; touch-action: none; }
-        
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Factor: Training Module</title>
+<style>
+    :root {
+        --bg: #F4F7F9; --accent: #A29BFE; --enemy: #D1B3C4; 
+        --friend: #B3D1CF; --text: #5B5B7B; --alert: #FF7675;
+    }
 
-        /* --- TUTORIAL HUD --- */
-        #tutorial-hud {
-            background: #ffffff;
-            border-bottom: 2px solid var(--accent);
-            padding: 15px; display: flex; flex-direction: column; gap: 8px; z-index: 20;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        #instruction-text {
-            font-size: 18px; font-weight: 800;
-            color: var(--accent); text-align: center; letter-spacing: 1px;
-        }
-        #learning-objective {
-            background: rgba(162, 155, 254, 0.1); border: 1px solid rgba(162, 155, 254, 0.3);
-            border-radius: 6px; padding: 10px; font-size: 13px;
-            color: var(--text); text-align: center; line-height: 1.4;
-        }
-        #learning-objective b { color: var(--multiple); }
-        #learning-objective .danger { color: var(--alert); font-weight: bold; }
+    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
 
-        /* --- START OVERLAY --- */
-        #start-overlay {
-            position: absolute; inset: 0; background: rgba(244, 247, 249, 0.95);
-            backdrop-filter: blur(10px); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 50; padding: 20px;
-        }
-        .start-title { font-size: 32px; font-weight: 900; color: var(--text); margin-bottom: 15px; letter-spacing: 4px; }
-        .start-desc { font-size: 15px; color: var(--text); margin-bottom: 35px; max-width: 400px; line-height: 1.6; text-align: center; }
-        .start-btn {
-            font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 800;
-            letter-spacing: 2px; padding: 15px 35px; background: var(--accent);
-            color: white; border: none; border-radius: 30px;
-            cursor: pointer; transition: all 0.2s; pointer-events: auto;
-            box-shadow: 0 10px 20px rgba(162,155,254,0.3);
-        }
-        .start-btn:active { transform: scale(0.95); }
+    html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: var(--bg); color: var(--text);
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        display: flex; align-items: center; justify-content: center;
+        touch-action: none;
+    }
 
-        /* --- HIGHLIGHT ANIMATION --- */
-        @keyframes pulseHighlight {
-            0% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(162, 155, 254, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(162, 155, 254, 0); }
-        }
-        .highlight-target {
-            animation: pulseHighlight 1.2s infinite !important;
-            border: 2px solid var(--accent) !important;
-            z-index: 10; position: relative;
-        }
-        .highlight-danger {
-            animation: pulseHighlightDanger 1.2s infinite !important;
-            border: 2px solid var(--alert) !important;
-        }
-        @keyframes pulseHighlightDanger {
-            0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.6); }
-            70% { box-shadow: 0 0 0 15px rgba(255, 118, 117, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); }
-        }
+    #tutorial-wrap {
+        position: relative; width: 100%; max-width: 500px; height: 100%; 
+        max-height: 850px; background: #fff; overflow: hidden;
+        box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
 
-        /* --- GAME AREA --- */
-        #gameContainer { flex: 1; display: flex; flex-direction: column; position: relative; background: var(--bg); overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; }
+    /* Dialogue Cards */
+    .card-container {
+        position: absolute; top: 10%; left: 5%; right: 5%; z-index: 100;
+        display: flex; flex-direction: column; gap: 10px;
+    }
 
-        /* --- CONTROLS --- */
-        #fire-btn { 
-            position: absolute; bottom: 30px; right: 30px; width: 85px; height: 85px; 
-            background: var(--accent); border-radius: 50%; border: 4px solid #FFF; 
-            z-index: 30; box-shadow: 0 10px 20px rgba(162,155,254,0.3); 
-            display: flex; align-items: center; justify-content: center; 
-            color: #FFF; font-weight: 900; font-size: 16px; cursor: pointer; transition: 0.1s;
-        }
-        #fire-btn:active { transform: scale(0.9); }
-        
-        #move-hint {
-            position: absolute; bottom: 45px; left: 30px;
-            background: rgba(255,255,255,0.9); padding: 12px 20px; border-radius: 20px;
-            font-size: 13px; font-weight: 800; color: var(--text);
-            pointer-events: none; border: 2px dashed var(--accent);
-        }
+    .card {
+        background: rgba(255, 255, 255, 0.95); border: 2px solid var(--accent);
+        border-radius: 16px; padding: 20px; text-align: center;
+        box-shadow: 0 10px 30px rgba(162, 155, 254, 0.2);
+        display: none; flex-direction: column; gap: 10px;
+        backdrop-filter: blur(5px);
+    }
+    .card.active { display: flex; animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-        .screen-flash {
-            position: absolute; inset: 0; background: var(--alert); opacity: 0;
-            pointer-events: none; z-index: 40; transition: opacity 0.2s;
-        }
-    </style>
+    @keyframes dropIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow { color: var(--accent); font-size: 0.75rem; letter-spacing: 2px; font-weight: bold; text-transform: uppercase; }
+    .headline { font-size: 1.4rem; font-weight: 900; color: var(--text); }
+    .bodytxt { font-size: 0.9rem; line-height: 1.5; color: #777; }
+    .bodytxt b { color: var(--alert); }
+
+    /* Buttons */
+    .btn {
+        background: var(--accent); color: white; border: none; padding: 12px 20px;
+        border-radius: 8px; font-weight: bold; letter-spacing: 1px;
+        cursor: pointer; transition: 0.2s; text-transform: uppercase; margin-top: 5px;
+    }
+    .btn:active { transform: scale(0.95); }
+
+    /* Canvas & Controls */
+    canvas { display: block; width: 100%; height: 100%; background: var(--bg); }
+    
+    #fire-btn {
+        position: absolute; bottom: 30px; right: 30px; width: 80px; height: 80px;
+        background: var(--accent); border-radius: 50%; border: 4px solid #FFF;
+        box-shadow: 0 10px 20px rgba(162, 155, 254, 0.4); display: none;
+        align-items: center; justify-content: center; color: #FFF; font-weight: 900;
+        z-index: 50; cursor: pointer;
+    }
+    #fire-btn:active { transform: scale(0.9); }
+
+</style>
 </head>
 <body>
 
-    <div id="tutorial-hud">
-        <div id="instruction-text">Step 1: Move Your Ship.</div>
-        <div id="learning-objective">
-            <strong>🎯 Learning Objective - Controls:</strong> You are the <b>x4</b> ship. Drag your finger across the screen (or use Left/Right arrows) to steer.
+<div id="tutorial-wrap">
+    
+    <div class="card-container">
+        <div class="card active" id="step-0">
+            <div class="eyebrow">Flight School</div>
+            <div class="headline">Calibration</div>
+            <div class="bodytxt">Welcome to the Elite Command. You are the <b>x4</b> Factor ship. <br><br>Let's verify your weapon systems.</div>
+            <button class="btn" onclick="startTutorial()">Begin Test</button>
+        </div>
+
+        <div class="card" id="step-1">
+            <div class="eyebrow">Module 1</div>
+            <div class="headline">Target Practice</div>
+            <div class="bodytxt"><b>Drag</b> your ship to move. <b>Tap</b> the Fire button to shoot.<br><br>Destroy the target above.</div>
+        </div>
+
+        <div class="card" id="step-2">
+            <div class="eyebrow">Module 2</div>
+            <div class="headline">Threat Recognition</div>
+            <div class="bodytxt">You only shoot <b>MULTIPLES</b> of 4.<br><br>8 is a multiple. Shoot it! <br>9 is NOT. <b>Let it pass!</b></div>
+        </div>
+
+        <div class="card" id="step-3">
+            <div class="eyebrow">Module 3</div>
+            <div class="headline">Heavy Armor</div>
+            <div class="bodytxt">Large multiples require multiple hits. <br><br>24 requires 6 hits (24 ÷ 4 = 6). Take it down!</div>
+        </div>
+
+        <div class="card" id="step-4">
+            <div class="eyebrow">Calibration Complete</div>
+            <div class="headline">Ready for Deployment</div>
+            <div class="bodytxt">You understand the logic. <br>1. Shoot your multiples.<br>2. Avoid the rest.<br>3. Spam fire on heavy targets.</div>
+            <button class="btn" onclick="finishTutorial()">Enter the Fray</button>
         </div>
     </div>
 
-    <div id="gameContainer">
-        <div id="start-overlay">
-            <div class="start-title">THE FACTOR</div>
-            <div class="start-desc">Learn how to identify multiples, divide through firepower, and spare the innocent non-multiples.</div>
-            <button class="start-btn" id="btn-start-tut">COMMENCE</button>
-        </div>
-
-        <div class="screen-flash" id="flash"></div>
-        <canvas id="cv"></canvas>
-        <div id="move-hint">◀ DRAG TO MOVE ▶</div>
-        <div id="fire-btn">FIRE</div>
-    </div>
+    <canvas id="cvs"></canvas>
+    <div id="fire-btn">FIRE</div>
+</div>
 
 <script>
-    const cv = document.getElementById("cv");
-    const ctx = cv.getContext("2d");
+    const cvs = document.getElementById('cvs');
+    const ctx = cvs.getContext('2d');
     
-    let w, h;
-    function resize() {
-        w = cv.width = window.innerWidth;
-        h = cv.height = document.getElementById('gameContainer').clientHeight;
-        player.y = h - 80;
-    }
+    let W, H;
+    let state = 0; // 0: menu, 1: move/shoot, 2: logic, 3: boss, 4: end
+    let loopId;
 
-    // Game State
-    let isStarted = false;
-    let step = 1;
-    let factor = 4;
-    
-    let player = { x: 0, y: 0, width: 40, height: 40 };
+    const player = { x: 0, y: 0, factor: 4 };
     let bullets = [];
-    let enemies = [];
-    
-    let touchActive = false;
-    let keys = {};
+    let targets = [];
 
-    // DOM
-    const instText = document.getElementById('instruction-text');
-    const objText = document.getElementById('learning-objective');
-    const fireBtn = document.getElementById('fire-btn');
-    const moveHint = document.getElementById('move-hint');
-    const flash = document.getElementById('flash');
-
+    function resize() {
+        W = cvs.parentElement.clientWidth;
+        H = cvs.parentElement.clientHeight;
+        cvs.width = W; cvs.height = H;
+        if(state === 0) { player.x = W / 2; player.y = H - 150; }
+    }
     window.addEventListener('resize', resize);
     resize();
-    player.x = w / 2; // Initialize player horizontally centered
 
-    document.getElementById('btn-start-tut').addEventListener('click', () => {
-        document.getElementById('start-overlay').style.display = 'none';
-        isStarted = true;
-        moveHint.classList.add('highlight-target');
-        requestAnimationFrame(loop);
+    // Input Handling
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+
+    cvs.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; });
+    cvs.addEventListener('touchmove', e => {
+        if(!isDragging || state === 0 || state === 4) return;
+        let dx = e.touches[0].clientX - lastX;
+        player.x = Math.max(30, Math.min(W - 30, player.x + dx));
+        lastX = e.touches[0].clientX;
+    });
+    cvs.addEventListener('touchend', () => isDragging = false);
+
+    cvs.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; });
+    cvs.addEventListener('mousemove', e => {
+        if(!isDragging || state === 0 || state === 4) return;
+        let dx = e.clientX - lastX;
+        player.x = Math.max(30, Math.min(W - 30, player.x + dx));
+        lastX = e.clientX;
+    });
+    cvs.addEventListener('mouseup', () => isDragging = false);
+
+    // Firing
+    const fireBtn = document.getElementById('fire-btn');
+    const fireAction = (e) => {
+        e.preventDefault();
+        if(state > 0 && state < 4) bullets.push({ x: player.x, y: player.y - 30 });
+    };
+    fireBtn.addEventListener('touchstart', fireAction);
+    fireBtn.addEventListener('mousedown', fireAction);
+
+    // Keyboard support
+    window.addEventListener('keydown', e => {
+        if (state > 0 && state < 4) {
+            if (e.key === 'ArrowLeft' || e.key === 'a') player.x = Math.max(30, player.x - 15);
+            if (e.key === 'ArrowRight' || e.key === 'd') player.x = Math.min(W - 30, player.x + 15);
+            if (e.key === ' ' || e.key === 'ArrowUp') bullets.push({ x: player.x, y: player.y - 30 });
+        }
     });
 
-    // --- ROBUST MOVEMENT CONTROLS ---
-    function updatePlayerPos(clientX) {
-        const rect = cv.getBoundingClientRect();
-        const scaleX = cv.width / rect.width;
-        let mappedX = (clientX - rect.left) * scaleX;
-        player.x = Math.max(30, Math.min(w - 30, mappedX));
-        checkMoveProgress();
-    }
+    // Flow Control
+    function setStep(step) {
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        document.getElementById(`step-${step}`).classList.add('active');
+        state = step;
 
-    window.addEventListener('keydown', e => { keys[e.code] = true; if(e.code === 'Space') fire(); });
-    window.addEventListener('keyup', e => keys[e.code] = false);
-
-    cv.addEventListener('touchstart', (e) => { touchActive = true; updatePlayerPos(e.touches[0].clientX); });
-    cv.addEventListener('touchmove', (e) => { if(touchActive && isStarted) { updatePlayerPos(e.touches[0].clientX); } });
-    cv.addEventListener('touchend', () => touchActive = false);
-
-    cv.addEventListener('mousedown', (e) => { touchActive = true; updatePlayerPos(e.clientX); });
-    window.addEventListener('mousemove', (e) => { if(touchActive && isStarted) { updatePlayerPos(e.clientX); } });
-    window.addEventListener('mouseup', () => touchActive = false);
-
-    fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); fire(); });
-    fireBtn.addEventListener('mousedown', (e) => { e.preventDefault(); fire(); });
-
-    // --- GAME LOGIC ---
-    function checkMoveProgress() {
-        if (step === 1 && Math.abs(player.x - w/2) > 60) {
-            step = 2;
-            moveHint.style.display = 'none';
-            fireBtn.classList.add('highlight-target');
-            instText.innerText = "Step 2: Destroy the Multiple!";
-            objText.innerHTML = "<strong>🎯 Learning Objective - Division:</strong> A purple <b>12</b> block is falling! Since 12 ÷ 4 = 3, you must shoot it exactly <b>3 times</b> to destroy it.";
-            
-            // Hex color: #6c5ce7 for multiples
-            enemies.push({ x: w/2, y: -50, hp: 12, isMultiple: true, w: 65, h: 65, color: '#6c5ce7' });
+        if (step === 1) {
+            fireBtn.style.display = 'flex';
+            targets = [{ x: W/2, y: 150, val: 8, hp: 8, color: '#D1B3C4', w: 60 }];
+        } else if (step === 2) {
+            targets = [
+                { x: W/2 - 60, y: 100, val: 9, hp: 9, color: '#B3D1CF', w: 60, passThrough: true },
+                { x: W/2 + 60, y: 100, val: 8, hp: 8, color: '#D1B3C4', w: 60 }
+            ];
+        } else if (step === 3) {
+            targets = [{ x: W/2, y: 150, val: 24, hp: 24, color: '#2D3436', w: 100 }];
+        } else if (step === 4) {
+            fireBtn.style.display = 'none';
         }
     }
 
-    function fire() {
-        if (!isStarted || step === 1) return;
-        bullets.push({ x: player.x, y: player.y - 30 });
-    }
-
-    function triggerFail(msg) {
-        flash.style.opacity = '0.8';
-        setTimeout(() => flash.style.opacity = '0', 200);
-        
-        instText.innerText = "Mistake Detected!";
-        instText.style.color = "var(--alert)";
-        objText.innerHTML = `<strong>⚠️ Warning:</strong> ${msg} Resetting...`;
-        
-        enemies = [];
-        bullets = [];
-        fireBtn.classList.remove('highlight-target');
-        fireBtn.classList.remove('highlight-danger');
-        
-        setTimeout(() => {
-            instText.style.color = "var(--accent)";
-            if (step === 2) {
-                instText.innerText = "Step 2: Destroy the Multiple!";
-                objText.innerHTML = "<strong>🎯 Learning Objective - Division:</strong> A <b>12</b> block is falling! You must shoot it exactly <b>3 times</b> (12 ÷ 4 = 3).";
-                fireBtn.classList.add('highlight-target');
-                enemies.push({ x: w/2, y: -50, hp: 12, isMultiple: true, w: 65, h: 65, color: '#6c5ce7' });
-            } else if (step === 3) {
-                instText.innerText = "Step 3: Cease Fire!";
-                objText.innerHTML = "<strong>🎯 Learning Objective - Avoidance:</strong> A <span class='danger'>13</span> block is falling. It is NOT a multiple of 4! <span class='danger'>DO NOT SHOOT IT.</span> Let it fall safely.";
-                moveHint.style.display = 'block';
-                moveHint.innerText = "◀ DODGE ▶";
-                // Hex color: #e17055 for non-multiples
-                enemies.push({ x: w/2, y: -50, hp: 13, isMultiple: false, w: 65, h: 65, color: '#e17055' });
-            }
-        }, 2500);
-    }
+    window.startTutorial = () => { setStep(1); loop(); };
 
     function loop() {
-        if (!isStarted) return;
+        ctx.clearRect(0, 0, W, H);
 
-        // Keyboard movement
-        if(keys['ArrowLeft'] || keys['KeyA']) { player.x = Math.max(30, player.x - 6); checkMoveProgress(); }
-        if(keys['ArrowRight'] || keys['KeyD']) { player.x = Math.min(w-30, player.x + 6); checkMoveProgress(); }
+        // Draw Player
+        ctx.fillStyle = "#5B5B7B";
+        ctx.beginPath(); ctx.arc(player.x, player.y, 30, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "#FFF"; ctx.font="bold 18px sans-serif"; ctx.textAlign="center";
+        ctx.fillText("x4", player.x, player.y + 6);
 
-        ctx.clearRect(0, 0, w, h);
-
-        // Draw Background dashes (using exact hex instead of CSS variable)
-        ctx.save(); 
-        ctx.globalAlpha = 0.2; 
-        ctx.setLineDash([5, 15]); 
-        ctx.strokeStyle = "#A29BFE"; 
-        for (let x = 50; x < w; x += 100) { 
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); 
-        }
-        ctx.restore();
-
-        // Update & Draw Bullets
+        // Draw Bullets
+        ctx.fillStyle = "#A29BFE";
         for (let i = bullets.length - 1; i >= 0; i--) {
             let b = bullets[i];
-            b.y -= 12;
-            ctx.fillStyle = "#A29BFE"; // Bullet color
-            ctx.fillRect(b.x - 3, b.y, 6, 25);
-            if (b.y < -50) bullets.splice(i, 1);
+            b.y -= 10;
+            ctx.fillRect(b.x - 3, b.y, 6, 20);
+            if (b.y < 0) bullets.splice(i, 1);
         }
 
-        // Update & Draw Enemies
-        for (let i = enemies.length - 1; i >= 0; i--) {
-            let e = enemies[i];
-            e.y += 1.2;
+        // Draw Targets
+        for (let i = targets.length - 1; i >= 0; i--) {
+            let t = targets[i];
+            
+            // Movement for Step 2
+            if(state === 2) t.y += 0.5;
 
-            // Collision with bullets
+            // Draw Block
+            ctx.fillStyle = t.color;
+            ctx.fillRect(t.x - t.w/2, t.y - t.w/2, t.w, t.w);
+            ctx.fillStyle = state===3 ? "#FFF" : "#5B5B7B";
+            ctx.font = "bold 24px sans-serif"; ctx.textAlign="center";
+            ctx.fillText(t.hp, t.x, t.y + 8);
+
+            // Collisions
             for (let j = bullets.length - 1; j >= 0; j--) {
                 let b = bullets[j];
-                if (Math.abs(b.x - e.x) < e.w/2 + 5 && Math.abs(b.y - e.y) < e.h/2 + 5) {
+                if (Math.abs(b.x - t.x) < t.w/2 && Math.abs(b.y - t.y) < t.w/2) {
                     bullets.splice(j, 1);
-                    
-                    if (e.isMultiple) {
-                        e.hp -= factor; 
-                        if (e.hp <= 0) {
-                            enemies.splice(i, 1);
-                            // Success -> Advance to Step 3
-                            if (step === 2) {
-                                step = 3;
-                                bullets = []; // Clear accidental rapid-fire bullets
-                                fireBtn.classList.remove('highlight-target');
-                                moveHint.style.display = 'block';
-                                moveHint.innerText = "◀ DODGE ▶";
-                                
-                                instText.innerText = "Step 3: Cease Fire!";
-                                objText.innerHTML = "<strong>🎯 Learning Objective - Avoidance:</strong> An orange <span class='danger'>13</span> block is falling. It is NOT a multiple of 4! <span class='danger'>DO NOT SHOOT IT.</span> Shooting non-multiples costs a life. Steer clear and let it pass!";
-                                
-                                enemies.push({ x: w/2, y: -50, hp: 13, isMultiple: false, w: 65, h: 65, color: '#e17055' });
-                            }
-                        }
+                    if(!t.passThrough) {
+                        t.hp -= player.factor;
+                        if(t.hp <= 0) targets.splice(i, 1);
                     } else {
-                        // Shot a non-multiple!
-                        enemies.splice(i, 1);
-                        triggerFail("You shot a 13! It is not a multiple of 4. NEVER shoot non-multiples.");
+                        // Tutorial error feedback
+                        ctx.fillStyle = "rgba(255, 118, 117, 0.3)";
+                        ctx.fillRect(0,0,W,H);
                     }
                     break;
                 }
             }
 
-            // Missed / Fell off screen
-            if (e && e.y > h + 50) {
-                enemies.splice(i, 1);
-                if (e.isMultiple) {
-                    triggerFail("A multiple escaped! You must destroy all multiples of your factor.");
-                } else if (step === 3) {
-                    // Successfully let non-multiple pass
-                    step = 4;
-                    moveHint.style.display = 'none';
-                    instText.innerText = "Tutorial Complete!";
-                    instText.style.color = "var(--success)";
-                    objText.innerHTML = "<strong>🎯 Success:</strong> You identified the multiples, divided them with your blaster, and safely spared the non-multiples! Close this window to play.";
-                }
-            }
-
-            // Draw Enemy Box
-            if (e) {
-                ctx.fillStyle = e.color; // Using the direct hex code now
-                ctx.fillRect(e.x - e.w/2, e.y - e.h/2, e.w, e.h);
-                // Draw bold white text
-                ctx.fillStyle = "#FFFFFF";
-                ctx.font = "900 24px Montserrat"; 
-                ctx.textAlign = "center"; 
-                ctx.textBaseline = "middle";
-                ctx.fillText(e.hp, e.x, e.y);
-            }
+            if (t.y > H + 50) targets.splice(i, 1);
         }
 
-        // Draw Player Ship (Triangle)
-        ctx.fillStyle = "#2d3436"; // Player ship color
-        ctx.beginPath(); 
-        ctx.moveTo(player.x, player.y - player.height/2);
-        ctx.lineTo(player.x + player.width/2, player.y + player.height/2);
-        ctx.lineTo(player.x - player.width/2, player.y + player.height/2);
-        ctx.closePath(); 
-        ctx.fill();
-        
-        // Draw Factor text below ship
-        ctx.fillStyle = "#2d3436";
-        ctx.font = "900 18px Montserrat"; 
-        ctx.textAlign = "center"; 
-        ctx.textBaseline = "top";
-        ctx.fillText("x" + factor, player.x, player.y + player.height/2 + 5);
+        // Step Progression
+        if (state === 1 && targets.length === 0) setStep(2);
+        if (state === 2 && targets.length === 0) setStep(3);
+        if (state === 3 && targets.length === 0) setStep(4);
 
-        requestAnimationFrame(loop);
+        if (state < 4) loopId = requestAnimationFrame(loop);
     }
+
+    window.finishTutorial = () => {
+        alert("Tutorial Complete! Send signal to parent window to unmount iframe and launch Realm 1.");
+    };
 </script>
 </body>
 </html>

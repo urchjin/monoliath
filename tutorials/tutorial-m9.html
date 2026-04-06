@@ -1,428 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Factory Builder Tutorial</title>
-    <style>
-        :root { 
-            --main-bg: #090a10; 
-            --accent: #6eb5b3; 
-            --accent-hover: #9adcd9; 
-            --danger: #d85c6b; 
-        }
-        
-        * { box-sizing: border-box; user-select: none; -webkit-touch-callout: none; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Fallacy: Sync Tutorial</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: var(--main-bg);
-            color: #CDD8F8;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
+  :root {
+    --neon-green: #39ff14;
+    --orange: #ff6600;
+    --amber: #ffaa00;
+    --cyan: #00e5ff;
+    --rad-red: #ff2222;
+    --dark: #050802;
+    --panel-bg: rgba(5, 15, 3, 0.95);
+  }
 
-        /* --- INSTRUCTION PANEL --- */
-        #instruction-panel {
-            background: rgba(110, 181, 179, 0.15);
-            border-bottom: 2px solid var(--accent);
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(110, 181, 179, 0.2);
-            z-index: 20;
-        }
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--dark);
+    color: var(--cyan);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+    user-select: none;
+  }
 
-        #instruction-text {
-            font-size: 15px;
-            font-weight: bold;
-            color: var(--accent-hover);
-            margin: 0;
-            min-height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-shadow: 0 0 8px rgba(110, 181, 179, 0.4);
-        }
+  /* CRT OVERLAY */
+  body::before {
+    content:'';
+    position:fixed; inset:0; z-index:9999; pointer-events:none;
+    background:
+      repeating-linear-gradient(0deg,
+        transparent 0px, transparent 3px,
+        rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px),
+      radial-gradient(ellipse at center,
+        transparent 50%, rgba(0,0,0,0.8) 100%);
+  }
 
-        /* --- GAME AREA --- */
-        #game-container {
-            flex: 1;
-            position: relative;
-            width: 100%;
-            background: radial-gradient(ellipse at 50% 38%, rgba(12,14,38,.97), rgba(4,5,14,.99));
-        }
+  #sim-container {
+    max-width: 800px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column; padding: 20px 10px;
+    position: relative; z-index: 10;
+  }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            cursor: crosshair;
-        }
+  .header { text-align: center; border-bottom: 2px solid var(--cyan); padding-bottom: 10px; margin-bottom: 15px; }
+  h1 { font-family: 'Orbitron', sans-serif; color: var(--cyan); text-shadow: 0 0 10px var(--cyan); font-size: clamp(1.5rem, 5vw, 2.5rem); letter-spacing: 0.1em; margin-bottom: 5px; }
+  .subtitle { font-size: 0.8rem; color: #007777; letter-spacing: 0.3em; }
 
-        /* --- HUD & CONTROLS --- */
-        #btnPhase {
-            position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background: rgba(8,9,20,.9);
-            border: 2px solid #ffcc00;
-            color: #ffcc00;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 12px;
-            letter-spacing: 1px;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
-        }
-        #btnPhase:active { background: rgba(255, 204, 0, 0.2); }
+  .module { display: none; background: var(--panel-bg); border: 1px solid var(--cyan); padding: 15px; border-radius: 4px; flex-grow: 1; animation: fadeIn 0.4s ease-out; box-shadow: 0 0 15px rgba(0, 229, 255, 0.1); }
+  .module.active { display: flex; flex-direction: column; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        #touchControls {
-            position: absolute;
-            bottom: 20px;
-            left: 15px;
-            right: 15px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 10;
-        }
+  .lo-box { background: rgba(0, 229, 255, 0.05); border-left: 4px solid var(--cyan); padding: 10px; margin-bottom: 20px; font-size: 0.85rem; line-height: 1.4; }
+  .lo-title { color: #fff; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; text-shadow: 0 0 5px var(--cyan); }
 
-        .tc-cluster { display: flex; gap: 10px; }
-        .tc-btn {
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            color: #FFF;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            pointer-events: auto;
-            cursor: pointer;
-        }
-        .tc-btn:active {
-            background: rgba(110, 181, 179, 0.4);
-            border-color: var(--accent-hover);
-        }
+  .interactive-zone { flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px 0; }
 
-        /* --- MINI FUSION MODAL --- */
-        #fusion-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(12,14,36,.96);
-            border: 1px solid var(--accent);
-            border-radius: 12px;
-            padding: 20px;
-            width: 85%;
-            max-width: 300px;
-            text-align: center;
-            z-index: 30;
-            display: none;
-            box-shadow: 0 20px 45px rgba(0,0,0,.8);
-        }
+  /* GRID ELEMENTS */
+  .grid-row { display: flex; align-items: center; gap: 5px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 4px; border: 1px solid #222; }
+  .row-label { font-size: 0.7rem; color: #777; width: 60px; text-align: right; margin-right: 5px; }
+  
+  .cell { 
+    width: 50px; height: 50px; border: 1px dashed rgba(0, 229, 255, 0.5); 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 1.5rem; font-family: 'VT323', monospace; color: white; 
+    transition: all 0.2s; background: rgba(0, 229, 255, 0.05);
+  }
+  .cell.playable { cursor: pointer; border: 1px dashed var(--orange); background: rgba(255, 102, 0, 0.1); }
+  .cell.playable:hover { background: rgba(255, 102, 0, 0.3); }
+  .cell.locked { border: 1px solid #555; background: #111; color: #888; text-shadow: none; }
+  .res-cell { width: 50px; text-align: left; font-size: 1.2rem; font-weight: bold; color: var(--neon-green); margin-left: 5px; }
 
-        .fusion-title { color: #EDE6D2; font-size: 18px; margin-bottom: 10px; letter-spacing: 1px; }
-        .fusion-desc { color: #7A85B0; font-size: 12px; margin-bottom: 15px; }
-        
-        .token-btn {
-            background: linear-gradient(135deg,#C08820,#8B5510);
-            border: 1px solid rgba(255,200,80,.5);
-            color: white;
-            padding: 10px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 15px;
-            width: 100%;
-        }
-        .token-btn:active { transform: scale(0.98); }
+  /* HAND ELEMENTS */
+  .hand-title { font-size: 0.8rem; color: var(--amber); margin-bottom: 5px; letter-spacing: 0.1em; }
+  .hand { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+  .card {
+    width: 50px; height: 70px; border: 2px solid var(--cyan); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-family: 'VT323', monospace; cursor: pointer;
+    background: #000; color: var(--cyan); transition: transform 0.1s;
+  }
+  .card.selected { border-color: var(--orange); color: var(--orange); transform: translateY(-8px); box-shadow: 0 0 10px var(--orange); }
+  .card.used { opacity: 0; pointer-events: none; }
 
-        .cta {
-            background: var(--accent);
-            border: none;
-            padding: 10px 20px;
-            border-radius: 20px;
-            color: #090a10;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-        }
-        .cta:disabled { background: #333; color: #666; cursor: not-allowed; }
+  /* HULK ENTITY */
+  .hulk-indicator {
+    border: 1px solid var(--rad-red); background: rgba(255, 34, 34, 0.1);
+    color: var(--rad-red); padding: 5px 10px; font-size: 0.8rem;
+    text-shadow: 0 0 5px var(--rad-red); border-radius: 3px; font-weight: bold;
+    text-align: center; margin-bottom: 10px;
+  }
 
-    </style>
+  /* BUTTONS & FEEDBACK */
+  .feedback { min-height: 20px; font-size: 0.9rem; color: #fff; text-align: center; margin-bottom: 10px; }
+  .btn-row { display: flex; gap: 10px; width: 100%; justify-content: center; margin-top: auto; }
+  .btn {
+    background: transparent; border: 2px solid var(--cyan); color: var(--cyan);
+    padding: 12px 20px; font-family: 'Share Tech Mono', monospace; font-size: 1rem;
+    cursor: pointer; text-transform: uppercase; transition: all 0.2s;
+    flex-grow: 1; max-width: 200px; text-align: center;
+  }
+  .btn:hover:not(:disabled) { background: var(--cyan); color: #000; box-shadow: 0 0 15px var(--cyan); }
+  .btn:disabled { border-color: #444; color: #444; cursor: not-allowed; }
+  
+  .btn-reset { border-color: #555; color: #aaa; }
+  .btn-reset:hover:not(:disabled) { background: #333; color: #fff; box-shadow: none; border-color: #777;}
+  .btn-next { border-color: var(--neon-green); color: var(--neon-green); font-weight: bold; }
+  .btn-next:hover:not(:disabled) { background: var(--neon-green); color: #000; box-shadow: 0 0 15px var(--neon-green); }
+
+  @media (max-width: 500px) {
+    .cell { width: 40px; height: 40px; font-size: 1.2rem; }
+    .card { width: 40px; height: 60px; font-size: 1.4rem; }
+    .row-label { display: none; }
+  }
+</style>
 </head>
 <body>
 
-    <div id="instruction-panel">
-        <p id="instruction-text">Step 1: Move right using the controls.</p>
+<div id="sim-container">
+  <div class="header">
+    <h1>THE FALLACY</h1>
+    <div class="subtitle">SYNC PROTOCOL ORIENTATION</div>
+  </div>
+
+  <div class="module active" id="mod1">
+    <div class="lo-box">
+      <div class="lo-title">LEARNING OBJECTIVE 1: SYNTHESIS</div>
+      Players will learn to construct valid mathematical equations on the grid using the sequence: [Number] [Operator] [Number].
     </div>
+    <div class="interactive-zone">
+      <div class="hulk-indicator" style="border-color:var(--cyan); color:var(--cyan); text-shadow:0 0 5px var(--cyan);">TARGET: CREATE THE VALUE '8'</div>
+      
+      <div class="grid-row">
+        <div class="row-label">SECTOR<br>ALPHA</div>
+        <div class="cell locked">4</div>
+        <div class="cell playable" id="m1-slot1" onclick="placeCard(1, 'm1-slot1')"></div>
+        <div class="cell playable" id="m1-slot2" onclick="placeCard(1, 'm1-slot2')"></div>
+        <div class="res-cell" id="m1-res"></div>
+      </div>
 
-    <div id="game-container">
-        <canvas id="cv"></canvas>
-        
-        <button id="btnPhase" onclick="togglePhase()">EDIT LAYOUT</button>
-
-        <div id="touchControls">
-            <div class="tc-cluster" id="move-cluster">
-                <div class="tc-btn" id="btnLeft" onpointerdown="input.L=true" onpointerup="input.L=false" onpointercancel="input.L=false">◀</div>
-                <div class="tc-btn" id="btnRight" onpointerdown="input.R=true" onpointerup="input.R=false" onpointercancel="input.R=false">▶</div>
-            </div>
-            <div class="tc-cluster" id="jump-cluster">
-                <div class="tc-btn" id="btnJump" onpointerdown="input.J=true" onpointerup="input.J=false" onpointercancel="input.J=false">▲</div>
-            </div>
-        </div>
-
-        <div id="fusion-modal">
-            <div class="fusion-title">Blueprint Fusion</div>
-            <div class="fusion-desc">Infuse tokens to give the block mass and length.</div>
-            <button class="token-btn" id="btnAddToken" onclick="addToken()">+ Inject [10s] Token</button>
-            <button class="cta" id="btnBuild" disabled onclick="buildBlock()">Fuse & Build</button>
-        </div>
+      <div style="width:100%; border-top: 1px dashed #333; margin: 10px 0;"></div>
+      
+      <div class="hand-title">YOUR HAND (Tap to select, tap slot to place)</div>
+      <div class="hand">
+        <div class="card" id="m1-c1" onclick="selectCard(1, 'x', 'm1-c1')">x</div>
+        <div class="card" id="m1-c2" onclick="selectCard(1, '2', 'm1-c2')">2</div>
+      </div>
+      
+      <div class="feedback" id="m1-feed">Place an operator and a number to evaluate to 8.</div>
     </div>
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetMod(1)">RESET</button>
+      <button class="btn btn-next" id="btn-next1" disabled onclick="nextModule(2)">PROCEED ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod2">
+    <div class="lo-box">
+      <div class="lo-title">LEARNING OBJECTIVE 2: SYNCHRONIZATION</div>
+      Players will observe multiple grids and deduce the missing variable required to match (sync) values across sectors.
+    </div>
+    <div class="interactive-zone">
+      <div class="grid-row" style="border-color: var(--neon-green); box-shadow: 0 0 10px rgba(57,255,20,0.2);">
+        <div class="row-label" style="color:var(--neon-green)">SECTOR<br>ALPHA</div>
+        <div class="cell locked">5</div>
+        <div class="cell locked">+</div>
+        <div class="cell locked">5</div>
+        <div class="res-cell" style="color:var(--neon-green)">= 10</div>
+      </div>
+      <div class="grid-row">
+        <div class="row-label">SECTOR<br>BETA</div>
+        <div class="cell locked">8</div>
+        <div class="cell locked">+</div>
+        <div class="cell playable" id="m2-slot1" onclick="placeCard(2, 'm2-slot1')"></div>
+        <div class="res-cell" id="m2-res"></div>
+      </div>
+
+      <div class="hand-title">YOUR HAND</div>
+      <div class="hand">
+        <div class="card" id="m2-c1" onclick="selectCard(2, '2', 'm2-c1')">2</div>
+        <div class="card" id="m2-c2" onclick="selectCard(2, '3', 'm2-c2')">3</div>
+      </div>
+      
+      <div class="feedback" id="m2-feed">Sector Alpha is synced at 10. Complete Beta to match it.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetMod(2)">RESET</button>
+      <button class="btn btn-next" id="btn-next2" disabled onclick="nextModule(3)">PROCEED ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod3">
+    <div class="lo-box">
+      <div class="lo-title">LEARNING OBJECTIVE 3: ANTI-VIRUS (HULKS)</div>
+      Players will learn that un-synced grids spawn Viruses (Hulks). Forming the Hulk's exact value destroys it.
+    </div>
+    <div class="interactive-zone">
+      <div class="hulk-indicator">⚠ VIRUS APPROACHING: HULK [12]</div>
+      
+      <div class="grid-row" style="border-color: var(--rad-red);">
+        <div class="row-label">SECTOR<br>GAMMA</div>
+        <div class="cell locked">15</div>
+        <div class="cell locked">-</div>
+        <div class="cell playable" id="m3-slot1" onclick="placeCard(3, 'm3-slot1')"></div>
+        <div class="res-cell" id="m3-res"></div>
+      </div>
+
+      <div class="hand-title">YOUR HAND</div>
+      <div class="hand">
+        <div class="card" id="m3-c1" onclick="selectCard(3, '5', 'm3-c1')">5</div>
+        <div class="card" id="m3-c2" onclick="selectCard(3, '3', 'm3-c2')">3</div>
+      </div>
+      
+      <div class="feedback" id="m3-feed">Form exactly 12 on this grid to eradicate the Hulk.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetMod(3)">RESET</button>
+      <button class="btn btn-next" id="btn-next3" disabled onclick="nextModule(4)">PROCEED ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod4">
+    <div class="lo-box" style="border-color: var(--orange);">
+      <div class="lo-title" style="color: var(--orange);">LEARNING OBJECTIVE 4: BREACH OVERRIDE</div>
+      Players will understand that if a Hulk breaches, the row locks. It can only be cleared by building a value GREATER (>) than the Hulk.
+    </div>
+    <div class="interactive-zone">
+      <div class="hulk-indicator" style="background: rgba(255,0,0,0.3); border: 2px solid red;">☠ ROW BREACHED: HULK [9] LOCKED</div>
+      
+      <div class="grid-row" style="border-color: var(--orange);">
+        <div class="row-label">SECTOR<br>DELTA</div>
+        <div class="cell locked">12</div>
+        <div class="cell locked">/</div>
+        <div class="cell playable" id="m4-slot1" onclick="placeCard(4, 'm4-slot1')"></div>
+        <div class="res-cell" id="m4-res"></div>
+      </div>
+
+      <div class="hand-title">YOUR HAND</div>
+      <div class="hand">
+        <div class="card" id="m4-c1" onclick="selectCard(4, '1', 'm4-c1')">1</div>
+        <div class="card" id="m4-c2" onclick="selectCard(4, '2', 'm4-c2')">2</div>
+      </div>
+      
+      <div class="feedback" id="m4-feed">The Hulk is a 9. Override it by yielding a value GREATER than 9!</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-reset" onclick="resetMod(4)">RESET</button>
+      <button class="btn btn-next" id="btn-next4" disabled onclick="completeTutorial()">FINISH ▶</button>
+    </div>
+  </div>
+
+</div>
 
 <script>
-    const cv = document.getElementById('cv');
-    const ctx = cv.getContext('2d');
+  let state = {
+    selectedVal: null,
+    selectedId: null,
+    mod1: { slot1: '', slot2: '' },
+    mod2: { slot1: '' },
+    mod3: { slot1: '' },
+    mod4: { slot1: '' }
+  };
+
+  // Navigate modules
+  function nextModule(index) {
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    document.getElementById('mod' + index).classList.add('active');
+    state.selectedVal = null;
+    state.selectedId = null;
+  }
+
+  function selectCard(mod, val, id) {
+    // Clear previous selections in this module
+    document.querySelectorAll(`#mod${mod} .card`).forEach(c => c.classList.remove('selected'));
     
-    // Engine Constants
-    const GRAV = 0.6, JF = -10, SPD = 4, PW = 20, PH = 20;
-    const P = {
-        skyT:'#0a0b12', skyB:'#1c1d29',
-        slabF:'#225452', slabT:'#368C88', slabS:'#112A29',
-        v10F:'#C08820', v10T:'#E0A840', v10S:'#8B5510',
-        pl:'#FFFFFF', bea:'#E85D75'
-    };
-
-    // State
-    let width, height, camZ = 1.2;
-    let step = 1;
-    let mode = 'PLAY'; // PLAY or BUILD
-    let input = { L: false, R: false, J: false };
+    let el = document.getElementById(id);
+    if(el.classList.contains('used')) return;
     
-    // PATCH APPLIED: Added w and h to player object for collision logic
-    let player = { x: 30, y: 150, w: PW, h: PH, vx: 0, vy: 0, onGround: false };
+    state.selectedVal = val;
+    state.selectedId = id;
+    el.classList.add('selected');
+  }
+
+  function placeCard(mod, slotId) {
+    if (!state.selectedVal) return;
     
-    // PATCH APPLIED: Widened the gap and stretched the blueprint
-    let world = {
-        plats: [
-            { x: 10, y: 200, w: 100, h: 20 }, // Start platform
-            { x: 270, y: 200, w: 120, h: 20 }  // End platform (pushed right)
-        ],
-        frag: null, // The block we will build
-        ghost: { x: 110, y: 200, w: 160, h: 20 }, // Ghost outline (stretched)
-        exit: { x: 320, y: 150, w: 40, h: 50 } // Exit beacon (pushed right)
-    };
-
-    const instText = document.getElementById('instruction-text');
-    const btnPhase = document.getElementById('btnPhase');
-    const touchControls = document.getElementById('touchControls');
-    const fusionModal = document.getElementById('fusion-modal');
-    let addedValue = 0;
-
-    // Resize
-    function resize() {
-        width = cv.parentElement.clientWidth;
-        height = cv.parentElement.clientHeight;
-        cv.width = width;
-        cv.height = height;
+    let slot = document.getElementById(slotId);
+    if(slot.innerText !== '') return; // Slot occupied
+    
+    // Place value
+    slot.innerText = state.selectedVal;
+    slot.classList.remove('playable');
+    slot.style.borderColor = "var(--cyan)";
+    
+    // Hide card
+    document.getElementById(state.selectedId).classList.add('used');
+    document.getElementById(state.selectedId).classList.remove('selected');
+    
+    // Update state & Eval
+    if(mod === 1) {
+      if(slotId === 'm1-slot1') state.mod1.slot1 = state.selectedVal;
+      if(slotId === 'm1-slot2') state.mod1.slot2 = state.selectedVal;
+      evalMod1();
+    } else if (mod === 2) {
+      state.mod2.slot1 = state.selectedVal;
+      evalMod2();
+    } else if (mod === 3) {
+      state.mod3.slot1 = state.selectedVal;
+      evalMod3();
+    } else if (mod === 4) {
+      state.mod4.slot1 = state.selectedVal;
+      evalMod4();
     }
-    window.addEventListener('resize', resize);
-    resize();
+    
+    state.selectedVal = null;
+    state.selectedId = null;
+  }
 
-    // Interaction Handlers
-    function setInstruction(text) { instText.innerText = text; }
-
-    function togglePhase() {
-        if(step === 2 && mode === 'PLAY') {
-            mode = 'BUILD';
-            step = 3;
-            setInstruction("Step 3: Tap the glowing yellow gap to draft a block.");
-            btnPhase.style.display = 'none'; // Hide until they build
-            touchControls.style.opacity = '0.2';
-            touchControls.style.pointerEvents = 'none';
-        } 
-        else if(step === 4 && mode === 'BUILD') {
-            mode = 'PLAY';
-            step = 5;
-            setInstruction("Step 5: Cross the gap to the pink beacon!");
-            btnPhase.style.display = 'none';
-            touchControls.style.opacity = '1';
-            touchControls.style.pointerEvents = 'auto';
-            player.x = 80; // Reset player safely before jump
-            player.y = 150;
-        }
+  // Evals
+  function evalMod1() {
+    let s1 = state.mod1.slot1;
+    let s2 = state.mod1.slot2;
+    if(s1 && s2) {
+      let res = s1 === 'x' && s2 === '2' ? 8 : (s1==='2' && s2==='x' ? 'Err' : 'Fail');
+      if (res === 8) {
+        document.getElementById('m1-res').innerText = '= 8';
+        document.getElementById('m1-feed').innerHTML = '<span style="color:var(--neon-green)">✓ VALID SYNTHESIS. Equation stabilized.</span>';
+        document.getElementById('btn-next1').disabled = false;
+      } else {
+        document.getElementById('m1-res').innerText = '= ?';
+        document.getElementById('m1-feed').innerHTML = '<span style="color:var(--rad-red)">⚠ INVALID LOGIC. Try again.</span>';
+      }
     }
+  }
 
-cv.addEventListener('pointerdown', (e) => {
-        if(mode !== 'BUILD' || step !== 3) return;
-        
-        const rect = cv.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        // 1. Calculate the exact camera offsets used in the render loop
-        const translateX = (width/camZ/2) - 190;
-        const translateY = Math.min(0, (height/camZ/2) - 200);
+  function evalMod2() {
+    let s1 = state.mod2.slot1;
+    if(s1) {
+      let res = 8 + parseInt(s1);
+      document.getElementById('m2-res').innerText = '= ' + res;
+      if (res === 10) {
+        document.getElementById('m2-feed').innerHTML = '<span style="color:var(--neon-green)">✓ SECTORS SYNCED.</span>';
+        document.getElementById('btn-next2').disabled = false;
+        document.querySelectorAll('#mod2 .grid-row')[1].style.borderColor = "var(--neon-green)";
+      } else {
+        document.getElementById('m2-feed').innerHTML = '<span style="color:var(--rad-red)">⚠ SYNC FAILED. Sector Alpha remains at 10.</span>';
+      }
+    }
+  }
 
-        // 2. Convert raw mouse coordinates into in-game world coordinates
-        const worldX = (mouseX / camZ) - translateX;
-        const worldY = (mouseY / camZ) - translateY;
-        
-        // 3. Check exact collision against the ghost block
-        if(worldX >= world.ghost.x && worldX <= world.ghost.x + world.ghost.w &&
-           worldY >= world.ghost.y - 20 && worldY <= world.ghost.y + world.ghost.h + 20) { 
-            // Note: Added a +/- 20px buffer to the Y-axis to make it easier to tap on mobile
-            fusionModal.style.display = 'block';
-            setInstruction("Step 4: Add value to the block, then Fuse.");
-        }
+  function evalMod3() {
+    let s1 = state.mod3.slot1;
+    if(s1) {
+      let res = 15 - parseInt(s1);
+      document.getElementById('m3-res').innerText = '= ' + res;
+      if (res === 12) {
+        document.getElementById('m3-feed').innerHTML = '<span style="color:var(--cyan)">✓ VIRUS ERADICATED. Target value matched.</span>';
+        document.getElementById('btn-next3').disabled = false;
+      } else {
+        document.getElementById('m3-feed').innerHTML = '<span style="color:var(--rad-red)">⚠ TARGET MISSED. Hulk continues approach.</span>';
+      }
+    }
+  }
+
+  function evalMod4() {
+    let s1 = state.mod4.slot1;
+    if(s1) {
+      let res = 12 / parseInt(s1);
+      document.getElementById('m4-res').innerText = '= ' + res;
+      if (res > 9) {
+        document.getElementById('m4-feed').innerHTML = '<span style="color:var(--orange)">✓ OVERRIDE SUCCESS. Breach contained.</span>';
+        document.getElementById('btn-next4').disabled = false;
+      } else {
+        document.getElementById('m4-feed').innerHTML = '<span style="color:var(--rad-red)">⚠ OVERRIDE FAILED. Output must be > 9.</span>';
+      }
+    }
+  }
+
+  // Resets
+  function resetMod(mod) {
+    document.getElementById(`btn-next${mod}`).disabled = true;
+    document.querySelectorAll(`#mod${mod} .card`).forEach(c => {
+      c.classList.remove('selected');
+      c.classList.remove('used');
     });
-
-    function addToken() {
-        addedValue += 10;
-        document.getElementById('btnAddToken').innerText = `Value: ${addedValue} (MAX)`;
-        document.getElementById('btnAddToken').style.pointerEvents = 'none';
-        document.getElementById('btnBuild').disabled = false;
-        document.getElementById('btnBuild').style.background = '#ffcc00';
+    
+    if(mod === 1) {
+      state.mod1 = { slot1: '', slot2: '' };
+      let s1 = document.getElementById('m1-slot1'); s1.innerText=''; s1.classList.add('playable'); s1.style.borderColor="";
+      let s2 = document.getElementById('m1-slot2'); s2.innerText=''; s2.classList.add('playable'); s2.style.borderColor="";
+      document.getElementById('m1-res').innerText = '';
+      document.getElementById('m1-feed').innerText = 'Place an operator and a number to evaluate to 8.';
+    } else {
+      state[`mod${mod}`] = { slot1: '' };
+      let s1 = document.getElementById(`m${mod}-slot1`); s1.innerText=''; s1.classList.add('playable'); s1.style.borderColor="";
+      document.getElementById(`m${mod}-res`).innerText = '';
+      if(mod===2) { document.getElementById('m2-feed').innerText = 'Sector Alpha is synced at 10. Complete Beta to match it.'; document.querySelectorAll('#mod2 .grid-row')[1].style.borderColor = "#222"; }
+      if(mod===3) document.getElementById('m3-feed').innerText = 'Form exactly 12 on this grid to eradicate the Hulk.';
+      if(mod===4) document.getElementById('m4-feed').innerText = 'The Hulk is a 9. Override it by yielding a value GREATER than 9!';
     }
+    state.selectedVal = null;
+    state.selectedId = null;
+  }
 
-    function buildBlock() {
-        // PATCH APPLIED: The built fragment matches the new 160px gap
-        world.frag = { x: 110, y: 200, w: 160, h: 20 }; 
-        fusionModal.style.display = 'none';
-        step = 4;
-        btnPhase.innerText = "TEST CLIMB";
-        btnPhase.style.color = "#4CAF50";
-        btnPhase.style.borderColor = "#4CAF50";
-        btnPhase.style.display = 'block';
-        setInstruction("Block Built! Tap 'TEST CLIMB' to resume physics.");
-    }
-
-    // Keyboard support for desktop
-    window.addEventListener('keydown', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=true;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=true;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=true;
-    });
-    window.addEventListener('keyup', e => {
-        if(e.code==='ArrowLeft'||e.code==='KeyA') input.L=false;
-        if(e.code==='ArrowRight'||e.code==='KeyD') input.R=false;
-        if(e.code==='ArrowUp'||e.code==='Space') input.J=false;
-    });
-
-    // Isometric Drawing Function
-    function iso(dx, dy, w, h, face, top, side) {
-        const D = 4;
-        ctx.fillStyle=side; ctx.beginPath(); ctx.moveTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+w+D,dy+h-D); ctx.lineTo(dx+w,dy+h); ctx.fill();
-        ctx.fillStyle=top; ctx.beginPath(); ctx.moveTo(dx,dy); ctx.lineTo(dx+w,dy); ctx.lineTo(dx+w+D,dy-D); ctx.lineTo(dx+D,dy-D); ctx.fill();
-        ctx.fillStyle=face; ctx.fillRect(dx,dy,w,h);
-    }
-
-    // AABB Collision
-    function boxOv(a, b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
-
-    // Game Loop
-    function loop() {
-        requestAnimationFrame(loop);
-
-        // --- Logic ---
-        if(mode === 'PLAY') {
-            player.vx = 0;
-            if(input.L) player.vx = -SPD;
-            if(input.R) player.vx = SPD;
-            if(input.J && player.onGround) { player.vy = JF; player.onGround = false; }
-
-            player.vy += GRAV;
-
-            // X Collision
-            player.x += player.vx;
-            let obstacles = [...world.plats];
-            if(world.frag) obstacles.push(world.frag);
-            
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vx > 0) player.x = p.x - PW;
-                    else if(player.vx < 0) player.x = p.x + p.w;
-                }
-            }
-
-            // Y Collision
-            player.y += player.vy;
-            player.onGround = false;
-            for(let p of obstacles) {
-                if(boxOv(player, p)) {
-                    if(player.vy > 0) { player.y = p.y - PH; player.vy = 0; player.onGround = true; }
-                }
-            }
-            
-            // Death Pit Reset
-            if(player.y > 400) {
-                player.x = 30; player.y = 150; player.vy = 0;
-            }
-
-            // Progression Logic
-            if(step === 1 && player.x > 70) {
-                step = 2;
-                setInstruction("Step 2: The gap is too wide! Tap 'EDIT LAYOUT' to enter Build Phase.");
-                btnPhase.style.display = 'block';
-                input.R = false; // Force stop
-            }
-            
-            if(step === 5 && boxOv(player, world.exit)) {
-                step = 6;
-                setInstruction("TUTORIAL COMPLETE! Close this window to play.");
-                touchControls.style.display = 'none';
-            }
-        }
-
-        // --- Render ---
-        ctx.fillStyle = P.skyT;
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.save();
-        ctx.scale(camZ, camZ);
-        // Center view slightly based on the wider layout
-        ctx.translate((width/camZ/2) - 190, Math.min(0, (height/camZ/2) - 200)); 
-
-        // Draw Platforms
-        for(let p of world.plats) iso(p.x, p.y, p.w, p.h, P.slabF, P.slabT, P.slabS);
-
-        // Draw Built Fragment
-        if(world.frag) {
-            iso(world.frag.x, world.frag.y, world.frag.w, world.frag.h, P.v10F, P.v10T, P.v10S);
-        } else if (mode === 'BUILD' && step === 3) {
-            // Draw Ghost Block
-            ctx.strokeStyle = '#ffcc00';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.strokeRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.fillStyle = 'rgba(255, 204, 0, 0.1)';
-            ctx.fillRect(world.ghost.x, world.ghost.y, world.ghost.w, world.ghost.h);
-            ctx.setLineDash([]);
-        }
-
-        // Draw Exit Beacon
-        ctx.fillStyle='rgba(232,93,117,0.3)'; ctx.fillRect(world.exit.x-10, world.exit.y, 60, 50);
-        ctx.fillStyle=P.bea; ctx.beginPath(); ctx.moveTo(world.exit.x+20, world.exit.y+20); ctx.lineTo(world.exit.x+30, world.exit.y+50); ctx.lineTo(world.exit.x+10, world.exit.y+50); ctx.fill();
-
-        // Draw Player
-        if(mode === 'BUILD') ctx.globalAlpha = 0.5;
-        ctx.fillStyle = P.pl; ctx.fillRect(player.x, player.y, PW, PH);
-        ctx.globalAlpha = 1.0;
-
-        ctx.restore();
-    }
-
-    // Start
-    loop();
+  function completeTutorial() {
+    document.body.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding:20px;">
+        <h1 style="color:var(--neon-green); font-family:'Orbitron',sans-serif; text-shadow:0 0 20px var(--neon-green); font-size:3rem; margin-bottom: 20px;">SYSTEMS ONLINE</h1>
+        <p style="color:#ccc; font-size: 1.2rem; max-width: 500px; line-height: 1.6;">You understand Synthesis, Synchronization, Viruses, and Overrides. You are ready for The Fallacy.</p>
+      </div>`;
+  }
 </script>
 </body>
 </html>

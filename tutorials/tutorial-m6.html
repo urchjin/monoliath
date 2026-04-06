@@ -3,342 +3,351 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>the formulA: Boot Camp</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>the formulA - Orientation</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
-    :root {
-        --bg: #07050f;
-        --prime: #00ffdd;
-        --op-add: #00ff88;
-        --portal: #ffffff;
-        --text: #c8c0f0;
-        --accent: #8866ff;
-        --player: #00ff00;
-        --hazard: #ff6600;
-    }
-    
-    * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-    
-    body, html { 
-        width: 100%; height: 100%; background: #000; overflow: hidden; 
-        font-family: 'Share Tech Mono', monospace; color: var(--text); 
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-    }
-    
-    body::after {
-        content: " "; display: block; position: absolute; inset: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-        z-index: 999; background-size: 100% 4px, 6px 100%; pointer-events: none; opacity: 0.3;
-    }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-    .game-wrapper {
-        width: 100%; max-width: 450px; height: 100%; max-height: 800px;
-        background: var(--bg); position: relative; display: flex; flex-direction: column;
-        border: 2px solid var(--accent); box-shadow: 0 0 30px rgba(136, 102, 255, 0.3);
-    }
+  :root {
+    --bg: #07050f;
+    --prime: #00ffdd;
+    --prime2: #ffd700;
+    --danger: #ff6600;
+    --danger2: #ff2244;
+    --void: #cc44ff;
+    --text: #c8c0f0;
+    --dim: #665a99;
+    --accent: #8866ff;
+    --panel: #09071a;
+  }
 
-    canvas { display: block; flex: 1; width: 100%; border-bottom: 2px solid var(--accent); background: var(--bg);}
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow-x: hidden;
+  }
 
-    #hud { 
-        position: absolute; top: 0; left: 0; width: 100%; 
-        background: rgba(7, 5, 15, 0.85); border-bottom: 2px solid var(--accent);
-        padding: 10px; display: flex; justify-content: space-between; align-items: center;
-        z-index: 10; backdrop-filter: blur(4px);
-    }
-    .hud-box { display: flex; flex-direction: column; gap: 5px; }
-    .hud-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-    .hud-value { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900; color: #fff; }
-    #target-val { color: var(--portal); text-shadow: 0 0 10px var(--portal); }
-    #eq-val { color: var(--prime); text-shadow: 0 0 10px var(--prime); min-height: 25px; min-width: 150px; text-align: right;}
+  /* CRT OVERLAY */
+  body::before {
+    content:''; position:fixed; inset:0; z-index:9999; pointer-events:none;
+    background: repeating-linear-gradient(0deg, transparent 0px, transparent 3px, rgba(0,0,0,0.12) 3px, rgba(0,0,0,0.12) 4px);
+  }
 
-    .modal { 
-        position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; 
-        display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        padding: 20px; backdrop-filter: blur(4px);
-    }
-    .hidden { display: none !important; }
-    
-    .tut-box { 
-        background: rgba(136, 102, 255, 0.05); border: 2px solid var(--accent); 
-        padding: 20px; width: 100%; max-width: 350px; text-align: center; 
-        border-radius: 8px; box-shadow: 0 0 20px rgba(136, 102, 255, 0.2);
-    }
-    .tut-title { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; color: var(--prime); margin-bottom: 10px; text-shadow: 0 0 10px var(--prime); text-transform: uppercase;}
-    .tut-desc { font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; color: #fff;}
-    .tut-desc b { color: var(--op-add); }
-    
-    .btn { 
-        background: rgba(0,0,0,0.8); border: 2px solid var(--prime); color: var(--prime); 
-        font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; 
-        padding: 12px 25px; cursor: pointer; text-transform: uppercase; transition: 0.2s; 
-        border-radius: 4px; width: 100%;
-    }
-    .btn:active { background: var(--prime); color: #000; box-shadow: 0 0 20px var(--prime); }
+  #tutorial-container {
+    max-width: 650px; margin: 0 auto; min-height: 100vh;
+    display: flex; flex-direction: column; padding: 20px 15px;
+    position: relative; z-index: 10;
+  }
 
-    #controls { 
-        height: 180px; background: rgba(7, 5, 15, 0.95); display: flex; 
-        justify-content: center; align-items: center; position: relative; z-index: 50;
-        touch-action: none;
-    }
-    .dpad {
-        display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px;
-    }
-    .d-btn {
-        background: rgba(136, 102, 255, 0.1); border: 1px solid var(--accent); 
-        border-radius: 8px; display: flex; justify-content: center; align-items: center;
-        color: var(--accent); font-size: 1.5rem; font-family: 'Orbitron'; cursor: pointer;
-    }
-    .d-btn:active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
-    #up { grid-column: 2; grid-row: 1; }
-    #left { grid-column: 1; grid-row: 2; }
-    #down { grid-column: 2; grid-row: 2; }
-    #right { grid-column: 3; grid-row: 2; }
+  .header { text-align: center; border-bottom: 1px solid rgba(136,102,255,0.3); padding-bottom: 15px; margin-bottom: 20px; }
+  h1 { font-family: 'Orbitron', sans-serif; color: var(--prime); text-shadow: 0 0 12px var(--prime); font-size: clamp(1.5rem, 5vw, 2.2rem); letter-spacing: 0.2em; margin-bottom: 5px; }
+  .subtitle { font-size: 0.8rem; color: var(--dim); letter-spacing: 0.3em; }
+
+  .module {
+    display: none; background: var(--panel); border: 1px solid rgba(136,102,255,0.3);
+    padding: 20px; border-radius: 4px; flex-grow: 1; animation: fadeIn 0.4s ease-out;
+    box-shadow: 0 0 20px rgba(0,255,221,0.05);
+  }
+  .module.active { display: flex; flex-direction: column; }
+  
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .lo-box {
+    background: rgba(0,255,221,0.05); border-left: 4px solid var(--prime);
+    padding: 12px; margin-bottom: 20px; font-size: 0.85rem; line-height: 1.5;
+  }
+  .lo-title { color: #fff; font-weight: bold; margin-bottom: 5px; font-size: 0.95rem; letter-spacing: 0.1em; text-shadow: 0 0 5px var(--prime); }
+
+  .interactive-zone { flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px 0; }
+
+  /* HUD Simulation */
+  .hud-block {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    background: rgba(136,102,255,0.05); border: 1px solid rgba(136,102,255,0.2);
+    padding: 10px 15px; border-radius: 4px; margin-bottom: 10px;
+  }
+  .sys-val { font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 900; color: #fff; text-shadow: 0 0 10px var(--prime); }
+
+  /* Grid/Tile Elements */
+  .tile-grid { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .tile {
+    width: 60px; height: 60px; background: rgba(0,0,0,0.8); border: 2px solid var(--prime);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+    font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900;
+    cursor: pointer; transition: all 0.2s; box-shadow: inset 0 0 10px rgba(0,255,221,0.2);
+  }
+  .tile:hover { background: rgba(0,255,221,0.2); transform: scale(1.05); box-shadow: 0 0 15px var(--prime); }
+  .tile.disabled { border-color: #333; color: #555; cursor: not-allowed; box-shadow: none; pointer-events: none; }
+  .tile.hulk { border-color: var(--danger); box-shadow: inset 0 0 10px rgba(255,102,0,0.3); }
+  .tile.hulk:hover { background: rgba(255,102,0,0.2); box-shadow: 0 0 15px var(--danger); }
+
+  /* Feedback & Buttons */
+  .feedback { min-height: 40px; font-size: 0.9rem; color: #fff; text-align: center; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
+  
+  .btn-row { display: flex; gap: 10px; width: 100%; justify-content: center; margin-top: auto; }
+  .btn {
+    background: transparent; border: 2px solid var(--accent); color: var(--text);
+    padding: 12px 20px; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: bold;
+    cursor: pointer; text-transform: uppercase; transition: all 0.2s; flex-grow: 1; text-align: center;
+  }
+  .btn:hover:not(:disabled) { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent); }
+  .btn:disabled { border-color: #333; color: #444; cursor: not-allowed; }
+  .btn-next { border-color: var(--prime); color: var(--prime); }
+  .btn-next:hover:not(:disabled) { background: var(--prime); color: #000; box-shadow: 0 0 15px var(--prime); }
+
+  /* Builder Area */
+  .pool-area, .builder-area { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; padding: 10px; border: 1px dashed var(--dim); background: rgba(0,0,0,0.3); min-height: 60px; }
+  .token {
+    font-family: 'Orbitron', sans-serif; font-size: 1.2rem; background: rgba(136,102,255,0.2);
+    color: #fff; border: 1px solid var(--accent); padding: 5px 15px; border-radius: 3px; cursor: pointer;
+  }
+  .token:hover { background: var(--accent); color: #000; }
+  .token.used { opacity: 0.3; pointer-events: none; }
+
+  .text-highlight { color: var(--prime); text-shadow: 0 0 5px var(--prime); }
+  .text-danger { color: var(--danger2); text-shadow: 0 0 5px var(--danger2); }
+  .text-void { color: var(--void); text-shadow: 0 0 5px var(--void); }
+
+  @media (max-width: 500px) {
+    .tile { width: 50px; height: 50px; font-size: 1.2rem; }
+    .sys-val { font-size: 1.5rem; }
+    .btn { padding: 10px; font-size: 0.8rem; }
+  }
 </style>
 </head>
 <body>
 
-<div class="game-wrapper">
-    <div id="hud">
-        <div class="hud-box">
-            <div class="hud-label">Target</div>
-            <div class="hud-value" id="target-val">5</div>
-        </div>
-        <div class="hud-box">
-            <div class="hud-label" style="text-align: right;">Formula</div>
-            <div class="hud-value" id="eq-val">_</div>
-        </div>
-    </div>
+<div id="tutorial-container">
+  <div class="header">
+    <h1>the formulA</h1>
+    <div class="subtitle">BOOT SEQUENCE / ORIENTATION</div>
+  </div>
 
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="controls">
-        <div class="dpad">
-            <div class="d-btn" id="up">▲</div>
-            <div class="d-btn" id="left">◀</div>
-            <div class="d-btn" id="down">▼</div>
-            <div class="d-btn" id="right">▶</div>
-        </div>
+  <div class="module active" id="mod0">
+    <div class="lo-box" style="border-color: var(--accent);">
+      <div class="lo-title" style="color: var(--accent); text-shadow: 0 0 5px var(--accent);">INITIALIZING HACKER CONSTRUCT</div>
+      Welcome to the Mainframe. To bypass the core firewalls, you must manipulate your system value (<span class="text-highlight">SYS_VAL</span>) through mathematical navigation.
     </div>
-
-    <div id="tut-modal" class="modal">
-        <div class="tut-box">
-            <div class="tut-title" id="tut-title">System Boot</div>
-            <div class="tut-desc" id="tut-desc">Welcome to the formulA.</div>
-            <button class="btn" onclick="resumeGame()">ACKNOWLEDGE</button>
-        </div>
+    <div class="interactive-zone" style="text-align: center; line-height: 1.8;">
+      <p>In this orientation, you will learn:</p>
+      <ul style="list-style: none; margin-top: 10px; color: var(--text);">
+        <li>[1] The Firewall Divisibility Rule</li>
+        <li>[2] Entity Survival (Hulks)</li>
+        <li>[3] Formula Construction (BODMAS)</li>
+      </ul>
     </div>
+    <div class="btn-row">
+      <button class="btn btn-next" onclick="nextModule(1)">COMMENCE TRAINING ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod1">
+    <div class="lo-box">
+      <div class="lo-title">OBJECTIVE 1: THE FIREWALL RULE</div>
+      Players must understand movement restrictions: You <b>CANNOT</b> step on a Number Tile if your current SYS_VAL is a multiple of that number.
+    </div>
+    <div class="interactive-zone">
+      <div class="hud-block">
+        <div>CURRENT SYS_VAL</div>
+        <div class="sys-val">12</div>
+      </div>
+      <p style="font-size: 0.85rem; text-align: center; margin-bottom: 10px;">Select a valid tile to move onto. Remember, your value (12) cannot be a multiple of the tile.</p>
+      
+      <div class="tile-grid">
+        <div class="tile" onclick="checkMod1(2)">2</div>
+        <div class="tile" onclick="checkMod1(3)">3</div>
+        <div class="tile" onclick="checkMod1(5)">5</div>
+        <div class="tile" onclick="checkMod1(6)">6</div>
+      </div>
+      
+      <div class="feedback" id="m1-feed">Awaiting input...</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-next" id="btn-next1" disabled onclick="nextModule(2)">PROCEED ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod2">
+    <div class="lo-box" style="border-color: var(--danger);">
+      <div class="lo-title" style="color: var(--danger); text-shadow: 0 0 5px var(--danger);">OBJECTIVE 2: ENTITY SURVIVAL</div>
+      Composite Hulks patrol the grid. You are only safe from a Hulk if your SYS_VAL and the Hulk's value share a <b>Common Factor greater than 1</b>.
+    </div>
+    <div class="interactive-zone">
+      <p style="font-size: 0.85rem; text-align: center;">A <span class="text-danger">Composite Hulk [8]</span> is blocking the path. Select a SYS_VAL that will let you pass safely.</p>
+      
+      <div class="tile-grid" style="margin-top: 10px;">
+        <div class="tile hulk" style="width: 80px; height: 80px; font-size: 2rem;">8</div>
+      </div>
+
+      <div style="font-size: 0.75rem; color: var(--dim); margin: 10px 0;">CHOOSE YOUR SYS_VAL:</div>
+      <div class="tile-grid">
+        <div class="tile" style="border-color: var(--text);" onclick="checkMod2(3)">3</div>
+        <div class="tile" style="border-color: var(--text);" onclick="checkMod2(5)">5</div>
+        <div class="tile" style="border-color: var(--text);" onclick="checkMod2(6)">6</div>
+        <div class="tile" style="border-color: var(--text);" onclick="checkMod2(7)">7</div>
+      </div>
+      
+      <div class="feedback" id="m2-feed">Awaiting input...</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-next" id="btn-next2" disabled onclick="nextModule(3)">PROCEED ▶</button>
+    </div>
+  </div>
+
+  <div class="module" id="mod3">
+    <div class="lo-box" style="border-color: var(--prime2);">
+      <div class="lo-title" style="color: var(--prime2); text-shadow: 0 0 5px var(--prime2);">OBJECTIVE 3: NODE DECRYPTION</div>
+      At the exit, use your collected tokens to build an equation that matches the Target Value. Standard <b>BODMAS / PEMDAS</b> rules apply.
+    </div>
+    <div class="interactive-zone">
+      <div class="hud-block" style="border-color: var(--prime2); background: rgba(255,215,0,0.05);">
+        <div style="color: var(--prime2);">FIREWALL TARGET</div>
+        <div class="sys-val" style="color: var(--prime2); text-shadow: 0 0 10px var(--prime2);">14</div>
+      </div>
+      
+      <div style="width: 100%; text-align: left; font-size: 0.75rem; color: var(--dim);">> INVENTORY POOL</div>
+      <div class="pool-area" id="m3-pool">
+        <div class="token" onclick="addToken(this, '+2')">+2</div>
+        <div class="token" onclick="addToken(this, '+3')">+3</div>
+        <div class="token" onclick="addToken(this, '*4')">*4</div>
+      </div>
+
+      <div style="width: 100%; text-align: left; font-size: 0.75rem; color: var(--dim); margin-top: 10px;">> FORMULA BUFFER (0 + ...)</div>
+      <div class="builder-area" id="m3-builder"></div>
+      
+      <div style="font-size: 1.2rem; font-weight: bold; margin-top: 10px;">EVAL: <span id="m3-eval">0</span></div>
+      <div class="feedback" id="m3-feed" style="min-height: 20px;">Construct: 0 + ... = 14</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="resetBuilder()">CLEAR</button>
+      <button class="btn btn-next" id="btn-next3" disabled onclick="completeOrientation()">FINISH ▶</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
-/** ENGINE SETUP **/
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-let cw, ch;
+  // --- Navigation Logic ---
+  function nextModule(index) {
+    document.querySelectorAll('.module').forEach(m => m.classList.remove('active'));
+    document.getElementById('mod' + index).classList.add('active');
+  }
 
-function resize() {
-    cw = canvas.width = canvas.clientWidth;
-    ch = canvas.height = canvas.clientHeight;
-}
-window.addEventListener('resize', resize);
-setTimeout(resize, 100);
+  function completeOrientation() {
+    const container = document.getElementById('tutorial-container');
+    container.innerHTML = `
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center;">
+        <h1 style="font-size: 3rem; margin-bottom: 20px;">ACCESS GRANTED</h1>
+        <p style="color: var(--text); line-height: 1.8; max-width: 400px;">Orientation complete. You understand Grid Navigation, Threat Evasion, and Decryption Protocol.<br><br>Good luck out there, Hacker.</p>
+      </div>
+    `;
+  }
 
-/** GAME STATE **/
-let state = 'PAUSED'; 
-let step = 0;
-let currentVal = 0;
+  // --- Module 1 Logic (Firewall Rule) ---
+  function checkMod1(val) {
+    const feed = document.getElementById('m1-feed');
+    const btn = document.getElementById('btn-next1');
+    const sysVal = 12;
 
-const Player = { x: 100, y: 150, vx: 0, vy: 0, speed: 180, radius: 12, angle: 0 };
-const Input = { up: false, down: false, left: false, right: false };
-
-let formula = [];
-let targetValue = 5;
-let entities = []; 
-let firewall = null;
-
-/** INPUT HANDLING **/
-const dpad = {
-    'up': document.getElementById('up'),
-    'down': document.getElementById('down'),
-    'left': document.getElementById('left'),
-    'right': document.getElementById('right')
-};
-
-function bindBtn(id, key) {
-    const el = dpad[id];
-    const start = (e) => { e.preventDefault(); Input[key] = true; };
-    const end = (e) => { e.preventDefault(); Input[key] = false; };
-    el.addEventListener('touchstart', start, {passive: false});
-    el.addEventListener('mousedown', start);
-    el.addEventListener('touchend', end);
-    el.addEventListener('mouseup', end);
-    el.addEventListener('mouseleave', end);
-}
-
-bindBtn('up', 'up'); bindBtn('down', 'down');
-bindBtn('left', 'left'); bindBtn('right', 'right');
-
-/** TUTORIAL MANAGER **/
-function showPause(title, desc) {
-    state = 'PAUSED';
-    document.getElementById('tut-modal').classList.remove('hidden');
-    document.getElementById('tut-title').innerText = title;
-    document.getElementById('tut-desc').innerHTML = desc;
-    Input.up = false; Input.down = false; Input.left = false; Input.right = false;
-}
-
-function resumeGame() {
-    document.getElementById('tut-modal').classList.add('hidden');
-    state = 'PLAY';
-    lastTime = performance.now();
-    requestAnimationFrame(loop);
-}
-
-function updateFormulaUI() {
-    const eqText = formula.length === 0 ? '_' : formula.join(' ');
-    document.getElementById('eq-val').innerText = eqText;
-    
-    // Evaluate current value
-    try {
-        if(formula.length > 0) {
-            let res = eval(formula.join('').replace(/ /g, ''));
-            currentVal = isNaN(res) ? 0 : res;
-        } else {
-            currentVal = 0;
-        }
-    } catch(e) { currentVal = 0; }
-}
-
-function spawnEntity(type, val, rx, ry) {
-    entities.push({
-        x: rx, y: ry, size: 20, type: type, val: val, active: true
-    });
-}
-
-function initTutorial() {
-    showPause("Phase 1: Primes", "To escape, you must build an equation that equals the <b>TARGET (5)</b>.<br><br><b>Learning Objective:</b> Move your ship and collect the Prime Number <b>[ 2 ]</b>.");
-    spawnEntity('prime', '2', 200, 150);
-}
-
-/** GAME LOOP **/
-let lastTime = 0;
-function loop(ts) {
-    if(state !== 'PLAY') return;
-    requestAnimationFrame(loop);
-    let dt = (ts - lastTime) / 1000; lastTime = ts;
-    if(dt > 0.1) dt = 0.1;
-    update(dt);
-    draw();
-}
-
-function update(dt) {
-    if(!cw || !ch) return; 
-    
-    let mx = 0, my = 0;
-    if(Input.up) my -= 1;
-    if(Input.down) my += 1;
-    if(Input.left) mx -= 1;
-    if(Input.right) mx += 1;
-    
-    let len = Math.hypot(mx, my);
-    if(len > 0) { 
-        mx /= len; my /= len; 
-        Player.vx = mx * Player.speed;
-        Player.vy = my * Player.speed;
-        Player.angle = Math.atan2(my, mx);
+    if (sysVal % val === 0) {
+      feed.innerHTML = `<span class="text-danger">ACCESS DENIED.</span> ${sysVal} is a multiple of ${val}. You cannot step here.`;
+      btn.disabled = true;
     } else {
-        Player.vx *= 0.8; Player.vy *= 0.8;
+      feed.innerHTML = `<span class="text-highlight">ACCESS GRANTED.</span> ${sysVal} is not a multiple of ${val}. Safe to proceed.`;
+      btn.disabled = false;
     }
+  }
+
+  // --- Module 2 Logic (Hulks/GCD) ---
+  function gcd(a, b) {
+    while(b) { let t = b; b = a % b; a = t; }
+    return a;
+  }
+
+  function checkMod2(val) {
+    const feed = document.getElementById('m2-feed');
+    const btn = document.getElementById('btn-next2');
+    const hulkVal = 8;
+    const commonFactor = gcd(val, hulkVal);
+
+    if (commonFactor > 1) {
+      feed.innerHTML = `<span class="text-highlight">SURVIVED.</span> You and the Hulk share a common factor of ${commonFactor}.`;
+      btn.disabled = false;
+    } else {
+      feed.innerHTML = `<span class="text-danger">CRUSHED.</span> No common factors between ${val} and ${hulkVal}. You teleport back to start!`;
+      btn.disabled = true;
+    }
+  }
+
+  // --- Module 3 Logic (Builder/BODMAS) ---
+  let formulaTokens = [];
+
+  function addToken(el, val) {
+    if (el.classList.contains('used')) return;
+    el.classList.add('used');
     
-    let nextX = Player.x + Player.vx * dt;
-    let nextY = Player.y + Player.vy * dt;
+    formulaTokens.push(val);
+    renderBuilder();
+    evaluateFormula();
+  }
 
-    // Firewall Collision
-    if (firewall) {
-        let isMultiple = currentVal !== 0 && currentVal % firewall.val === 0;
-        if (isMultiple && nextY < firewall.y + 10) {
-            nextY = Math.max(nextY, firewall.y + 10);
-            if (state === 'PLAY' && step === 3) {
-                 showPause("Blocked!", `Your value is <b>${currentVal}</b>, which is a multiple of ${firewall.val}.<br><br><b>Learning Objective:</b> Collect the [ 3 ] below to change your value to 5, which is NOT a multiple of 2!`);
-                 step = 4;
-            }
-        }
-    }
+  function renderBuilder() {
+    const builder = document.getElementById('m3-builder');
+    builder.innerHTML = '';
+    formulaTokens.forEach(t => {
+      let div = document.createElement('div');
+      div.className = 'token';
+      div.style.background = 'var(--prime)';
+      div.style.color = '#000';
+      div.innerText = t;
+      builder.appendChild(div);
+    });
+  }
+
+  function resetBuilder() {
+    formulaTokens = [];
+    document.querySelectorAll('#m3-pool .token').forEach(t => t.classList.remove('used'));
+    renderBuilder();
+    evaluateFormula();
+  }
+
+  function evaluateFormula() {
+    const evalDisplay = document.getElementById('m3-eval');
+    const feed = document.getElementById('m3-feed');
+    const btn = document.getElementById('btn-next3');
     
-    Player.x = Math.max(Player.radius, Math.min(cw - Player.radius, nextX));
-    Player.y = Math.max(Player.radius, Math.min(ch - Player.radius, nextY));
-
-    for(let i = entities.length - 1; i >= 0; i--) {
-        let e = entities[i];
-        if(e.active && Math.hypot(Player.x - e.x, Player.y - e.y) < Player.radius + e.size) {
-            if(e.type === 'portal') {
-                state = 'WIN';
-                showPause("Sector Cleared!", "<b>✦ FORMULA VERIFIED ✦</b><br><br>You mastered equation building and firewall navigation. Avoid hazards and dive deeper.<br><br>End Tutorial to start.");
-                document.querySelector('#tut-modal .btn').innerText = "END TUTORIAL";
-                document.querySelector('#tut-modal .btn').onclick = () => location.reload();
-                return;
-            }
-            
-            e.active = false;
-            formula.push(e.val);
-            updateFormulaUI();
-            
-            if(step === 0) {
-                step = 1;
-                spawnEntity('op', '+', 150, 250);
-                setTimeout(() => showPause("Phase 2: Operators", "Collect the <b>[ + ]</b> to continue the equation."), 100);
-            }
-            else if(step === 1) {
-                step = 2;
-                firewall = { y: 100, val: 2 };
-                setTimeout(() => showPause("Phase 3: The Firewall", "A Firewall has appeared! It blocks any ship whose value is a <b>MULTIPLE</b> of its number.<br><br><b>Objective:</b> Try to pass through the orange beam while your value is [ 2 ]."), 100);
-                step = 3;
-            }
-            else if(step === 4) {
-                step = 5;
-                spawnEntity('portal', '', cw/2, 50);
-                setTimeout(() => showPause("Phase 4: Success", "<b>2 + 3 = 5</b>. Since 5 is not a multiple of 2, you can pass! Reach the Portal."), 100);
-            }
-        }
-    }
-    entities = entities.filter(e => e.active);
-}
-
-function draw() {
-    ctx.fillStyle = '#07050f'; ctx.fillRect(0, 0, cw, ch);
-    ctx.strokeStyle = '#1a1530'; ctx.lineWidth = 1;
-    for(let x=0; x<cw; x+=40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,ch); ctx.stroke(); }
-    for(let y=0; y<ch; y+=40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); }
-
-    if (firewall) {
-        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(0, firewall.y); ctx.lineTo(cw, firewall.y); ctx.stroke();
-        ctx.fillStyle = '#ff6600'; ctx.font = 'bold 14px Orbitron';
-        ctx.fillText(`FIREWALL: MULTIPLES OF ${firewall.val} BLOCKED`, 10, firewall.y - 10);
-        if (step === 3 || step === 4) {
-             if (!entities.some(e => e.val === '3')) spawnEntity('prime', '3', cw/2, 300);
-        }
+    if (formulaTokens.length === 0) {
+      evalDisplay.innerText = "0";
+      evalDisplay.style.color = "var(--text)";
+      feed.innerHTML = "Construct: 0 + ... = 14";
+      btn.disabled = true;
+      return;
     }
 
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for(let e of entities) {
-        if(e.type === 'portal') {
-            ctx.strokeStyle = '#ffffff'; ctx.strokeRect(e.x - e.size, e.y - e.size, e.size*2, e.size*2);
-        } else {
-            ctx.strokeStyle = e.type === 'prime' ? '#00ffdd' : '#00ff88';
-            ctx.strokeRect(e.x - e.size, e.y - e.size, e.size*2, e.size*2);
-            ctx.fillStyle = ctx.strokeStyle; ctx.font = 'bold 20px Orbitron';
-            ctx.fillText(e.val, e.x, e.y + 2);
-        }
+    const eqStr = "0 " + formulaTokens.join(' ');
+    
+    try {
+      // Safely evaluate simple math string
+      const result = Function('"use strict";return (' + eqStr + ')')();
+      evalDisplay.innerText = result;
+      
+      if (result === 14) {
+        evalDisplay.style.color = "var(--prime2)";
+        evalDisplay.style.textShadow = "0 0 10px var(--prime2)";
+        feed.innerHTML = `<span style="color:var(--prime2)">FIREWALL BYPASSED. (0 + 2 + 12 = 14)</span>`;
+        btn.disabled = false;
+      } else {
+        evalDisplay.style.color = "var(--danger2)";
+        evalDisplay.style.textShadow = "none";
+        feed.innerHTML = "Target not met. Remember BODMAS (Multiplication happens first).";
+        btn.disabled = true;
+      }
+    } catch(e) {
+      evalDisplay.innerText = "ERR";
     }
-
-    ctx.save();
-    ctx.translate(Player.x, Player.y); ctx.rotate(Player.angle);
-    ctx.fillStyle = '#00ff00';
-    ctx.beginPath(); ctx.moveTo(Player.radius, 0); ctx.lineTo(-Player.radius, Player.radius * 0.8); ctx.lineTo(-Player.radius * 0.5, 0); ctx.lineTo(-Player.radius, -Player.radius * 0.8); ctx.closePath(); ctx.fill();
-    ctx.restore();
-}
-
-document.fonts.ready.then(() => initTutorial());
+  }
 </script>
+
 </body>
 </html>
