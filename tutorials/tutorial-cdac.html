@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Talk to 💯 - Interactive Tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fascinate&family=Neuton:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #E8431A;
+        --blue: #2B4EBF;
+        --blue-dark: #1B2E8A;
+        --pink: #FF6EB4;
+        --pink-dark: #CC3A88;
+        --yellow: #FFD700;
+        --yellow-dark: #CC9900;
+        --green: #4EC94B;
+        --green-dark: #2E9B2B;
+        --cream: #F5E6C8;
+        --cream-dark: #C8A878;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Neuton', serif;
+        background: var(--bg);
+        background-image: repeating-linear-gradient(45deg, rgba(43,78,191,.08) 0, rgba(43,78,191,.08) 2px, transparent 2px, transparent 22px);
+        color: var(--white);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    h1, h2, h3 { font-family: 'Fascinate', cursive; font-weight: normal; margin-bottom: 10px; }
+
+    .tutorial-container {
+        flex: 1; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; padding: 15px; position: relative;
+    }
+
+    /* Pointing to the Parent window's X button */
+    .close-pointer {
+        position: absolute; top: 15px; right: 45px; 
+        color: var(--yellow); font-size: 24px; font-weight: bold; display: flex;
+        align-items: center; gap: 10px; animation: bounceRight 0.6s infinite alternate;
+        text-shadow: 2px 2px 0 var(--blue-dark); z-index: 100;
+    }
+    .close-pointer-text { font-family: 'Fascinate', cursive; font-size: 16px; }
+
+    @keyframes bounceRight { from { transform: translateX(0); } to { transform: translateX(10px); } }
+
+    /* Card UI */
+    .tut-card {
+        background: #fff; border-radius: 20px; padding: 25px 20px; width: 100%;
+        max-width: 420px; box-shadow: 0 10px 0 var(--blue-dark), 0 20px 40px rgba(0,0,0,0.3);
+        border: 4px solid var(--blue); text-align: center; color: var(--blue-dark);
+        position: relative; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn { from { transform: scale(0.8) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+    .tut-icon { font-size: 54px; filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.1)); margin-bottom: 5px; line-height: 1; }
+    .tut-title { font-size: 32px; color: var(--blue); line-height: 1.1; }
+    .tut-text { font-size: 18px; color: #444; font-weight: 700; line-height: 1.3; margin-top: 10px; }
+    .tut-text b { color: var(--pink-dark); }
+    
+    /* Interactive Sandbox Area */
+    .sandbox {
+        background: rgba(0,0,0,0.03); border: 2px dashed rgba(0,0,0,0.1);
+        border-radius: 12px; padding: 15px; margin-top: 15px; min-height: 120px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+
+    /* Mini Grid (Co-op) */
+    .mini-grid { display: grid; grid-template-columns: repeat(3, 50px); gap: 2px; justify-content: center; margin-bottom: 10px;}
+    .cell { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; border: 2px solid transparent; transition: transform 0.2s;}
+    .cell.empty { background: rgba(0,0,0,0.05); border: 2px dashed rgba(0,0,0,0.15); cursor: pointer; }
+    .cell.vp { background: rgba(255,215,0,0.2); border: 2px solid var(--yellow)!important; cursor: pointer; animation: pls 1s infinite; }
+    .cell.t-start { background: #ddd; border-color: #aaa; }
+    .cell.t-ladder { background: #88E888; border-color: #339933; }
+    @keyframes pls { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.5)} 50%{box-shadow:0 0 0 5px rgba(255,215,0,0)} }
+
+    /* Mini Hand (Co-op) */
+    .hc { width: 60px; height: 70px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 2px solid rgba(0,0,0,0.2); background: #fff; transition: transform 0.2s;}
+    .hc.t-ladder { background: #88E888; border-color: #339933; }
+    .hc.sel { border-color: var(--yellow)!important; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,.3), 0 0 0 3px var(--yellow); }
+    .hci { font-size: 24px; }
+    .hcl { font-size: 12px; font-weight: 800; color: #333; }
+
+    /* Typing Sandbox (Blitz) */
+    .bz-prompt { font-size: 42px; color: var(--blue-dark); font-weight: 800; letter-spacing: 2px; margin: 10px 0; }
+    .bz-input { width: 100%; max-width: 250px; background: #fff; border: 3px solid var(--blue-dark); border-radius: 12px; font-size: 24px; padding: 10px; text-align: center; font-family: var(--body-font); font-weight: 800; color: var(--blue-dark); outline: none; }
+    .bz-input:focus { border-color: var(--yellow); }
+    .bz-trap-row { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 28px; font-weight: 800; margin: 5px 0;}
+    
+    .shake { animation: shake 0.3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-10px);} 75%{transform:translateX(10px);} }
+
+    /* Success Overlay */
+    .success-msg { color: var(--green-dark); font-family: 'Fascinate', cursive; font-size: 24px; animation: popIn 0.3s; display: none; margin-top: 10px; }
+
+    /* Navigation */
+    .nav-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
+    .progress-dots { display: flex; gap: 6px; justify-content: center; margin-top: 15px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.1); transition: background 0.3s; }
+    .dot.active { background: var(--blue); }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 20px; border: none; border-radius: 50px; font-size: 18px; cursor: pointer; transition: transform .1s; font-weight: 800; font-family: 'Neuton', serif; outline: none; flex: 1; }
+    .btn:active { transform: translateY(2px)!important; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none!important; }
+    .btn-y { background: var(--yellow); color: var(--blue-dark); box-shadow: 0 4px 0 var(--yellow-dark); }
+    .btn-b { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
+    .btn-g { background: var(--green); color: #fff; box-shadow: 0 4px 0 var(--green-dark); }
+    .btn-secondary { background: #e0e0e0; color: #555; box-shadow: 0 4px 0 #bbb; }
+    
+    .hidden { display: none !important; }
+
+</style>
+</head>
+<body>
+
+<div class="tutorial-container">
+    <div class="close-pointer" id="skip-prompt">
+        <span class="close-pointer-text">Skip & Play</span>
+        <span>👉</span>
+    </div>
+
+    <div class="tut-card" id="screen-select">
+        <div class="tut-icon">🎓</div>
+        <h2 class="tut-title">Training Sim</h2>
+        <p class="tut-text">Welcome to <b>Talk to 💯</b>! Let's practice the mechanics before you drop in.</p>
+        
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top: 25px;">
+            <button class="btn btn-b" onclick="startTutorial('coop')">👥 Learn Co-op Mode</button>
+            <button class="btn btn-y" onclick="startTutorial('blitz')">⚡ Learn Blitz Mode</button>
+        </div>
+    </div>
+
+    <div class="tut-card hidden" id="screen-tutorial">
+        <div class="tut-icon" id="t-icon">🎲</div>
+        <h2 class="tut-title" id="t-title">Title</h2>
+        <div class="tut-text" id="t-text">Text goes here.</div>
+        
+        <div class="sandbox hidden" id="t-sandbox">
+            </div>
+
+        <div class="success-msg" id="t-success">✨ PERFECT! ✨</div>
+        <div class="progress-dots" id="t-dots"></div>
+
+        <div class="nav-controls">
+            <button class="btn btn-secondary" id="btn-back" onclick="navStep(-1)">Back</button>
+            <button class="btn btn-g" id="btn-next" onclick="navStep(1)">Next</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- PROCEDURAL AUDIO ENGINE ---
+    const sfx = (function() {
+        let ctx = null;
+        function initCtx() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); }
+        function playTone(freq, type, duration, vol=0.1, slideFreq=null) {
+            try {
+                initCtx(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
+                osc.type = type; osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                if(slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, ctx.currentTime + duration);
+                gain.gain.setValueAtTime(vol, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+                osc.start(); osc.stop(ctx.currentTime + duration);
+            } catch(e) {}
+        }
+        return {
+            click: () => playTone(600, 'sine', 0.1, 0.05),
+            tileSnap: () => playTone(150, 'square', 0.1, 0.08, 100),
+            hop: () => playTone(400, 'sine', 0.12, 0.08, 800), 
+            snake: () => playTone(250, 'sawtooth', 0.8, 0.1, 50), 
+            coop: () => { playTone(800, 'sine', 0.2, 0.05); setTimeout(()=>playTone(1200, 'sine', 0.4, 0.05), 100); },
+            error: () => playTone(150, 'sawtooth', 0.2, 0.1)
+        };
+    })();
+
+    // --- TUTORIAL DATA (With Interactive Hooks) ---
+    const tutorials = {
+        coop: [
+            {
+                icon: "🏗️", title: "Setup Phase",
+                text: "In Rounds 1 & 2, you build the board. You must place tiles <b>Up, Left, or Right</b> of the last tile.",
+                interactive: null
+            },
+            {
+                icon: "👇", title: "Try Placing a Tile",
+                text: "1. Click the Ladder in your hand.<br>2. Place it exactly <b>Up, Left, or Right</b> of the Start tile.",
+                interactive: 'coop-place'
+            },
+            {
+                icon: "🎁", title: "Push a Teammate!",
+                text: "If you play ANY tile except a Snake, you unlock a <b>Co-op Roll</b>! You can move yourself, OR push a teammate.",
+                interactive: 'coop-push'
+            }
+        ],
+        blitz: [
+            {
+                icon: "⌨️", title: "Type to Climb",
+                text: "This is a solo speedrun! Type the <b>slang</b> or <b>emoji</b> exactly as it appears to move forward.",
+                interactive: 'blitz-type'
+            },
+            {
+                icon: "🐍", title: "Snake Traps!",
+                text: "Sometimes two prompts appear. Always type the word next to the <b>Ladder</b>. Ignore the Snake!",
+                interactive: 'blitz-trap'
+            }
+        ]
+    };
+
+    let currentMode = null;
+    let currentStep = 0;
+    let sandboxState = {};
+
+    function startTutorial(mode) {
+        sfx.click();
+        currentMode = mode; currentStep = 0;
+        document.getElementById('screen-select').classList.add('hidden');
+        document.getElementById('screen-tutorial').classList.remove('hidden');
+        renderStep();
+    }
+
+    function renderStep() {
+        const data = tutorials[currentMode];
+        const stepData = data[currentStep];
+
+        // Reset UI
+        document.getElementById('t-icon').innerHTML = stepData.icon;
+        document.getElementById('t-title').innerHTML = stepData.title;
+        document.getElementById('t-text').innerHTML = stepData.text;
+        document.getElementById('t-success').style.display = 'none';
+        
+        const sandbox = document.getElementById('t-sandbox');
+        sandbox.innerHTML = '';
+        sandboxState = {};
+
+        const btnNext = document.getElementById('btn-next');
+        btnNext.disabled = false; // Enabled by default unless interactive
+
+        // Build Sandbox if requested
+        if (stepData.interactive) {
+            sandbox.classList.remove('hidden');
+            btnNext.disabled = true; // Force them to complete the task
+            buildSandbox(stepData.interactive);
+        } else {
+            sandbox.classList.add('hidden');
+        }
+
+        // Update Dots
+        const dotsContainer = document.getElementById('t-dots');
+        dotsContainer.innerHTML = '';
+        for(let i=0; i < data.length; i++) {
+            const dot = document.createElement('div');
+            dot.className = `dot ${i === currentStep ? 'active' : ''}`;
+            dotsContainer.appendChild(dot);
+        }
+
+        // Update Buttons
+        const btnBack = document.getElementById('btn-back');
+        if (currentStep === 0) { btnBack.textContent = "Modes"; btnBack.onclick = () => { sfx.click(); goHome(); }; } 
+        else { btnBack.textContent = "Back"; btnBack.onclick = () => navStep(-1); }
+
+        if (currentStep === data.length - 1) { btnNext.textContent = "Ready!"; btnNext.onclick = finishTutorial; } 
+        else { btnNext.textContent = "Next"; btnNext.onclick = () => navStep(1); }
+    }
+
+    function navStep(dir) {
+        sfx.click();
+        currentStep += dir;
+        renderStep();
+    }
+
+    function goHome() {
+        document.getElementById('screen-tutorial').classList.add('hidden');
+        document.getElementById('screen-select').classList.remove('hidden');
+        currentMode = null;
+    }
+
+    // --- SANDBOX BUILDERS & LOGIC ---
+
+    function buildSandbox(type) {
+        const sandbox = document.getElementById('t-sandbox');
+
+        if (type === 'coop-place') {
+            sandboxState.selected = false;
+            sandbox.innerHTML = `
+                <div class="mini-grid" id="sb-grid">
+                    <div class="cell empty" onclick="sandboxAction('invalid')"></div>
+                    <div class="cell empty vp" onclick="sandboxAction('place', 1)"></div>
+                    <div class="cell empty" onclick="sandboxAction('invalid')"></div>
+                    
+                    <div class="cell empty vp" onclick="sandboxAction('place', 3)"></div>
+                    <div class="cell t-start">🏁</div>
+                    <div class="cell empty vp" onclick="sandboxAction('place', 5)"></div>
+                    
+                    <div class="cell empty" onclick="sandboxAction('invalid')"></div>
+                    <div class="cell empty" onclick="sandboxAction('invalid')"></div>
+                    <div class="cell empty" onclick="sandboxAction('invalid')"></div>
+                </div>
+                <div class="hc t-ladder" id="sb-hand-card" onclick="sandboxAction('select')">
+                    <div class="hci">🪜</div><div class="hcl">Ladder</div>
+                </div>
+            `;
+        } 
+        else if (type === 'coop-push') {
+            sandbox.innerHTML = `
+                <div style="font-size:40px; margin-bottom:10px;">🎲 <b>5</b></div>
+                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                    <button class="btn btn-secondary" onclick="sandboxAction('push', 'self')">🫠 Move Yourself</button>
+                    <button class="btn btn-y" onclick="sandboxAction('push', 'team')">🤝 Push Player 2 (👀)</button>
+                </div>
+            `;
+        }
+        else if (type === 'blitz-type') {
+            sandbox.innerHTML = `
+                <div class="bz-prompt">slay</div>
+                <input type="text" id="sb-input" class="bz-input" placeholder="Type it..." autocomplete="off">
+            `;
+            setTimeout(() => document.getElementById('sb-input').addEventListener('input', (e) => {
+                if(e.target.value.trim().toLowerCase() === 'slay') sandboxAction('type-success');
+            }), 100);
+        }
+        else if (type === 'blitz-trap') {
+            sandbox.innerHTML = `
+                <div class="bz-trap-row" style="color:var(--green-dark)">🪜 <span>bet</span></div>
+                <div class="bz-trap-row" style="color:var(--pink-dark)">🐍 <span>sus</span></div>
+                <input type="text" id="sb-input" class="bz-input" placeholder="Type here..." autocomplete="off" style="margin-top:15px;">
+            `;
+            setTimeout(() => document.getElementById('sb-input').addEventListener('input', (e) => {
+                const val = e.target.value.trim().toLowerCase();
+                if(val === 'bet') sandboxAction('trap-success');
+                else if(val === 'sus') sandboxAction('trap-fail');
+            }), 100);
+        }
+    }
+
+    function sandboxAction(action, data) {
+        if(sandboxState.done) return;
+
+        if (action === 'select') {
+            sfx.click();
+            sandboxState.selected = true;
+            document.getElementById('sb-hand-card').classList.add('sel');
+        } 
+        else if (action === 'place' || action === 'invalid') {
+            if (!sandboxState.selected) { 
+                sfx.error(); 
+                const card = document.getElementById('sb-hand-card');
+                card.classList.remove('shake');
+                void card.offsetWidth;
+                card.classList.add('shake');
+                return; 
+            }
+            
+            if (action === 'invalid') {
+                sfx.error();
+                const grid = document.getElementById('sb-grid');
+                grid.classList.remove('shake');
+                void grid.offsetWidth; // trigger reflow
+                grid.classList.add('shake');
+                return;
+            }
+
+            // Valid Placement
+            sfx.tileSnap();
+            sandboxState.done = true;
+            const cells = document.querySelectorAll('.mini-grid .cell');
+            cells[data].className = 'cell t-ladder';
+            cells[data].innerHTML = '🪜';
+            document.getElementById('sb-hand-card').style.opacity = '0.3';
+            // Remove glow from others
+            cells.forEach(c => c.classList.remove('vp'));
+            completeSandbox();
+        }
+        else if (action === 'push') {
+            sfx.coop();
+            sandboxState.done = true;
+            completeSandbox(data === 'team' ? "✨ Awesome Teamwork! ✨" : "✨ Moved! ✨");
+        }
+        else if (action === 'type-success' || action === 'trap-success') {
+            sfx.hop();
+            sandboxState.done = true;
+            document.getElementById('sb-input').blur();
+            completeSandbox();
+        }
+        else if (action === 'trap-fail') {
+            sfx.snake();
+            const input = document.getElementById('sb-input');
+            input.value = "";
+            input.classList.remove('shake');
+            void input.offsetWidth; // trigger reflow
+            input.classList.add('shake');
+        }
+    }
+
+    function completeSandbox(customMsg) {
+        const msg = document.getElementById('t-success');
+        if(customMsg) msg.innerText = customMsg;
+        msg.style.display = 'block';
+        document.getElementById('btn-next').disabled = false;
+        
+        // Slight pulse on the next button to draw attention
+        const nextBtn = document.getElementById('btn-next');
+        nextBtn.style.transform = "scale(1.1)";
+        setTimeout(() => nextBtn.style.transform = "scale(1)", 200);
+    }
+
+    function finishTutorial() {
+        sfx.victory();
+        document.getElementById('t-icon').innerHTML = "🎮";
+        document.getElementById('t-title').innerHTML = "You're Ready!";
+        document.getElementById('t-text').innerHTML = "Click the <b>'X'</b> button in the top right corner of the screen to close this tutorial and begin the simulation!";
+        
+        document.getElementById('t-sandbox').classList.add('hidden');
+        document.getElementById('t-success').style.display = 'none';
+        document.getElementById('t-dots').innerHTML = "";
+        document.getElementById('btn-back').style.display = "none";
+        document.getElementById('btn-next').style.display = "none";
+        
+        // Emphasize the pointer
+        const pointer = document.getElementById('skip-prompt');
+        pointer.style.transform = "scale(1.3)";
+        pointer.style.right = "35px";
+        pointer.style.top = "25px";
+    }
+</script>
+</body>
+</html>
